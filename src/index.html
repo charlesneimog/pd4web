@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+        <script defer src="enable-threads.js"></script>
+        <meta charset="utf-8">
+        <title>Piece Test</title>
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-E81RWT6R4V"></script>
+        <script>
+            navigator.mediaDevices.getUserMedia({ audio: true });
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-E81RWT6R4V');
+            const userPreferredLanguage = navigator.language.split('-')[0];
+        </script>
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Charles K. Neimog</title>
+    </head>
+    <body>
+        <div id="scriptContainer"></div>
+        <div style="text-align: center; outline: 1px solid black; border-radius: 10px; margin: 10px; padding: 10px;">
+            <a id="Start-Audio-Button">
+                <i  id="SoundIcon" class="fa-solid fa-volume-xmark fa-2x"></i>
+            </a>
+        </div>
+        <div style="text-align: center; outline: 1px solid black; border-radius: 10px; margin: 10px; padding: 10px;">
+            <h4>Input Device</h4>
+            <select id="Input-Device-Select" style="text-align: center;">
+                <h2>Input Device</h2>
+                <option value="default">Default</option>
+            </select>
+        </div>
+        <div style="text-align: center; outline: 1px solid black; border-radius: 10px; margin: 10px; padding: 10px;">
+            <h4>Output Device</h4>
+            <select id="Output-Device-Select" style="text-align: center;">
+                <option value="default">Default</option>
+            </select>
+        </div>
+    <script async src="libpd.js"></script>
+    <script src="helpers.js"></script>
+
+    <h4 id="Latency-AudioNode" style="text-align: center">Estimated Latency for processing: NULL</h4>
+    <h4 id="Latency-Output" style="text-align: center">Estimated Latency for output: NULL</h4>
+    <button id="Print-Audio-Context-Button" style="text-align: center">Print Audio Context</button>
+  </body>
+</html>

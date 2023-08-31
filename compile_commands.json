@@ -1,0 +1,33 @@
+[
+  {
+    "arguments": [
+      "/home/neimog/Documents/emsdk/upstream/bin/clang",
+      "-target",
+      "wasm32-unknown-emscripten",
+      "-fignore-exceptions",
+      "-fvisibility=default",
+      "-mllvm",
+      "-combiner-global-alias-analysis=false",
+      "-mllvm",
+      "-enable-emscripten-sjlj",
+      "-mllvm",
+      "-disable-lsr",
+      "-DEMSCRIPTEN",
+      "-Werror=implicit-function-declaration",
+      "-I/home/neimog/Documents/emsdk/upstream/emscripten/cache/sysroot/include/SDL2",
+      "--sysroot=/home/neimog/Documents/emsdk/upstream/emscripten/cache/sysroot",
+      "-Xclang",
+      "-iwithsysroot/include/compat",
+      "-I../../..//pure-data/src",
+      "-I../../..//libpd_wrapper",
+      "-O3",
+      "-c",
+      "-o",
+      "/tmp/emscripten_temp_bia57hyj/main_0.o",
+      "main.c"
+    ],
+    "directory": "/home/neimog/Documents/Git/libpd/samples/emscripten/pdtest",
+    "file": "/home/neimog/Documents/Git/libpd/samples/emscripten/pdtest/main.c",
+    "output": "/tmp/emscripten_temp_bia57hyj/main_0.o"
+  }
+]
