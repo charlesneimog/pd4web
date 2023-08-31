@@ -1,18 +1,17 @@
+
 // ====================
 function sendFloat(receiver, f) {
-    if (pdIsInitialized === false) {
-        console.log("Pd is not initialized yet!");
+    if (Module === undefined) {
+        alert("Module is undefined!");
         return;
     }
-    console.log("sendFloat: " + receiver + " " + f);
-    var str_raw = new TextEncoder().encode(receiver);
-    var ptr = Module._webpd_malloc(str_raw.length + 1);
-    var chunk = Module.HEAPU8.subarray(ptr, ptr + str_raw.length);
-    chunk.set(str_raw);
-    Module.HEAPU8[ptr + str_raw.length] = 0; // Null-terminate the string
-    var result = Module._pd_sendFloat(ptr, f);
-    Module._webpd_free(ptr);
-    if (result !== 0) {
+    var str_rawReceiver = new TextEncoder().encode(receiver);
+    var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
+    var chunkReceiver = Module.HEAPU8.subarray(ptrReceiver, ptrReceiver + str_rawReceiver.length);
+    chunkReceiver.set(str_rawReceiver);
+    Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+
+    if(Module._sendFloatToPd(ptrReceiver, f) !== 0){
         console.error("Error sending float to pd");
     }
 }

@@ -5,6 +5,7 @@ import requests
 import zipfile
 import shutil
 import datetime
+import pprint
 
 ## ================== EXTERNALS THINGS ================== ##
 from lib.externals import PD_LIBRARIES
@@ -51,7 +52,7 @@ class webpdPatch():
         parser = argparse.ArgumentParser(description="Sample script to create personalised webPd patch")
         parser.add_argument('--patch', required=True, help='Patch argument')
         parser.add_argument('--confirm', required=False, help='Confirm if the object is an external')
-        parser.add_argument('--clearTmpFiles', required=False, default=True, help='Remove all objects from the patch')
+        parser.add_argument('--clearTmpFiles', required=False, default=False, help='Remove all objects from the patch')
         args = parser.parse_args()
         self.FoundExternals = False
         self.source = sourcefile
@@ -64,8 +65,8 @@ class webpdPatch():
             self.templateCode = file.readlines()
 
         if not insideaddAbstractions:
-            if not os.path.exists("externals"):
-                os.mkdir("externals")
+            if not os.path.exists(".externals"):
+                os.mkdir(".externals")
 
             if not os.path.exists("webpatch"):
                 os.mkdir("webpatch")
@@ -113,30 +114,29 @@ class webpdPatch():
         shutil.copy("src/enable-threads.js", "webpatch/enable-threads.js")
 
         if self.clearTmpFiles == True:
-            if os.path.exists("externals"):
-                shutil.rmtree("externals")
+            if os.path.exists(".externals"):
+                shutil.rmtree(".externals")
+        
+        if not insideaddAbstractions:
+            print("")
 
-        print("")
-
+        
     def printInfo(self, str):
         # clear the last line
         sys.stdout.write("\033[K")
-        sys.stdout.write("\r" + str)
+        sys.stdout.write("\r" + "    " + str)
         sys.stdout.flush()
         self.lastPrintedLine = str
 
         
     def printError(self, str):
-        # print in red
-        print("")
         print("\033[91m" + str + "\033[0m")
 
 
-
     def configForAbstraction(self, abstractionfile):
-        if not os.path.exists("webpatch/libs"):
-            os.mkdir("webpatch/libs")
-        shutil.copy(abstractionfile, "./webpatch/libs")
+        if not os.path.exists("webpatch/data"):
+            os.mkdir("webpatch/data")
+        shutil.copy(abstractionfile, "webpatch/data")
 
 
     def findExternals(self):
@@ -170,7 +170,6 @@ class webpdPatch():
             self.PatchLinesExternalFound.append(lineInfo)
 
 
-
     def checkIsObjIsSingle(self, patchLine):
         if patchLine[1] == "obj":
             nameOfTheObject = patchLine[4].replace(";", "").replace("\n", "")
@@ -187,33 +186,10 @@ class webpdPatch():
             if lineInfo.isExternal:
                 foundLibrary = self.downloadExternalLibrarySrc(lineInfo.library)
                 if foundLibrary:
-                    for root, _, files in os.walk("externals/" + lineInfo.library):
+                    for root, _, files in os.walk(".externals/" + lineInfo.library):
                         for file in files:
                             if file.endswith(".c"):
-                                with open(os.path.join(root, file), "r") as file: 
-                                    lineNumber = 0
-                                    for line in file:
-                                        lineNumber += 1
-                                        if lineInfo.objGenSym in line:
-                                            shutil.copy(file.name, "webpatch/externals")
-                                            lineInfo.objFound = True
-                                            lineInfo.genSymIndex = lineNumber
-                                            with open(file.name, "r") as file2checkFunc:
-                                                content = file2checkFunc.readlines()
-                                                for functionline in range(lineNumber, 0, -1):
-                                                    if "void" in content[functionline]:
-                                                        functionTokens = content[functionline].split(" ") # [1].replace("\n", "")
-                                                        for token in enumerate(functionTokens):
-                                                            if token[1] == "void":
-                                                                lineInfo.functionName = functionTokens[token[0] + 1]
-                                                        lineInfo.functionName = lineInfo.functionName.replace("\n", "")
-                                                        lineInfo.functionName = lineInfo.functionName.replace("{", "")
-                                                        lineInfo.functionName = lineInfo.functionName + ";"
-                                                        if "(void)" in lineInfo.functionName:
-                                                            lineInfo.functionName = lineInfo.functionName.replace("(void)", "()")
-                                                        self.printInfo("\033[92m" + "Found function: " + lineInfo.functionName + "\033[0m")
-                                                        print("")
-                                                        break
+                                     self.searchCFunction(lineInfo, root, file)
                             elif file.endswith(".pd"):
                                 if lineInfo.name == file.split(".")[0]:
                                     lineInfo.isAbstraction = True
@@ -227,42 +203,67 @@ class webpdPatch():
                 self.printError("\033[91m" + "Could not find " + lineInfo.name + " in " + lineInfo.library + "\033[0m")
 
 
+    def searchCFunction(self, lineInfo, root, file):
+        with open(os.path.join(root, file), "r") as file: 
+            lineNumber = 0
+            for line in file:
+                lineNumber += 1
+                if lineInfo.objGenSym in line:
+                    shutil.copy(file.name, "webpatch/externals")
+                    lineInfo.objFound = True
+                    lineInfo.genSymIndex = lineNumber
+                    with open(file.name, "r") as file2checkFunc:
+                        content = file2checkFunc.readlines()
+                        for functionline in range(lineNumber, 0, -1):
+                            if "void" in content[functionline]:
+                                functionTokens = content[functionline].split(" ") # [1].replace("\n", "")
+                                for token in enumerate(functionTokens):
+                                    if token[1] == "void":
+                                        lineInfo.functionName = functionTokens[token[0] + 1]
+                                lineInfo.functionName = lineInfo.functionName.replace("\n", "")
+                                lineInfo.functionName = lineInfo.functionName.replace("{", "")
+                                lineInfo.functionName = lineInfo.functionName + ";"
+                                if "(void)" in lineInfo.functionName:
+                                    lineInfo.functionName = lineInfo.functionName.replace("(void)", "()")
+                                self.printInfo("\033[92m" + "External Function Found: " + lineInfo.functionName + "\033[0m")
+                                print("")
+                                break
+
+
     def addObjSetup(self):
         '''
         This function will add the obj_setup() inside the main.c file
         '''
+        addedFunctions = []
         for lineInfo in self.PatchLinesExternalFound:
-            if lineInfo.isExternal and lineInfo.objFound:
-                start_index = None
-                end_index = None
-                for i, line in enumerate(self.templateCode):
-                    if "// Externals Objects Declarations" in line:
-                        start_index = i
-                    if "// ====================" in line:
-                        end_index = i
-                    if start_index is not None and end_index is not None:
-                        functionName = "void " + lineInfo.functionName + "\n"
-                        self.templateCode.insert(start_index + 1, functionName)
-                        break
-
-                start_index = None
-                end_index = None
-                for i, line in enumerate(self.templateCode):
-                    if "// WebPd Load Externals" in line:
-                        start_index = i
-                    if "// ====================" in line:
-                        end_index = i
-                    if start_index is not None and end_index is not None:
-                        functionName = lineInfo.functionName
-                        functionName = "    " + functionName + "\n"
-                        alreadyAdded = False
-                        for line in self.templateCode:
-                            if functionName in line:
-                                alreadyAdded = True
-                                break
-                        if not alreadyAdded:
+            if lineInfo.functionName not in addedFunctions:
+                addedFunctions.append(lineInfo.functionName)
+                if lineInfo.isExternal and lineInfo.objFound:
+                    start_index = None
+                    end_index = None
+                    for i, line in enumerate(self.templateCode):
+                        if "// Externals Objects Declarations" in line:
+                            start_index = i
+                        if "// ====================" in line:
+                            end_index = i
+                        if start_index is not None and end_index is not None:
+                            functionName = "void " + lineInfo.functionName + "\n"
                             self.templateCode.insert(start_index + 1, functionName)
-                        break
+                            break
+
+                    start_index = None
+                    end_index = None
+                    for i, line in enumerate(self.templateCode):
+                        if "// WebPd Load Externals" in line:
+                            start_index = i
+                        if "// ====================" in line:
+                            end_index = i
+                        if start_index is not None and end_index is not None:
+                            functionName = lineInfo.functionName
+                            functionName = "    " + functionName + "\n"
+                            self.templateCode.insert(start_index + 1, functionName)
+                            break
+
         return True
 
 
@@ -270,19 +271,6 @@ class webpdPatch():
         with open("webpatch/main.c", "w") as file:
             for line in self.templateCode:
                 file.write(line)
-
-
-    def createHeaderFile(self):
-        '''
-        In the same folder where self.source is, create one externals.h file.
-        '''
-        folder = os.path.dirname(self.source)
-        if os.path.exists(os.path.join(folder, "externals.h")):
-            os.remove(os.path.join(folder, "externals.h"))
-        with open(os.path.join(folder, "externals.h"), "w") as file:
-            for object in self.PatchLinesExternalFound:
-                if object.isExternal:
-                    file.write("void " + object.functionName + "\n")
 
 
     def usedLibraries(self, libraryName):
@@ -295,37 +283,45 @@ class webpdPatch():
 
 
     def downloadExternalLibrarySrc(self, libraryName):
+        responseJson = {'message': 'Unknown error'}
         if libraryName in PD_LIBRARIES.LibraryNames:
-            self.usedLibraries(libraryName)
-            LibraryClass = PD_LIBRARIES.get(libraryName)
-            libURL = PD_LIBRARIES.getDownloadURL(libraryName)
-            if not isinstance(libURL, str):
-                print("LibURL is not a string or None" + str(type(libURL)))
-                return None
+            try:
+                self.usedLibraries(libraryName)
+                LibraryClass = PD_LIBRARIES.get(libraryName)
+                libURL = PD_LIBRARIES.getDownloadURL(libraryName)
+                if not isinstance(libURL, str) or LibraryClass is None:
+                    print("LibURL is not a string or None" + str(type(libURL)))
+                    return None
 
-            # check if os.path.join(os.getcwd(), "externals/" + libraryName) exists
-            if os.path.exists(os.path.join(os.getcwd(), "externals/" + libraryName)):
-                LibraryClass.folder = os.path.join(os.getcwd(), "externals/" + libraryName)
+                if os.path.exists(os.path.join(os.getcwd(), ".externals/" + libraryName)):
+                    LibraryClass.folder = os.path.join(os.getcwd(), ".externals/" + libraryName)
+                    return True
+
+                response = requests.get(libURL)
+                responseJson = response.json()
+                sourceCodeLink = responseJson[0]["zipball_url"]
+                response = requests.get(sourceCodeLink)
+                if not os.path.exists(".externals"):
+                    os.mkdir(".externals")
+                with open(".externals/" + libraryName + ".zip", "wb") as file:
+                    file.write(response.content)
+
+                with zipfile.ZipFile(".externals/" + libraryName + ".zip", 'r') as zip_ref:
+                    zip_ref.extractall(".externals")
+                    extractFolderName = zip_ref.namelist()[0]
+                    os.rename(".externals/" + extractFolderName, ".externals/" + libraryName)
+
+                LibraryClass.folder = os.path.join(os.getcwd(), ".externals/" + libraryName)
+                self.librariesFolder.append(os.path.join(os.getcwd(), ".externals/" + libraryName))
+                os.remove(".externals/" + libraryName + ".zip")
                 return True
-
-            response = requests.get(libURL)
-            responseJson = response.json()
-            sourceCodeLink = responseJson[0]["zipball_url"]
-            response = requests.get(sourceCodeLink)
-            if not os.path.exists("externals"):
-                os.mkdir("externals")
-            with open("externals/" + libraryName + ".zip", "wb") as file:
-                file.write(response.content)
-
-            with zipfile.ZipFile("externals/" + libraryName + ".zip", 'r') as zip_ref:
-                zip_ref.extractall("externals")
-                extractFolderName = zip_ref.namelist()[0]
-                os.rename("externals/" + extractFolderName, "externals/" + libraryName)
-
-            LibraryClass.folder = os.path.join(os.getcwd(), "externals/" + libraryName)
-            self.librariesFolder.append(os.path.join(os.getcwd(), "externals/" + libraryName))
-            os.remove("externals/" + libraryName + ".zip")
-            return True
+            except:
+                print("")
+                print("")
+                self.printError("\033[91m" + str(responseJson["message"]) + "\033[0m")
+                print("")
+                print("")
+                return False
         else:
             return False
 
@@ -354,7 +350,10 @@ class webpdPatch():
 
 
     def savePdPatchModified(self):
-        with open('webpatch/index.pd', "w") as file:
+        if not os.path.exists("webpatch/data"):
+            os.mkdir("webpatch/data")
+
+        with open('webpatch/data/index.pd', "w") as file:
             finalPatch = []
             thereIsAbstraction = False
             for obj in self.PatchLinesExternalFound:
@@ -377,7 +376,7 @@ class webpdPatch():
                 if newLine[0] == "#N" and newLine[1] == 'canvas' and thereIsAbstraction:
                     newLine = " ".join(newLine)
                     file.write(newLine)
-                    file.write("#X declare -path libs;\n")
+                    file.write("#X declare -path data;\n")
                 else:
                     newLine = " ".join(newLine)
                     file.write(newLine)
@@ -408,12 +407,12 @@ class webpdPatch():
 
 
     def addAbstractions(self):
-        # list all files in webpatch/libs
-        for dir, _, files in os.walk("webpatch/libs"):
+        # list all files in webpatch/data
+        for dir, _, files in os.walk("webpatch/data"):
             for patchfile in files:
-                if patchfile.endswith(".pd"):
+                if patchfile.endswith(".pd") and patchfile != "index.pd":
                     self.printInfo("\033[92m" + "Found Abstraction: " + patchfile + "\033[0m")
-                    webpdPatch(sourcefile="webpatch/main.c", pdpatch="webpatch/libs/" + patchfile, insideaddAbstractions=True)
+                    webpdPatch(sourcefile="webpatch/main.c", pdpatch="webpatch/data/" + patchfile, insideaddAbstractions=True)
                     self.removeLibraryPrefix(dir + "/" + patchfile)
 
 
