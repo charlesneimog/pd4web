@@ -68,9 +68,11 @@ class webpdPatch():
             os.mkdir("externals")
 
         if not os.path.exists("webpatch"):
+            os.mkdir("webpatch")
+        else:
             shutil.rmtree("webpatch")
             os.mkdir("webpatch")
-
+        
         if not os.path.exists("webpatch/externals"):
             os.mkdir("webpatch/externals")
         else:
