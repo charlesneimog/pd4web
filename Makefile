@@ -4,9 +4,6 @@ LIBPD_DIR = libpd
 SRC_FILES = webpatch/main.c
 EXTERNAL_FILES = $(wildcard webpatch/externals/*.c)
 
-LIBS_DATA_FILES = $(wildcard webpatch/libs/*.pd)
-LIBS_DATA_WITH_FLAGS = $(foreach file,$(LIBS_DATA_FILES),--preload-file $(file))
-
 CFLAGS = -I webpatch/extra/ -I $(LIBPD_DIR)/pure-data/src -I $(LIBPD_DIR)/libpd_wrapper 
 CFLAGS += -L $(LIBPD_DIR)/build/libs -lpd
 
@@ -35,9 +32,7 @@ emcc:
 	emcc \
 		$(CFLAGS) \
 		$(LDFLAGS) \
-		$(LIBS_DATA_WITH_FLAGS) \
-		--preload-file webpatch/index.pd \
-		$(EXTRA_DATA_FILES) \
+		--embed-file webpatch/data \
 		$(SRC_FILES) $(EXTERNAL_FILES) -o $(TARGET) 
 				 
 

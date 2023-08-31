@@ -11,6 +11,28 @@ uint8_t patchAudioOutputs = 2;
 uint8_t wasmAudioWorkletStack[1024 * 1024];
 int samplerate = 48000;
 
+
+// ==============================================
+EMSCRIPTEN_KEEPALIVE
+void* webpd_malloc(int size) {
+    return malloc(size);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void webpd_free(void *ptr) {
+    free(ptr);
+}
+
+
+// Send data to PureData
+// ==============================================
+EMSCRIPTEN_KEEPALIVE
+int sendFloatToPd(const char *receiver, float value) {
+    return libpd_float(receiver, value);
+}
+
+
+
 // ==============================================
 void pdprint(const char *s) {
     printf("%s", s);
@@ -47,6 +69,7 @@ EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int numOut
 EM_JS(int, GetAudioSampleRate, (EMSCRIPTEN_WEBAUDIO_T audioContext), {
     return emscriptenGetAudioObject(audioContext).sampleRate;
 });
+
 
 // ========================================
 EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode), {
@@ -208,7 +231,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     libpd_finish_message("pd", "dsp");
 
     libpd_init_audio(patchAudioInputs, patchAudioOutputs, GetAudioSampleRate(audioContext));
-    if (!libpd_openfile("index.pd", "webpatch")){
+    if (!libpd_openfile("index.pd", "webpatch/data")){
         printf("Failed to open patch\n");
     }
 }
@@ -232,9 +255,12 @@ int main(){
 
     EmscriptenWebAudioCreateAttributes attrs = {
             .latencyHint = "interactive",
-            .sampleRate = samplerate,
     };
+
     EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(&attrs);
+
+
+    samplerate = GetAudioSampleRate(context);
 
     emscripten_start_wasm_audio_worklet_thread_async(context, wasmAudioWorkletStack, 
         sizeof(wasmAudioWorkletStack), WebAudioWorkletThreadInitialized, 0);
