@@ -63,27 +63,27 @@ class webpdPatch():
         with open(self.source, "r") as file:
             self.templateCode = file.readlines()
 
-        # check if webpatch/externals and webpatch/extras exists
-        if not os.path.exists("externals"):
-            os.mkdir("externals")
+        if not insideaddAbstractions:
+            if not os.path.exists("externals"):
+                os.mkdir("externals")
 
-        if not os.path.exists("webpatch"):
-            os.mkdir("webpatch")
-        else:
-            shutil.rmtree("webpatch")
-            os.mkdir("webpatch")
-        
-        if not os.path.exists("webpatch/externals"):
-            os.mkdir("webpatch/externals")
-        else:
-            shutil.rmtree("webpatch/externals")
-            os.mkdir("webpatch/externals")
+            if not os.path.exists("webpatch"):
+                os.mkdir("webpatch")
+            else:
+                shutil.rmtree("webpatch")
+                os.mkdir("webpatch")
 
-        if not os.path.exists("webpatch/extra"):
-            os.mkdir("webpatch/extra")
-        else:
-            shutil.rmtree("webpatch/extra")
-            os.mkdir("webpatch/extra")
+            if not os.path.exists("webpatch/externals"):
+                os.mkdir("webpatch/externals")
+            else:
+                shutil.rmtree("webpatch/externals")
+                os.mkdir("webpatch/externals")
+
+            if not os.path.exists("webpatch/extra"):
+                os.mkdir("webpatch/extra")
+            else:
+                shutil.rmtree("webpatch/extra")
+                os.mkdir("webpatch/extra")
 
         if pdpatch is not None:
             self.patch = pdpatch
@@ -107,14 +107,14 @@ class webpdPatch():
         if not insideaddAbstractions:
             self.addAbstractions()
         
-        if self.clearTmpFiles == True:
-            if os.path.exists("externals"):
-                shutil.rmtree("externals")
-
         # copy index.html to webpatch
         shutil.copy("src/index.html", "webpatch/index.html")
         shutil.copy("src/helpers.js", "webpatch/helpers.js")
         shutil.copy("src/enable-threads.js", "webpatch/enable-threads.js")
+
+        if self.clearTmpFiles == True:
+            if os.path.exists("externals"):
+                shutil.rmtree("externals")
 
         print("")
 
@@ -134,11 +134,9 @@ class webpdPatch():
 
 
     def configForAbstraction(self, abstractionfile):
-        # copy the abstraction file to webpatch/libs
-        # check if libs folder exists
         if not os.path.exists("webpatch/libs"):
             os.mkdir("webpatch/libs")
-        shutil.copy(abstractionfile, "webpatch/libs")
+        shutil.copy(abstractionfile, "./webpatch/libs")
 
 
     def findExternals(self):
@@ -348,7 +346,11 @@ class webpdPatch():
         Month = datetime.datetime.now().month
         patchName = self.patch.split("/")[-1].split(".")[0]
         backPatchName = patchName + "_" + str(Day) + "_" + str(Month) + "_" + str(Hour) + "_" + str(Minute) + ".pd"
-        shutil.copy(self.patch, ".backup/" + backPatchName)
+        try:
+            shutil.copy(self.patch, ".backup/" + backPatchName)
+        except Exception as e:
+            self.printError("\033[91m" + str(e) + "\033[0m")
+            
 
 
     def savePdPatchModified(self):
@@ -410,7 +412,6 @@ class webpdPatch():
         for dir, _, files in os.walk("webpatch/libs"):
             for patchfile in files:
                 if patchfile.endswith(".pd"):
-                    print("")
                     self.printInfo("\033[92m" + "Found Abstraction: " + patchfile + "\033[0m")
                     webpdPatch(sourcefile="webpatch/main.c", pdpatch="webpatch/libs/" + patchfile, insideaddAbstractions=True)
                     self.removeLibraryPrefix(dir + "/" + patchfile)
