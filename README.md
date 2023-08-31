@@ -2,6 +2,18 @@
 
 This is one Repo where I try to merge all the repos related with run PureData in the browser, this work was done by [claudeha](https://github.com/claudeha/libpd.git) and already have on PR for PureData, that was not merged yet :(. 
 
+The main addition to this repository is the webpatch module, located within the 'resources' directory. `webpatch.py` is a Python script that configures a `.c` file, making it possible to use various external ones. Below is the list of supported external libraries.
+
+* *Obs*.: Some objects, mainly because of dynamic libraries, are not supported (mainly because I don't use then).
+
+| Library | NOT Supported Objects       | 
+|---------|-----------------------------|
+| `else`  | `sfont~`, `plaits~`, `sfz~` |
+| `cyclone`  | - |
+| `earplug~`  | - |
+
+
+
 ## Make your patch run on internet
 
 To put your patch online run these commands:
