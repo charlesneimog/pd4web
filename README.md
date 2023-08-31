@@ -15,7 +15,7 @@ To put your patch online run these commands:
     ./emsdk activate latest
     source ./emsdk_env.sh
     git clone https://github.com/charlesneimog/webpd.git
-    cd webpd && git submodule init
+    cd webpd && git submodule init && git submodule update
     cd libpd && git switch emscripten-pd54
     cd pure-data && git switch emscripten-pd54
     cd ../ && mkdir build && cd build
