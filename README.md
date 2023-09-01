@@ -13,7 +13,7 @@ This repository configures a `.c` file and then compile it for web, allowing run
 | earplug~  |               -              | 
 
 
-* *Obs*.: Some objects, mainly because of dynamic libraries, are not supported yet (mainly because I don't use then, **please make one Pull Request**).
+* *Obs*.: Some objects, mainly because of dynamic libraries, are not supported yet (mainly because I don't use then, **please make a Pull Request**).
 
 ------------------
 
