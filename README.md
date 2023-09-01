@@ -41,7 +41,7 @@ To put your patch online run these commands:
 * `Windows`: `winget install Git.Git`.
 
 
-#### 2. Install for emscripten
+#### 2. Install emscripten
 
 ``` bash
     git clone https://github.com/emscripten-core/emsdk.git
