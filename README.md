@@ -55,8 +55,6 @@ To put your patch online run these commands:
     source ./emsdk_env.sh && cd ..
 ```
 
-You need to install `emscripten`. 
-
 #### 3. Configure all the Enviroment (only the first time)
 
 ``` bash
