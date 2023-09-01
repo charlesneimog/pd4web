@@ -1,6 +1,6 @@
 # PdWebCompiler
 
-This repository aims to compile PureData Patches for WebBrowser using Web Audio technologies. This is possible thanks to the Pull Request of [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. 
+This repository aims to compile PureData Patches for WebBrowser using Web Audio technologies. It is very different of (hvcc)[https://github.com/Wasted-Audio/hvcc] and (WebPd)[https://github.com/sebpiq/WebPd] This is possible thanks to the Pull Request of [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. 
 
 This repository configures a `.c` file and then compile it for web, allowing running complete PureData patches **with externals** for the web. 
 
