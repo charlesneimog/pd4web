@@ -23,7 +23,7 @@ There is three main things in this repository that you can make Pull Requests:
 
 * *Add externals support in `resources/lib/externals.py`*.
 * Improve the `src/template.c`.
-* Improve the `resources/webpd.py`.
+* Improve the `resources/PdWebCompiler.py`.
 
 If you see some way to improve the `resources/template.c` or all the Python inside `resources` please make an Pull Request.
 
