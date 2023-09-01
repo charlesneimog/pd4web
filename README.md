@@ -28,11 +28,11 @@ To put your patch online run these commands:
 
 #### 1. Install Git
 
-* Linux: `apt install Git`, `dnf install Git`, etc...
+* `Linux`: `apt install Git`, `dnf install Git`, etc...
 
-* MacOS: Go to [Git](https://git-scm.com/download/mac) website and Download/Install Binary installer.
+* `MacOS`: Go to [Git](https://git-scm.com/download/mac) website and Download/Install Binary installer.
 
-* Windows: `winget install Git.Git`.
+* `Windows`: `winget install Git.Git`.
 
 
 #### 2. Install for emscripten
