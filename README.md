@@ -1,30 +1,41 @@
 # PdWebCompiler
 
-This repository serves as a consolidation point for various repositories focused on running PureData in web browsers. The initial work on this project was undertaken by [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. 
+This repository is a `package` that aims to compile PureData Patches for WebBrowser using Web Audio technologies. This is possible thanks to the Pull Request of [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. 
 
-The main addition to this repository is the webpatch module, located within the 'resources' directory. `webpatch.py` is a Python script that configures a `.c` file, making it possible to use various external ones. Below is the list of supported external libraries.
+This repository configures a `.c` file and then compile it for web, allowing running complete PureData patches **with externals** for the web. 
 
-* *Obs*.: Some objects, mainly because of dynamic libraries, are not supported (mainly because I don't use then).
-
-<p style="margin-left: auto; margin-right: auto">
+-------------------
 
 | Library   |          Not Supported       |  
 |:---------:|:----------------------------:|
 | else      |  `sfont~`, `plaits~`, `sfz~` | 
-| cyclone   |               -              |  
+| cyclone   |               -              | 
 | earplug~  |               -              | 
-| piro      |               -              |
-
-</p>
 
 
+* *Obs*.: Some objects, mainly because of dynamic libraries, are not supported yet (mainly because I don't use then, **please make one Pull Request**).
 
+------------------
 
-## Make your patch run on internet
+## Make your Pull Request
+
+I am a composer, not a programmer. If you see some way to improve the `resources/template.c` or all the Python inside `resources` please make an Pull Request.
+
+ 
+## Make your Patch run on Internet
 
 To put your patch online run these commands:
 
-* **IMPORTANT**: Download it from zip will not work.
+#### 1. Install Git
+
+* Linux: `apt install Git`, `dnf install Git`, etc...
+
+* MacOS: Go to [Git](https://git-scm.com/download/mac) website and Download/Install Binary installer.
+
+* Windows: `winget install Git.Git`.
+
+
+#### 2. Install for emscripten
 
 ``` bash
     git clone https://github.com/emscripten-core/emsdk.git
@@ -32,6 +43,17 @@ To put your patch online run these commands:
     ./emsdk install latest
     ./emsdk activate latest
     source ./emsdk_env.sh
+
+```
+
+You need to install `emscripten`. 
+
+#### 3. Compile your Patch
+
+* **IMPORTANT**: Download it from zip will not work.
+
+
+``` bash
     git clone https://github.com/charlesneimog/pdweb.git
     cd pdweb && git submodule init && git submodule update
     cd libpd && git switch emscripten-pd54 && git submodule init && git submodule update
@@ -41,4 +63,5 @@ To put your patch online run these commands:
     emmake make STATIC=true
     cd .. && cd ..
     make PATCH=./mypatch.pd 
+```
 
