@@ -21,13 +21,10 @@ This repository configures a `.c` file and then compile it for web, allowing run
 
 There is three main things in this repository:
 
-* *Add externals support in `resources/lib/externals.py`*.
-* Improve the `src/template.c`.
-* Improve the `resources/PdWebCompiler.py`.
+* The `resources/lib/` folder, where are located some files with special steps to compile some externals/libraries.
+* The `src/template.c`, where we load PureData and load the patches.
+* The `resources/PdWebCompiler.py`, this make some configurations for the `main.c` file (because of it we can load externals).
 
-If you see some way to improve the `resources/template.c` or all the Python inside `resources` please make an Pull Request.
-
- 
 ## Make your Patch run on Internet
 
 To put your patch online run these commands:
