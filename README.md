@@ -62,8 +62,6 @@ You need to install `emscripten`.
 
 #### 3. Configure all the Enviroment (only the first time)
 
-* **IMPORTANT**: Download it from zip will not work.
-
 ``` bash
     git clone https://github.com/charlesneimog/pdweb.git
     cd pdweb && git submodule init && git submodule update
@@ -75,7 +73,7 @@ You need to install `emscripten`.
     cd .. && cd ..
 ```
 
-#### 4. Compile your patch
+#### 4. Compile your patch (Just this two lines for now)
 
 ```
     cd emsdk && source ./emsdk_env.sh && cd ..
