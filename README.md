@@ -63,7 +63,7 @@ You need to install `emscripten`.
 #### 3. Configure all the Enviroment (only the first time)
 
 ``` bash
-    git clone https://github.com/charlesneimog/pdweb.git
+    git clone https://github.com/charlesneimog/PdWebCompiler.git
     cd PdWebCompiler && git submodule init && git submodule update
     cd libpd && git switch emscripten-pd54 && git submodule init && git submodule update
     cd pure-data && git switch emscripten-pd54
