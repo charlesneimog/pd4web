@@ -19,7 +19,13 @@ This repository configures a `.c` file and then compile it for web, allowing run
 
 ## Make your Pull Request
 
-I am a composer, not a programmer. If you see some way to improve the `resources/template.c` or all the Python inside `resources` please make an Pull Request.
+There is three main things in this repository that you can make Pull Requests:
+
+* *Add externals support in `resources/lib/externals.py`*.
+* Improve the `src/template.c`.
+* Improve the `resources/webpd.py`.
+
+If you see some way to improve the `resources/template.c` or all the Python inside `resources` please make an Pull Request.
 
  
 ## Make your Patch run on Internet
