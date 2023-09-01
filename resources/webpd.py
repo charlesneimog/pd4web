@@ -5,7 +5,6 @@ import requests
 import zipfile
 import shutil
 import datetime
-import pprint
 
 ## ================== EXTERNALS THINGS ================== ##
 from lib.externals import PD_LIBRARIES
@@ -108,6 +107,7 @@ class webpdPatch():
         if not insideaddAbstractions:
             self.addAbstractions()
         
+        self.copyAllDataFiles()
         # copy index.html to webpatch
         shutil.copy("src/index.html", "webpatch/index.html")
         shutil.copy("src/helpers.js", "webpatch/helpers.js")
@@ -139,6 +139,25 @@ class webpdPatch():
         shutil.copy(abstractionfile, "webpatch/data")
 
 
+    def copyAllDataFiles(self):
+        if not os.path.exists("webpatch/data"):
+            os.mkdir("webpatch/data")
+
+        for root, _, files in os.walk("extra"):
+            for file in files:
+                shutil.copy(os.path.join(root, file), "webpatch/data")
+
+
+    def checkIfIsSupportedObject(self, patchLine):
+        objectName = patchLine[4].replace(";", "").replace("\n", "")
+        pdClass = patchLine[1]
+        if pdClass == "array":
+                self.printError("\033[91m" + "    " +
+                                      "Visual Arrays are not supported, use [array define] object" + "\033[0m")
+                print("")
+                sys.exit()
+
+
     def findExternals(self):
         for line in enumerate(self.PatchLines):
             lineInfo = LineInfo()
@@ -148,6 +167,8 @@ class webpdPatch():
             lineArgs = lineInfo.patchLine.split(" ")
             if len(lineArgs) < 5:
                 continue
+
+            self.checkIfIsSupportedObject(lineArgs)
             if (lineArgs[0] == "#X" and lineArgs[1] == "obj" and "/" in lineArgs[4]):
                 lineInfo.isExternal = True
                 lineInfo.library = lineArgs[4].split("/")[0]
@@ -188,7 +209,7 @@ class webpdPatch():
                 if foundLibrary:
                     for root, _, files in os.walk(".externals/" + lineInfo.library):
                         for file in files:
-                            if file.endswith(".c"):
+                            if file.endswith(".c") or file.endswith(".cpp"):
                                      self.searchCFunction(lineInfo, root, file)
                             elif file.endswith(".pd"):
                                 if lineInfo.name == file.split(".")[0]:
@@ -216,7 +237,7 @@ class webpdPatch():
                         content = file2checkFunc.readlines()
                         for functionline in range(lineNumber, 0, -1):
                             if "void" in content[functionline]:
-                                functionTokens = content[functionline].split(" ") # [1].replace("\n", "")
+                                functionTokens = content[functionline].split(" ") 
                                 for token in enumerate(functionTokens):
                                     if token[1] == "void":
                                         lineInfo.functionName = functionTokens[token[0] + 1]
