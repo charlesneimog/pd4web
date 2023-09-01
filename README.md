@@ -19,7 +19,7 @@ This repository configures a `.c` file and then compile it for web, allowing run
 
 ## Make your Pull Request
 
-There is three main things in this repository that you can make Pull Requests:
+There is three main things in this repository:
 
 * *Add externals support in `resources/lib/externals.py`*.
 * Improve the `src/template.c`.
