@@ -1,9 +1,11 @@
 import os
 import sys
+import subprocess
 import argparse
 import requests
 import zipfile
 import shutil
+import re
 import datetime
 
 ## ================== EXTERNALS THINGS ================== ##
@@ -66,6 +68,9 @@ class webpdPatch():
         self.clearTmpFiles = args.clearTmpFiles
         self.insideaddAbstractions = insideaddAbstractions
         self.lastPrintedLine = ""
+        self.PdWebCompilearPath = os.path.dirname(os.path.realpath(__file__))
+        self.PdWebCompilearPath = os.path.dirname(self.PdWebCompilearPath)
+        self.PROJECT_ROOT = os.getcwd()
         self.processedAbstractions = []
 
         if pdpatch is not None:
@@ -73,9 +78,22 @@ class webpdPatch():
         else:
             self.patch = args.patch
 
+        if not os.path.isabs(self.patch) and not insideaddAbstractions:
+            absolutePath = os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), self.patch)))
+            self.patch = os.getcwd() + "/" + self.patch
+            self.source = os.getcwd() + "/" + self.source
+            self.PROJECT_ROOT = absolutePath
+            os.chdir(absolutePath)
+
         # template code
-        with open(self.source, "r") as file:
-            self.templateCode = file.readlines()
+        if not insideaddAbstractions:
+            with open(os.path.join(self.PdWebCompilearPath, "src/template.c"), "r") as file:
+                self.templateCode = file.readlines()
+        
+        else:
+            with open("webpatch/main.c", "r") as file:
+                self.templateCode = file.readlines()
+
 
         if not insideaddAbstractions:
             if not os.path.exists(".externals"):
@@ -117,19 +135,23 @@ class webpdPatch():
             self.addAbstractions()
         
         self.copyAllDataFiles()
-        # copy index.html to webpatch
-        shutil.copy("src/index.html", "webpatch/index.html")
-        shutil.copy("src/helpers.js", "webpatch/helpers.js")
-        shutil.copy("src/enable-threads.js", "webpatch/enable-threads.js")
 
-        if self.clearTmpFiles == True:
+        shutil.copy(self.PdWebCompilearPath + "/src/index.html", "webpatch/index.html")
+        shutil.copy(self.PdWebCompilearPath + "/src/helpers.js", "webpatch/helpers.js")
+        shutil.copy(self.PdWebCompilearPath + "/src/enable-threads.js", "webpatch/enable-threads.js")
+
+        if not insideaddAbstractions:
+            self.emccCompile()
+            
+        if self.clearTmpFiles == True and not insideaddAbstractions:
             if os.path.exists(".externals"):
                 shutil.rmtree(".externals")
         
         if not insideaddAbstractions:
             print("")
-
         
+
+
     def printInfo(self, str):
         # clear the last line
         sys.stdout.write("\033[K")
@@ -158,7 +180,6 @@ class webpdPatch():
 
 
     def checkIfIsSupportedObject(self, patchLine):
-        objectName = patchLine[4].replace(";", "").replace("\n", "")
         pdClass = patchLine[1]
         if pdClass == "array":
                 self.printError("\033[91m" + "    " +
@@ -227,10 +248,10 @@ class webpdPatch():
                                   
                 else:
                     lineInfo.objFound = False
-                    self.printError("\033[91m" + "Could not find " + lineInfo.library + "\033[0m")
+                    self.printError("    " + "\033[91m" + "Could not find " + lineInfo.library + "\033[0m")
                     
             if lineInfo.isExternal and not lineInfo.objFound and not lineInfo.isAbstraction:
-                self.printError("\033[91m" + "Could not find " + lineInfo.name + " in " + lineInfo.library + "\033[0m")
+                self.printError("    " + "\033[91m" + "Could not find " + lineInfo.name + " in " + lineInfo.library + "\033[0m")
 
 
     def searchCFunction(self, lineInfo, root, file):
@@ -301,7 +322,7 @@ class webpdPatch():
         with open("webpatch/main.c", "w") as file:
             for line in self.templateCode:
                 file.write(line)
-
+        
 
     def usedLibraries(self, libraryName):
         '''
@@ -318,6 +339,7 @@ class webpdPatch():
             try:
                 self.usedLibraries(libraryName)
                 LibraryClass = PD_LIBRARIES.get(libraryName)
+                LibraryClass.PROJECT_ROOT = self.PROJECT_ROOT
                 libURL = PD_LIBRARIES.getDownloadURL(libraryName)
                 if not isinstance(libURL, str) or LibraryClass is None:
                     print("LibURL is not a string or None" + str(type(libURL)))
@@ -450,6 +472,94 @@ class webpdPatch():
             return
 
         self.addAbstractions()
+
+
+
+    def emccCompile(self):
+        '''
+        This is where the code is compiled.
+        '''
+        # check if emcc is installed and in the path
+        if shutil.which("emcc") is None:
+            self.printError("\033[91m" + "emcc is not installed or in the path" + "\033[0m")
+            print("")
+            sys.exit(-1)
+        
+        self.target = 'webpatch/libpd.js'
+        self.libpd_dir = self.PdWebCompilearPath + '/libpd'
+        self.src_files = 'webpatch/main.c'
+        self.CFLAGS = '-I webpatch/extra/ -I "' + self.libpd_dir + '/pure-data/src" -I "' + self.libpd_dir + '/libpd_wrapper" '
+        self.CFLAGS += '-L "' + self.libpd_dir + '/build/libs" -lpd '
+        self.LDFLAGS = '-O3  '
+        self.LDFLAGS += '-s AUDIO_WORKLET=1 -s WASM_WORKERS=1 -s WASM=1 -s USE_PTHREADS=1 '
+
+        command = ['emcc',
+                    "-I", "webpatch/extra/",
+                    "-I", '' + self.libpd_dir + '/pure-data/src/',
+                    "-I", '' + self.libpd_dir + '/libpd_wrapper/',
+                    "-L", '' + self.libpd_dir + '/build/libs/',
+                    "-lpd",
+                    "-O3",
+                    "-s", "AUDIO_WORKLET=1",
+                    "-s", "WASM_WORKERS=1",
+                    "-s", "WASM=1",
+                    "-s", "USE_PTHREADS=1",
+                    "--preload-file", "webpatch/data/",
+                   ]
+
+        for root, _, files in os.walk("webpatch/externals"):
+            for file in files:
+                if file.endswith(".c") or file.endswith(".cpp"):
+                    command.append(os.path.join(root, file))
+
+            
+        command.append(self.src_files)
+        command.append("-o")
+        command.append(self.target)
+
+        print("")
+
+        # print command in dark blue
+        print("\033[94m" + " ".join(command) + "\033[0m")
+
+        print("")
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+
+
+        _, stderr = process.communicate()
+
+        if stderr:
+                if "warning" in stderr:
+                    # split by new line
+                    stderr = stderr.split("\n")
+                    for line in stderr:
+                        if "warning:" in line:
+                            print("")
+                            print("     " + "\033[93m" + line + "\033[0m")
+                            print("")
+                        else:
+                            print("     " + line)
+            
+
+                if "error" in stderr:
+                    stderr = stderr.split("\n")
+                    for line in stderr:
+                        if "error:" in line:
+                            print("")
+                            print("\033[91m" + line + "\033[0m")
+                            print("")
+                        else:
+                            print(line)
+                else:
+                    # print in dark green ok
+                    print("\033[92m" + ("=" * 10) + " Compiled with success " + ("=" * 10) +  "\033[0m")
+
+                
+
+        process.wait()
+
+        print("")
+
 
 
 if __name__ == "__main__":
