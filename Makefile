@@ -3,12 +3,13 @@ LIBPD_DIR = libpd
 
 SRC_FILES = webpatch/main.c
 EXTERNAL_FILES = $(wildcard webpatch/externals/*.c)
+EXTERNAL_FILES += $(wildcard webpatch/externals/*.cpp)
 
 CFLAGS = -I webpatch/extra/ -I $(LIBPD_DIR)/pure-data/src -I $(LIBPD_DIR)/libpd_wrapper 
 CFLAGS += -L $(LIBPD_DIR)/build/libs -lpd
 
 LDFLAGS = -O3  
-LDFLAGS += -s AUDIO_WORKLET=1 -s WASM_WORKERS=1 -s ALLOW_MEMORY_GROWTH=1 \
+LDFLAGS += -s AUDIO_WORKLET=1 -s WASM_WORKERS=1 -s WASM=1 -s USE_PTHREADS=1 \
 
 # USER OPTIONS
 NOTCLEAR = 0
@@ -32,7 +33,7 @@ emcc:
 	emcc \
 		$(CFLAGS) \
 		$(LDFLAGS) \
-		--embed-file webpatch/data \
+		--preload-file webpatch/data \
 		$(SRC_FILES) $(EXTERNAL_FILES) -o $(TARGET) 
 				 
 

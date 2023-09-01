@@ -31,6 +31,12 @@ int sendFloatToPd(const char *receiver, float value) {
     return libpd_float(receiver, value);
 }
 
+// ==============================================
+EMSCRIPTEN_KEEPALIVE
+int sendBangToPd(const char *receiver, float value) {
+    return libpd_bang(receiver);
+}
+
 
 
 // ==============================================
