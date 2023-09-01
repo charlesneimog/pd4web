@@ -11,6 +11,8 @@ from lib.externals import PD_LIBRARIES
 
 ## ================== EXTERNALS THINGS ================== ##
 
+PROCESSED_ABSTRACTIONS = []
+
 class File:
     def __init__(self, patchPath):
         with open(patchPath, "r") as file:
@@ -46,6 +48,12 @@ class LineInfo:
             return "<Not an external>"
 
 
+    def addToUsedObject(self):
+        if self.isExternal:
+            LibraryClass = PD_LIBRARIES.get(self.library)
+            LibraryClass.addToUsed(self.name)
+            
+
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None, insideaddAbstractions=False) -> None:
         parser = argparse.ArgumentParser(description="Sample script to create personalised webPd patch")
@@ -58,7 +66,13 @@ class webpdPatch():
         self.clearTmpFiles = args.clearTmpFiles
         self.insideaddAbstractions = insideaddAbstractions
         self.lastPrintedLine = ""
-        
+        self.processedAbstractions = []
+
+        if pdpatch is not None:
+            self.patch = pdpatch
+        else:
+            self.patch = args.patch
+
         # template code
         with open(self.source, "r") as file:
             self.templateCode = file.readlines()
@@ -84,11 +98,6 @@ class webpdPatch():
             else:
                 shutil.rmtree("webpatch/extra")
                 os.mkdir("webpatch/extra")
-
-        if pdpatch is not None:
-            self.patch = pdpatch
-        else:
-            self.patch = args.patch
 
         self.librariesFolder = []
         self.confirm = args.confirm
@@ -187,7 +196,7 @@ class webpdPatch():
             else:
                 lineInfo.name = lineArgs[4].replace(";", "").replace("\n", "")
 
-
+            lineInfo.addToUsedObject()
             self.PatchLinesExternalFound.append(lineInfo)
 
 
@@ -429,12 +438,18 @@ class webpdPatch():
 
     def addAbstractions(self):
         # list all files in webpatch/data
+        before_files = os.listdir("webpatch/data")
         for dir, _, files in os.walk("webpatch/data"):
             for patchfile in files:
                 if patchfile.endswith(".pd") and patchfile != "index.pd":
-                    self.printInfo("\033[92m" + "Found Abstraction: " + patchfile + "\033[0m")
                     webpdPatch(sourcefile="webpatch/main.c", pdpatch="webpatch/data/" + patchfile, insideaddAbstractions=True)
                     self.removeLibraryPrefix(dir + "/" + patchfile)
+                    PROCESSED_ABSTRACTIONS.append(patchfile)
+        after_files = os.listdir("webpatch/data")
+        if before_files == after_files:
+            return
+
+        self.addAbstractions()
 
 
 if __name__ == "__main__":

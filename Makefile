@@ -27,7 +27,7 @@ ifndef PATCH
 endif
 
 makewebpatch:
-	python resources/webpd.py --patch $(PATCH) $(TMP_FILES)
+	python resources/PdWebCompiler.py --patch $(PATCH) $(TMP_FILES)
 
 emcc:
 	emcc \
