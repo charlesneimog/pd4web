@@ -55,7 +55,7 @@ To put your patch online run these commands:
     cd emsdk
     ./emsdk install latest
     ./emsdk activate latest
-    source ./emsdk_env.sh 
+    source ./emsdk_env.sh && cd ..
 ```
 
 You need to install `emscripten`. 
