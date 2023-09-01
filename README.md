@@ -1,6 +1,6 @@
 # PdWebCompiler
 
-This repository aims to compile PureData Patches for WebBrowser using Web Audio technologies. It distinguishes itself from approaches such as [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because we compile the PureData source. You can compile any PureData vanilla patch and most of the externals.
+This repository aims to compile PureData Patches for WebBrowser using Web Audio technologies. It distinguishes itself from approaches such as [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because we compile the `libpd` source. You can compile any PureData vanilla patch and most of the externals.
 
 This repository configures a `.c` file and then compile it for web, allowing running complete PureData patches **with externals** for the web. 
 
