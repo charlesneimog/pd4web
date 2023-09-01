@@ -72,6 +72,7 @@ To put your patch online run these commands:
 
 ```
     cd emsdk && source ./emsdk_env.sh && cd ..
-    make PATCH=./mypatch.pd 
+    make PATCH=./mypatch.pd
 ```
+Then run your server with `python -m http.server`.
 
