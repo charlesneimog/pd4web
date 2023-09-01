@@ -8,14 +8,14 @@ def earplug_extra(librarySelf):
     if librarySelf.extraFuncExecuted:
         return
 
-    if not os.path.exists(os.path.join(librarySelf.ROOT, "webpatch", "externals")):
-        os.makedirs(os.path.join(librarySelf.ROOT, "webpatch", "externals"))
+    if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals")):
+        os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals"))
 
-    if not os.path.exists(os.path.join(librarySelf.ROOT, "webpatch", "data")):
-        os.makedirs(os.path.join(librarySelf.ROOT, "webpatch", "data"))
+    if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "data")):
+        os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "data"))
 
     folder = librarySelf.folder
-    shutil.copy(os.path.join(folder, "earplug_data.txt"), os.path.join(librarySelf.ROOT, "webpatch", "data/earplug_data.txt"))
+    shutil.copy(os.path.join(folder, "earplug_data.txt"), os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "data/earplug_data.txt"))
     
             
 

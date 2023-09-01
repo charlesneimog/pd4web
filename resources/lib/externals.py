@@ -17,7 +17,7 @@ class PureDataExternals:
         self.singleObject = single
         self.extraFunc = extraFunc
         self.extraFuncExecuted = False
-        self.ROOT = os.getcwd()
+        self.PROJECT_ROOT = os.getcwd()
 
     def addToUsed(self, objName):
         self.usedObjs.append(objName)
