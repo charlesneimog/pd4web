@@ -1,6 +1,6 @@
 # PdWebCompiler
 
-This repository serves as a consolidation point for various repositories focused on running PureData in web browsers. The initial work on this project was undertaken by [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. Unfortunately, the pull request has not been merged yet :(.
+This repository serves as a consolidation point for various repositories focused on running PureData in web browsers. The initial work on this project was undertaken by [claudeha](https://github.com/claudeha/pure-data/tree/emscripten), who has also submitted a pull request for PureData. 
 
 The main addition to this repository is the webpatch module, located within the 'resources' directory. `webpatch.py` is a Python script that configures a `.c` file, making it possible to use various external ones. Below is the list of supported external libraries.
 
