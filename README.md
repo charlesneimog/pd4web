@@ -21,7 +21,7 @@ This repository configures a `.c` file and then compile it for web, allowing run
 
 There is three main things in this repository:
 
-* The `resources/lib/` folder, where are located some files with special steps to compile some externals/libraries.
+* The `resources/lib/` folder, where are located some files with special steps to compile some `externals/libraries`.
 * The `src/template.c`, where we load PureData and load the patches.
 * The `resources/PdWebCompiler.py`, this make some configurations for the `main.c` file (because of it we can load externals).
 
