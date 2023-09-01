@@ -6,28 +6,15 @@ The main addition to this repository is the webpatch module, located within the 
 
 * *Obs*.: Some objects, mainly because of dynamic libraries, are not supported (mainly because I don't use then).
 
-<div style="text-align: center">
-  <table>
-    <tr>
-      <th>Library</th>
-      <th>NOT Supported Objects</th>
-    </tr>
-    <tr>
-      <td><code>else</code></td>
-      <td><code>sfont~</code>, <code>plaits~</code>, <code>sfz~</code></td>
-    </tr>
-    <tr>
-      <td><code>cyclone</code></td>
-      <td>-</td>
-    </tr>
-    <tr>
-      <td><code>earplug~</code></td>
-      <td>-</td>
-    </tr>
-  </table>
-</div>
+<center>
 
+| Library   |          Not Supported       |  
+|:---------:|:----------------------------:|
+| else      |  `sfont~`, `plaits~`, `sfz~` | 
+| cyclone   |               -              |  
+| earplug~  |               -              |  
 
+</center>
 
 
 ## Make your patch run on internet
