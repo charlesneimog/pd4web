@@ -8,15 +8,15 @@ def cyclone_extra(librarySelf):
     if librarySelf.extraFuncExecuted:
         return
 
-    if not os.path.exists(os.path.join(librarySelf.ROOT, "webpatch", "extra")):
-        os.makedirs(os.path.join(librarySelf.ROOT, "webpatch", "extra"))
+    if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "extra")):
+        os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "extra"))
     folder = librarySelf.folder
     folders = os.listdir(folder)
     for i in folders: 
         if i == "shared": # in case porres change something
             sharedFiles = os.listdir(os.path.join(folder, i))
             for k in sharedFiles: # k is yet another folder
-                shutil.copytree(os.path.join(folder, i, k), os.path.join(librarySelf.ROOT, "webpatch", "extra", k))
+                shutil.copytree(os.path.join(folder, i, k), os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "extra", k))
 
     librarySelf.extraFuncExecuted = True
             
