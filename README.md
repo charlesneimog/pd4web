@@ -1,6 +1,6 @@
 # WebPd
 
-This is one Repo where I try to merge all the repos related with run PureData in the browser, this work was done by [claudeha](https://github.com/claudeha/libpd.git) and already have on PR for PureData, that was not merged yet :(. 
+This repository serves as a consolidation point for various repositories focused on running PureData in web browsers. The initial work on this project was undertaken by claudeha, who has also submitted a pull request for PureData. Unfortunately, the pull request has not been merged yet :(.
 
 The main addition to this repository is the webpatch module, located within the 'resources' directory. `webpatch.py` is a Python script that configures a `.c` file, making it possible to use various external ones. Below is the list of supported external libraries.
 
