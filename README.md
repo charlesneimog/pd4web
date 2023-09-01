@@ -32,7 +32,7 @@ If you see some way to improve the `resources/template.c` or all the Python insi
 
 To put your patch online run these commands:
 
-#### 1. Install Git
+#### 1. Install Git (only the first time)
 
 * `Linux`: `apt install Git`, `dnf install Git`, etc...
 
@@ -40,24 +40,29 @@ To put your patch online run these commands:
 
 * `Windows`: `winget install Git.Git`.
 
+#### 2. Install Python (only the first time)
 
-#### 2. Install emscripten
+* `Linux`: `apt install python3.11`, `dnf install python3.11`, etc...
+
+* `MacOS`: Go to [Python](https://www.python.org/downloads/release/python-3115/) website and Download/Install Binary installer.
+
+* `Windows`: `winget install -e --id Python.Python.3.11`.
+
+#### 2. Install emscripten (only the first time)
 
 ``` bash
     git clone https://github.com/emscripten-core/emsdk.git
     cd emsdk
     ./emsdk install latest
     ./emsdk activate latest
-    source ./emsdk_env.sh
-
+    source ./emsdk_env.sh 
 ```
 
 You need to install `emscripten`. 
 
-#### 3. Compile your Patch
+#### 3. Configure all the Enviroment (only the first time)
 
 * **IMPORTANT**: Download it from zip will not work.
-
 
 ``` bash
     git clone https://github.com/charlesneimog/pdweb.git
@@ -68,6 +73,12 @@ You need to install `emscripten`.
     emcmake cmake .. -DPD_UTILS:BOOL=OFF -DCMAKE_BUILD_TYPE=Release -Wno-dev
     emmake make STATIC=true
     cd .. && cd ..
+```
+
+#### 4. Compile your patch
+
+```
+    cd emsdk && source ./emsdk_env.sh && cd ..
     make PATCH=./mypatch.pd 
 ```
 
