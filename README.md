@@ -2,15 +2,17 @@
 
 **Introduction**
 
-`PdWebCompiler` empowers you to bring PureData functionality to web browsers using Web Audio technologies. This tool stands out from other approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because it compiles the [libpd](https://github.com/libpd/libpd) source. You can compile any PureData vanilla patch and most of the externals.
+`PdWebCompiler` allows bring PureData functionality to web browsers using Web Audio technologies. This tool stands out from other approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because it compiles the [libpd](https://github.com/libpd/libpd) source, this is possible mainly because of the work of [claudeha](https://github.com/claudeha). You can compile any PureData vanilla patch and most of the externals.
 
-**Supported Library Externals**
+**Already Supported Library Externals**
 
-| Library   |          Not Supported       | 
-|:---------:|:----------------------------:|
-| else      |  `sfont~`, `plaits~`, `sfz~` | 
-| cyclone   |               -              | 
-| earplug~  |               -              | 
+| Library   |          Not Supported       | Number of Objects | 
+|:---------:|:----------------------------:|:-----------------:|
+| else      |  `sfont~`, `plaits~`, `sfz~` | 509               |
+| cyclone   |               -              | ± 197             |
+| earplug~  |               -              | 1                 |
+
+So, for now, we have more than 700 supported externals objects.
 
 * **Note**: Some objects, mainly due to dynamic libraries, are not supported yet. Feel free to submit a Pull Request to add support for them.
 
