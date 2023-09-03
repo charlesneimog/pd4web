@@ -500,6 +500,8 @@ class webpdPatch():
                     "-L", '' + self.libpd_dir + '/build/libs/',
                     "-lpd",
                     "-O3",
+                    # "-s", "MODULARIZE=1",
+                    # "-sEXPORT_NAME=LibPd",
                     "-s", "AUDIO_WORKLET=1",
                     "-s", "WASM_WORKERS=1",
                     "-s", "WASM=1",
@@ -507,15 +509,17 @@ class webpdPatch():
                     "--preload-file", "webpatch/data/",
                    ]
 
+        command.append(self.src_files)
+        command.append("-o")
+        command.append(self.target)
+
         for root, _, files in os.walk("webpatch/externals"):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
                     command.append(os.path.join(root, file))
 
             
-        command.append(self.src_files)
-        command.append("-o")
-        command.append(self.target)
+
 
         print("")
 
@@ -548,12 +552,14 @@ class webpdPatch():
                             print("")
                             print("\033[91m" + line + "\033[0m")
                             print("")
+                            sys.exit(-1)
                         else:
                             print(line)
                 else:
                     # print in dark green ok
                     print("\033[92m" + ("=" * 10) + " Compiled with success " + ("=" * 10) +  "\033[0m")
 
+                                    
                 
 
         process.wait()
