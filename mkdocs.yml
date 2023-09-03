@@ -70,10 +70,7 @@ extra_css:
    
 nav:
     - index.md 
-    - setup.md
-    - puredata-users.md
-    - python-users.md
-    - libraries.md
+
 
 extra:
   social:
