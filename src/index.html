@@ -39,10 +39,24 @@
         </div>
     <script async src="libpd.js"></script>
     <script src="helpers.js"></script>
-    <input style="text-align: center" type="range"
-            type="number" value="90" min="30" max="330" step="1" onchange="sendFloat('azimuth', this.value)">Azimuth</input>
 
-    <button onclick="sendBang('playsound')">Play Sound</button>
+    <script>
+        
+
+        function setGainValue() {
+            const gainValue = document.getElementById('ui_gain');
+            if (gainValue) {
+                console.log(gainValue.value);
+            }
+        }
+
+        // execute setGainValue every 500 ms
+        setInterval(setGainValue, 500);
+
+
+
+    </script>
+
 
 
     <h4 id="Latency-AudioNode" style="text-align: center">Estimated Latency for processing: NULL</h4>
