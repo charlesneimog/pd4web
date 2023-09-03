@@ -40,8 +40,22 @@
     <script async src="libpd.js"></script>
     <script src="helpers.js"></script>
 
+    <script>
+        
 
-    <h4 id="browser_altura" style="text-align: center"></h4>
+        function setGainValue() {
+            const gainValue = document.getElementById('ui_gain');
+            if (gainValue) {
+                console.log(gainValue.value);
+            }
+        }
+
+        // execute setGainValue every 500 ms
+        setInterval(setGainValue, 500);
+
+
+
+    </script>
 
 
 

@@ -34,6 +34,8 @@ class LineInfo:
         self.genSymIndex = 0
         self.functionName = ''
         self.objFound = False
+        self.uiReceiver = False
+        self.uiSymbol = ''
             
             
     def __str__(self) -> str:
@@ -66,6 +68,7 @@ class webpdPatch():
         self.FoundExternals = False
         self.source = sourcefile
         self.clearTmpFiles = args.clearTmpFiles
+        self.uiReceiversSymbol = []
         self.insideaddAbstractions = insideaddAbstractions
         self.lastPrintedLine = ""
         self.PdWebCompilearPath = os.path.dirname(os.path.realpath(__file__))
@@ -198,6 +201,7 @@ class webpdPatch():
             if len(lineArgs) < 5:
                 continue
 
+            # here for especial objects (externals, not supported objects, abstractions)
             self.checkIfIsSupportedObject(lineArgs)
             if (lineArgs[0] == "#X" and lineArgs[1] == "obj" and "/" in lineArgs[4]):
                 lineInfo.isExternal = True
@@ -205,7 +209,7 @@ class webpdPatch():
                 lineInfo.name = lineArgs[4].split("/")[1].replace("\n", "").replace(";", "").replace(",", "")
                 lineInfo.objGenSym = 'class_new(gensym("' + lineArgs[4].split("/")[1].replace("\n", "").replace(";", "") + '")'
                 self.printInfo("\033[92m" + "Found External: " + lineInfo.name + "\033[0m")
-
+            
             elif self.checkIsObjIsSingle(lineArgs):
                 lineInfo.isExternal = True
                 lineInfo.library = lineArgs[4].replace(";", "").replace("\n", "").replace(",", "")
@@ -213,6 +217,15 @@ class webpdPatch():
                 lineInfo.objGenSym = 'gensym("' + lineInfo.library + '")'
                 lineInfo.singleObject = True
                 self.printInfo("\033[92m" + "Found External: " + lineInfo.name + "\033[0m")
+
+            elif ("s" == lineArgs[4] or "send" == lineArgs[4]):
+                receiverSymbol = lineArgs[5].replace("\n", "").replace(";", "").replace(",", "")
+                if ("ui_" in receiverSymbol):
+                    lineInfo.uiReceiver = True
+                    lineInfo.uiSymbol = receiverSymbol
+                    self.uiReceiversSymbol.append(receiverSymbol)
+                
+                lineInfo.name = lineArgs[4].replace(";", "").replace("\n", "")
 
             else:
                 lineInfo.name = lineArgs[4].replace(";", "").replace("\n", "")
@@ -314,7 +327,25 @@ class webpdPatch():
                             functionName = "    " + functionName + "\n"
                             self.templateCode.insert(start_index + 1, functionName)
                             break
-
+                
+        HTML_IDS = None
+        HTML_IDS_SIZE = None
+        for i, line in enumerate(self.templateCode):
+            if "char* HTML_IDS[] = {};" in line:
+                HTML_IDS = i
+            if "int HTML_IDS_SIZE = 0;" in line:
+                HTML_IDS_SIZE = i
+            if HTML_IDS is not None and HTML_IDS_SIZE is not None:
+                lenUIReceiver = len(self.uiReceiversSymbol)
+                self.templateCode[HTML_IDS] = "char* HTML_IDS[] = {"
+                for i, uiReceiver in enumerate(self.uiReceiversSymbol):
+                    if i == lenUIReceiver - 1:
+                        self.templateCode[HTML_IDS] += '"' + uiReceiver + '"'
+                    else:
+                        self.templateCode[HTML_IDS] += '"' + uiReceiver + '", '
+                self.templateCode[HTML_IDS] += "};\n"
+                self.templateCode[HTML_IDS_SIZE] = "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n"
+                break
         return True
 
 
