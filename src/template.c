@@ -396,32 +396,57 @@ void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOO
     emscripten_create_wasm_audio_worklet_processor_async(audioContext, &opts, AudioWorkletProcessorCreated, 0);
 }
 
+// ========================================
+EM_JS(void, setFloatValue, (const char* symbol, float value), {
+    var symbolId = UTF8ToString(symbol);
+    var element = document.getElementById(symbolId); // Find the element by ID
+
+    if (element === null) {
+        var myElement = document.createElement("input");
+        myElement.id = symbolId;
+        myElement.value = value;
+        myElement.style.display = "none";
+        document.body.appendChild(myElement);
+    } 
+    else {
+        element.value = value;
+    }
+
+});
+
+// ========================================
+EM_JS(void, setSymbolValue, (const char* symbol, const char* value), {
+    var symbolId = UTF8ToString(symbol);
+    var element = document.getElementById(symbolId); // Find the element by ID
+
+    if (element === null) {
+        var myElement = document.createElement("input");
+        myElement.id = symbolId;
+        myElement.value = UTF8ToString(value);
+        myElement.style.display = "none";
+        document.body.appendChild(myElement);
+    } 
+    else {
+        element.value = UTF8ToString(value);
+    }
+
+});
 
 // ========================================
 void PdWebCompiler_Loop(){
-
     for (int i = 0; i < HTML_IDS_SIZE; i++){
         pdItem* item = GetItem(receiverHash, HTML_IDS[i]);
         if (item == NULL) {
-            return;
+            continue;
         }
         
         if (item->changed){
             item->changed = 0;
             if (item->type == A_FLOAT){
-                EM_ASM({
-                    var value = $1;
-                    var element = document.getElementById(UTF8ToString($0)); // is a h4
-                    element.innerHTML = value;
-                }, HTML_IDS[i], item->f);
+                setFloatValue(HTML_IDS[i], item->f);
             }
             else if(item->type == A_SYMBOL){
-                EM_ASM({
-                    var value = UTF8ToString($1);
-                    var element = document.getElementById(UTF8ToString($1)); // is a h4
-                    element.innerHTML = value;
-                }, HTML_IDS[i], item->s);
-
+                setSymbolValue(HTML_IDS[i], item->s); 
             }
             else{
                 return;
