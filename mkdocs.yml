@@ -1,13 +1,13 @@
-site_name: py4pd
+site_name: PureData Web Compiler
    
 copyright: Copyright &copy 2023 | Charles K. Neimog | University of São Paulo. 
 
 theme:
-  logo: assets/py4pd-logo.svg
+  logo: assets/icon-light.svg
   custom_dir: docs/overrides
-  logo_dark_mode: assets/py4pd-dark.svg
-  logo_light_mode: assets/py4pd-light.svg
-  favicon: assets/py4pd-favicon.png
+  logo_dark_mode: assets/icon-dark.svg
+  logo_light_mode: assets/icon-light.svg
+  favicon: assets/favicon.png
   name: material
   features:
     - navigation.top
@@ -63,14 +63,13 @@ markdown_extensions:
     - pymdownx.details
 
 
-repo_url: https://github.com/charlesneimog/py4pd
+repo_url: https://github.com/charlesneimog/PdWebCompiler
 
 extra_css:
   - extra/extra.css
    
 nav:
     - index.md 
-
 
 extra:
   social:
