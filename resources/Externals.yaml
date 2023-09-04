@@ -1,0 +1,34 @@
+DownloadSources:
+  GITHUB_RELEASES: "https://api.github.com/repos/{}/{}/releases"
+  GITHUB_TAGS: "https://api.github.com/repos/{}/{}/tags"
+
+SupportedLibraries:
+  - name: cyclone # name of the pd library
+    download_source: GITHUB_RELEASES # source
+    developer: porres # in this case, Github user name
+    repo: pd-cyclone # in this case, Github Repo
+    version: cyclone_0.7-0 # version
+    extraFunction: cyclone_extra # This library needs some extras steps, so we used a function called cyclone_extra, defined in externals.cyclone.
+
+  - name: else
+    download_source: GITHUB_RELEASES
+    developer: porres
+    repo: pd-else
+    version: v1.0-rc9
+    extraFunction: else_extra
+
+  - name: earplug~
+    download_source: GITHUB_TAGS
+    developer: pd-externals
+    repo: earplug
+    extraFunction: earplug_extra
+    version: 0.3.0
+    singleObject: true
+
+  - name: convolve
+    download_source: GITHUB_TAGS
+    developer: wbrent
+    repo: convolve_tilde
+    extraFunction: convolve_extra
+    singleObject: true
+
