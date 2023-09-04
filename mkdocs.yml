@@ -25,7 +25,6 @@ theme:
     - attr_list
     - md_in_html
     
-  
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
