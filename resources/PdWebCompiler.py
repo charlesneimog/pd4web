@@ -5,58 +5,16 @@ import argparse
 import requests
 import zipfile
 import shutil
-import re
 import datetime
+import yaml
 
-## ================== EXTERNALS THINGS ================== ##
-from lib.externals import PD_LIBRARIES
+from externals.ExternalClass import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
+
 
 ## ================== EXTERNALS THINGS ================== ##
 
 PROCESSED_ABSTRACTIONS = []
 
-class File:
-    def __init__(self, patchPath):
-        with open(patchPath, "r") as file:
-            self.patchLines = file.readlines()
-        
-
-class LineInfo:
-    def __init__(self):
-        self.isExternal = False
-        self.isAbstraction = False
-        self.name = ''
-        self.library = ''
-        self.patchLineIndex = 0
-        self.patchLine = ''
-        self.objGenSym = ''
-        self.singleObject = False
-        self.genSymIndex = 0
-        self.functionName = ''
-        self.objFound = False
-        self.uiReceiver = False
-        self.uiSymbol = ''
-            
-            
-    def __str__(self) -> str:
-        if self.isExternal:
-            return "<Obj: " + self.name + " | Lib: " + self.library + ">"
-        else:
-            return "<Not an external>"
-
-
-    def __repr__(self) -> str:
-        if self.isExternal:
-            return "<Obj: " + self.name + " | Lib: " + self.library + ">"
-        else:
-            return "<Not an external>"
-
-
-    def addToUsedObject(self):
-        if self.isExternal:
-            LibraryClass = PD_LIBRARIES.get(self.library)
-            LibraryClass.addToUsed(self.name)
-            
 
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None, insideaddAbstractions=False) -> None:
@@ -71,10 +29,7 @@ class webpdPatch():
         self.uiReceiversSymbol = []
         self.insideaddAbstractions = insideaddAbstractions
         self.lastPrintedLine = ""
-        self.PdWebCompilearPath = os.path.dirname(os.path.realpath(__file__))
-        self.PdWebCompilearPath = os.path.dirname(self.PdWebCompilearPath)
-        self.PROJECT_ROOT = os.getcwd()
-        self.processedAbstractions = []
+        self.extraFlags = []
 
         if pdpatch is not None:
             self.patch = pdpatch
@@ -87,6 +42,18 @@ class webpdPatch():
             self.source = os.getcwd() + "/" + self.source
             self.PROJECT_ROOT = absolutePath
             os.chdir(absolutePath)
+
+        with open(self.patch, "r") as file:
+            self.PatchLines = file.readlines()
+
+        # read externals
+        self.getSupportedLibraries()
+        # ==============
+
+        self.PdWebCompilearPath = os.path.dirname(os.path.realpath(__file__))
+        self.PdWebCompilearPath = os.path.dirname(self.PdWebCompilearPath)
+        self.PROJECT_ROOT = os.getcwd()
+        self.processedAbstractions = []
 
         # template code
         if not insideaddAbstractions:
@@ -124,7 +91,6 @@ class webpdPatch():
         self.confirm = args.confirm
         self.getPatchPath()
         self.mkBackup()
-        self.PatchLines = File(self.patch).patchLines # REMOVE
         self.PatchLinesExternalFound = []
         self.findExternals()
         self.cfgExternals()
@@ -153,7 +119,33 @@ class webpdPatch():
         if not insideaddAbstractions:
             print("")
         
+    def getValue(self, dictionary, key):
+        if key in dictionary:
+            return dictionary[key]
+        else:
+            return False
 
+
+    def getSupportedLibraries(self):
+        ''' Read yaml file and get all supported libraries '''
+        thisFile = os.path.dirname(os.path.realpath(__file__))
+        externalFile = os.path.join(thisFile, "Externals.yaml")
+        self.PD_LIBRARIES = PD_SUPPORTED_EXTERNALS()
+
+        with open(externalFile) as file:
+            supportedLibraries = yaml.load(file, Loader=yaml.FullLoader)
+            self.downloadSources = supportedLibraries['DownloadSources']
+            supportedLibraries = supportedLibraries['SupportedLibraries']
+            for library in supportedLibraries:
+                libraryName = self.getValue(library, 'name')
+                developer = self.getValue(library, 'developer')
+                repo = self.getValue(library, 'repo')
+                downloadURL = self.getValue(library, 'download_source')
+                downloadURL = self.downloadSources[downloadURL]
+                extraFunction = self.getValue(library, 'extraFunction')
+                singleObject = self.getValue(library, 'singleObject')
+                self.PD_LIBRARIES.add(PureDataExternals(downloadURL, developer, repo, libraryName, extraFunction, singleObject))
+                
 
     def printInfo(self, str):
         # clear the last line
@@ -193,53 +185,54 @@ class webpdPatch():
 
     def findExternals(self):
         for line in enumerate(self.PatchLines):
-            lineInfo = LineInfo()
-            lineInfo.patchLineIndex = line[0]
-            lineInfo.patchLine = line[1]
-            lineInfo.isExternal = False
-            lineArgs = lineInfo.patchLine.split(" ")
+            print(line)
+            patchLine = PatchLine()
+            patchLine.patchLineIndex = line[0]
+            patchLine.patchLine = line[1]
+            patchLine.isExternal = False
+            lineArgs = patchLine.patchLine.split(" ")
             if len(lineArgs) < 5:
                 continue
 
             # here for especial objects (externals, not supported objects, abstractions)
             self.checkIfIsSupportedObject(lineArgs)
             if (lineArgs[0] == "#X" and lineArgs[1] == "obj" and "/" in lineArgs[4]):
-                lineInfo.isExternal = True
-                lineInfo.library = lineArgs[4].split("/")[0]
-                lineInfo.name = lineArgs[4].split("/")[1].replace("\n", "").replace(";", "").replace(",", "")
-                lineInfo.objGenSym = 'class_new(gensym("' + lineArgs[4].split("/")[1].replace("\n", "").replace(";", "") + '")'
-                self.printInfo("\033[92m" + "Found External: " + lineInfo.name + "\033[0m")
+                patchLine.isExternal = True
+                patchLine.library = lineArgs[4].split("/")[0]
+                patchLine.name = lineArgs[4].split("/")[1].replace("\n", "").replace(";", "").replace(",", "")
+                patchLine.objGenSym = 'class_new(gensym("' + lineArgs[4].split("/")[1].replace("\n", "").replace(";", "") + '")'
+                self.printInfo("\033[92m" + "Found External: " + patchLine.name + "\033[0m")
             
             elif self.checkIsObjIsSingle(lineArgs):
-                lineInfo.isExternal = True
-                lineInfo.library = lineArgs[4].replace(";", "").replace("\n", "").replace(",", "")
-                lineInfo.name = lineInfo.library
-                lineInfo.objGenSym = 'gensym("' + lineInfo.library + '")'
-                lineInfo.singleObject = True
-                self.printInfo("\033[92m" + "Found External: " + lineInfo.name + "\033[0m")
+                patchLine.isExternal = True
+                patchLine.library = lineArgs[4].replace(";", "").replace("\n", "").replace(",", "")
+                patchLine.name = patchLine.library
+                patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
+                patchLine.singleObject = True
+                self.printInfo("\033[92m" + "Found External: " + patchLine.name + "\033[0m")
 
             elif ("s" == lineArgs[4] or "send" == lineArgs[4]):
                 receiverSymbol = lineArgs[5].replace("\n", "").replace(";", "").replace(",", "")
                 if ("ui_" in receiverSymbol):
-                    lineInfo.uiReceiver = True
-                    lineInfo.uiSymbol = receiverSymbol
+                    patchLine.uiReceiver = True
+                    patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
                 
-                lineInfo.name = lineArgs[4].replace(";", "").replace("\n", "")
+                patchLine.name = lineArgs[4].replace(";", "").replace("\n", "")
 
             else:
-                lineInfo.name = lineArgs[4].replace(";", "").replace("\n", "")
+                patchLine.name = lineArgs[4].replace(";", "").replace("\n", "")
 
-            lineInfo.addToUsedObject()
-            self.PatchLinesExternalFound.append(lineInfo)
+            patchLine.addToUsedObject(self.PD_LIBRARIES)
+            self.PatchLinesExternalFound.append(patchLine)
 
 
     def checkIsObjIsSingle(self, patchLine):
         if patchLine[1] == "obj":
             nameOfTheObject = patchLine[4].replace(";", "").replace("\n", "")
             nameOfTheObject = nameOfTheObject.replace(",", "")
-            if nameOfTheObject in PD_LIBRARIES.LibraryNames:
-                LibraryClass = PD_LIBRARIES.get(nameOfTheObject)
+            if nameOfTheObject in self.PD_LIBRARIES.LibraryNames:
+                LibraryClass = self.PD_LIBRARIES.get(nameOfTheObject)
                 if LibraryClass and LibraryClass.singleObject:
                     return True
         return False
@@ -359,19 +352,22 @@ class webpdPatch():
         '''
         It adds the used libraries for the patch, it can be accessed by the extra functions.
         '''
-        if libraryName not in PD_LIBRARIES.UsedLibrariesNames:
-            PD_LIBRARIES.UsedLibrariesNames.append(libraryName)
-            PD_LIBRARIES.UsedLibraries.append(PD_LIBRARIES.get(libraryName))
+        if libraryName not in self.PD_LIBRARIES.UsedLibrariesNames:
+            self.PD_LIBRARIES.UsedLibrariesNames.append(libraryName)
+            self.PD_LIBRARIES.UsedLibraries.append(self.PD_LIBRARIES.get(libraryName))
 
 
     def downloadExternalLibrarySrc(self, libraryName):
         responseJson = {'message': 'Unknown error'}
-        if libraryName in PD_LIBRARIES.LibraryNames:
+        if libraryName in self.PD_LIBRARIES.LibraryNames:
             try:
                 self.usedLibraries(libraryName)
-                LibraryClass = PD_LIBRARIES.get(libraryName)
+                LibraryClass = self.PD_LIBRARIES.get(libraryName)
+                if LibraryClass is None:
+                    sys.exit(-1)
+
                 LibraryClass.PROJECT_ROOT = self.PROJECT_ROOT
-                libURL = PD_LIBRARIES.getDownloadURL(libraryName)
+                libURL = self.PD_LIBRARIES.getDownloadURL(libraryName)
                 if not isinstance(libURL, str) or LibraryClass is None:
                     print("LibURL is not a string or None" + str(type(libURL)))
                     return None
@@ -469,7 +465,10 @@ class webpdPatch():
         '''
         This function will execute the second argument 
         '''
-        PD_LIBRARIES.executeExtraFunction()
+        extraFlags = self.PD_LIBRARIES.executeExtraFunction()
+        if extraFlags is not None:
+            for flag in extraFlags:
+                self.extraFlags.append(flag)
 
     
     def removeLibraryPrefix(self, patchfile):
@@ -519,10 +518,8 @@ class webpdPatch():
         self.target = 'webpatch/libpd.js'
         self.libpd_dir = self.PdWebCompilearPath + '/libpd'
         self.src_files = 'webpatch/main.c'
-        self.CFLAGS = '-I webpatch/extra/ -I "' + self.libpd_dir + '/pure-data/src" -I "' + self.libpd_dir + '/libpd_wrapper" '
-        self.CFLAGS += '-L "' + self.libpd_dir + '/build/libs" -lpd '
-        self.LDFLAGS = '-O3  '
-        self.LDFLAGS += '-s AUDIO_WORKLET=1 -s WASM_WORKERS=1 -s WASM=1 -s USE_PTHREADS=1 '
+
+        print(self.extraFlags) 
 
         command = ['emcc',
                     "-I", "webpatch/extra/",
@@ -531,8 +528,6 @@ class webpdPatch():
                     "-L", '' + self.libpd_dir + '/build/libs/',
                     "-lpd",
                     "-O3",
-                    # "-s", "MODULARIZE=1",
-                    # "-sEXPORT_NAME=LibPd",
                     "-s", "AUDIO_WORKLET=1",
                     "-s", "WASM_WORKERS=1",
                     "-s", "WASM=1",
@@ -540,6 +535,12 @@ class webpdPatch():
                     "--preload-file", "webpatch/data/",
                    ]
 
+        indexFlag = 0
+        for flag in self.extraFlags:
+            # add in command after -O3, it must be added in orde, so it must be after -O3
+            command.insert(10 + indexFlag, flag)
+            indexFlag += 1
+            
         command.append(self.src_files)
         command.append("-o")
         command.append(self.target)
@@ -549,20 +550,11 @@ class webpdPatch():
                 if file.endswith(".c") or file.endswith(".cpp"):
                     command.append(os.path.join(root, file))
 
-            
-
-
         print("")
-
-        # print command in dark blue
         print("\033[94m" + " ".join(command) + "\033[0m")
-
         print("")
         process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-
-
         _, stderr = process.communicate()
-
         if stderr:
                 if "warning" in stderr:
                     # split by new line
@@ -574,8 +566,6 @@ class webpdPatch():
                             print("")
                         else:
                             print("     " + line)
-            
-
                 if "error" in stderr:
                     stderr = stderr.split("\n")
                     for line in stderr:
@@ -590,11 +580,7 @@ class webpdPatch():
                     # print in dark green ok
                     print("\033[92m" + ("=" * 10) + " Compiled with success " + ("=" * 10) +  "\033[0m")
 
-                                    
-                
-
         process.wait()
-
         print("")
 
 
