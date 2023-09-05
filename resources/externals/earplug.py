@@ -5,6 +5,10 @@ def earplug_extra(librarySelf):
     ''' 
     This function copy some things that I already need to compile some externals in cyclone
     '''
+    # print in orange, executing earplug function   
+    print("\n")
+    print("\033[95m" + "    Executing earplug_extra function" + "\033[0m")
+    print("\n")
     if librarySelf.extraFuncExecuted:
         return
 
