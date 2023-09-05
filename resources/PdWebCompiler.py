@@ -21,12 +21,14 @@ PROCESSED_ABSTRACTIONS = []
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None, insideaddAbstractions=False) -> None:
         parser = argparse.ArgumentParser(description="Sample script to create personalised webPd patch")
-        parser.add_argument('--patch', required=True, help='Patch argument')
+        parser.add_argument('--patch', required=True, help='Patch file to compile')
+        parser.add_argument('--html', required=False, help='HTML file')
         parser.add_argument('--confirm', required=False, help='Confirm if the object is an external')
         parser.add_argument('--clearTmpFiles', required=False, default=False, help='Remove all objects from the patch')
         args = parser.parse_args()
         print("\n")
         self.FoundExternals = False
+        self.html = False
         self.source = sourcefile
         self.clearTmpFiles = args.clearTmpFiles
         self.uiReceiversSymbol = []
@@ -39,6 +41,12 @@ class webpdPatch():
             self.patch = pdpatch
         else:
             self.patch = args.patch
+
+        if not os.path.isabs(args.html) and not insideaddAbstractions:
+            absolutePath = os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), args.html)))
+            self.html = os.getcwd() + "/" + args.html
+            print(self.html)
+
 
         if not os.path.isabs(self.patch) and not insideaddAbstractions:
             absolutePath = os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), self.patch)))
@@ -597,7 +605,9 @@ class webpdPatch():
                     print("\033[92m" + ("=" * 10) + " Compiled with success " + ("=" * 10) +  "\033[0m")
 
         process.wait()
-        print("")
+        if isinstance(self.html, str):
+            shutil.copy(self.html, "webpatch")
+            print("\033[92m" + "    " + "Copied to " + self.html + "\033[0m")
 
 
 
