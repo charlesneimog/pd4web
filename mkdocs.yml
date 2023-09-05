@@ -68,7 +68,8 @@ extra_css:
   - extra/extra.css
    
 nav:
-    - index.md 
+    - index.md
+    - patch.md
 
 extra:
   social:
