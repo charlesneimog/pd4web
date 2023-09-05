@@ -1,4 +1,5 @@
 import os
+import sys
 import importlib
 
 thisFile = os.path.abspath(__file__)
@@ -12,17 +13,38 @@ for module_name in module_names:
 
 
 class PureDataExternals:
-    def __init__(self, repoAPI, user, repo, name, extraFunc='', single=False) -> None:
+    def __init__(self, library) -> None:
+        self.name = library['name']
+        self.repoUser = library['repoUser']
+        self.repoName = library['repoName']
+        try:
+            self.repoAPI = library['download_source']
+        except:
+            self.repoAPI = False
+            try:
+                self.directLink = library['direct_link']
+            except:
+                # print in red
+                print(f"\033[91mError: {self.name} doesn't have a download source\033[0m")
+                sys.exit()
+
+        try:
+            self.extraFunc = library['extraFunction']
+        except:
+            self.extraFunc = None
+
+        try:
+            self.singleObject = library['singleObject']
+        except:
+            self.singleObject = False
+
+        try:
+            self.requireDynamicLibraries = library['dynamicLibraries']
+        except:
+            self.requireDynamicLibraries = False
+        
         self.usedObjs = []
-        self.repoAPI = repoAPI
-        self.username = user
-        self.repo = repo
-        self.name = name
-        self.folder = ''
-        self.singleObject = single
-        self.extraFunc = extraFunc
-        self.requireDynamicLibraries = False
-        self.dynamicLibraries = []
+        self.UsedSourceFiles = []
         self.extraFuncExecuted = False
         self.PROJECT_ROOT = os.getcwd()
         self.extraFlags = []
@@ -30,15 +52,14 @@ class PureDataExternals:
     def addToUsed(self, objName):
         self.usedObjs.append(objName)
         
-
     def getUsedObjs(self):
         return self.usedObjs
 
     def __repr__(self) -> str:
-        return f"<Dev: {self.username} | User: {self.repo}>"
+        return f"<Dev: {self.repoUser} | User: {self.repoName}>"
 
     def __str__(self) -> str:
-        return f"<Dev: {self.username} | User: {self.repo}>"
+        return f"<Dev: {self.repoUser} | User: {self.repoName}>"
 
 
 
@@ -48,11 +69,13 @@ class PD_SUPPORTED_EXTERNALS:
         self.LibraryNames = []
         self.UsedLibraries = []
         self.UsedLibrariesNames = []
+        self.totalOfLibraries = 0
 
 
     def add(self, PureDataExternals):
         self.PureDataExternals.append(PureDataExternals)
         self.LibraryNames.append(PureDataExternals.name)
+        self.totalOfLibraries += 1
 
 
     def get(self, name):
@@ -69,28 +92,33 @@ class PD_SUPPORTED_EXTERNALS:
         return False
 
 
-    def getDownloadURL(self, name):
-        for i in self.PureDataExternals:
-            if i.name == name:
-                return i.repoAPI.format(i.username, i.repo)
-        return None
+    def getDownloadURL(self, libraryName, supportedDownloads):
+        if libraryName.repoAPI == False:
+            return False
+
+        else:
+            try:
+                return supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName)
+            except:
+                return None
 
 
-    def executeExtraFunction(self):
-        for i in self.PureDataExternals:
-            if i.extraFunc != None and i in self.UsedLibraries:
-                libraryClass = self.isUsed(i.name)
-                extraFunctionStr = i.extraFunc
-                executedFunction = f"{extraFunctionStr}" + '(libraryClass)'
-                print(executedFunction)
-                exec(executedFunction)
-                return libraryClass.extraFlags
+    def executeExtraFunction(self, UsedLibrary):
+        if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
+            print("\033[95m" + f"    Executing {UsedLibrary.extraFunc} function" + "\033[0m")
+
+            libraryClass = self.isUsed(UsedLibrary.name)
+            extraFunctionStr = UsedLibrary.extraFunc
+            executedFunction = f"{extraFunctionStr}" + '(libraryClass)'
+            exec(executedFunction)
+            return libraryClass.extraFlags
     def __repr__(self) -> str:
-        return f"<PD_EXTERNALS>"
+
+        return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
 
 
     def __str__(self) -> str:
-        return f"<PD_EXTERNALS>"
+        return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
 
 
 

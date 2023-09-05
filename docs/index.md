@@ -16,18 +16,18 @@ hide:
 
 <table class="special-table">
     <thead>
-      <tr>
-        <th>Library Name</th>
-        <th>Not Supported Objects</th>
-        <th>Numbers of Objects</th>
-      </tr>
+        <tr>
+          <th>Library Name</th>
+          <th>Not Supported Objects</th>
+          <th>Numbers of Objects</th>
+        </tr>
     </thead>
     <tbody>
-      <tr>
-        <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
-        <td><code>plaits~</code>, <code>sfz~</code>, <code>sfont~</code> </td>
-        <td>509</td>
-      </tr>
+        <tr>
+          <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
+          <td><code>plaits~</code>, <code>sfz~</code>, <code>sfont~</code> </td>
+          <td>509</td>
+        </tr>
     </tbody>
     <tbody>
       <tr>
@@ -41,6 +41,21 @@ hide:
         <td><a href="https://github.com/pd-externals/earplug/">earplug</a></td>
         <td> - </td>
         <td>1</td>
+      </tr>
+    </tbody>
+      <tbody>
+      <tr>
+        <td><a href="https://github.com/wbrent/convolve_tilde/">convolve~</a></td>
+        <td> - </td>
+        <td>1</td>
+      </tr>
+    </tbody>
+    </tbody>
+      <tbody>
+      <tr>
+        <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
+        <td> - </td>
+        <td>109</td>
       </tr>
     </tbody>
   </table>
