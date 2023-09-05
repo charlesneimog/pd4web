@@ -4,17 +4,7 @@
 
 `PdWebCompiler` allows bring PureData functionality to web browsers using Web Audio technologies. This tool stands out from other approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because it compiles the [libpd](https://github.com/libpd/libpd) source, this is possible mainly because of the work of [claudeha](https://github.com/claudeha). You can compile any PureData vanilla patch and most of the externals.
 
-**Already Supported Library Externals**
-
-| Library   |          Not Supported       | Number of Objects | 
-|:---------:|:----------------------------:|:-----------------:|
-| else      |  `sfont~`, `plaits~`, `sfz~` | 509               |
-| cyclone   |               -              | ± 197             |
-| earplug~  |               -              | 1                 |
-
-So, for now, we have more than 700 supported externals objects.
-
-* **Note**: Some objects, mainly due to dynamic libraries, are not supported yet. Feel free to submit a Pull Request to add support for them.
+So, for now, we have more than 800 supported externals objects. One of the main problems is that, for some objects, mainly due to dynamic libraries, we need to make some work arround to compile it for `Wasm`. Feel free to submit a Pull Request to add support.
 
 ------------------
 
@@ -22,9 +12,10 @@ So, for now, we have more than 700 supported externals objects.
 
 Contributions to this repository are welcome! Here are the main areas you can contribute to:
 
-* The `resources/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
-* The `src/template.c`, where we load PureData and the patches.
-* The `resources/PdWebCompiler.py`, which configures the `main.c` file.
+* The `resources/lib/` folder, which contains files with special steps for compiling and add support to dynamic libraries.
+* The `resources/externals/` folder, which contains python scripts with extra steps for externals (externals with extra `.h` and dynamic libraries require it). 
+* The `src/template.c`, where we load PureData and the patches, we are looking mainly for faster code.
+* The `resources/PdWebCompiler.py`, which configures the `main.c` file. It allows to use externals.
 
 ## Running Your Patch on the Internet
 
