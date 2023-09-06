@@ -245,7 +245,14 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
         console.log("AudioContext state: " + audioContext.state);
     };
 
-    // send document to the AudioWorkletProcessor
+    console.log(audioContext);
+    console.log(audioWorkletNode);
+
+    audioWorkletNode.onprocessorerror = (event) => {
+        alert(event);
+        audioContext.suspend();
+    };
+
 
     const inputDeviceSelect = document.getElementById("Input-Device-Select");
     inputDeviceSelect.addEventListener("change", async () => {
