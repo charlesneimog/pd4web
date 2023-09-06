@@ -411,7 +411,6 @@ EM_JS(void, setFloatValue, (const char* symbol, float value), {
     else {
         element.value = value;
     }
-
 });
 
 // ========================================
@@ -429,7 +428,6 @@ EM_JS(void, setSymbolValue, (const char* symbol, const char* value), {
     else {
         element.value = UTF8ToString(value);
     }
-
 });
 
 // ========================================
@@ -450,16 +448,14 @@ void PdWebCompiler_Loop(){
             }
             else{
                 return;
-
             }
         }
     }
 }
 
-
-
 // ========================================
 int main(){
+    
     srand(time(NULL));
     assert(!emscripten_current_thread_is_audio_worklet());
 
