@@ -2,9 +2,11 @@ import os
 import sys
 import importlib
 
+
 thisFile = os.path.abspath(__file__)
 module_files = [f for f in os.listdir(os.path.dirname(thisFile)) if f.endswith('.py') and not f.startswith('__')]
 module_names = [os.path.splitext(f)[0] for f in module_files]
+
 
 for module_name in module_names:
     if module_name != 'ExternalClass':
@@ -42,7 +44,7 @@ class PureDataExternals:
             self.requireDynamicLibraries = library['dynamicLibraries']
         except:
             self.requireDynamicLibraries = False
-        
+
         self.usedObjs = []
         self.UsedSourceFiles = []
         self.extraFuncExecuted = False
@@ -51,7 +53,7 @@ class PureDataExternals:
 
     def addToUsed(self, objName):
         self.usedObjs.append(objName)
-        
+
     def getUsedObjs(self):
         return self.usedObjs
 
@@ -60,7 +62,6 @@ class PureDataExternals:
 
     def __str__(self) -> str:
         return f"<Dev: {self.repoUser} | User: {self.repoName}>"
-
 
 
 class PD_SUPPORTED_EXTERNALS:
@@ -106,7 +107,6 @@ class PD_SUPPORTED_EXTERNALS:
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
             print("\033[95m" + f"    Executing {UsedLibrary.extraFunc} function" + "\033[0m")
-
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
             executedFunction = f"{extraFunctionStr}" + '(libraryClass)'
@@ -137,7 +137,7 @@ class PatchLine:
         self.objFound = False
         self.uiReceiver = False
         self.uiSymbol = ''
-            
+
     def __str__(self) -> str:
         if self.isExternal:
             return "<Obj: " + self.name + " | Lib: " + self.library + ">"
@@ -152,7 +152,7 @@ class PatchLine:
             return "<Not an external>"
 
 
-    def addToUsedObject(self, PD_LIBRARIES):
+    def addToUsedObject(self, PD_LIBS):
         if self.isExternal:
-            LibraryClass = PD_LIBRARIES.get(self.library)
+            LibraryClass = PD_LIBS.get(self.library)
             LibraryClass.addToUsed(self.name)
