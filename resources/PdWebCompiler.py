@@ -20,11 +20,15 @@ PROCESSED_ABSTRACTIONS = []
 
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None, insideaddAbstractions=False) -> None:
-        parser = argparse.ArgumentParser(description="Sample script to create personalised webPd patch")
-        parser.add_argument('--patch', required=True, help='Patch file to compile')
+        parser = argparse.ArgumentParser(
+            description="Sample script to create personalised webPd patch")
+        parser.add_argument('--patch', required=True,
+                            help='Patch file to compile')
         parser.add_argument('--html', required=False, help='HTML file')
-        parser.add_argument('--confirm', required=False, help='Confirm if the object is an external')
-        parser.add_argument('--clearTmpFiles', required=False, default=False, help='Remove all objects from the patch')
+        parser.add_argument('--confirm', required=False,
+                            help='Confirm if the object is an external')
+        parser.add_argument('--clearTmpFiles', required=False,
+                            default=False, help='Remove all objects from the patch')
         args = parser.parse_args()
         self.FoundExternals = False
         self.html = False
@@ -41,14 +45,18 @@ class webpdPatch():
         else:
             self.patch = args.patch
 
-        if not os.path.isabs(args.html) and not insideaddAbstractions:
-            absolutePath = os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), args.html)))
-            self.html = os.getcwd() + "/" + args.html
-            print(self.html)
+        # patch file name
+        patchFileName = os.path.basename(self.patch)
+        print("\033[96m" + "\n    " + patchFileName + "\n\033[0m")
 
+        if not os.path.isabs(args.html) and not insideaddAbstractions:
+            absolutePath = os.path.dirname(os.path.abspath(
+                os.path.join(os.getcwd(), args.html)))
+            self.html = os.getcwd() + "/" + args.html
 
         if not os.path.isabs(self.patch) and not insideaddAbstractions:
-            absolutePath = os.path.dirname(os.path.abspath(os.path.join(os.getcwd(), self.patch)))
+            absolutePath = os.path.dirname(os.path.abspath(
+                os.path.join(os.getcwd(), self.patch)))
             self.patch = os.getcwd() + "/" + self.patch
             self.source = os.getcwd() + "/" + self.source
             self.PROJECT_ROOT = absolutePath
@@ -56,6 +64,8 @@ class webpdPatch():
 
         with open(self.patch, "r") as file:
             self.PatchLines = file.readlines()
+
+        self.replaceVISArray()
 
         # read externals
         self.getSupportedLibraries()
@@ -74,7 +84,6 @@ class webpdPatch():
         else:
             with open("webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
-
 
         if not insideaddAbstractions:
             if not os.path.exists(".externals"):
@@ -116,9 +125,12 @@ class webpdPatch():
 
         self.copyAllDataFiles()
 
-        shutil.copy(self.PdWebCompilearPath + "/src/index.html", "webpatch/index.html")
-        shutil.copy(self.PdWebCompilearPath + "/src/helpers.js", "webpatch/helpers.js")
-        shutil.copy(self.PdWebCompilearPath + "/src/enable-threads.js", "webpatch/enable-threads.js")
+        shutil.copy(self.PdWebCompilearPath +
+                    "/src/index.html", "webpatch/index.html")
+        shutil.copy(self.PdWebCompilearPath +
+                    "/src/helpers.js", "webpatch/helpers.js")
+        shutil.copy(self.PdWebCompilearPath +
+                    "/src/enable-threads.js", "webpatch/enable-threads.js")
 
         self.getDynamicLibraries()
 
@@ -138,7 +150,6 @@ class webpdPatch():
         else:
             return ''
 
-
     def getSupportedLibraries(self):
         ''' Read yaml file and get all supported libraries '''
         global PD_LIBRARIES
@@ -155,13 +166,102 @@ class webpdPatch():
                 PdLib = PureDataExternals(library)
                 PD_LIBRARIES.add(PdLib)
 
+    
+    def searchForSpecialObject(self, line):
+        if len(line.Tokens) > 4:
+            if line.Tokens[4].replace("\n", "") == "clone":
+                for token in line.Tokens:
+                    if not "-" in token:
+                        # from self.PROJECT_ROOT, search for token.pd
+                        # if found, copy to webpatch/data
+                        absName = token.replace(",", "") + ".pd"
+                        for root, _, files in os.walk(self.PROJECT_ROOT):
+                            for file in files:
+                                if file.endswith(".pd") and absName in file:
+                                    if absName == file:
+                                        # check is file already exists in webpatch/data 
+                                        if not os.path.exists("webpatch/data/" + absName):
+                                            # print in yellow the name of the patch with the array
+                                            print("\033[93m" + "    " + "Copying " + absName + " to webpatch/data" + "\033[0m")
+                                            
+                                            shutil.copy(os.path.join(root, file), "webpatch/data")
+
+                                
+
+                
+
+
+        
+
+
+    def replaceVISArray(self):
+        canvasIndex = False
+        coordsIndex = False
+        restoreIndex = False
+        arrayLastIndex = False
+        arrayFirstIndex = False
+        arrayName = ''
+        arrayLength = ''
+        x_y_coords = {'x': '0', 'y': '0'}
+        for i in range(len(self.PatchLines)):
+            LineTokens = self.PatchLines[i].split(" ")
+            if len(LineTokens) < 7:
+                continue
+            if LineTokens[6] == "(subpatch)":
+                canvasIndex = i
+            else:
+                continue
+            LineTokens_Next = self.PatchLines[i + 1].split(" ")
+            if LineTokens_Next[1] == "array":
+                arrayFirstIndex = i + 1
+                arrayName = LineTokens_Next[2]
+                arrayLength = LineTokens_Next[3]
+
+            j = 2
+            while True:
+                if self.PatchLines[i + j].split(" ")[0] == "#A":
+                    j += 1
+                else:
+                    arrayLastIndex = i + j - 1
+                    break
+
+            if self.PatchLines[arrayLastIndex + 1].split(" ")[1] == "coords":
+                coordsIndex = arrayLastIndex + 1
+            if self.PatchLines[arrayLastIndex + 2].split(" ")[1] == "restore":
+                restoreIndex = arrayLastIndex + 2
+                x_y_coords['x'] = self.PatchLines[restoreIndex].split(" ")[2]
+                x_y_coords['y'] = self.PatchLines[restoreIndex].split(" ")[3]
+
+            if canvasIndex and coordsIndex and restoreIndex:
+                break
+
+        if canvasIndex and coordsIndex and restoreIndex:
+            # from self.PatchLines, remove canvasIndex value
+            self.PatchLines.pop(canvasIndex)
+            arrayDefine = f"#X obj {x_y_coords['x']} {x_y_coords['y']} array define " \
+                f"{arrayName} {arrayLength};\n"
+            self.PatchLines.insert(arrayFirstIndex - 1, arrayDefine)
+            self.PatchLines.pop(arrayFirstIndex)
+            self.PatchLines.pop(coordsIndex - 1)
+            self.PatchLines.pop(restoreIndex - 2)
+            # print in yellow the name of the patch with the array
+            print("\033[93m" + "    " + self.patch +
+                  " has VIS array, it is not supported and was replaced by [array define]" + "\033[0m")
+
+            self.replaceVISArray()
+
+        # save self.PatchLines to file
+        with open(self.patch, "w") as file:
+            for line in self.PatchLines:
+                file.write(line)
+
 
     def configForAbstraction(self, abstractionfile):
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
         shutil.copy(abstractionfile, "webpatch/data")
-        print("\033[92m" + "    Found Abstraction: " + abstractionfile.split("/")[-1] + "\033[0m")
-
+        print("\033[92m" + "    Found Abstraction: " +
+              abstractionfile.split("/")[-1] + "\033[0m")
 
     def copyAllDataFiles(self):
         if not os.path.exists("webpatch/data"):
@@ -171,13 +271,11 @@ class webpdPatch():
             for file in files:
                 shutil.copy(os.path.join(root, file), "webpatch/data")
 
-
     def checkIfIsSupportedObject(self, patchLine):
         pdClass = patchLine[1]
         if pdClass == "array":
-                print("\033[91m" + "    " +
-                        "Visual Arrays are not supported, use [array define] object" + "\033[0m")
-
+            print("\033[91m" + "    " +
+                  "Visual Arrays are not supported, use [array define] object" + "\033[0m")
 
     def findExternals(self):
         for line in enumerate(self.PatchLines):
@@ -185,40 +283,47 @@ class webpdPatch():
             patchLine.patchLineIndex = line[0]
             patchLine.patchLine = line[1]
             patchLine.isExternal = False
-            lineArgs = patchLine.patchLine.split(" ")
-            if len(lineArgs) < 5:
+            patchLine.Tokens = patchLine.patchLine.split(" ")
+            # lineArgs = patchLine.patchLine.split(" ")
+            if len(patchLine.Tokens) < 5:
                 continue
 
             # here for especial objects (externals, not supported objects, abstractions)
-            objName = lineArgs[4].replace("\n", "").replace(";", "").replace(",", "")
+            objName = patchLine.Tokens[4].replace(
+                "\n", "").replace(";", "").replace(",", "")
 
-            self.checkIfIsSupportedObject(lineArgs)
+            self.checkIfIsSupportedObject(patchLine.Tokens)
 
-            if (lineArgs[0] == "#X" and lineArgs[1] == "obj" and "/" in lineArgs[4]) and objName != "/":
+            if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj" 
+                    and "/" in patchLine.Tokens[4]) and objName != "/":
                 patchLine.isExternal = True
-                patchLine.library = lineArgs[4].split("/")[0]
-                patchLine.name = lineArgs[4].split("/")[1].replace("\n", "").replace(";", "").replace(",", "")
-                patchLine.objGenSym = 'class_new(gensym("' + lineArgs[4].split("/")[1].replace("\n", "").replace(";", "") + '")'
+                patchLine.library = patchLine.Tokens[4].split("/")[0]
+                patchLine.name = patchLine.Tokens[4].split(
+                    "/")[1].replace("\n", "").replace(";", "").replace(",", "")
+                patchLine.objGenSym = 'class_new(gensym("' + patchLine.Tokens[4].split("/")[
+                    1].replace("\n", "").replace(";", "") + '")'
 
-            elif self.checkIsObjIsSingle(lineArgs):
+            elif self.checkIsObjIsSingle(patchLine.Tokens):
                 patchLine.isExternal = True
-                patchLine.library = lineArgs[4].replace(";", "").replace("\n", "").replace(",", "")
+                patchLine.library = patchLine.Tokens[4].replace(
+                    ";", "").replace("\n", "").replace(",", "")
                 patchLine.name = patchLine.library
                 patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
                 patchLine.singleObject = True
 
-            elif ("s" == lineArgs[4] or "send" == lineArgs[4]):
-                receiverSymbol = lineArgs[5].replace("\n", "").replace(";", "").replace(",", "")
+            elif ("s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]):
+                receiverSymbol = patchLine.Tokens[5].replace(
+                    "\n", "").replace(";", "").replace(",", "")
                 if ("ui_" in receiverSymbol):
                     patchLine.uiReceiver = True
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
-
-                patchLine.name = lineArgs[4].replace(";", "").replace("\n", "")
+                patchLine.name = patchLine.Tokens[4].replace(";", "").replace("\n", "")
 
             else:
-                patchLine.name = lineArgs[4].replace(";", "").replace("\n", "")
+                patchLine.name = patchLine.Tokens[4].replace(";", "").replace("\n", "")
 
+            self.searchForSpecialObject(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternalFound.append(patchLine)
 
@@ -237,7 +342,8 @@ class webpdPatch():
     def cfgExternals(self):
         for lineInfo in self.PatchLinesExternalFound:
             if lineInfo.isExternal:
-                foundLibrary = self.downloadExternalLibrarySrc(lineInfo.library)
+                foundLibrary = self.downloadExternalLibrarySrc(
+                    lineInfo.library)
                 if foundLibrary:
                     for root, _, files in os.walk(".externals/" + lineInfo.library):
                         for file in files:
@@ -247,19 +353,25 @@ class webpdPatch():
                                 if lineInfo.name == file.split(".pd")[0]:
                                     lineInfo.isAbstraction = True
                                     lineInfo.objFound = True
-                                    self.configForAbstraction(os.path.join(root, file))
+                                    self.configForAbstraction(
+                                            os.path.join(root, file))
 
                 else:
                     lineInfo.objFound = False
-                    print("    " + "\033[91m" + "Could not find " + lineInfo.library + "\033[0m")
+                    print("    " + \
+                            "\033[91m" + "Could not find " + lineInfo.library + "\033[0m")
 
                 if lineInfo.objFound and lineInfo.isAbstraction:
-                    print("\033[92m" + "    Found Abstraction: " + lineInfo.name + "\033[0m")
+                    print("\033[92m" + "    Found Abstraction: " +
+                          lineInfo.name + "\033[0m")
                 elif lineInfo.objFound and not lineInfo.isAbstraction:
-                    print("\033[92m" + "    Found External: " + lineInfo.name + "\033[0m")
+                    print("\033[92m" + "    Found External: " +
+                          lineInfo.name + "\033[0m")
                 else:
-                    print("\033[91m" + "    Could not find " + lineInfo.name + "\033[0m")
+                    print("\033[91m" + "    Could not find " +
+                          lineInfo.name + "\033[0m")
                     print("")
+
 
     def searchCFunction(self, lineInfo, root, file):
         functionName = lineInfo.name
@@ -276,12 +388,11 @@ class webpdPatch():
                 functionName = functionName.replace(".", "0x2e")
             self.regexSearch(lineInfo, functionName, os.path.join(root, file))
 
-
-
     def regexSearch(self, lineInfo, functionName, file):
         with open(file, "r") as C_file:
             file_contents = C_file.read()
-            pattern = r'void\s*{}\s*\(\s*void\s*\)'.format(re.escape(functionName))
+            pattern = r'void\s*{}\s*\(\s*void\s*\)'.format(
+                re.escape(functionName))
             matches = re.finditer(pattern, file_contents, re.DOTALL)
             listMatches = list(matches)
             if len(listMatches) > 0:
@@ -292,7 +403,6 @@ class webpdPatch():
                     self.externalsDict[lineInfo.library] = [C_file.name]
                 else:
                     self.externalsDict[lineInfo.library].append(C_file.name)
-
 
     def addObjSetup(self):
         '''
@@ -311,8 +421,10 @@ class webpdPatch():
                         if "// ====================" in line:
                             end_index = i
                         if start_index is not None and end_index is not None:
-                            functionName = "void " + lineInfo.functionName + "(void);\n"
-                            self.templateCode.insert(start_index + 1, functionName)
+                            functionName = "void " + \
+                                lineInfo.functionName + "(void);\n"
+                            self.templateCode.insert(
+                                start_index + 1, functionName)
                             break
 
                     start_index = None
@@ -325,7 +437,8 @@ class webpdPatch():
                         if start_index is not None and end_index is not None:
                             functionName = lineInfo.functionName
                             functionName = "    " + functionName + "();\n"
-                            self.templateCode.insert(start_index + 1, functionName)
+                            self.templateCode.insert(
+                                start_index + 1, functionName)
                             break
 
         HTML_IDS = None
@@ -344,16 +457,15 @@ class webpdPatch():
                     else:
                         self.templateCode[HTML_IDS] += '"' + uiReceiver + '", '
                 self.templateCode[HTML_IDS] += "};\n"
-                self.templateCode[HTML_IDS_SIZE] = "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n"
+                self.templateCode[HTML_IDS_SIZE] = "int HTML_IDS_SIZE = " + \
+                    str(lenUIReceiver) + ";\n"
                 break
         return True
-
 
     def saveMainFile(self):
         with open("webpatch/main.c", "w") as file:
             for line in self.templateCode:
                 file.write(line)
-
 
     def usedLibraries(self, libraryName):
         '''
@@ -363,7 +475,6 @@ class webpdPatch():
             PD_LIBRARIES.UsedLibrariesNames.append(libraryName)
             PD_LIBRARIES.UsedLibraries.append(PD_LIBRARIES.get(libraryName))
 
-
     def downloadExternalLibrarySrc(self, libraryName):
         responseJson = {'message': 'Unknown error'}
         if libraryName in PD_LIBRARIES.LibraryNames:
@@ -371,35 +482,40 @@ class webpdPatch():
                 self.usedLibraries(libraryName)
                 LibraryClass = PD_LIBRARIES.get(libraryName)
                 if LibraryClass is None:
-                    print("\033[91m" + "Could not find " + libraryName + "\033[0m")
+                    print("\033[91m" + "Could not find " +
+                          libraryName + "\033[0m")
                     sys.exit(-1)
 
                 LibraryClass.PROJECT_ROOT = self.PROJECT_ROOT
 
                 if os.path.exists(os.path.join(os.getcwd(), ".externals/" + libraryName)):
-                    LibraryClass.folder = os.path.join(os.getcwd(), ".externals/" + libraryName)
+                    LibraryClass.folder = os.path.join(
+                        os.getcwd(), ".externals/" + libraryName)
                     return True
 
-                GithutAPI = PD_LIBRARIES.getDownloadURL(LibraryClass, self.downloadSources)
+                GithutAPI = PD_LIBRARIES.getDownloadURL(
+                    LibraryClass, self.downloadSources)
                 if GithutAPI is None:
-                    print("\033[91m" + "   LibURL is not a string or None" + "\033[0m")
+                    print(
+                        "\033[91m" + "   LibURL is not a string or None" + "\033[0m")
                     sys.exit(-1)
 
-                elif GithutAPI == False: # means that is a direct link
+                elif GithutAPI == False:  # means that is a direct link
                     response = requests.get(LibraryClass.directLink)
 
-                elif isinstance(GithutAPI, str): # is a GithubAPI link
+                elif isinstance(GithutAPI, str):  # is a GithubAPI link
                     response = requests.get(GithutAPI)
                     responseJson = response.json()
                     sourceCodeLink = responseJson[0]["zipball_url"]
                     response = requests.get(sourceCodeLink)
 
                 else:
-                    print("\033[91m" + "    The link of the srcs of " + libraryName + " is not valid" + "\033[0m")
+                    print("\033[91m" + "    The link of the srcs of " +
+                          libraryName + " is not valid" + "\033[0m")
                     sys.exit(-1)
 
-                print("\033[92m" + "    Downloading " + libraryName + "\033[0m")
-
+                print("\033[92m" + "    Downloading " +
+                      libraryName + "\033[0m")
 
                 if not os.path.exists(".externals"):
                     os.mkdir(".externals")
@@ -410,10 +526,13 @@ class webpdPatch():
                 with zipfile.ZipFile(".externals/" + libraryName + ".zip", 'r') as zip_ref:
                     zip_ref.extractall(".externals")
                     extractFolderName = zip_ref.namelist()[0]
-                    os.rename(".externals/" + extractFolderName, ".externals/" + libraryName)
+                    os.rename(".externals/" + extractFolderName,
+                              ".externals/" + libraryName)
 
-                LibraryClass.folder = os.path.join(os.getcwd(), ".externals/" + libraryName)
-                self.librariesFolder.append(os.path.join(os.getcwd(), ".externals/" + libraryName))
+                LibraryClass.folder = os.path.join(
+                    os.getcwd(), ".externals/" + libraryName)
+                self.librariesFolder.append(os.path.join(
+                    os.getcwd(), ".externals/" + libraryName))
                 os.remove(".externals/" + libraryName + ".zip")
                 return True
 
@@ -424,13 +543,11 @@ class webpdPatch():
         else:
             return False
 
-
     def getPatchPath(self):
         if os.path.isabs(self.patch):
-            self.patch =  self.patch
+            self.patch = self.patch
         else:
-             self.patch = os.path.join(os.getcwd(),  self.patch)
-
+            self.patch = os.path.join(os.getcwd(),  self.patch)
 
     def mkBackup(self):
         if not os.path.exists(".backup"):
@@ -440,13 +557,13 @@ class webpdPatch():
         Day = datetime.datetime.now().day
         Month = datetime.datetime.now().month
         patchName = self.patch.split("/")[-1].split(".")[0]
-        backPatchName = patchName + "_" + str(Day) + "_" + str(Month) + "_" + str(Hour) + "_" + str(Minute) + ".pd"
+        backPatchName = patchName + "_" + \
+            str(Day) + "_" + str(Month) + "_" + \
+            str(Hour) + "_" + str(Minute) + ".pd"
         try:
             shutil.copy(self.patch, ".backup/" + backPatchName)
         except Exception as e:
             print("\033[91m" + str(e) + "\033[0m")
-
-
 
     def savePdPatchModified(self):
         if not os.path.exists("webpatch/data"):
@@ -480,7 +597,6 @@ class webpdPatch():
                     newLine = " ".join(newLine)
                     file.write(newLine)
 
-
     def extraFunctions(self):
         '''
         This function will execute the second argument
@@ -493,7 +609,6 @@ class webpdPatch():
             if extraFlags is not None:
                 for flag in extraFlags:
                     self.extraFlags.append(flag)
-
 
     def removeLibraryPrefix(self, patchfile):
         patchWithoutPrefix = []
@@ -511,14 +626,14 @@ class webpdPatch():
             for line in patchWithoutPrefix:
                 file.write(" ".join(line))
 
-
     def addAbstractions(self):
         # list all files in webpatch/data
         before_files = os.listdir("webpatch/data")
         for dir, _, files in os.walk("webpatch/data"):
             for patchfile in files:
                 if patchfile.endswith(".pd") and patchfile != "index.pd":
-                    webpdPatch(sourcefile="webpatch/main.c", pdpatch="webpatch/data/" + patchfile, insideaddAbstractions=True)
+                    webpdPatch(sourcefile="webpatch/main.c",
+                               pdpatch="webpatch/data/" + patchfile, insideaddAbstractions=True)
                     self.removeLibraryPrefix(dir + "/" + patchfile)
                     PROCESSED_ABSTRACTIONS.append(patchfile)
         after_files = os.listdir("webpatch/data")
@@ -526,7 +641,6 @@ class webpdPatch():
             return
 
         self.addAbstractions()
-
 
     def getDynamicLibraries(self):
         '''
@@ -538,10 +652,10 @@ class webpdPatch():
                 for dyn_library in requiredLibraries:
                     try:
                         function = DYNAMIC_LIBRARIES[dyn_library]
-                        function(self) # call the function
+                        function(self)  # call the function
                     except:
-                        print("\033[91m" + "Could not find " + dyn_library + "\033[0m")
-
+                        print("\033[91m" + "Could not find " +
+                              dyn_library + "\033[0m")
 
     def emccCompile(self):
         '''
@@ -549,26 +663,30 @@ class webpdPatch():
         '''
         # check if emcc is installed and in the path
         if shutil.which("emcc") is None:
-            print("\033[91m" + "emcc is not installed or in the path" + "\033[0m")
+            print("\033[91m" +
+                  "emcc is not installed or in the path" + "\033[0m")
             print("")
             sys.exit(-1)
 
         self.target = 'webpatch/libpd.js'
         self.libpd_dir = self.PdWebCompilearPath + '/libpd'
         self.src_files = 'webpatch/main.c'
+        memory = 32 # we start with 32mb, for big patches you should increase this value
 
         command = ['emcc',
-                    "-I", "webpatch/includes/",
-                    "-I", '' + self.libpd_dir + '/pure-data/src/',
-                    "-I", '' + self.libpd_dir + '/libpd_wrapper/',
-                    "-L", '' + self.libpd_dir + '/build/libs/',
-                    "-lpd",
-                    "-O3",
-                    "-s", "AUDIO_WORKLET=1",
-                    "-s", "WASM_WORKERS=1",
-                    "-s", "WASM=1",
-                    "-s", "USE_PTHREADS=1",
-                    "--preload-file", "webpatch/data/",
+                   "-I", "webpatch/includes/",
+                   "-I", '' + self.libpd_dir + '/pure-data/src/',
+                   "-I", '' + self.libpd_dir + '/libpd_wrapper/',
+                   "-L", '' + self.libpd_dir + '/build/libs/',
+                   "-lpd", "-lm",
+                   "-O3",
+                   "-s", f"INITIAL_MEMORY={memory}mb",
+                   # "-s", "ALLOW_MEMORY_GROWTH=1", # wait to solve problem 
+                   "-s", "AUDIO_WORKLET=1",
+                   "-s", "WASM_WORKERS=1",
+                   "-s", "WASM=1",
+                   "-s", "USE_PTHREADS=1",
+                   "--preload-file", "webpatch/data/",
                    ]
 
         indexFlag = 0
@@ -589,37 +707,38 @@ class webpdPatch():
         print("")
         print("\033[94m" + " ".join(command) + "\033[0m")
         print("")
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
         _, stderr = process.communicate()
         if stderr:
-                if "warning" in stderr:
-                    # split by new line
-                    stderr = stderr.split("\n")
-                    for line in stderr:
-                        if "warning:" in line:
-                            print("")
-                            print("     " + "\033[93m" + line + "\033[0m")
-                            print("")
-                        else:
-                            print("     " + line)
-                if "error" in stderr:
-                    stderr = stderr.split("\n")
-                    for line in stderr:
-                        if "error:" in line:
-                            print("")
-                            print("\033[91m" + line + "\033[0m")
-                            print("")
-                            sys.exit(-1)
-                        else:
-                            print(line)
-                else:
-                    print("\033[92m" + ("=" * 10) + " Compiled with success " + ("=" * 10) +  "\033[0m")
+            if "warning" in stderr:
+                # split by new line
+                stderr = stderr.split("\n")
+                for line in stderr:
+                    if "warning:" in line:
+                        print("")
+                        print("     " + "\033[93m" + line + "\033[0m")
+                        print("")
+                    else:
+                        print("     " + line)
+            if "error" in stderr:
+                stderr = stderr.split("\n")
+                for line in stderr:
+                    if "error:" in line:
+                        print("")
+                        print("\033[91m" + line + "\033[0m")
+                        print("")
+                        sys.exit(-1)
+                    else:
+                        print(line)
+            else:
+                print("\033[92m" + ("=" * 10) +
+                      " Compiled with success " + ("=" * 10) + "\033[0m")
 
         process.wait()
         if isinstance(self.html, str):
             shutil.copy(self.html, "webpatch")
             print("\033[92m" + "    " + "Copied to " + self.html + "\033[0m")
-
 
 
 if __name__ == "__main__":

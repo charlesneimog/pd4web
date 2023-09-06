@@ -137,19 +137,46 @@ class PatchLine:
         self.objFound = False
         self.uiReceiver = False
         self.uiSymbol = ''
+        self.Tokens = []
 
     def __str__(self) -> str:
         if self.isExternal:
             return "<Obj: " + self.name + " | Lib: " + self.library + ">"
         else:
-            return "<Not an external>"
+            if self.Tokens[0] == '#X':
+                if self.Tokens[1] == 'obj':
+                    removeNewLines = self.Tokens[4].replace('\n', '')
+                    return "<Pd Object: " + self.Tokens[1] + " | " + removeNewLines + ">"
+                elif self.Tokens[1] == 'connect': 
+                    return "<Pd Connection>"
+                elif self.Tokens[1] == 'text':
+                    return "<Pd Text>"
+                elif self.Tokens[1] == 'msg':
+                    return "<Pd Message>"
+                elif self.Tokens[1] == 'floatatom':
+                    return "<Pd Float>"
+                elif self.Tokens[1] == 'restore':
+                    return "<Pd Restore>"
+                else:
+                    return "<Pd Object: " + str(self.Tokens) + ">"
+                
+            elif self.Tokens[0] == '#A':
+                return "<Array Data>"
+
+            else:
+                return "<Special Pd Object: " + self.Tokens[0] + ">"
 
 
     def __repr__(self) -> str:
         if self.isExternal:
             return "<Obj: " + self.name + " | Lib: " + self.library + ">"
         else:
-            return "<Not an external>"
+            if self.Tokens[0] == '#X':
+                return "<Pd Object: " + self.Tokens[4] + " | " + self.Tokens[1] + ">"
+                
+            else:
+                return "<Special Pd Object: " + self.Tokens[0] + ">"
+            
 
 
     def addToUsedObject(self, PD_LIBS):
