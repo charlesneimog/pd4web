@@ -818,8 +818,7 @@ class webpdPatch():
         
         if platform.system() == "Windows":
             os.system(" ".join(command))
-        
-        
+                    
         else:
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
@@ -856,7 +855,6 @@ class webpdPatch():
         if self.args.server_port:
             emrun = self.PdWebCompilerPath + f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} webpatch'
             os.system(emrun)
-
         sys.exit(0)
 
 if __name__ == "__main__":

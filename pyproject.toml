@@ -16,6 +16,5 @@ requests = "^2.31.0"
 [tool.poetry.scripts]
 pd2wasm = "pd2wasm:webpdPatch"
 
-
 [build-system]
 build-backend = "poetry.core.masonry.api"
