@@ -10,7 +10,8 @@
 |:---------:|:----------------------------:|:-----------------:|
 | else      |  `sfont~`, `plaits~`, `sfz~` | 509               |
 | cyclone   |               -              | ± 197             |
-| earplug~  |               -              | 1                 |
+| convolve~ |               -              | 1                 |
+| timbreIDLib |               -              | 109                |
 
 So, for now, we have more than 700 supported externals objects.
 
@@ -42,34 +43,16 @@ To make your patch available online, follow these steps:
 * **MacOS**: Download and install Python from the [Python website](https://www.python.org/downloads/release/python-3115/).
 * **Windows**: `winget install -e --id Python.Python.3.11`.
 
-#### 3. Install emscripten (first-time setup)
+#### 3. Then install pd2wasm
 
-```bash
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh && cd ..
+``` bash
+  pip install pd2wasm
 ```
+#### 4. Now is just to compile your patch
 
-#### 4. Configure the Environment (first-time setup)
+``` bash
+      pd2wasm --patch ./YOUR_PATCH.pd
 
-```
-git clone https://github.com/charlesneimog/PdWebCompiler.git
-cd PdWebCompiler && git submodule init && git submodule update
-cd libpd && git switch emscripten-pd54 && git submodule init && git submodule update
-cd pure-data && git switch emscripten-pd54
-cd ../ && mkdir build && cd build
-emcmake cmake .. -DPD_UTILS:BOOL=OFF -DCMAKE_BUILD_TYPE=Release -Wno-dev
-emmake make STATIC=true
-cd .. && cd ..
-
-```
-
-#### 5. Compile Your Patch (Just these two lines for now)
-```
-cd emsdk && source ./emsdk_env.sh && cd ..
-make PATCH=./mypatch.pd
 ```
 
 
