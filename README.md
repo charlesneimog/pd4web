@@ -31,28 +31,21 @@ Contributions to this repository are welcome! Here are the main areas you can co
 
 To make your patch available online, follow these steps:
 
-#### 1. Install Git (first-time setup)
-
-* **Linux**: `apt install Git`, `dnf install Git`, etc.
-* **MacOS**: Download and install the [Git Binary installer](https://git-scm.com/download/mac).
-* **Windows**: `winget install Git.Git`.
-
-#### 2. Install Python (first-time setup)
+#### 1. Install Python (first-time setup)
 
 * **Linux**: `apt install python3.11`, `dnf install python3.11`, etc.
 * **MacOS**: Download and install Python from the [Python website](https://www.python.org/downloads/release/python-3115/).
 * **Windows**: `winget install -e --id Python.Python.3.11`.
 
-#### 3. Then install pd2wasm
+#### 2. Then Install pd2wasm (first-time setup)
 
 ``` bash
   pip install pd2wasm
 ```
-#### 4. Now is just to compile your patch
+#### 3. Now, it is just to compile your patch
 
 ``` bash
       pd2wasm --patch ./YOUR_PATCH.pd
-
 ```
 
 
