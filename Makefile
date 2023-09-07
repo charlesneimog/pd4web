@@ -16,7 +16,7 @@ else
 endif
 	
 makewebpatch:
-	python resources/PdWebCompiler.py --patch $(PATCH) --html $(HTML) $(TMP_FILES)
+	python pd2wasm/PdWebCompiler.py --patch $(PATCH) --html $(HTML) $(TMP_FILES)
 
 
 
