@@ -10,7 +10,7 @@ module_names = [os.path.splitext(f)[0] for f in module_files]
 
 for module_name in module_names:
     if module_name != 'ExternalClass':
-        module = importlib.import_module('externals.' + module_name)
+        module = importlib.import_module('pd2wasm.externals.' + module_name)
         globals().update(vars(module))
 
 

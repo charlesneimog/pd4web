@@ -9,8 +9,8 @@ import datetime
 import yaml
 import re
 
-from externals.ExternalClass import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
-from lib.main import DYNAMIC_LIBRARIES
+from .externals.ExternalClass import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
+from .lib.main import DYNAMIC_LIBRARIES
 
 
 ## ================== EXTERNALS THINGS ================== ##
