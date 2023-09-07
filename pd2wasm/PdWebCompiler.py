@@ -803,7 +803,7 @@ class webpdPatch():
                    '-lpd',
                    '-O3',
                    '-s', f'INITIAL_MEMORY={memory}mb',
-                   # '-s', 'ALLOW_MEMORY_GROWTH=1', # wait to solve problem 
+                   # '-s', 'ALLOW_MEMORY_GROWTH=1', # TODO: wait to solve problem 
                    '-s', 'AUDIO_WORKLET=1',
                    '-s', 'WASM_WORKERS=1',
                    '-s', 'WASM=1',
