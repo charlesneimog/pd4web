@@ -777,25 +777,42 @@ class webpdPatch():
         self.src_files = 'webpatch/main.c'
         memory = 32 # we start with 32mb, for big patches you should increase this value
         if platform.system() == "Windows":
-            emcc = '"' + self.PdWebCompilearPath + '\\emsdk\\upstream\\emscripten\\emcc"'
-        else:
-            emcc = self.PdWebCompilearPath + '/emsdk/upstream/emscripten/emcc'
-
-        command = [emcc,
-                   "-I", "webpatch/includes/",
-                   "-I", self.libpd_dir + '/pure-data/src/',
-                   "-I", self.libpd_dir + '/libpd_wrapper/',
-                   "-L", self.PdWebCompilerPath + '/lib/compiled/',
-                   "-lpd",
-                   "-O3",
-                   "-s", f"INITIAL_MEMORY={memory}mb",
-                   # "-s", "ALLOW_MEMORY_GROWTH=1", # wait to solve problem 
-                   "-s", "AUDIO_WORKLET=1",
-                   "-s", "WASM_WORKERS=1",
-                   "-s", "WASM=1",
-                   "-s", "USE_PTHREADS=1",
-                   "--preload-file", "webpatch/data/",
+            emcc = '"' + self.PdWebCompilerPath + '\\emsdk\\upstream\\emscripten\\emcc"'
+            command = [emcc,
+                   '-I "', 'webpatch\\includes\\"',
+                   '-I "', self.libpd_dir + '\\pure-data/src\\"',
+                   '-I "', self.libpd_dir + '\\libpd_wrapper\\"',
+                   '-L "', self.PdWebCompilerPath + '\\lib/compiled\\"',
+                   '-lpd',
+                   '-O3',
+                   '-s', f'INITIAL_MEMORY={memory}mb',
+                   # '-s', 'ALLOW_MEMORY_GROWTH=1', # wait to solve problem 
+                   '-s', 'AUDIO_WORKLET=1',
+                   '-s', 'WASM_WORKERS=1',
+                   '-s', 'WASM=1',
+                   '-s', 'USE_PTHREADS=1',
+                   '--preload-file', 'webpatch\\data\\',
                    ]
+        else:
+            emcc = '"' + self.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc"'
+            command = [emcc,
+                   '-I ', 'webpatch/includes/',
+                   '-I "', self.libpd_dir + '/pure-data/src/"',
+                   '-I "', self.libpd_dir + '/libpd_wrapper/"',
+                   '-L "', self.PdWebCompilerPath + '/lib/compiled/"',
+                   '-lpd',
+                   '-O3',
+                   '-s', f'INITIAL_MEMORY={memory}mb',
+                   # '-s', 'ALLOW_MEMORY_GROWTH=1', # wait to solve problem 
+                   '-s', 'AUDIO_WORKLET=1',
+                   '-s', 'WASM_WORKERS=1',
+                   '-s', 'WASM=1',
+                   '-s', 'USE_PTHREADS=1',
+                   '--preload-file', 'webpatch/data/',
+                   ]
+
+
+        
 
         indexFlag = 0
         for flag in self.extraFlags:
