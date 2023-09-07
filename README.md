@@ -13,7 +13,7 @@
 | convolve~ |               -              | 1                 |
 | timbreIDLib |               -              | 109                |
 
-So, for now, we have more than 700 supported externals objects.
+So, for now, we have more than 800 supported externals objects.
 
 * **Note**: Some objects, mainly due to dynamic libraries, are not supported yet. Feel free to submit a Pull Request to add support for them.
 
