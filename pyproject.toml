@@ -10,6 +10,8 @@ documentation = "https://www.charlesneimog.com/PdWebCompiler"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+pyyaml = "^6.0.0"
+requests = "^2.31.0"
 
 [tool.poetry.scripts]
 pd2wasm = "pd2wasm:webpdPatch"
