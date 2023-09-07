@@ -1,12 +1,15 @@
 [tool.poetry]
 name = "pd2wasm"
-version = "1.0.3"
+version = "1.0.2"
 description = "pd2wasm convert a PureData patch to Wasm file."
 authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
+
+[tool.poetry.scripts]
+pd2wasm = "pd2wasm:webpdPatch"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
