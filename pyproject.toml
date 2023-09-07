@@ -4,6 +4,11 @@ version = "1.0.2"
 description = "pd2wasm convert a PureData patch to Wasm file."
 authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"
+homepage = "www.charlesneimog.com/PdWebCompiler"
+repository = "https://github.com/charlesneimog/PdWebCompiler"
+documentation = "www.charlesneimog.com/PdWebCompiler"
+
+
 
 [tool.poetry.dependencies]
 python = "^3.10"
