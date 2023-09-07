@@ -19,11 +19,12 @@ PROCESSED_ABSTRACTIONS = []
 
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None, insideaddAbstractions=False, runMain=True) -> None:
+        self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
+        
         if not insideaddAbstractions:
-            self.PdWebCompilearPath = os.path.dirname(os.path.realpath(__file__))
-            self.PdWebCompilearPath = os.path.dirname(self.PdWebCompilearPath) + "/pd2wasm"
             self.downloadEmcc()
             self.downloadLibPd()
+
 
         # get this folder directory
         parser = argparse.ArgumentParser(
@@ -35,6 +36,10 @@ class webpdPatch():
                             help='There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag')
         parser.add_argument('--clearTmpFiles', required=False,
                             default=False, help='Remove all TempFiles, like .externals folder')
+
+        parser.add_argument('--server-port', required=False,
+                            default=False, help='Set the port to start the server')
+
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.0.4')
 
@@ -77,7 +82,7 @@ class webpdPatch():
                 self.html = os.getcwd() + "/" + self.args.html
         else:
             
-            self.html = self.PdWebCompilearPath + "/src/index.html"
+            self.html = self.PdWebCompilerPath + "/src/index.html"
 
 
         if not os.path.isabs(self.patch) and not insideaddAbstractions:
@@ -102,15 +107,15 @@ class webpdPatch():
 
         # template code
         if not insideaddAbstractions:
-            with open(os.path.join(self.PdWebCompilearPath, "src/template.c"), "r") as file:
+            with open(os.path.join(self.PdWebCompilerPath, "src/template.c"), "r") as file:
                 self.templateCode = file.readlines()
         else:
             with open("webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
 
         if not insideaddAbstractions:
-            if not os.path.exists(self.PdWebCompilearPath + "/.externals"):
-                os.mkdir(self.PdWebCompilearPath + "/.externals")
+            if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
+                os.mkdir(self.PdWebCompilerPath + "/.externals")
 
             if not os.path.exists("webpatch"):
                 os.mkdir("webpatch")
@@ -148,11 +153,11 @@ class webpdPatch():
 
         self.copyAllDataFiles()
 
-        shutil.copy(self.PdWebCompilearPath +
+        shutil.copy(self.PdWebCompilerPath +
                     "/src/index.html", "webpatch/index.html")
-        shutil.copy(self.PdWebCompilearPath +
+        shutil.copy(self.PdWebCompilerPath +
                     "/src/helpers.js", "webpatch/helpers.js")
-        shutil.copy(self.PdWebCompilearPath +
+        shutil.copy(self.PdWebCompilerPath +
                     "/src/enable-threads.js", "webpatch/enable-threads.js")
 
         self.getDynamicLibraries()
@@ -167,39 +172,39 @@ class webpdPatch():
 
 
     def downloadEmcc(self):
-        if not os.path.exists(self.PdWebCompilearPath + "/emsdk"):
+        if not os.path.exists(self.PdWebCompilerPath + "/emsdk"):
             emccGithub = "https://api.github.com/repos/emscripten-core/emsdk/tags"
             response = requests.get(emccGithub)
             responseJson = response.json()
             sourceCodeLink = responseJson[0]["zipball_url"]
             response = requests.get(sourceCodeLink)
             self.print("    Downloading emcc...", color="green")
-            with open(self.PdWebCompilearPath + "/emcc.zip", "wb") as file:
+            with open(self.PdWebCompilerPath + "/emcc.zip", "wb") as file:
                         file.write(response.content)
 
-            with zipfile.ZipFile(self.PdWebCompilearPath + "/emcc.zip", 'r') as zip_ref:
-                zip_ref.extractall(self.PdWebCompilearPath)
+            with zipfile.ZipFile(self.PdWebCompilerPath + "/emcc.zip", 'r') as zip_ref:
+                zip_ref.extractall(self.PdWebCompilerPath)
                 extractFolderName = zip_ref.namelist()[0]
-                os.rename(self.PdWebCompilearPath + "/" + extractFolderName, self.PdWebCompilearPath + "/emsdk")
+                os.rename(self.PdWebCompilerPath + "/" + extractFolderName, self.PdWebCompilerPath + "/emsdk")
 
             if platform.system() == "Windows":
-                subprocess.run([self.PdWebCompilearPath + "/emsdk/emsdk.bat", "install", "latest"])
-                subprocess.run([self.PdWebCompilearPath + "/emsdk/emsdk.bat", "activate", "latest"])
+                subprocess.run([self.PdWebCompilerPath + "/emsdk/emsdk.bat", "install", "latest"])
+                subprocess.run([self.PdWebCompilerPath + "/emsdk/emsdk.bat", "activate", "latest"])
             else:
                 os.environ["EMSDK_QUIET"] = "1"
-                os.system("chmod +x " + self.PdWebCompilearPath + "/emsdk/emsdk")
-                os.system(self.PdWebCompilearPath + "/emsdk/emsdk install latest")
-                os.system(self.PdWebCompilearPath + "/emsdk/emsdk activate latest")
+                os.system("chmod +x " + self.PdWebCompilerPath + "/emsdk/emsdk")
+                os.system(self.PdWebCompilerPath + "/emsdk/emsdk install latest")
+                os.system(self.PdWebCompilerPath + "/emsdk/emsdk activate latest")
                 
-                os.system("chmod +x " + self.PdWebCompilearPath + "/emsdk/emsdk_env.sh")
+                os.system("chmod +x " + self.PdWebCompilerPath + "/emsdk/emsdk_env.sh")
 
 
         if platform.system() == "Windows":
             subprocess.run(["set", "EMSDK_QUIET=1"], shell=True)
-            subprocess.run([self.PdWebCompilearPath + "/emsdk/emsdk_env.bat"], shell=True)
+            subprocess.run([self.PdWebCompilerPath + "/emsdk/emsdk_env.bat"], shell=True)
         else:
             os.environ["EMSDK_QUIET"] = "1"
-            subprocess.run([self.PdWebCompilearPath + "/emsdk/emsdk_env.sh"], shell=True)
+            subprocess.run([self.PdWebCompilerPath + "/emsdk/emsdk_env.sh"], shell=True)
 
             
     def downloadLibPd(self):
@@ -223,12 +228,12 @@ class webpdPatch():
                 self.print("    " + "Git is not installed, install it to proceed", color='red')
                 sys.exit(-1)
         
-        if not os.path.exists(self.PdWebCompilearPath + "/libpd"):
+        if not os.path.exists(self.PdWebCompilerPath + "/libpd"):
             self.print("    " + "Downloading libpd...", color='yellow')
-            os.mkdir(self.PdWebCompilearPath + "/libpd")
+            os.mkdir(self.PdWebCompilerPath + "/libpd")
             os.system("git clone https://github.com/charlesneimog/libpd.git " +
-                        f"{self.PdWebCompilearPath}/libpd")
-            os.system(f"cd {self.PdWebCompilearPath}/libpd && git switch emscripten-pd54 &&"
+                        f"{self.PdWebCompilerPath}/libpd")
+            os.system(f"cd {self.PdWebCompilerPath}/libpd && git switch emscripten-pd54 &&"
                       " git submodule init && git submodule update" + 
                       " && cd pure-data && git switch emscripten-pd54")
             
@@ -365,8 +370,7 @@ class webpdPatch():
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
         shutil.copy(abstractionfile, "webpatch/data")
-        self.print("    " + "Found Abstraction: " +
-                   abstractionfile.split("/")[-1], color='yellow')
+
 
     def copyAllDataFiles(self):
         if not os.path.exists("webpatch/data"):
@@ -450,7 +454,7 @@ class webpdPatch():
                 foundLibrary = self.downloadExternalLibrarySrc(
                     lineInfo.library)
                 if foundLibrary:
-                    for root, _, files in os.walk(self.PdWebCompilearPath + "/.externals/" + lineInfo.library):
+                    for root, _, files in os.walk(self.PdWebCompilerPath + "/.externals/" + lineInfo.library):
                         for file in files:
                             if file.endswith(".c") or file.endswith(".cpp"):
                                 self.searchCFunction(lineInfo, root, file)
@@ -593,8 +597,8 @@ class webpdPatch():
 
                 LibraryClass.PROJECT_ROOT = self.PROJECT_ROOT
 
-                if os.path.exists(os.path.join(os.getcwd(), self.PdWebCompilearPath + "/.externals/" + libraryName)):
-                    LibraryClass.folder = os.path.join(self.PdWebCompilearPath + "/.externals/" + libraryName)
+                if os.path.exists(os.path.join(os.getcwd(), self.PdWebCompilerPath + "/.externals/" + libraryName)):
+                    LibraryClass.folder = os.path.join(self.PdWebCompilerPath + "/.externals/" + libraryName)
                     return True
 
                 GithutAPI = PD_LIBRARIES.getDownloadURL(
@@ -621,23 +625,23 @@ class webpdPatch():
                 self.print("    Downloading " +
                       libraryName, color='yellow')
 
-                if not os.path.exists(self.PdWebCompilearPath + "/.externals"):
-                    os.mkdir(self.PdWebCompilearPath + "/.externals")
+                if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
+                    os.mkdir(self.PdWebCompilerPath + "/.externals")
 
-                with open(self.PdWebCompilearPath + "/.externals/" + libraryName + ".zip", "wb") as file:
+                with open(self.PdWebCompilerPath + "/.externals/" + libraryName + ".zip", "wb") as file:
                     file.write(response.content)
 
-                with zipfile.ZipFile(self.PdWebCompilearPath + "/.externals/" + libraryName + ".zip", 'r') as zip_ref:
-                    zip_ref.extractall(self.PdWebCompilearPath + "/.externals")
+                with zipfile.ZipFile(self.PdWebCompilerPath + "/.externals/" + libraryName + ".zip", 'r') as zip_ref:
+                    zip_ref.extractall(self.PdWebCompilerPath + "/.externals")
                     extractFolderName = zip_ref.namelist()[0]
-                    os.rename(self.PdWebCompilearPath + "/.externals/" + extractFolderName,
-                              self.PdWebCompilearPath + "/.externals/" + libraryName)
+                    os.rename(self.PdWebCompilerPath + "/.externals/" + extractFolderName,
+                              self.PdWebCompilerPath + "/.externals/" + libraryName)
 
                 LibraryClass.folder = os.path.join(
-                    os.getcwd(), self.PdWebCompilearPath + "/.externals/" + libraryName)
+                    os.getcwd(), self.PdWebCompilerPath + "/.externals/" + libraryName)
                 self.librariesFolder.append(os.path.join(
-                    os.getcwd(), self.PdWebCompilearPath + "/.externals/" + libraryName))
-                os.remove(self.PdWebCompilearPath + "/.externals/" + libraryName + ".zip")
+                    os.getcwd(), self.PdWebCompilerPath + "/.externals/" + libraryName))
+                os.remove(self.PdWebCompilerPath + "/.externals/" + libraryName + ".zip")
                 return True
 
             except Exception as e:
@@ -654,8 +658,8 @@ class webpdPatch():
             self.patch = os.path.join(os.getcwd(),  self.patch)
 
     def mkBackup(self):
-        if not os.path.exists(self.PdWebCompilearPath + "/.backup"):
-            os.mkdir(self.PdWebCompilearPath + "/.backup")
+        if not os.path.exists(self.PdWebCompilerPath + "/.backup"):
+            os.mkdir(self.PdWebCompilerPath + "/.backup")
         Hour = datetime.datetime.now().hour
         Minute = datetime.datetime.now().minute
         Day = datetime.datetime.now().day
@@ -665,7 +669,7 @@ class webpdPatch():
             str(Day) + "_" + str(Month) + "_" + \
             str(Hour) + "_" + str(Minute) + ".pd"
         try:
-            shutil.copy(self.patch, self.PdWebCompilearPath + "/.backup/" + backPatchName)
+            shutil.copy(self.patch, self.PdWebCompilerPath + "/.backup/" + backPatchName)
         except Exception as e:
             self.print("    " + str(e), color='red')
 
@@ -769,16 +773,16 @@ class webpdPatch():
         '''
 
         self.target = 'webpatch/libpd.js'
-        self.libpd_dir = self.PdWebCompilearPath + '/libpd'
+        self.libpd_dir = self.PdWebCompilerPath + '/libpd'
         self.src_files = 'webpatch/main.c'
         memory = 32 # we start with 32mb, for big patches you should increase this value
-        emcc = self.PdWebCompilearPath + '/emsdk/upstream/emscripten/emcc'
+        emcc = self.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc'
 
         command = [emcc,
                    "-I", "webpatch/includes/",
                    "-I", self.libpd_dir + '/pure-data/src/',
                    "-I", self.libpd_dir + '/libpd_wrapper/',
-                   "-L", self.PdWebCompilearPath + '/lib/compiled/',
+                   "-L", self.PdWebCompilerPath + '/lib/compiled/',
                    "-lpd",
                    "-O3",
                    "-s", f"INITIAL_MEMORY={memory}mb",
@@ -840,7 +844,11 @@ class webpdPatch():
         if isinstance(self.html, str):
             shutil.copy(self.html, "webpatch")
             
+        if self.args.server_port:
+            emrun = self.PdWebCompilerPath + f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} webpatch'
+            os.system(emrun)
 
+        sys.exit(0)
 
 if __name__ == "__main__":
     webpdPatch()
