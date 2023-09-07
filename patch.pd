@@ -1,7 +1,0 @@
-#N canvas 142 245 450 300 8;
-#X obj 74 25 osc~ 440;
-#X obj 74 46;
-#X obj 144 55 cyclone/cycle~ 440;
-#X obj 144 76 dac~;
-#X connect 0 0 1 0;
-#X connect 2 0 3 0;

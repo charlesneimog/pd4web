@@ -776,7 +776,10 @@ class webpdPatch():
         self.libpd_dir = self.PdWebCompilerPath + '/libpd'
         self.src_files = 'webpatch/main.c'
         memory = 32 # we start with 32mb, for big patches you should increase this value
-        emcc = self.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc'
+        if platform.system() == "Windows":
+            emcc = '"' + self.PdWebCompilearPath + '\\emsdk\\upstream\\emscripten\\emcc"'
+        else:
+            emcc = self.PdWebCompilearPath + '/emsdk/upstream/emscripten/emcc'
 
         command = [emcc,
                    "-I", "webpatch/includes/",
@@ -812,35 +815,41 @@ class webpdPatch():
         print("")
         self.print("    " + " ".join(command), color='blue')
         print("")
-        process = subprocess.Popen(
-            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-        _, stderr = process.communicate()
-        if stderr:
-            if "warning" in stderr:
-                # split by new line
-                stderr = stderr.split("\n")
-                for line in stderr:
-                    if "warning:" in line:
-                        print("")
-                        self.print("     " + line, color='yellow')
-                        print("")
-                    else:
-                        print("     " + line)
-            if "error" in stderr:
-                stderr = stderr.split("\n")
-                for line in stderr:
-                    if "error:" in line:
-                        print("")
-                        self.print("    " + line, color='red')
-                        print("")
-                        sys.exit(-1)
-                    else:
-                        self.print(line, color='red')
-            else:
-                self.print("    " + ("=" * 10) +
-                      " Compiled with success " + ("=" * 10), color='green')
+        
+        if platform.system() == "Windows":
+            os.system(" ".join(command))
+        
+        
+        else:
+            process = subprocess.Popen(
+                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+            _, stderr = process.communicate()
+            if stderr:
+                if "warning" in stderr:
+                    # split by new line
+                    stderr = stderr.split("\n")
+                    for line in stderr:
+                        if "warning:" in line:
+                            print("")
+                            self.print("     " + line, color='yellow')
+                            print("")
+                        else:
+                            print("     " + line)
+                if "error" in stderr:
+                    stderr = stderr.split("\n")
+                    for line in stderr:
+                        if "error:" in line:
+                            print("")
+                            self.print("    " + line, color='red')
+                            print("")
+                            sys.exit(-1)
+                        else:
+                            self.print(line, color='red')
+                else:
+                    self.print("    " + ("=" * 10) +
+                        " Compiled with success " + ("=" * 10), color='green')
 
-        process.wait()
+            process.wait()
         if isinstance(self.html, str):
             shutil.copy(self.html, "webpatch")
             
