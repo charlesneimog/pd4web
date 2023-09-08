@@ -38,7 +38,7 @@ pip install pd2wasm
 #### 3. Now, it is just to compile your patch
 
 ``` bash
-      pd2wasm --patch ./YOUR_PATCH.pd
+pd2wasm --patch ./YOUR_PATCH.pd
 ```
 
 ## Making a Pull Request
