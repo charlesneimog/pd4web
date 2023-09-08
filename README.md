@@ -72,7 +72,7 @@ pd2wasm --patch ./YOUR_PATCH.pd --server-port 8080
   <br>
 </p>
 
-Contributions to this repository are welcome! Here are the main areas you can contribute to:
+Join us in contributing to this repository! Explore the primary areas for your valuable contributions:
 
 * The `pd2wasm/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
 * The `pd2wasm/src/template.c`, used to PdWebCompiler to build the `main.c` file.
