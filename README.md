@@ -10,8 +10,8 @@
 
 <p align="center">
   <a href="https://github.com/charlesneimog/PdWebCompiler/releases/latest"><img src="https://img.shields.io/github/release/charlesneimog/PdWebCompiler?include_prereleases" alt="Release"></a>
-  <a href="https://img.shields.io/pypi/dm/pd2wasm"><img src="https://img.shields.io/pypi/dm/pd2wasm" alt="Downloads"></a>
-  <a href="https://img.shields.io/pypi/pyversions/pd2wasm"><img src="https://img.shields.io/pypi/pyversions/pd2wasm" alt="Version"></a>
+  <a href="https://pypistats.org/packages/pd2wasm"><img src="https://img.shields.io/pypi/dm/pd2wasm" alt="Downloads"></a>
+  <a href="https://pypistats.org/packages/pd2wasm"><img src="https://img.shields.io/pypi/pyversions/pd2wasm" alt="Version"></a>
 </p>
 
 <p align="center">
