@@ -326,7 +326,7 @@ class webpdPatch():
         for token in line.Tokens:
             if not "-" in token:
                 absName = token.replace(",", "") + ".pd"
-                for root, _, files in os.walk(self.PROJECT_ROOT):
+                for root, _, files in os.walk(self.PdWebCompilerPath):
                     for file in files:
                         if not file.endswith(".pd") and absName not in file:
                             continue
