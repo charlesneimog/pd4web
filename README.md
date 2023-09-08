@@ -10,14 +10,18 @@
 </p>
 
 
-
-
-**Introduction**
+<p align="center">
+  <h2 align="center">Intro</h2>
+  <br>
+</p>
 
 `PdWebCompiler` allows to run PureData patches in web browsers using Web Audio technologies. This tool stands out from other approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because it compiles the [libpd](https://github.com/libpd/libpd) source, this is possible mainly because of the work of [claudeha](https://github.com/claudeha). You can compile any PureData vanilla patch and most of the externals.
 
+<p align="center">
+  <h2 align="center">Already Supported Library Externals</h2>
+  <hr>
+</p>
 
-**Already Supported Library Externals**
 
 | Library   |          Not Supported       | Number of Objects | 
 |:---------:|:----------------------------:|:-----------------:|
@@ -32,7 +36,10 @@ So, for now, we have more than 800 supported externals objects.
 
 ------------------
 
-## Running Your Patch on the Internet
+<p align="center">
+  <h2 align="center">Running Your Patch on the Internet</h2>
+  <br>
+</p>
 
 To make your patch available online, follow these steps:
 
@@ -53,7 +60,10 @@ pip install pd2wasm
 pd2wasm --patch ./YOUR_PATCH.pd
 ```
 
-## Making a Pull Request
+<p align="center">
+  <h2 align="center">Making a Pull Request</h2>
+  <br>
+</p>
 
 Contributions to this repository are welcome! Here are the main areas you can contribute to:
 
