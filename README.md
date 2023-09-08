@@ -40,7 +40,7 @@ To make your patch available online, follow these steps:
 #### 2. Then Install pd2wasm (first-time setup)
 
 ``` bash
-  pip install pd2wasm
+pip install pd2wasm
 ```
 #### 3. Now, it is just to compile your patch
 
