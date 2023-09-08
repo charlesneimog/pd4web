@@ -4,6 +4,7 @@
 
 `PdWebCompiler` allows to run PureData patches in web browsers using Web Audio technologies. This tool stands out from other approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) because it compiles the [libpd](https://github.com/libpd/libpd) source, this is possible mainly because of the work of [claudeha](https://github.com/claudeha). You can compile any PureData vanilla patch and most of the externals.
 
+
 **Already Supported Library Externals**
 
 | Library   |          Not Supported       | Number of Objects | 
@@ -18,14 +19,6 @@ So, for now, we have more than 800 supported externals objects.
 * **Note**: Some objects, mainly due to dynamic libraries, are not supported yet. Feel free to submit a Pull Request to add support for them.
 
 ------------------
-
-## Making a Pull Request
-
-Contributions to this repository are welcome! Here are the main areas you can contribute to:
-
-* The `pd2wasm/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
-* The `pd2wasm/src/template.c`, used to PdWebCompiler to build the `main.c` file.
-* The `pd2wasm/resources/PdWebCompiler.py`, which configures the `main.c` file.
 
 ## Running Your Patch on the Internet
 
@@ -48,4 +41,10 @@ pip install pd2wasm
       pd2wasm --patch ./YOUR_PATCH.pd
 ```
 
+## Making a Pull Request
 
+Contributions to this repository are welcome! Here are the main areas you can contribute to:
+
+* The `pd2wasm/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
+* The `pd2wasm/src/template.c`, used to PdWebCompiler to build the `main.c` file.
+* The `pd2wasm/resources/PdWebCompiler.py`, which configures the `main.c` file.
