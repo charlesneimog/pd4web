@@ -1,0 +1,99 @@
+name: Tests
+on:
+  workflow_dispatch:
+
+
+jobs:  
+  # ==============================================================================
+  # =                               WINDOWS                                      =
+  # ==============================================================================
+  windows-build:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install pd2wasm
+      run: |
+        pip install pd2wasm
+  
+    - name: Tests
+      run: |
+        cd pd2wasm/tests/externals
+        pd2wasm --patch ./patch.pd
+        cd ../simplepatch
+        pd2wasm --patch ./patch.pd
+        cd ../static-libs
+        pd2wasm --patch ./patch.pd
+
+
+  # ==============================================================================
+  # =                               MAC INTEL                                    =
+  # ==============================================================================
+  macos-intel-build:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        fetch-depth: 0
+
+
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install pd2wasm
+      run: |
+        pip install pd2wasm
+
+    - name: Tests
+      run: |
+        cd pd2wasm/tests/externals
+        pd2wasm --patch ./patch.pd
+        cd ../simplepatch
+        pd2wasm --patch ./patch.pd
+        cd ../static-libs
+        pd2wasm --patch ./patch.pd
+      
+
+  # ==============================================================================
+  # =                               LINUX                                        =
+  # ==============================================================================
+
+  linux-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'       
+         
+      - name: Install pd2wasm
+        run: |
+          pip install pd2wasm
+
+      - name: Test pd2wasm
+        run: |
+          pd2wasm --help
+
+      - name: Tests
+        run: |
+          cd pd2wasm/tests/externals
+          pd2wasm --patch ./patch.pd
+          cd ../simplepatch
+          pd2wasm --patch ./patch.pd
+          cd ../static-libs
+          pd2wasm --patch ./patch.pd

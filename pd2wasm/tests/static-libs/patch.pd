@@ -1,0 +1,14 @@
+#N canvas 651 197 450 488 8;
+#X declare -lib timbreIDLib;
+#X obj 19 4 declare -lib timbreIDLib;
+#X obj 42 46 osc~ 440;
+#X obj 42 115 timbreIDLib/energy~ 1024;
+#X obj 42 136 print;
+#X obj 107 30 loadbang;
+#X obj 102 65 metro 1000;
+#X obj 161 46 bng 15 250 50 0 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 4 0 5 0;
+#X connect 5 0 2 0;
+#X connect 6 0 5 0;

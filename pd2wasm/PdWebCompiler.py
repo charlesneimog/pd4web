@@ -42,6 +42,9 @@ class webpdPatch():
 
         parser.add_argument('--server-port', required=False,
                             default=False, help='Set the port to start the server')
+        
+        parser.add_argument('--gui', required=False,
+                            default=False, help='Set the port to start the server')
 
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.0.6')
@@ -71,6 +74,7 @@ class webpdPatch():
                     insideaddAbstractions=insideaddAbstractions)
             else:
                 print("Bye Bye!")
+
 
     def main(self, pdpatch=None, insideaddAbstractions=False):
         if pdpatch is not None:
