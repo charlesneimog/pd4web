@@ -35,7 +35,7 @@ To make your patch available online, follow these steps:
 
 * **Linux**: `apt install python3.11`, `dnf install python3.11`, etc.
 * **MacOS**: Download and install Python from the [Python website](https://www.python.org/downloads/release/python-3115/).
-* **Windows**: `winget install -e --id Python.Python.3.11`.
+* **Windows**: `winget install -e --id Python.Python.3.11` or go to [Python website](https://www.python.org/downloads/release/python-3115/)
 
 #### 2. Then Install pd2wasm (first-time setup)
 
