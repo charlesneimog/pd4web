@@ -106,12 +106,16 @@ class PD_SUPPORTED_EXTERNALS:
 
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
-            print("\033[95m" + f"    Executing {UsedLibrary.extraFunc} function" + "\033[0m")
+            print("\033[95m" + f"    Executing extra configs for {UsedLibrary.name}")
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
             executedFunction = f"{extraFunctionStr}" + '(libraryClass)'
             exec(executedFunction)
-            return libraryClass.extraFlags
+            if libraryClass:
+                return libraryClass.extraFlags
+            else:
+                return []
+
     def __repr__(self) -> str:
 
         return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
