@@ -4,3 +4,4 @@ dist/
 .externals/
 webpatch/
 compile_commands.json
+pyrightconfig.json
