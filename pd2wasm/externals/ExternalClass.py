@@ -19,6 +19,7 @@ class PureDataExternals:
         self.name = library['name']
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
+        self.webpdPatch = None
         try:
             self.repoAPI = library['download_source']
         except:
