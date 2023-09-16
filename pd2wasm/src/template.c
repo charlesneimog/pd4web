@@ -215,6 +215,12 @@ EM_JS(int, GetAudioSampleRate, (EMSCRIPTEN_WEBAUDIO_T audioContext), {
 
 
 // ========================================
+EM_JS(void, LoadFinished, (void), {
+    var soundIcon = document.getElementById("SoundIcon");
+    soundIcon.className = "fa-solid fa-volume-xmark fa-2x";
+});
+
+// ========================================
 EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode), {
     audioContext = emscriptenGetAudioObject(audioContext);
     audioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
@@ -239,14 +245,6 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
         }
     };
 
-    // create button to print the audio context state
-    const printButton = document.getElementById("Print-Audio-Context-Button");
-    printButton.onclick = () => {
-        console.log("AudioContext state: " + audioContext.state);
-    };
-
-    console.log(audioContext);
-    console.log(audioWorkletNode);
 
     audioWorkletNode.onprocessorerror = (event) => {
         alert(event);
@@ -328,10 +326,6 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
             }
         };
         startButtonMic.addEventListener("click", clickListenerMic);
-        const AudioNoteLatency = document.getElementById("Latency-AudioNode");
-        const Latency_Output = document.getElementById("Latency-Output");
-        AudioNoteLatency.innerHTML = "Latency for AudioProcessing " + Math.floor(audioContext.baseLatency * 1000) + " ms";
-        Latency_Output.innerHTML = "Latency for Output " + Math.floor(audioContext.outputLatency * 1000) + " ms";
     }
     
     
@@ -390,6 +384,9 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     if (!libpd_openfile("index.pd", "webpatch/data")){
         printf("Failed to open patch\n");
     }
+
+    // Add sound off button
+    LoadFinished();
 }
 
 // ========================================
