@@ -22,6 +22,11 @@ class webpdPatch():
                  insideaddAbstractions=False, runMain=True) -> None:
         self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
 
+        if runMain and  not insideaddAbstractions:
+            if os.path.exists("webpatch"):
+                shutil.rmtree("webpatch")
+
+
         if not insideaddAbstractions:
             self.downloadEmcc()
             self.downloadLibPd()
@@ -42,12 +47,15 @@ class webpdPatch():
 
         parser.add_argument('--server-port', required=False,
                             default=False, help='Set the port to start the server')
+
+        parser.add_argument('--initial-memory', required=False,
+                            default=32, help='Set the initial memory of the WebAssembly in MB')
         
         parser.add_argument('--gui', required=False,
                             default=False, help='Set the port to start the server')
 
         parser.add_argument('--version', action='version',
-                            version='%(prog)s 1.0.6')
+                            version='%(prog)s 1.0.8')
 
         self.args = parser.parse_args()
 
@@ -58,6 +66,7 @@ class webpdPatch():
         self.uiReceiversSymbol = []
         self.insideaddAbstractions = insideaddAbstractions
         self.lastPrintedLine = ""
+        self.memory = self.args.initial_memory
         self.extraFlags = []
         self.externalsDict = {}
 
@@ -114,7 +123,6 @@ class webpdPatch():
         self.PROJECT_ROOT = os.getcwd()
         self.processedAbstractions = []
 
-        # self.print("=== " + self.PROJECT_ROOT + " ===", color="yellow")
 
         # template code
         if not insideaddAbstractions:
@@ -154,15 +162,14 @@ class webpdPatch():
         self.findExternals()
         self.cfgExternals()
         self.addObjSetup()
-        if not insideaddAbstractions:
-            self.savePdPatchModified()
+        
+        self.savePdPatchModified()
 
         self.saveMainFile()
         self.extraFunctions()
         if not insideaddAbstractions:
+            self.copyAllDataFiles()
             self.addAbstractions()
-
-        self.copyAllDataFiles()
 
         shutil.copy(self.PdWebCompilerPath +
                     "/src/index.html", "webpatch/index.html")
@@ -725,7 +732,14 @@ class webpdPatch():
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
 
-        with open('webpatch/data/index.pd', "w") as file:
+
+        if self.insideaddAbstractions:
+            PatchFile = self.patch
+
+        else:
+            PatchFile = 'webpatch/data/index.pd'
+
+        with open(PatchFile, "w") as file:
             finalPatch = []
             thereIsAbstraction = False
             for obj in self.PatchLinesExternalFound:
@@ -753,14 +767,20 @@ class webpdPatch():
                     newLine = " ".join(newLine)
                     file.write(newLine)
 
+
     def extraFunctions(self):
         '''
         This function will execute the second argument
         '''
         for usedLibrary in PD_LIBRARIES.UsedLibraries:
+            usedLibrary.webpdPatch = self
             if usedLibrary.name in self.externalsDict:
                 usedLibrary.UsedSourceFiles = self.externalsDict[usedLibrary.name]
+            
+            if usedLibrary.extraFuncExecuted == True:
+                continue
 
+            
             extraFlags = PD_LIBRARIES.executeExtraFunction(usedLibrary)
             if extraFlags is not None:
                 for flag in extraFlags:
@@ -826,7 +846,7 @@ class webpdPatch():
         self.target = 'webpatch/libpd.js'
         self.libpd_dir = self.PdWebCompilerPath + '/libpd'
         self.src_files = 'webpatch/main.c'
-        memory = 32  # we start with 32mb, for big patches you should increase this value
+        memory = self.memory
         if platform.system() == "Windows":
             emcc = '"' + self.PdWebCompilerPath + '\\emsdk\\upstream\\emscripten\\emcc"'
             command = [emcc,
