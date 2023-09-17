@@ -51,8 +51,8 @@ class webpdPatch():
         parser.add_argument('--initial-memory', required=False,
                             default=32, help='Set the initial memory of the WebAssembly in MB')
         
-        parser.add_argument('--gui', required=False,
-                            default=False, help='Set the port to start the server')
+        # parser.add_argument('--gui', required=False,
+                            # default=False, help='Set the port to start the server')
 
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.0.8')
@@ -110,6 +110,33 @@ class webpdPatch():
             self.source = os.getcwd() + "/" + self.source
             self.PROJECT_ROOT = absolutePath
             os.chdir(absolutePath)
+
+        else:
+            self.PROJECT_ROOT = os.getcwd()
+
+        print(self.PROJECT_ROOT + "/webpatch")
+
+        # if self.patch not exist look recursively in subfolders
+        if not os.path.exists(self.patch):
+            notFound = True
+            # look inside subfolders of the PROJECT_ROOT
+            for root, _, files in os.walk(self.PROJECT_ROOT):
+                for file in files:
+                    if not file.endswith(".pd"):
+                        continue
+
+                    if file != patchFileName:
+                        continue
+
+                    self.patch = os.path.join(root, file)
+                    notFound = False
+                    break
+            
+                
+            if notFound:
+                self.print("    " + "Patch not found", color='red')
+                sys.exit(-1)
+
 
         with open(self.patch, "r") as file:
             self.PatchLines = file.readlines()
@@ -280,10 +307,10 @@ class webpdPatch():
             self.print("    " + "Downloading libpd...", color='yellow')
             os.mkdir(self.PdWebCompilerPath + "/libpd")
             os.system("git clone https://github.com/charlesneimog/libpd.git " +
-                      f"{self.PdWebCompilerPath}/libpd")
+                      f"{self.PdWebCompilerPath}/libpd --recursive")
             os.system(f"cd {self.PdWebCompilerPath}/libpd && git switch emscripten-pd54 &&"
                       " git submodule init && git submodule update" +
-                      " && cd pure-data && git switch emscripten-pd54")
+                      " && cd pure-data && git submodule init && git submodule update && git switch emscripten-pd54")
 
     def getValue(self, dictionary, key):
         if key in dictionary:
@@ -420,9 +447,19 @@ class webpdPatch():
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
 
-        for root, _, files in os.walk("extra"):
-            for file in files:
-                shutil.copy(os.path.join(root, file), "webpatch/data")
+        for folderName in ["extra", "Extras", "Audios", "libs", "Abstractions"]:
+            if not os.path.exists(folderName):
+                continue
+
+            if folderName != "Extras":
+                shutil.copytree(folderName, "webpatch/data/" + folderName)
+            else:
+                shutil.copytree(folderName, "webpatch/Extras")
+
+            # for root, _, files in os.walk(folderName):
+                # for file in files:
+                    # shutil.copy(os.path.join(root, file), "webpatch/data")
+
 
     def checkIfIsSupportedObject(self, patchLine):
         pdClass = patchLine[1]
