@@ -181,13 +181,11 @@ static void receiveSymbolfromPd(const char *receiver, const char *thing) {
     InsertSymbol(receiverHash, (char*)receiver, (char*)thing);
 }
 
-// ======================================= 
+// ========================================
 // to remove warning about not defined
 void sys_gui_midipreferences(void) {
     return;
 }
-
-
 
 // ========================================
 // ============= WEB AUDIO ================
@@ -359,6 +357,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     EMSCRIPTEN_AUDIO_WORKLET_NODE_T wasmAudioWorklet = emscripten_create_wasm_audio_worklet_node(audioContext, 
                                                             "libpd-processor", &options, &ProcessPdPatch, 0); 
     AddUIButtons(audioContext, wasmAudioWorklet);
+    printf("PdWebCompiler version 1.0.8");
 
 
     libpd_set_floathook(receiveFloatfromPd);
@@ -376,6 +375,9 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
         libpd_bind(HTML_IDS[i]);
     }
 
+    // add webpatch/data to the search path
+    libpd_add_to_search_path("webpatch/data");
+
     libpd_start_message(1); 
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
@@ -384,6 +386,10 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     if (!libpd_openfile("index.pd", "webpatch/data")){
         printf("Failed to open patch\n");
     }
+
+    
+
+
 
     // Add sound off button
     LoadFinished();
