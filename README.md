@@ -45,7 +45,7 @@ The project is very recent, so can be very hard breaking changes for sometime.
 
 So, for now, we have more than 800 supported externals objects.
 
-* **Note**: Some objects, mainly due to dynamic libraries, are not supported yet. Feel free to submit a Pull Request to add support for them.
+* **Note**: Some objects, mainly due to dynamic libraries or GUI componets, are not supported yet. Feel free to submit a Pull Request to add support for them.
 
 <p align="center">
   <h2 align="center">Running Your Patch on the Internet</h2>
