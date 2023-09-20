@@ -236,9 +236,7 @@ Once you finish to compile the patch sucefully. The final step is to put it onli
 
 If you don't have any website, you can use the free github pages. It provides one website with the `<yourusername>.github.io`, for example, my user name is `charlesneimog` so my website will be `charlesneimog.github.io`. If you are one completly noob, you can use VsCode to do that. See the video below:
 
-<p align="center" style="border-radius: 5px">
-        <iframe style="border-radius: 5px" width="560" height="315" src="https://www.youtube.com/embed/MorVMzsVEk4" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-    </p>
+<h2 style="text-align: center"> I will upload one video soon!</h2>
 
 I hope that is can be usefull.
 
