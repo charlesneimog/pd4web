@@ -62,6 +62,7 @@ class webpdPatch():
         self.FoundExternals = False
         self.html = False
         self.source = sourcefile
+        self.sortedSourceFiles = [] # case there is some files that need to be compiled in order
         self.clearTmpFiles = self.args.clearTmpFiles
         self.uiReceiversSymbol = []
         self.insideaddAbstractions = insideaddAbstractions
@@ -114,7 +115,6 @@ class webpdPatch():
         else:
             self.PROJECT_ROOT = os.getcwd()
 
-        print(self.PROJECT_ROOT + "/webpatch")
 
         # if self.patch not exist look recursively in subfolders
         if not os.path.exists(self.patch):
@@ -685,8 +685,7 @@ class webpdPatch():
                         self.PdWebCompilerPath + "/.externals/" + libraryName)
                     return True
 
-                GithutAPI = PD_LIBRARIES.getDownloadURL(
-                    LibraryClass, self.downloadSources)
+                GithutAPI = PD_LIBRARIES.getDownloadURL(LibraryClass, self.downloadSources)
                 if GithutAPI is None:
                     self.print(
                         "    LibURL is not a string or None", color='red')
@@ -926,14 +925,20 @@ class webpdPatch():
             command.insert(10 + indexFlag, flag)
             indexFlag += 1
 
-        command.append(self.src_files)
-        command.append("-o")
-        command.append(self.target)
-
         for root, _, files in os.walk("webpatch/externals"):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
                     command.append(os.path.join(root, file))
+
+
+        for source in self.sortedSourceFiles:
+            command.append(source)
+
+
+        command.append(self.src_files)
+        command.append("-o")
+        command.append(self.target)
+
 
         print("")
         self.print("    " + " ".join(command), color='blue')

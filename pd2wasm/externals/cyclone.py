@@ -25,17 +25,6 @@ def cyclone_extra(librarySelf):
         librarySelf.webpdPatch.print("Coll object is not supported yet", color="red")
         shutil.copy("webpatch/includes/common/file.c", "webpatch/externals/file.c")
 
-    elif 'sfz~' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("sfz~ object is not supported yet", color="red")
-
-    elif 'sfont~' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("sfont~ object is not supported yet", color="red")
-
-    elif 'plaits~' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("plaits~ object is not supported yet", color="red")
-
-
-
     librarySelf.extraFuncExecuted = True
 
 
