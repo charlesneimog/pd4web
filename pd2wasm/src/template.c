@@ -231,6 +231,10 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
         if (iconElement.classList.contains("fa-volume-xmark")) {
             iconElement.classList.remove("fa-volume-xmark");
             iconElement.classList.add("fa-volume-high");
+            if (iconElement.classList.contains("fa-bounce")){
+                iconElement.classList.remove("fa-bounce");
+            }
+
             if (audioContext.state === "suspended")
                 audioContext.resume();
             audioWorkletNode.connect(audioContext.destination);
@@ -254,7 +258,8 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
     inputDeviceSelect.addEventListener("change", async () => {
         const iconElement = document.getElementById("SoundIcon");
         iconElement.classList.remove("fa-volume-high");
-        iconElement.classList.add("fa-volume-xmark fa-bounce"); 
+        iconElement.classList.add("fa-volume-xmark"); 
+        iconElement.classList.add("fa-bounce");
         if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
         || outputDeviceSelect.value === "default") {
             if (audioContext.state === "running")
