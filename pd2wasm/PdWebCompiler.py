@@ -19,7 +19,7 @@ PROCESSED_ABSTRACTIONS = []
 
 class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None,
-                 insideaddAbstractions=False, runMain=True) -> None:
+                 insideaddAbstractions=False, runMain=True, parent=[]) -> None:
         self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
 
         if runMain and  not insideaddAbstractions:
@@ -61,6 +61,7 @@ class webpdPatch():
 
         self.FoundExternals = False
         self.html = False
+        self.parent = parent
         self.source = sourcefile
         self.sortedSourceFiles = [] # case there is some files that need to be compiled in order
         self.clearTmpFiles = self.args.clearTmpFiles
@@ -115,7 +116,6 @@ class webpdPatch():
         else:
             self.PROJECT_ROOT = os.getcwd()
 
-
         # if self.patch not exist look recursively in subfolders
         if not os.path.exists(self.patch):
             notFound = True
@@ -132,7 +132,6 @@ class webpdPatch():
                     notFound = False
                     break
             
-                
             if notFound:
                 self.print("    " + "Patch not found", color='red')
                 sys.exit(-1)
@@ -206,6 +205,13 @@ class webpdPatch():
                     "/src/enable-threads.js", "webpatch/enable-threads.js")
 
         self.getDynamicLibraries()
+
+
+        if insideaddAbstractions:
+            for sourceFile in self.sortedSourceFiles:
+                self.parent.sortedSourceFiles.append(sourceFile)
+            
+
 
         if not insideaddAbstractions:
             self.emccCompile()
@@ -478,8 +484,6 @@ class webpdPatch():
             if len(patchLine.Tokens) < 5:
                 continue
 
-            # here for especial objects (externals, not supported objects,
-            # abstractions)
             objName = patchLine.Tokens[4].replace(
                 "\n", "").replace(";", "").replace(",", "")
 
@@ -489,18 +493,25 @@ class webpdPatch():
                     and "/" in patchLine.Tokens[4]) and objName != "/":
                 patchLine.isExternal = True
                 patchLine.library = patchLine.Tokens[4].split("/")[0]
-                patchLine.name = patchLine.Tokens[4].split(
-                    "/")[1].replace("\n", "").replace(";", "").replace(",", "")
-                patchLine.objGenSym = 'class_new(gensym("' + patchLine.Tokens[4].split("/")[
-                    1].replace("\n", "").replace(";", "") + '")'
+                patchLine.name = objName.split("/")[-1]
+                patchLine.objGenSym = 'class_new(gensym("' + objName + '")'
+                absPath = self.PROJECT_ROOT + "/" + patchLine.library + "/" + patchLine.name + ".pd"
+                if os.path.exists(absPath):
+                    patchLine.isAbstraction = True
+                    patchLine.objFound = True
+                    patchLine.isExternal = False
 
             elif self.checkIsObjIsSingle(patchLine.Tokens):
                 patchLine.isExternal = True
-                patchLine.library = patchLine.Tokens[4].replace(
-                    ";", "").replace("\n", "").replace(",", "")
+                patchLine.library =  objName
                 patchLine.name = patchLine.library
+                # check if is abstraction, if it is, should be some patchLine.name.pd in the folder
+                if os.path.exists(patchLine.library + ".pd"):
+                    self.print("It is an abstraction", color='red')
+
                 patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
                 patchLine.singleObject = True
+
 
             elif ("s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]):
                 receiverSymbol = patchLine.Tokens[5].replace(
@@ -509,13 +520,12 @@ class webpdPatch():
                     patchLine.uiReceiver = True
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
-                patchLine.name = patchLine.Tokens[4].replace(
-                    ";", "").replace("\n", "")
+                patchLine.name = objName
 
             else:
-                patchLine.name = patchLine.Tokens[4].replace(
-                    ";", "").replace("\n", "")
+                patchLine.name = objName
 
+            # TODO: Print object here
             self.searchForSpecialObject(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternalFound.append(patchLine)
@@ -768,7 +778,6 @@ class webpdPatch():
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
 
-
         if self.insideaddAbstractions:
             PatchFile = self.patch
 
@@ -784,11 +793,11 @@ class webpdPatch():
                     patchLineList = patchLine.split(" ")
                     patchLineList[4] = patchLineList[4].split("/")[1]
                     finalPatch.append(patchLineList)
-                elif obj.isAbstraction:
-                    patchLine = obj.patchLine
-                    patchLineList = patchLine.split(" ")
-                    patchLineList[4] = patchLineList[4].split("/")[1]
-                    finalPatch.append(patchLineList)
+                # elif obj.isAbstraction:
+                    # patchLine = obj.patchLine
+                    # patchLineList = patchLine.split(" ")
+                    # patchLineList[4] = patchLineList[4].split("/")[1]
+                    # finalPatch.append(patchLineList)
                     thereIsAbstraction = True
                 else:
                     patchLineList = obj.patchLine.split(" ")
@@ -839,7 +848,7 @@ class webpdPatch():
                 file.write(" ".join(line))
 
     def addAbstractions(self):
-        # list all files in webpatch/data
+        
         before_files = os.listdir("webpatch/data")
         for dir, _, files in os.walk("webpatch/data"):
             for patchfile in files:
@@ -849,7 +858,8 @@ class webpdPatch():
                         webpdPatch(sourcefile="webpatch/main.c",
                                    pdpatch="webpatch/data/" + patchfile,
                                    insideaddAbstractions=True,
-                                   runMain=True)
+                                   runMain=True, 
+                                   parent=self)
                         self.removeLibraryPrefix(dir + "/" + patchfile)
                         PROCESSED_ABSTRACTIONS.append(patchfile)
                     
@@ -861,6 +871,14 @@ class webpdPatch():
 
     def getDynamicLibraries(self):
         '''
+        Configures dynamic libraries for compilation.
+
+        This method iterates through the list of used libraries in the `PD_LIBRARIES.UsedLibraries`
+        and checks if they require dynamic libraries specified in Externals.yaml. If dynamic libraries are required, it attempts
+        to locate and configure them using the supported libraries in `DYNAMIC_LIBRARIES`.
+
+        This method provides a way to configure dynamic libraries necessary for building a project
+        with external dependencies.
 
         '''
         for library in PD_LIBRARIES.UsedLibraries:
@@ -873,6 +891,7 @@ class webpdPatch():
                     except BaseException:
                         self.print("    " + "Could not find " +
                                    dyn_library, color='red')
+
 
     def emccCompile(self):
         '''
