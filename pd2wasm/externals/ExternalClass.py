@@ -100,6 +100,7 @@ class PD_SUPPORTED_EXTERNALS:
 
         else:
             try:
+                print("LINK: ", supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName))
                 return supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName)
             except:
                 return None

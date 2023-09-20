@@ -3,7 +3,10 @@ hide:
   - toc
 ---
 
-# How to Compile Your Patch
+# Patch Compilation Guide
+ 
+<p style="text-align: center"> This guide introduce step by step the process of compiling your PureData patches. </p>
+
 
 ## <h3 style="text-align: center"><b>Installing Dependencies</b></h3>
 

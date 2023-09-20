@@ -41,3 +41,9 @@ SupportedLibraries:
     extraFunction: timbreID_extra
     dynamicLibraries: ['fftw3']
 
+  - name: pmpd
+    download_source: GITHUB_RELEASES
+    repoUser: avilleret 
+    repoName: pd-pmpd
+    extraFunction: pmpd_extra
+
