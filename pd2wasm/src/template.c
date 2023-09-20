@@ -254,7 +254,7 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
     inputDeviceSelect.addEventListener("change", async () => {
         const iconElement = document.getElementById("SoundIcon");
         iconElement.classList.remove("fa-volume-high");
-        iconElement.classList.add("fa-volume-xmark");
+        iconElement.classList.add("fa-volume-xmark fa-bounce"); 
         if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
         || outputDeviceSelect.value === "default") {
             if (audioContext.state === "running")
