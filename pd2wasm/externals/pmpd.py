@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 
 def pmpd_extra(librarySelf):
@@ -28,13 +29,12 @@ def pmpd_extra(librarySelf):
                 shutil.copy(os.path.join(root, file), os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes", "pmpd3d.h"))
 
 
-    emCmake = librarySelf.webpdPatch.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcmake'
+    emCmake = librarySelf.webpdPatch.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcmake cmake '
     # make the build folder
     if not os.path.exists(os.path.join(folder, "build")):
         os.makedirs(os.path.join(folder, "build"))
 
-    # emcmake -B /home/neimog/miniconda3/lib/python3.10/site-packages/pd2wasm/.externals/pmpd/build /path/to/source/code
-    os.system(f"{emCmake} -B {os.path.join(folder, 'build')} {folder}")
+    os.system(f"{emCmake} -B {os.path.join(folder, 'build')} {folder} -Wno-dev")
 
     # from the build folder, copy pmpd_export.h to includes folder
     shutil.copy(os.path.join(folder, "build", "pmpd_export.h"), 
