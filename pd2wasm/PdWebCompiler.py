@@ -84,10 +84,11 @@ class webpdPatch():
                     pdpatch=pdpatch,
                     insideaddAbstractions=insideaddAbstractions)
             else:
-                print("Bye Bye!")
+                self.print("Bye Bye!", color="green")
 
 
     def main(self, pdpatch=None, insideaddAbstractions=False):
+
         if pdpatch is not None:
             self.patch = pdpatch
         else:
@@ -101,9 +102,14 @@ class webpdPatch():
                 absolutePath = os.path.dirname(os.path.abspath(
                     os.path.join(os.getcwd(), self.args.html)))
                 self.html = os.getcwd() + "/" + self.args.html
+                # check if name of the file is index.html
         else:
-
             self.html = self.PdWebCompilerPath + "/src/index.html"
+
+
+        if "index.html" not in str(self.html) and insideaddAbstractions:
+            self.print("    The name of your html is not index.html, we will copy one index.html for webpatch!", color="red")
+
 
         if not os.path.isabs(self.patch) and not insideaddAbstractions:
             absolutePath = os.path.dirname(os.path.abspath(
@@ -119,7 +125,7 @@ class webpdPatch():
         # if self.patch not exist look recursively in subfolders
         if not os.path.exists(self.patch):
             notFound = True
-            # look inside subfolders of the PROJECT_ROOT
+            # look inside folders of the PROJECT_ROOT
             for root, _, files in os.walk(self.PROJECT_ROOT):
                 for file in files:
                     if not file.endswith(".pd"):
@@ -133,8 +139,8 @@ class webpdPatch():
                     break
             
             if notFound:
-                self.print("    " + "Patch not found", color='red')
-                sys.exit(-1)
+                self.print("Patch not found: The current folder is " + str(os.getcwd()), color="red")
+                sys.exit(0)
 
 
         with open(self.patch, "r") as file:
@@ -146,7 +152,7 @@ class webpdPatch():
         self.getSupportedLibraries()
         # ==============
 
-        self.PROJECT_ROOT = os.getcwd()
+        self.PROJECT_ROOT = os.getcwd() # command line
         self.processedAbstractions = []
 
 
@@ -206,19 +212,14 @@ class webpdPatch():
 
         self.getDynamicLibraries()
 
-
         if insideaddAbstractions:
             for sourceFile in self.sortedSourceFiles:
                 self.parent.sortedSourceFiles.append(sourceFile)
             
-
-
         if not insideaddAbstractions:
             self.emccCompile()
-
         if not insideaddAbstractions:
             print("")
-
         return True
 
     def downloadEmcc(self):
