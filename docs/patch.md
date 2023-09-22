@@ -3,14 +3,14 @@ hide:
   - toc
 ---
 
-# Patch Compilation Guide
+# PureData Online: Step-by-Step Guide
  
 <p style="text-align: center"> This guide introduce step by step the process of compiling your PureData patches. </p>
 
 
-## <h3 style="text-align: center"><b>Installing Dependencies</b></h3>
+## <h2 style="text-align: center"><b>Installing Dependencies</b></h2>
 
-To compile your patch, you need to have Git, Python, and `pd2wasm` installed. Begin by installing Git and Python, and then proceed to install `pd2wasm`.
+<p style="text-align: center"> To compile your patch, you need to install <code>Git</code>, <code>Python</code>, and <code>pd2wasm</code>. Below we have instructions for all the main plataforms, follow the steps for your plataform.</p>
 
 --------------------------
 ### <h3 style="text-align: center"><b>Git</b></h3>
@@ -155,15 +155,17 @@ It must install a lot of things. Wait for it. Finnaly run `pd2wasm --help` again
 
 Now you can compile your patches! If it not work, you can buy support in <a href="https://ko-fi.com/s/13200c3cd6" target="_blank">Ko-Fi</a>.
  
+ 
 -----------------------------------
-## <h3 style="text-align: center"><b>Compiling the patch</b></h3>
+## <h2 style="text-align: center"><b>Make your patch</b></h2>
 -----------------------------------
 
+Here, I will explain some considerations for starting a new Project using `PdWebCompiler`.
 
-<p style="text-align: center"> To compile you <code>Pd</code> patch I highly recommend the use of a specific way to organize your Project.</p>
-------------------------------
 
-#### Folder structure
+#### Folder Structure
+
+I recommend using the file structure shown below. Be careful with upper and lower case letters.
 
 !!! folder "Folder Organization"
     ```
@@ -171,7 +173,7 @@ Now you can compile your patches! If it not work, you can buy support in <a href
     └── Audios/
         ├── AllMyAudioFiles.wav
         └── AllMyAudioFiles.aif
-    └── libs/
+    └── Libs/
         ├── pdAbstraction1.pd
         └── pdAbstraction2.pd
     └── Extras/
@@ -182,44 +184,85 @@ Now you can compile your patches! If it not work, you can buy support in <a href
 
 * In the `Audios` folder, you should place audio files. 
 
-* In the `libs` folder, you can store abstractions, text files, or any other relevant items. 
+* In the `Libs` folder you store abstractions, text files, or any other relevant items.
 
-* In the `Extras` folder, you should place items that are not intended for PureData but will be utilized to enhance the website's appearance. For instance, I use this folder to store `.svg` files of my scores, which I then display in the pieces below.
-
-> <h4><a href="charlesneimog.github.io/Compiled-I" target="_blank">Compiled I</a></h4>
+* In the `Extras` folder, you should place items that are not intended for PureData but will be utilized to enhance the website's appearance. For instance, I use this folder to store `.svg` files of my scores, which I then display in the piece work in progress <a href="charlesneimog.github.io/Compiled-I" target="_blank">Compiled I.</a>
 
 ---------------------
-#### Build your patch
+#### Rules to follow
 
 There is some rules that you need to follow to `pd2wasm` work properly. 
 
 ---------------------
-!!! pd2wasm-rule "RULE #1"
+=== "Rule 1: Externals"
 
-    <h3 style="text-align: center">Always use the library name in the object. So, don't type `counter` object, type `cyclone/counter`. </h3>
-    
-This is how, for now, `pd2wasm` find what object is external what object is embbedded in PureData. There is some automatic work around externals. 
+    !!! pd2wasm-rule "RULE #1"
 
+        <h3 style="text-align: center">Always use the library name in the object. So, don't type `counter` object, type `cyclone/counter`. </h3>
+        
+    This is how, for now, `pd2wasm` find the objects that are externals or embbedded in PureData. There is some automatic work around externals.
+
+=== "Rule 2: Browser Console"
+
+    !!! pd2wasm-rule "RULE #2"
+
+        <h3 style="text-align: center">Always check the console after compile.</h3>
+
+    There is some errors that just can be noted when run the patch in the Web. So always check the console of your browser. You can do it pressing: Shift + ⌘ + J (on macOS) or Shift + CTRL + J (on Windows/Linux). 
+
+
+ 
+ 
+ 
+-----------------------------------
+## <h2 style="text-align: center"><b>Compiling the patch</b></h2>
+-----------------------------------
+
+Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm` file will be loaded in the browser.
+
+### <h3 style="text-align: center"><b>pd2wasm command line</b></h3>
 ---------------------
-!!! pd2wasm-rule "RULE #2"
-
-    <h3 style="text-align: center">Always check the console after compile.</h3>
-
-There is some errors that just can be noted when run the patch in the Web. So always check the console of your browser. You can do it pressing: Shift + ⌘ + J (on macOS) or Shift + CTRL + J (on Windows/Linux).
-
----------------------
 
 
----------------------
-#### pd2wasm utilitary
-
-`pd2wasm` is a command line used to compile your PureData patch. Here we will see all the options to use it.
+`pd2wasm` is a command line used to compile your PureData patch. 
 
 * `--patch`: Define your patch name. For example, `--patch mypatch.pd`
 * `--html`: Define where is the `index.html` page. If not provided, `pd2wasm` will use the default page. `--html index.html`
 * `--confirm`: There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag. For example, `--confirm True`.
 * `--server-port`: If you want see your patch running in the web browser after the compilation process, you can use this. Normally we use the port number 8080, for example: `--server-port 8080`.
-* `--initial-memory`: If you have a big patch, maybe you will need more that `32MB` of memory, to use more memory set it using `--initial-memory`.
+* `--initial-memory`: If you have a big patch, maybe you will need more that `32MB` of memory, to use more memory set it using `--initial-memory 64`, for example.
+
+
+### <h3 style="text-align: center"><b>Common Browser Console Erros</b></h3>
+---------------------
+
+=== "Memory"
+
+    !!! bash-code ERROR
+        ```
+        Uncaught RuntimeError: Aborted(OOM). Build with -sASSERTIONS for more info.
+        at abort (libpd.js:1:12855)
+        at abortOnCannotGrowMemory (libpd.js:1:116480)
+        at _emscripten_resize_heap (libpd.js:1:116583)
+        at libpd.wasm:0x2c8e6
+        at libpd.wasm:0x3d5f
+        at libpd.wasm:0x1f204
+        at libpd.wasm:0x3044
+        at libpd.wasm:0x3071
+        at libpd.wasm:0xae4dd
+        at libpd.wasm:0x18244
+        ```
+        
+    To solve this, you must run `pd2wasm` with the flag `--initial-memory 64` or a bigger number.
+    
+
+=== "Files Not Found"
+
+    To solve this, you must check all the paths used by PureData. It is important to say that, objects like `readsf~` are not able to search from paths declared by `declare -path myfolder`.
+
+
+
+
 
 
 -----------------------------------
@@ -240,5 +283,8 @@ If you don't have any website, you can use the free github pages. It provides on
 
 I hope that is can be usefull.
 
+-----------------------------------
+## <h2 style="text-align: center"><b>Making a html GUI</b></h2>
+-----------------------------------
 
-
+This is the hard part of the process, and for now you must know how to use `html`. I will soon release some templates for 
