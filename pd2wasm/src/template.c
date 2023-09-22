@@ -303,7 +303,7 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
             });
         }
         else {
-            alert("Your browser not support AudioContext.setSinkId(), use Brave, Chrome or Edge instead.");
+            console.log("Your browser not support AudioContext.setSinkId(), use Brave, Chrome or Edge instead.");
         }
 
         if ("setSinkId" in AudioContext.prototype) {
