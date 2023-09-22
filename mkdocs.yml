@@ -71,6 +71,7 @@ nav:
     - index.md
     - patch.md
     - libraries.md
+    - devs.md
 
 extra:
   social:
