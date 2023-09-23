@@ -1,6 +1,7 @@
 import os
 import sys
 import importlib
+# from  ..PdWebCompiler import webpdPatch
 
 
 thisFile = os.path.abspath(__file__)
@@ -20,6 +21,7 @@ class PureDataExternals:
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
         self.webpdPatch = None
+        self.folder = ''
         try:
             self.repoAPI = library['download_source']
         except:
