@@ -1,6 +1,8 @@
 import os
 import shutil
 import sys
+# from ..PdWebCompiler import webpdPatch
+# from .ExternalClass import PureDataExternals
 
 
 def else_extra(librarySelf):
