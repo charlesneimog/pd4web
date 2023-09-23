@@ -157,10 +157,10 @@ Now you can compile your patches! If it not work, you can buy support in <a href
  
  
 -----------------------------------
-## <h2 style="text-align: center"><b>Make your patch</b></h2>
+## <h2 style="text-align: center"><b>Make your patch for Web</b></h2>
 -----------------------------------
 
-Here, I will explain some considerations for starting a new Project using `PdWebCompiler`.
+<p style="text-align: center"> Here, I will explain some considerations for starting a new Project using <code>PdWebCompiler</code>. </p>
 
 
 #### Folder Structure
@@ -188,8 +188,32 @@ I recommend using the file structure shown below. Be careful with upper and lowe
 
 * In the `Extras` folder, you should place items that are not intended for PureData but will be utilized to enhance the website's appearance. For instance, I use this folder to store `.svg` files of my scores, which I then display in the piece work in progress <a href="charlesneimog.github.io/Compiled-I" target="_blank">Compiled I.</a>
 
+After you compile your patch, will be created `index.html` in the ROOT of the project and a new folder called `webpatch`.
+
+??? folder "Folder After Compilation"
+    ```
+    ├─ PROJECT_FOLDER
+    ├── Audios/
+        ├── AllMyAudioFiles.wav
+        └── AllMyAudioFiles.aif
+    ├── Libs/
+        ├── pdAbstraction1.pd
+        └── pdAbstraction2.pd
+    ├── Extras/
+        ├── extrathings.png
+        └── mygesture.svg
+    ├── webpatch/
+        ├── libpd.data
+        ├── ...
+        └── libpd.wasm
+    ├── MY_MAIN_PATCH.pd
+    └── index.html
+    
+    ```
+
+
 ---------------------
-#### Rules to follow
+#### Rules to follow when making your patch
 
 There is some rules that you need to follow to `pd2wasm` work properly. 
 
@@ -202,17 +226,13 @@ There is some rules that you need to follow to `pd2wasm` work properly.
         
     This is how, for now, `pd2wasm` find the objects that are externals or embbedded in PureData. There is some automatic work around externals.
 
-=== "Rule 2: Browser Console"
+=== "Rule 2: Avoid Visual Objects"
 
     !!! pd2wasm-rule "RULE #2"
 
-        <h3 style="text-align: center">Always check the console after compile.</h3>
+        <h3 style="text-align: center">Avoid the use of Visual Arrays and Visual Objects.</h3>
 
-    There is some errors that just can be noted when run the patch in the Web. So always check the console of your browser. You can do it pressing: Shift + ⌘ + J (on macOS) or Shift + CTRL + J (on Windows/Linux). 
-
-
- 
- 
+    Always avoid the use of visual objects. Visual arrays, for example will broke your patch. Because of many abstractions of `else` that uses visual array, we replace then using `array define myarray` automatically, but I suspect that another visual objects should not work. So, don't use then.
  
 -----------------------------------
 ## <h2 style="text-align: center"><b>Compiling the patch</b></h2>
@@ -222,7 +242,6 @@ Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm
 
 ### <h3 style="text-align: center"><b>pd2wasm command line</b></h3>
 ---------------------
-
 
 `pd2wasm` is a command line used to compile your PureData patch. 
 
@@ -260,11 +279,6 @@ Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm
 
     To solve this, you must check all the paths used by PureData. It is important to say that, objects like `readsf~` are not able to search from paths declared by `declare -path myfolder`.
 
-
-
-
-
-
 -----------------------------------
 ## <h2 style="text-align: center"><b>Put the patch online</b></h2>
 -----------------------------------
@@ -284,7 +298,31 @@ If you don't have any website, you can use the free github pages. It provides on
 I hope that is can be usefull.
 
 -----------------------------------
-## <h2 style="text-align: center"><b>Making a html GUI</b></h2>
+## <h2 style="text-align: center"><b>Making a <code>html</code> GUI</b></h2>
 -----------------------------------
 
-This is the hard part of the process, and for now you must know how to use `html`. I will soon release some templates for 
+This is the hard part of the process, and for now you must know how to use `html` and maybe `css`. I will try to release some templates for html, but for now, you should make them by yourself. When you build your `index.html`, you must know that is possible to make your web GUI comunitate with PureData and Vice-versa. For that you should include the `helpers.js` in your `index.html`. 
+
+### <h3 style="text-align: center"><b>Receiving data from PureData</b></h3>
+
+To get some data from PureData you must first send the data using `send` or `s` object. To diferenciate the data that you send inside your own patch and the things that you want to send to web GUI we use the `ui_` identifier. For example, if you use `s mygain` it will not work, you can't get this data from the `html`. You must use `s ui_mygain` or `send ui_mygain`.
+
+
+To get this data you use these JavaScript snippet.
+
+``` js
+const forceValue7 = document.getElementById('ui_mygain');
+```
+
+### <h3 style="text-align: center"><b>Sending data to PureData</b></h3>
+
+To make some trigger or change some parameter like `gain` for your patch you must use the `sendToPureData`. They are part of the `helpers.js` script provide with `PdWebCompiler`. To receive the data you must use `receive` or `r` with the same name specified with function `sendToPureData`.
+
+For example, to send `0.7` to PureData you must use the `js` code below:
+
+``` js
+sendToPureData("mygain", 0.7);
+```
+
+to receive this data you must create one `r mygain`.
+

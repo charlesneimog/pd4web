@@ -66,7 +66,10 @@ repo_url: https://github.com/charlesneimog/PdWebCompiler
 
 extra_css:
   - extra/extra.css
-   
+  
+extra_javascript:
+  - js/index_slider.js
+  
 nav:
     - index.md
     - patch.md

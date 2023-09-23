@@ -41,25 +41,40 @@ This table presents an overview of all PureData externals supported by <code>PdW
         <td>1</td>
       </tr>
     </tbody>
-      <tbody>
-      <tr>
-        <td><a href="https://github.com/wbrent/convolve_tilde/">convolve~</a></td>
-        <td> - </td>
-        <td>1</td>
-      </tr>
+    <tbody>
+        <tr>
+            <td><a href="https://github.com/wbrent/convolve_tilde/">convolve~</a></td>
+            <td> - </td>
+            <td>1</td>
+        </tr>
     </tbody>
+
+    <tbody>
+        <tr>
+            <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
+            <td> - </td>
+            <td>109</td>
+        </tr>
     </tbody>
-      <tbody>
-      <tr>
-        <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
-        <td> - </td>
-        <td>109</td>
-      </tr>
+    
+    <tbody>
+        <tr>
+            <td><a href="  https://github.com/avilleret/pd-pmpd">pmpd</a></td>
+            <td> - </td>
+            <td>30</td>
+        </tr>
     </tbody>
-  </table>
+    
+    
+    
+ </table>
+  
+  
   
 ----------------------------------
 
 <p style="text-align: center">
 If there is some object of these supported libraries that not work, please report in <a href="https://github.com/charlesneimog/PdWebCompiler/issues">Github</a>.
 </p>
+
+
