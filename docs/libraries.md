@@ -74,7 +74,11 @@ This table presents an overview of all PureData externals supported by <code>PdW
 ----------------------------------
 
 <p style="text-align: center">
+<<<<<<< HEAD
 If there is some object of these supported libraries that not work, please report in <a href="https://github.com/charlesneimog/PdWebCompiler/issues">Github</a>.
+=======
+If some object of these libraries that are not supported, please report on <a href="https://github.com/charlesneimog/PdWebCompiler/issues">Github</a>.
+>>>>>>> a0cd2a7415153c0c49b971693d3c368e7ac09a82
 </p>
 
 
