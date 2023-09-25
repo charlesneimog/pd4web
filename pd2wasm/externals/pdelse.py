@@ -1,16 +1,13 @@
 import os
 import shutil
-import sys
-# from ..PdWebCompiler import webpdPatch
-# from .ExternalClass import PureDataExternals
+from .ExternalClass import PureDataExternals
+from ..helpers import myprint
+from ..PdWebCompiler import webpdPatch
 
-
-def else_extra(librarySelf):
+def else_extra(librarySelf: PureDataExternals):
     '''
     This function copy some things that I already need to compile some externals in cyclone
     '''
-    if librarySelf.extraFuncExecuted:
-        return
 
     if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes")):
         os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes"))
@@ -29,10 +26,10 @@ def else_extra(librarySelf):
     os.remove(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "s_elseutf8.c"))
     librarySelf.extraFuncExecuted = True
     if 'sfz~' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("sfz~ object is not supported yet", color="red")
+        myprint("sfz~ object is not supported yet", color="red")
 
     elif 'sfont~' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("sfont~ object is not supported yet", color="red")
+        myprint("sfont~ object is not supported yet", color="red")
 
     elif 'plaits~' in librarySelf.usedObjs:
         # inside the library folder, search recursively for the file plaits~.cpp

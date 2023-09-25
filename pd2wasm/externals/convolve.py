@@ -1,7 +1,9 @@
 import os
-import shutil
+from .ExternalClass import PureDataExternals
 
-def piro_extra(librarySelf):
+
+
+def piro_extra(librarySelf: PureDataExternals):
     ''' 
     Properties of librarySelf:
         * extraFuncExecuted: Set to True if extraFunc just need to be executed once
