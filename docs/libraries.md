@@ -23,14 +23,14 @@ This table presents an overview of all PureData externals supported by <code>PdW
     <tbody>
         <tr>
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
-          <td><code>sfz~</code>, <code>sfont~</code>, <code>coll</code> </td>
+          <td><code>sfz~</code>, <code>sfont~</code></td>
           <td>509</td>
         </tr>
     </tbody>
     <tbody>
       <tr>
         <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
-        <td> - </td>
+        <td> <code>coll</code> </td>
         <td>± 197</td>
       </tr>
     </tbody>
@@ -68,17 +68,10 @@ This table presents an overview of all PureData externals supported by <code>PdW
     
     
  </table>
-  
-  
-  
-----------------------------------
 
+<br>
 <p style="text-align: center">
-<<<<<<< HEAD
 If there is some object of these supported libraries that not work, please report in <a href="https://github.com/charlesneimog/PdWebCompiler/issues">Github</a>.
-=======
-If some object of these libraries that are not supported, please report on <a href="https://github.com/charlesneimog/PdWebCompiler/issues">Github</a>.
->>>>>>> a0cd2a7415153c0c49b971693d3c368e7ac09a82
 </p>
 
 
