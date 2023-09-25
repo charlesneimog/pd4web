@@ -1,8 +1,9 @@
 import os
-import sys
 import shutil
+from .ExternalClass import PureDataExternals
+# from ..helpers import myprint
 
-def pmpd_extra(librarySelf):
+def pmpd_extra(librarySelf: PureDataExternals):
     '''
     This function copy some things that I already need to compile some externals in cyclone
     '''
@@ -28,6 +29,9 @@ def pmpd_extra(librarySelf):
             if file == "pmpd3d.h":
                 shutil.copy(os.path.join(root, file), os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes", "pmpd3d.h"))
 
+    if librarySelf.webpdPatch == None:
+        raise Exception("PdWebCompilerPath is not set")
+        
 
     emCmake = librarySelf.webpdPatch.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcmake cmake '
     # make the build folder

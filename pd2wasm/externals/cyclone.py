@@ -1,7 +1,11 @@
 import os
 import shutil
+from .ExternalClass import PureDataExternals
+from ..helpers import myprint
+from ..PdWebCompiler import webpdPatch
 
-def cyclone_extra(librarySelf):
+
+def cyclone_extra(librarySelf: PureDataExternals):
     '''
     This function copy some things that I already need to compile some externals in cyclone
     '''
@@ -22,7 +26,7 @@ def cyclone_extra(librarySelf):
                     shutil.copytree(os.path.join(folder, i, k), theFile)
 
     if 'coll' in librarySelf.usedObjs:
-        librarySelf.webpdPatch.print("Coll object is not supported yet", color="red")
+        myprint("Coll object is not supported yet", color="red")
         shutil.copy("webpatch/includes/common/file.c", "webpatch/externals/file.c")
 
     librarySelf.extraFuncExecuted = True

@@ -1,7 +1,9 @@
 import os
 import shutil
+from .ExternalClass import PureDataExternals
+# from ..helpers import myprint
 
-def timbreID_extra(librarySelf):
+def timbreID_extra(librarySelf: PureDataExternals):
     ''' 
     This function copy some things that I already need to compile some externals in cyclone
     '''

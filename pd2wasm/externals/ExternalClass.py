@@ -1,18 +1,6 @@
 import os
 import sys
-import importlib
-# from  ..PdWebCompiler import webpdPatch
-
-
-thisFile = os.path.abspath(__file__)
-module_files = [f for f in os.listdir(os.path.dirname(thisFile)) if f.endswith('.py') and not f.startswith('__')]
-module_names = [os.path.splitext(f)[0] for f in module_files]
-
-
-for module_name in module_names:
-    if module_name != 'ExternalClass':
-        module = importlib.import_module('pd2wasm.externals.' + module_name)
-        globals().update(vars(module))
+from typing import Optional
 
 
 class PureDataExternals:
@@ -20,8 +8,10 @@ class PureDataExternals:
         self.name = library['name']
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
-        self.webpdPatch = None
+        from ..PdWebCompiler import webpdPatch
+        self.webpdPatch: Optional[webpdPatch]
         self.folder = ''
+        self.externalsExtraFunctions = []
         try:
             self.repoAPI = library['download_source']
         except:
@@ -75,7 +65,6 @@ class PD_SUPPORTED_EXTERNALS:
         self.UsedLibrariesNames = []
         self.totalOfLibraries = 0
 
-
     def add(self, PureDataExternals):
         self.PureDataExternals.append(PureDataExternals)
         self.LibraryNames.append(PureDataExternals.name)
@@ -102,7 +91,7 @@ class PD_SUPPORTED_EXTERNALS:
 
         else:
             try:
-                print("LINK: ", supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName))
+                # print("LINK: ", supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName))
                 return supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName)
             except:
                 return None
@@ -113,8 +102,18 @@ class PD_SUPPORTED_EXTERNALS:
             print("\033[95m" + f"    Executing extra configs for {UsedLibrary.name}")
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
-            executedFunction = f"{extraFunctionStr}" + '(libraryClass)'
-            exec(executedFunction)
+            function = None
+            for module in UsedLibrary.externalsExtraFunctions:
+                for definedThing in dir(module):
+                    if definedThing == extraFunctionStr:
+                        function = getattr(module, extraFunctionStr)
+                        break
+                
+            if function is not None:      
+                function(libraryClass)
+            else:
+                return []
+
             if libraryClass:
                 return libraryClass.extraFlags
             else:
@@ -173,18 +172,6 @@ class PatchLine:
 
             else:
                 return "<Special Pd Object: " + self.Tokens[0] + ">"
-
-
-    def __repr__(self) -> str:
-        if self.isExternal:
-            return "<Obj: " + self.name + " | Lib: " + self.library + ">"
-        else:
-            if self.Tokens[0] == '#X':
-                return "<Pd Object: " + self.Tokens[4] + " | " + self.Tokens[1] + ">"
-                
-            else:
-                return "<Special Pd Object: " + self.Tokens[0] + ">"
-            
 
 
     def addToUsedObject(self, PD_LIBS):
