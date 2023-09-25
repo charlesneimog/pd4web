@@ -6,7 +6,6 @@ DownloadSources:
 SupportedLibraries:
   - name: cyclone # name of the pd library
     download_source: GITHUB_RELEASES # source
-    # direct_link:
     repoUser: porres # in this case, Github user name
     repoName: pd-cyclone # in this case, Github Repo
     version: cyclone_0.7-0 # version
