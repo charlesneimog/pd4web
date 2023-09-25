@@ -22,22 +22,25 @@ Additionally, a significant aspect of my research delves into the capacity of We
 -------------------------
 
 <div class="slideshow-container">
-  <div class="mySlides fade">
-    <h3 align="center">Compiled-I</h3>
-    <a href="https://www.charlesneimog.com/Compiled-I/webpatch/index.html" targer="_blank">
-      <div class="numbertext">1 / 3</div>
-      <img src="img/Compiled-I.png" style="width:100%; border-radiux: 10px; box-shadow: 10px 10px 10px rgba(0.2, 0.2, 0.2, 0.2);">
-      <div class="text">Compiled is a Work in Progress yet!</div>
-    </a>
-  </div>
+  
   <div class="mySlides fade">
     <h3 align="center">Algorithm-I</h3>
-    <a href="https://www.charlesneimog.com/Algorithm-Music/Piece-I" targer="_blank">
-      <div class="numbertext">2 / 3</div>
+    <a href="https://www.charlesneimog.com/Algorithm-Music/Piece-I" target="_blank">
+      <div class="numbertext">1 / 2</div>
       <img src="img/piece-I.png" style="width:100%; border-radiux: 10px; box-shadow: 10px 10px 10px rgba(0.2, 0.2, 0.2, 0.2);">
       <div class="text">This is an Algorithm Music.</div>
     </a>
   </div>
+  
+  <div class="mySlides fade">
+    <h3 align="center">Compiled-I</h3>
+    <a href="https://www.charlesneimog.com/Compiled-I/webpatch/index.html" target="_blank">
+      <div class="numbertext">2 / 2</div>
+      <img src="img/Compiled-I.png" style="width:100%; border-radiux: 10px; box-shadow: 10px 10px 10px rgba(0.2, 0.2, 0.2, 0.2);">
+      <div class="text">Compiled is a Work in Progress yet!</div>
+    </a>
+  </div>
+  
 </div>
 <br>
 <div style="text-align:center">

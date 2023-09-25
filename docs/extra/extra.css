@@ -31,19 +31,22 @@ body {
 }
 
 .special-table th, .special-table td {
-  border: 0.001em solid var(--background-for-line);
-  padding: 5px;
+  border: 0.1em solid var(--background-for-line);
+  padding: 10px;
 }
 
 .special-table th {
-  /* set different background for light and dark mode using if else */
-  /* background-color: var(--background-color); */
   text-align: center;
   font-weight: bold;
 }
 
 .special-table td {
   text-align: center;
+}
+
+.special-table th:first-child,
+.special-table td:first-child {
+  width: 20%; /* Adjust the width as needed */
 }
 
 svg, img {
