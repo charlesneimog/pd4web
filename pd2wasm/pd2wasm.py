@@ -904,10 +904,9 @@ class webpdPatch():
                         function = DYNAMIC_LIBRARIES[dyn_library]
                         function(self)  # call the function
                     except Exception as e:
-                        myprint("Could not find " +
-                                   dyn_library, color='red')
+                        myprint("Could not find " + dyn_library, color='red')
                         myprint("" + str(e), color='red')
-                        sys.exit(0)
+                        sys.exit(1)
 
 
     def emccCompile(self):

@@ -1,8 +1,6 @@
-import os
 import sys
 from typing import Optional
 from ..helpers import myprint
-
 
 class PureDataExternals:
     def __init__(self, library, projectRoot) -> None:
@@ -21,7 +19,7 @@ class PureDataExternals:
                 self.directLink = library['direct_link']
             except:
                 # print in red
-                print(f"\033[91mError: {self.name} doesn't have a download source\033[0m")
+                myprint("Error: {self.name} doesn't have a download source", color="red")
                 sys.exit()
 
         try:
@@ -100,7 +98,7 @@ class PD_SUPPORTED_EXTERNALS:
 
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
-            myprint("\033[95m" + f"    Executing extra configs for {UsedLibrary.name}", color="purple")
+            myprint(f"Executing extra configs for {UsedLibrary.name}", color="purple")
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
             function = None
@@ -110,7 +108,7 @@ class PD_SUPPORTED_EXTERNALS:
                         function = getattr(module, extraFunctionStr)
                         break
             if function is None and extraFunctionStr != None:
-                myprint("\033[91m" + f"    Error: {extraFunctionStr} is not defined in {UsedLibrary.name}", color="red")
+                myprint(f"Error: {extraFunctionStr} is not defined in {UsedLibrary.name}", color="red")
 
             if function is not None:      
                 function(libraryClass)
