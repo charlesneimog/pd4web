@@ -55,7 +55,7 @@ jobs:
 
     - name: Install pd2wasm
       run: |  
-        pip install poetry
+        pip install poetry certifi
         poetry build
         pip install dist/*.whl
 
