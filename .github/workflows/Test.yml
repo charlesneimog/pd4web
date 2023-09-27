@@ -28,12 +28,9 @@ jobs:
   
     - name: Tests
       run: |
-        cd pd2wasm/tests/externals
-        pd2wasm --patch ./patch.pd
-        cd ../simplepatch
-        pd2wasm --patch ./patch.pd
-        cd ../static-libs
-        pd2wasm --patch ./patch.pd
+        cd pd2wasm/tests/
+        python ./runTests.py
+        
 
 
   # ==============================================================================
@@ -61,12 +58,8 @@ jobs:
 
     - name: Tests
       run: |
-        cd pd2wasm/tests/externals
-        pd2wasm --patch ./patch.pd
-        cd ../simplepatch
-        pd2wasm --patch ./patch.pd
-        cd ../static-libs
-        pd2wasm --patch ./patch.pd
+        cd pd2wasm/tests/
+        python3 ./runTests.py
       
 
   # ==============================================================================
@@ -97,9 +90,5 @@ jobs:
 
       - name: Tests
         run: |
-          cd pd2wasm/tests/externals
-          pd2wasm --patch ./patch.pd
-          cd ../simplepatch
-          pd2wasm --patch ./patch.pd
-          cd ../static-libs
-          pd2wasm --patch ./patch.pd
+          cd pd2wasm/tests/
+          python3 ./runTests.py
