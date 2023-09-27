@@ -765,7 +765,7 @@ class webpdPatch():
                 myprint("" + str(e), color='red')
                 myprint("" + str(responseJson["message"]), color='red')
                 myprint("" + str(e), color='red')
-                return False
+                sys.exit(1)
         else:
             return False
 
@@ -913,7 +913,6 @@ class webpdPatch():
         '''
         This is where the code is compiled.
         '''
-        
         memory = self.memory
         if platform.system() == "Windows":
             self.target = self.PROJECT_ROOT + 'webpatch\\libpd.js'
@@ -1010,7 +1009,7 @@ class webpdPatch():
 
                 if error:
                     myprint("There was an error compiling, READ the output", color='red')
-                    sys.exit(0)
+                    sys.exit(1)
 
                 else:
                     myprint("" + ("=" * 10) +
