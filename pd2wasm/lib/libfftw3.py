@@ -27,17 +27,20 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
         webpdPatchClass.extraFlags.append("-lfftw3f")
         return True
 
+    if platform.system() == "Windows":
+        myprint("I don't know how to compile FFTW3 for Windows, using compiled version...", color="red")
+        webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "\\.lib\\fftw-3.3.10\\api"))
+        webpdPatchClass.extraFlags.append(fixPaths('-L' +  PackagePatch + '\\lib\\compiled\\'))
+        webpdPatchClass.extraFlags.append("-lfftw3f")
+        return True
+
     myprint("Building fftw3...", color="orange")
     compilers = emccPaths()
     command = ("cmd /C cd '" + fixPaths(PackagePatch + "/.lib/fftw-3.3.10'"))
     command += f" && {compilers.configure} ./configure --enable-float --disable-fortran"
     command += f" && {compilers.make}"
     
-    if platform.system() == "Windows":
-        command = command.replace("&&", "&")
-    myprint(command, color="red")
     os.system(command)
-
     webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "/.lib/fftw-3.3.10/api"))
     webpdPatchClass.extraFlags.append(fixPaths("-L" + PackagePatch + "/.lib/fftw-3.3.10/.libs"))
     webpdPatchClass.extraFlags.append("-lfftw3f")

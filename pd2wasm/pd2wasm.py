@@ -73,7 +73,7 @@ class webpdPatch():
             absolutePath = os.path.dirname(os.path.abspath(
                 os.path.join(os.getcwd(), self.args.patch)))
             self.patch = os.getcwd() + "/" + self.args.patch
-            self.source = os.getcwd() + "/" + self.args.source
+            self.source = sourcefile
             self.PROJECT_ROOT = absolutePath
             os.chdir(absolutePath)
             
