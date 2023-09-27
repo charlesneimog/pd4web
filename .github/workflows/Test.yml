@@ -1,4 +1,4 @@
-name: Tests
+name: pd2wasm Tests
 on:
   workflow_dispatch:
 
