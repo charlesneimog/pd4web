@@ -1,9 +1,6 @@
 import requests
 import tarfile
 import os
-import sys
-import shutil
-import platform
 from ..helpers import myprint, fixPaths
 from ..helpers import emccPaths
 
@@ -21,7 +18,8 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
         print("\n")
         myprint("Downloading FFTW3...", color="orange")
         response = requests.get('https://www.fftw.org/fftw-3.3.10.tar.gz')
-        with open(fixPaths(PackagePatch + '/.lib/fftw-3.3.10.tar.gz'), 'wb') as f:
+        outputFile = fixPaths(PackagePatch + '/.lib/fftw-3.3.10.tar.gz')
+        with open(outputFile, 'wb') as f:
             f.write(response.content)
         with tarfile.open(fixPaths(PackagePatch + '/.lib/fftw-3.3.10.tar.gz'), 'r:gz') as tar:
             tar.extractall(PackagePatch + '/.lib')

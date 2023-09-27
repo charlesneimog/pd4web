@@ -98,7 +98,7 @@ class PD_SUPPORTED_EXTERNALS:
 
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
-            myprint(f"Executing extra configs for {UsedLibrary.name}", color="purple")
+            myprint(f"Executing extra configs for {UsedLibrary.name}", color="magenta")
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
             function = None
