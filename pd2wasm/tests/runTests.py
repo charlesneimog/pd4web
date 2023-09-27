@@ -10,7 +10,11 @@ for root, folders, files in os.walk(TestFolder):
                 for file in files:
                     if file.endswith(".pd") and file == f"{folder}.pd":        
                         testFile = os.path.join(TestFolder, folder, f"{folder}.pd")        
-                        os.system(f"pd2wasm --patch {testFile}")                
+                        # run pd2wasm --patch {testFile} and check if it returns 0
+                        returnCode = os.system(f"pd2wasm --patch {testFile}")                
+                        if returnCode != 0:
+                            print(f"Error: {testFile} failed")
+                            exit(1)
 
 
 

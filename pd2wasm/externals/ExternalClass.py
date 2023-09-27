@@ -19,8 +19,8 @@ class PureDataExternals:
                 self.directLink = library['direct_link']
             except:
                 # print in red
-                myprint("Error: {self.name} doesn't have a download source", color="red")
-                sys.exit()
+                myprint(f"Error: {self.name} doesn't have a download source", color="red")
+                sys.exit(1)
 
         try:
             self.extraFunc = library['extraFunction']
