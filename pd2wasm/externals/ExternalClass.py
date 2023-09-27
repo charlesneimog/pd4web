@@ -5,7 +5,7 @@ from ..helpers import myprint
 
 
 class PureDataExternals:
-    def __init__(self, library) -> None:
+    def __init__(self, library, projectRoot) -> None:
         self.name = library['name']
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
@@ -42,7 +42,7 @@ class PureDataExternals:
         self.usedObjs = []
         self.UsedSourceFiles = []
         self.extraFuncExecuted = False
-        self.PROJECT_ROOT = os.getcwd()
+        self.PROJECT_ROOT = projectRoot
         self.extraFlags = []
 
     def addToUsed(self, objName):

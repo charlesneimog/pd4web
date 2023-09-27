@@ -26,8 +26,9 @@ def cyclone_extra(librarySelf: PureDataExternals):
                     shutil.copytree(os.path.join(folder, i, k), theFile)
 
     if 'coll' in librarySelf.usedObjs:
-        myprint("Coll object is not supported yet", color="red")
-        shutil.copy("webpatch/includes/common/file.c", "webpatch/externals/file.c")
+       
+        shutil.copy(librarySelf.PROJECT_ROOT + "webpatch/includes/common/file.c", 
+                    "webpatch/externals/file.c")
 
     librarySelf.extraFuncExecuted = True
 

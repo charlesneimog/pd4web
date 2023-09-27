@@ -20,16 +20,23 @@ def myprint(str, color=None):
     else:
         print(str)
 
+def fixPaths(path):
+    if platform.system() == "Windows":
+        path = path.replace("/", "\\")
+
 
 class emccPaths:
     def __init__(self):
         PdWebCompilerPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
         if platform.system() == "Windows":
-            PdWebCompilerPath = PdWebCompilerPath.replace("\\", "/")
+            PdWebCompilerPath = PdWebCompilerPath.replace("/", "\\")
+            # if first char of PdWebCompilerPath is a space remove it
+            if PdWebCompilerPath[0] == " ":
+                PdWebCompilerPath = PdWebCompilerPath[1:]
             self.cmake = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcmake.bat" cmake '
             self.configure = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emconfigure.bat" '
             self.make = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emmake.bat" make '
-            self.emcc = f'"{PdWebCompilerPath}\\emsdk/upstream/emscripten/emcc.bat" '
+            self.emcc = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcc.bat" '
             self.emsdk = f'"{PdWebCompilerPath}\\emsdk\\emsdk.bat" '
             self.emsdk_env = f'"{PdWebCompilerPath}\\emsdk\\emsdk_env.bat" '
         else:
