@@ -35,6 +35,7 @@ class webpdPatch():
     def __init__(self, sourcefile="src/template.c", pdpatch=None,
                  insideaddAbstractions=False, runMain=True, parent=[]) -> None:
         self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
+        self.emcc = emccPaths()
 
         if runMain and not insideaddAbstractions:
             if os.path.exists("webpatch"):
@@ -100,7 +101,6 @@ class webpdPatch():
         self.memory = self.args.initial_memory
         self.extraFlags = []
         self.externalsDict = {}
-        self.emcc = emccPaths()
 
         if runMain:
             self.main(
@@ -632,7 +632,6 @@ class webpdPatch():
         '''
         Recursively enumerate all external objects and save the JSON file.
         '''
-        print(libraryFolder)
 
         # Check if there is an "externals.json" file in the self.PdWebCompilerPath folder
         externalsJson = os.path.join(self.PdWebCompilerPath, "externals.json")

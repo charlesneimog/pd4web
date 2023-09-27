@@ -24,7 +24,7 @@ def myprint(str, color=None):
 class emccPaths:
     def __init__(self):
         PdWebCompilerPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        if platform.system() != "Windows":
+        if platform.system() == "Windows":
             PdWebCompilerPath = PdWebCompilerPath.replace("\\", "/")
             self.cmake = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcmake.bat" cmake '
             self.configure = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emconfigure.bat" '
