@@ -22,7 +22,8 @@ jobs:
 
     - name: Install pd2wasm
       run: |
-        pip install pd2wasm
+        pip install poetry
+        poetry build && poetry install
   
     - name: Tests
       run: |
@@ -53,7 +54,8 @@ jobs:
 
     - name: Install pd2wasm
       run: |
-        pip install pd2wasm
+	pip install poetry
+        poetry build && poetry install
 
     - name: Tests
       run: |
@@ -83,7 +85,8 @@ jobs:
          
       - name: Install pd2wasm
         run: |
-          pip install pd2wasm
+	pip install poetry
+        poetry build && poetry install
 
       - name: Test pd2wasm
         run: |
