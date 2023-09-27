@@ -18,11 +18,16 @@ def myprint(str, color=None):
     elif color == 'cyan':
         print("\033[96m" + "    " + str + "\033[0m")
     else:
-        print(str)
+        print("    " + str)
 
 def fixPaths(path):
     if platform.system() == "Windows":
         path = path.replace("/", "\\")
+        return path
+    else:
+        return path
+
+
 
 
 class emccPaths:
