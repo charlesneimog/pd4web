@@ -273,10 +273,9 @@ class webpdPatch():
                     self.PdWebCompilerPath +
                     "/emsdk")
 
-            
             if platform.system() == "Windows":
-                subprocess.run([self.emcc.emsdk, "install", "latest"])
-                subprocess.run([self.emcc.emsdk, "activate", "latest"])
+                os.system(f"{self.emcc.emsdk} install latest")
+                os.system(f"{self.emcc.emsdk} activate latest")
             else:
                 os.environ["EMSDK_QUIET"] = "1"
                 os.system(f"chmod +x {self.emcc.emsdk}")
@@ -906,9 +905,9 @@ class webpdPatch():
             emcc = '"' + self.PdWebCompilerPath + '\\emsdk\\upstream\\emscripten\\emcc"'
             command = [emcc,
                        '-I "', 'webpatch\\includes\\"',
-                       '-I "', self.libpd_dir + '\\pure-data/src\\"',
+                       '-I "', self.libpd_dir + '\\pure-data\\src\\"',
                        '-I "', self.libpd_dir + '\\libpd_wrapper\\"',
-                       '-L "', self.PdWebCompilerPath + '\\lib/compiled\\"',
+                       '-L "', self.PdWebCompilerPath + '\\lib\\compiled\\"',
                        '-lpd',
                        '-O3',
                        '-s', f'INITIAL_MEMORY={memory}mb',
