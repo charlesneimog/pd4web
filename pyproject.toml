@@ -6,7 +6,7 @@ authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"
 homepage = "https://www.charlesneimog.com/PdWebCompiler"
 repository = "https://github.com/charlesneimog/PdWebCompiler"
-documentation = "https://www.charlesneimog.com/PdWebCompiler"
+documentation = "https://www.charlesneimog.github.io/PdWebCompiler"
 
 [tool.poetry.dependencies]
 python = "^3.10"

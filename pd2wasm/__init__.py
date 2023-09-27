@@ -1,1 +1,1 @@
-from .PdWebCompiler import webpdPatch
+from .pd2wasm import webpdPatch

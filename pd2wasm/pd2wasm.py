@@ -10,9 +10,11 @@ import datetime
 import yaml
 import re
 import importlib
+import json
+
 from .externals import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
-from .lib.main import DYNAMIC_LIBRARIES
-from .helpers.helpers import myprint
+from .lib.DynamicLibraries import DYNAMIC_LIBRARIES
+from .helpers.helpers import myprint, emccPaths
 
 
 ## ================== EXTERNALS THINGS ================== ##
@@ -34,7 +36,7 @@ class webpdPatch():
                  insideaddAbstractions=False, runMain=True, parent=[]) -> None:
         self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
 
-        if runMain and  not insideaddAbstractions:
+        if runMain and not insideaddAbstractions:
             if os.path.exists("webpatch"):
                 shutil.rmtree("webpatch")
 
@@ -43,6 +45,11 @@ class webpdPatch():
             self.activeEmcc()
             self.downloadLibPd()
             self.importExternalObjs()
+            self.getSupportedLibraries()
+
+        else:
+            self.externalsExtraFunctions = parent.externalsExtraFunctions
+
 
         # get this folder directory
         parser = argparse.ArgumentParser(
@@ -53,6 +60,13 @@ class webpdPatch():
             '--html',
             required=False,
             help='HTML used to load and render the Web Page. If not defined, we use the default one')
+
+        parser.add_argument(
+            '--page-folder',
+            required=False,
+            help='Folder with html, css, js and all others files to be used in the Web Page. If not defined, we use the default one')
+
+
         parser.add_argument('--confirm', required=False,
                             help='There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag')
         parser.add_argument('--clearTmpFiles', required=False,
@@ -74,6 +88,7 @@ class webpdPatch():
 
         self.FoundExternals = False
         self.html = False
+        self.pageFolder = self.args.page_folder
         self.parent = parent
         self.source = sourcefile
         self.sortedSourceFiles = [] # case there is some files that need to be compiled in order
@@ -85,6 +100,7 @@ class webpdPatch():
         self.memory = self.args.initial_memory
         self.extraFlags = []
         self.externalsDict = {}
+        self.emcc = emccPaths()
 
         if runMain:
             self.main(
@@ -102,13 +118,10 @@ class webpdPatch():
 
 
     def main(self, pdpatch=None, insideaddAbstractions=False):
-
         if pdpatch is not None:
             self.patch = pdpatch
         else:
             self.patch = self.args.patch
-
-        # patch file name
         patchFileName = os.path.basename(self.patch)
         myprint("\n    • Patch => " + patchFileName + "\n", color='cyan')
         if self.args.html is not None:
@@ -116,14 +129,18 @@ class webpdPatch():
                 absolutePath = os.path.dirname(os.path.abspath(
                     os.path.join(os.getcwd(), self.args.html)))
                 self.html = os.getcwd() + "/" + self.args.html
-                # check if name of the file is index.html
+
+        elif self.pageFolder is not None:
+            if not os.path.isabs(self.pageFolder) and not insideaddAbstractions:
+                absolutePath = os.path.dirname(os.path.abspath(
+                    os.path.join(os.getcwd(), self.pageFolder)))
+                self.pageFolder = os.getcwd() + "/" + self.pageFolder 
+
         else:
             self.html = self.PdWebCompilerPath + "/src/index.html"
 
-
-        if "index.html" not in str(self.html) and insideaddAbstractions:
+        if "index.html" not in str(self.html) and not insideaddAbstractions:
             myprint("The name of your html is not index.html, we will copy one index.html for webpatch!", color="red")
-
 
         if not os.path.isabs(self.patch) and not insideaddAbstractions:
             absolutePath = os.path.dirname(os.path.abspath(
@@ -132,78 +149,61 @@ class webpdPatch():
             self.source = os.getcwd() + "/" + self.source
             self.PROJECT_ROOT = absolutePath
             os.chdir(absolutePath)
-
         else:
             self.PROJECT_ROOT = os.getcwd()
 
-        # Project ROOT
+        if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
+            os.mkdir(self.PROJECT_ROOT + "/.backup")
+
         if not insideaddAbstractions:
             if os.path.exists(self.PROJECT_ROOT + "/index.html"):
-                myprint("" + "index.html already exists in the root folder, please change his name or delete it, making backup and deleting it.", color="red")
-                shutil.copy("index.html", "index_backup.html")
+                myprint("index.html already exists in the root folder, " \
+                        "please change his name or delete it, making backup and deleting it.", color="red")
+                shutil.copy("index.html", self.PROJECT_ROOT + "/.backup/index.html")
             else:
                 with open(self.PROJECT_ROOT + "/index.html", "w") as file:
                     file.write(INDEX_HTML.format(os.path.basename(str(self.html))))
             
-
-        # if self.patch not exist look recursively in subfolders
         if not os.path.exists(self.patch):
             notFound = True
-            # look inside folders of the PROJECT_ROOT
             for root, _, files in os.walk(self.PROJECT_ROOT):
                 for file in files:
                     if not file.endswith(".pd"):
                         continue
-
                     if file != patchFileName:
                         continue
-
                     self.patch = os.path.join(root, file)
                     notFound = False
                     break
-            
             if notFound:
                 myprint("Patch not found: The current folder is " + str(os.getcwd()), color="red")
                 sys.exit(0)
 
-
         with open(self.patch, "r") as file:
             self.PatchLines = file.readlines()
-
         self.replaceVISArray()
-
-        # read externals
-        self.getSupportedLibraries()
-        # ==============
-
         self.PROJECT_ROOT = os.getcwd() # command line
         self.processedAbstractions = []
 
-
-        # template code
         if not insideaddAbstractions:
             with open(os.path.join(self.PdWebCompilerPath, "src/template.c"), "r") as file:
                 self.templateCode = file.readlines()
         else:
             with open("webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
-
         if not insideaddAbstractions:
             if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
                 os.mkdir(self.PdWebCompilerPath + "/.externals")
-
             if not os.path.exists("webpatch"):
                 os.mkdir("webpatch")
             else:
                 shutil.rmtree("webpatch")
                 os.mkdir("webpatch")
-
             if not os.path.exists("webpatch/externals"):
                 os.mkdir("webpatch/externals")
             else:
                 shutil.rmtree("webpatch/externals")
                 os.mkdir("webpatch/externals")
-
             if not os.path.exists("webpatch/includes"):
                 os.mkdir("webpatch/includes")
             else:
@@ -218,41 +218,39 @@ class webpdPatch():
         self.findExternals()
         self.cfgExternals()
         self.addObjSetup()
-        
         self.savePdPatchModified()
-
         self.saveMainFile()
         self.extraFunctions()
         if not insideaddAbstractions:
             self.copyAllDataFiles()
             self.addAbstractions()
-
-        shutil.copy(self.PdWebCompilerPath +
+            shutil.copy(self.PdWebCompilerPath +
                     "/src/index.html", "webpatch/index.html")
-        shutil.copy(self.PdWebCompilerPath +
+            shutil.copy(self.PdWebCompilerPath +
                     "/src/helpers.js", "webpatch/helpers.js")
-        shutil.copy(self.PdWebCompilerPath +
+            shutil.copy(self.PdWebCompilerPath +
                     "/src/enable-threads.js", "webpatch/enable-threads.js")
+            if self.pageFolder is not None:
+                for root, dir, files in os.walk(self.pageFolder):
+                    for file in files:
+                        shutil.copy(os.path.join(root, file), "webpatch")
+                    for folder in dir:
+                        shutil.copytree(os.path.join(root, folder), "webpatch/" + folder)
+
 
         self.getDynamicLibraries()
 
         if insideaddAbstractions:
             for sourceFile in self.sortedSourceFiles:
                 self.parent.sortedSourceFiles.append(sourceFile)
-            
-
             for pdpatch in self.PROCESSED_ABSTRACTIONS:
                 self.parent.PROCESSED_ABSTRACTIONS.append(pdpatch)
-
-
-
-
-
         if not insideaddAbstractions:
             self.emccCompile()
         if not insideaddAbstractions:
             print("")
         return True
+
 
     def activeEmcc(self):
         if not os.path.exists(self.PdWebCompilerPath + "/emsdk"):
@@ -275,37 +273,23 @@ class webpdPatch():
                     self.PdWebCompilerPath +
                     "/emsdk")
 
+            
             if platform.system() == "Windows":
-                subprocess.run([self.PdWebCompilerPath +
-                                "/emsdk/emsdk.bat", "install", "latest"])
-                subprocess.run([self.PdWebCompilerPath +
-                                "/emsdk/emsdk.bat", "activate", "latest"])
+                subprocess.run([self.emcc.emsdk, "install", "latest"])
+                subprocess.run([self.emcc.emsdk, "activate", "latest"])
             else:
                 os.environ["EMSDK_QUIET"] = "1"
-                os.system(
-                    "chmod +x " +
-                    self.PdWebCompilerPath +
-                    "/emsdk/emsdk")
-                os.system(
-                    self.PdWebCompilerPath +
-                    "/emsdk/emsdk install latest")
-                os.system(
-                    self.PdWebCompilerPath +
-                    "/emsdk/emsdk activate latest")
-
-                os.system(
-                    "chmod +x " +
-                    self.PdWebCompilerPath +
-                    "/emsdk/emsdk_env.sh")
+                os.system(f"chmod +x {self.emcc.emsdk}")
+                os.system(f"{self.emcc.emsdk} install latest")
+                os.system(f"{self.emcc.emsdk} activate latest")
+                os.system(f"chmod +x {self.emcc.emsdk_env}")
 
         if platform.system() == "Windows":
             subprocess.run(["set", "EMSDK_QUIET=1"], shell=True)
-            subprocess.run([self.PdWebCompilerPath +
-                           "/emsdk/emsdk_env.bat"], shell=True)
+            subprocess.run([self.emcc.emsdk_env], shell=True)
         else:
             os.environ["EMSDK_QUIET"] = "1"
-            subprocess.run([self.PdWebCompilerPath +
-                           "/emsdk/emsdk_env.sh"], shell=True)
+            subprocess.run([self.emcc.emsdk_env], shell=True)
 
 
     def importExternalObjs(self):
@@ -318,34 +302,11 @@ class webpdPatch():
                 self.externalsExtraFunctions.append(module)
 
     def downloadLibPd(self):
-        # see if Git is installed
         if shutil.which("git") is None:
-            myprint("" + "Git is not installed", color='red')
-            if platform.system() == 'Windows':
-                # os.system("start https://git-scm.com/download/win")
-                myprint("")
-                myprint(
-                    "Download Git from https://git-scm.com/download/win",
-                    color='yellow')
-                sys.exit(-1)
-            elif platform.system() == 'Linux':
-                myprint("")
-                myprint("Download Git from https://git-scm.com/download/linux",
-                    color='yellow')
-                sys.exit(-1)
-            elif platform.system() == 'Darwin':
-                myprint("")
-                os.system("git --version")
-                myprint("Download Git from https://git-scm.com/download/mac",
-                    color='yellow')
-                sys.exit(-1)
-
-            else:
-                myprint(
-                    "Git is not installed, install it to proceed",
-                    color='red')
-                sys.exit(-1)
-
+            myprint("" + "Git is not installed!", color='red')
+            myprint("")
+            myprint("Install git using the pd2wasm Docs https://charlesneimog.github.io/PdWebCompiler/patch/#git", color='yellow')
+            sys.exit(0)
         if not os.path.exists(self.PdWebCompilerPath + "/libpd"):
             myprint("" + "Downloading libpd...", color='yellow')
             os.mkdir(self.PdWebCompilerPath + "/libpd")
@@ -466,22 +427,17 @@ class webpdPatch():
             os.mkdir("webpatch/data")
         shutil.copy(abstractionfile, "webpatch/data")
 
+
     def copyAllDataFiles(self):
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
-
         for folderName in ["extra", "Extras", "Audios", "libs", "Abstractions"]:
             if not os.path.exists(folderName):
                 continue
-
             if folderName != "Extras":
                 shutil.copytree(folderName, "webpatch/data/" + folderName)
             else:
                 shutil.copytree(folderName, "webpatch/Extras")
-
-            # for root, _, files in os.walk(folderName):
-                # for file in files:
-                    # shutil.copy(os.path.join(root, file), "webpatch/data")
 
 
     def checkIfIsSupportedObject(self, patchLine):
@@ -490,6 +446,7 @@ class webpdPatch():
             myprint("" +
                        "Visual Arrays are not supported, use [array define] object", color='red')
 
+
     def findExternals(self):
         for line in enumerate(self.PatchLines):
             patchLine = PatchLine()
@@ -497,15 +454,11 @@ class webpdPatch():
             patchLine.patchLine = line[1]
             patchLine.isExternal = False
             patchLine.Tokens = patchLine.patchLine.split(" ")
-            # lineArgs = patchLine.patchLine.split(" ")
             if len(patchLine.Tokens) < 5:
                 continue
-
             objName = patchLine.Tokens[4].replace(
                 "\n", "").replace(";", "").replace(",", "")
-
             self.checkIfIsSupportedObject(patchLine.Tokens)
-
             if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj"
                     and "/" in patchLine.Tokens[4]) and objName != "/":
                 patchLine.isExternal = True
@@ -522,18 +475,15 @@ class webpdPatch():
                 patchLine.isExternal = True
                 patchLine.library =  objName
                 patchLine.name = patchLine.library
-                # check if is abstraction, if it is, should be some patchLine.name.pd in the folder
                 if os.path.exists(patchLine.library + ".pd"):
                     myprint("It is an abstraction", color='red')
-
                 patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
                 patchLine.singleObject = True
-
 
             elif ("s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]):
                 receiverSymbol = patchLine.Tokens[5].replace(
                     "\n", "").replace(";", "").replace(",", "")
-                if ("ui_" in receiverSymbol):
+                if "ui_" in receiverSymbol:
                     patchLine.uiReceiver = True
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
@@ -541,8 +491,6 @@ class webpdPatch():
 
             else:
                 patchLine.name = objName
-
-            # TODO: Print object here
             self.searchForSpecialObject(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternalFound.append(patchLine)
@@ -574,22 +522,19 @@ class webpdPatch():
                                     lineInfo.objFound = True
                                     self.configForAbstraction(
                                         os.path.join(root, file))
-
                 else:
                     lineInfo.objFound = False
-                    myprint("" +
-                               "Could not find " + lineInfo.library, color='red')
-
+                    myprint("Could not find " + lineInfo.library, color='red')
                 if lineInfo.objFound and lineInfo.isAbstraction:
-                    myprint("" + "Found Abstraction: " +
+                    myprint("Found Abstraction: " +
                                lineInfo.name, color='green')
-
                 elif lineInfo.objFound and not lineInfo.isAbstraction:
-                    myprint("" + "Found External: " +
+                    myprint("Found External: " +
                                lineInfo.name, color='green')
                 else:
-                    myprint("" + "Could not find " +
+                    myprint("Could not find " +
                                lineInfo.name, color='red')
+
 
     def searchCFunction(self, lineInfo, root, file):
         functionName = lineInfo.name
@@ -606,6 +551,7 @@ class webpdPatch():
                 functionName = functionName.replace(".", "0x2e")
             self.regexSearch(lineInfo, functionName, os.path.join(root, file))
 
+
     def regexSearch(self, lineInfo, functionName, file):
         with open(file, "r") as C_file:
             file_contents = C_file.read()
@@ -621,6 +567,7 @@ class webpdPatch():
                     self.externalsDict[lineInfo.library] = [C_file.name]
                 else:
                     self.externalsDict[lineInfo.library].append(C_file.name)
+
 
     def addObjSetup(self):
         '''
@@ -680,10 +627,49 @@ class webpdPatch():
                 break
         return True
 
+
+    def enumerateExternals(self, libraryFolder, libraryName):
+        '''
+        Recursively enumerate all external objects and save the JSON file.
+        '''
+        print(libraryFolder)
+
+        # Check if there is an "externals.json" file in the self.PdWebCompilerPath folder
+        externalsJson = os.path.join(self.PdWebCompilerPath, "externals.json")
+        if os.path.exists(externalsJson):
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+        else:
+            externalsDict = {}
+
+        # Define a dictionary to store external object information
+        externalsObjects = []
+
+        for root, _, files in os.walk(libraryFolder):
+            for file in files:
+                if file.endswith(".c") or file.endswith(".cpp"):
+                    with open(os.path.join(root, file), "r") as c_file:
+                        file_contents = c_file.read()
+                        pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
+                        matches = re.finditer(pattern, file_contents)
+                        for match in matches:
+                            objectName = match.group(1)
+                            externalsObjects.append(objectName)
+                            
+
+        # Add the library information to the externals dictionary
+        externalsDict[libraryName] = externalsObjects
+
+        # Save the JSON file
+        with open(externalsJson, "w") as file:
+            json.dump(externalsDict, file, indent=4)
+                                                                    
+
     def saveMainFile(self):
         with open("webpatch/main.c", "w") as file:
             for line in self.templateCode:
                 file.write(line)
+
 
     def usedLibraries(self, libraryName):
         '''
@@ -692,6 +678,7 @@ class webpdPatch():
         if libraryName not in PD_LIBRARIES.UsedLibrariesNames:
             PD_LIBRARIES.UsedLibrariesNames.append(libraryName)
             PD_LIBRARIES.UsedLibraries.append(PD_LIBRARIES.get(libraryName))
+
 
     def downloadExternalLibrarySrc(self, libraryName):
         responseJson = {'message': 'Unknown error'}
@@ -755,6 +742,8 @@ class webpdPatch():
                     "/.externals/" +
                     libraryName +
                     ".zip")
+                
+                self.enumerateExternals(LibraryClass.folder, libraryName)
                 return True
 
             except Exception as e:
@@ -764,11 +753,13 @@ class webpdPatch():
         else:
             return False
 
+
     def getPatchPath(self):
         if os.path.isabs(self.patch):
             self.patch = self.patch
         else:
             self.patch = os.path.join(os.getcwd(), self.patch)
+
 
     def mkBackup(self):
         if not os.path.exists(self.PdWebCompilerPath + "/.backup"):
@@ -790,16 +781,14 @@ class webpdPatch():
         except Exception as e:
             myprint("" + str(e), color='red')
 
+
     def savePdPatchModified(self):
         if not os.path.exists("webpatch/data"):
             os.mkdir("webpatch/data")
-
         if self.insideaddAbstractions:
             PatchFile = self.patch
-
         else:
             PatchFile = 'webpatch/data/index.pd'
-
         with open(PatchFile, "w") as file:
             finalPatch = []
             thereIsAbstraction = False
@@ -809,16 +798,10 @@ class webpdPatch():
                     patchLineList = patchLine.split(" ")
                     patchLineList[4] = patchLineList[4].split("/")[1]
                     finalPatch.append(patchLineList)
-                # elif obj.isAbstraction:
-                    # patchLine = obj.patchLine
-                    # patchLineList = patchLine.split(" ")
-                    # patchLineList[4] = patchLineList[4].split("/")[1]
-                    # finalPatch.append(patchLineList)
                     thereIsAbstraction = True
                 else:
                     patchLineList = obj.patchLine.split(" ")
                     finalPatch.append(patchLineList)
-
             for newLine in finalPatch:
                 if newLine[0] == "#N" and newLine[1] == 'canvas' and thereIsAbstraction:
                     newLine = " ".join(newLine)
@@ -848,6 +831,7 @@ class webpdPatch():
                 for flag in extraFlags:
                     self.extraFlags.append(flag)
 
+
     def removeLibraryPrefix(self, patchfile):
         patchWithoutPrefix = []
         with open(patchfile, "r") as file:
@@ -864,8 +848,8 @@ class webpdPatch():
             for line in patchWithoutPrefix:
                 file.write(" ".join(line))
 
+
     def addAbstractions(self):
-        
         before_files = os.listdir("webpatch/data")
         for dir, _, files in os.walk("webpatch/data"):
             for patchfile in files:
@@ -879,12 +863,11 @@ class webpdPatch():
                                    parent=self)
                         self.removeLibraryPrefix(dir + "/" + patchfile)
                         self.PROCESSED_ABSTRACTIONS.append(patchfile)
-                    
         after_files = os.listdir("webpatch/data")
         if before_files == after_files:
             return
-
         self.addAbstractions()
+
 
     def getDynamicLibraries(self):
         '''
@@ -896,7 +879,6 @@ class webpdPatch():
 
         This method provides a way to configure dynamic libraries necessary for building a project
         with external dependencies.
-
         '''
         for library in PD_LIBRARIES.UsedLibraries:
             requiredLibraries = library.requireDynamicLibraries
@@ -905,16 +887,17 @@ class webpdPatch():
                     try:
                         function = DYNAMIC_LIBRARIES[dyn_library]
                         function(self)  # call the function
-                    except BaseException:
-                        myprint("" + "Could not find " +
+                    except Exception as e:
+                        myprint("Could not find " +
                                    dyn_library, color='red')
+                        myprint("" + str(e), color='red')
+                        sys.exit(0)
 
 
     def emccCompile(self):
         '''
         This is where the code is compiled.
         '''
-
         self.target = 'webpatch/libpd.js'
         self.libpd_dir = self.PdWebCompilerPath + '/libpd'
         self.src_files = 'webpatch/main.c'
@@ -987,39 +970,37 @@ class webpdPatch():
             process = subprocess.Popen(
                 command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
             _, stderr = process.communicate()
+            error = False
             if isinstance(stderr, str):
+                stderrTOKENS = stderr.lower().split("\n") 
+                for key in stderrTOKENS:
+                    if "warning:" in key:
+                        print("")
+                        myprint(key, color='yellow')
+                    elif "error" in key and isinstance(key, str):
+                        error = True
+                        print("")
+                        myprint(key, color='red')
+                    else:
+                        myprint(key)
 
-                if "warning" in stderr:
-                    # split by new line
-                    stderr = stderr.split("\n")
-                    for line in stderr:
-                        if "warning:" in line:
-                            print("")
-                            myprint(" " + line, color='yellow')
-                            print("")
-                        else:
-                            print("     " + line)
-                if "error" in stderr and isinstance(stderr, str):
-                    stderr = stderr.split("\n")
-                    for line in stderr:
-                        if "error:" in line:
-                            print("")
-                            myprint("" + line, color='red')
-                            print("")
-                            sys.exit(-1)
-                        else:
-                            myprint(line, color='red')
+                if error:
+                    myprint("There was an error compiling, READ the output", color='red')
+                    sys.exit(0)
+
                 else:
                     myprint("" + ("=" * 10) +
-                               " Compiled with success " + ("=" * 10), color='green')
+                               " Compiled with success " + ("=" * 10) + "\n", color='green')
 
             process.wait()
         if isinstance(self.html, str):
             shutil.copy(self.html, "webpatch")
 
         if self.args.server_port:
+            myprint("Starting server on port " + str(self.args.server_port), color='green')
+            print("")
             emrun = self.PdWebCompilerPath + \
-                f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} webpatch'
+                f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} .'
             os.system(emrun)
         sys.exit(0)
 

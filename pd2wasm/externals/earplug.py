@@ -7,8 +7,6 @@ def earplug_extra(librarySelf: PureDataExternals):
     '''
     This function copy some things that I already need to compile some externals in cyclone
     '''
-    # print in orange, executing earplug function
-    print("\033[95m" + "    Executing earplug_extra function" + "\033[0m")
     if librarySelf.extraFuncExecuted:
         return
 
