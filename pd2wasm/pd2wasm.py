@@ -14,7 +14,7 @@ import json
 
 from .externals import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
 from .lib.DynamicLibraries import DYNAMIC_LIBRARIES
-from .helpers.helpers import myprint, emccPaths, fixPaths
+from .helpers.helpers import myprint, emccPaths
 
 
 ## ================== EXTERNALS THINGS ================== ##
@@ -64,9 +64,6 @@ class webpdPatch():
         parser.add_argument('--initial-memory', required=False,
                             default=32, help='Set the initial memory of the WebAssembly in MB')
         
-        # parser.add_argument('--gui', required=False,
-                            # default=False, help='Set the port to start the server')
-
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.0.9')
 
@@ -108,7 +105,6 @@ class webpdPatch():
             else:
                 self.PROJECT_ROOT = self.PROJECT_ROOT + "/"
 
-
         self.FoundExternals = False
         self.html = False
         self.pageFolder = self.args.page_folder
@@ -123,12 +119,10 @@ class webpdPatch():
         self.memory = self.args.initial_memory
         self.extraFlags = []
         self.externalsDict = {}
-
         if runMain:
             self.main(
                 pdpatch=pdpatch,
                 insideaddAbstractions=insideaddAbstractions)
-
         else:
             myinput = input("Do you want to compile the patch? [Y/n]: ")
             if myinput == "Y" or myinput == "y":
@@ -148,25 +142,15 @@ class webpdPatch():
         myprint("\n    • Patch => " + patchFileName + "\n", color='cyan')
         if self.args.html is not None:
             if not os.path.isabs(self.args.html) and not insideaddAbstractions:
-                absolutePath = os.path.dirname(os.path.abspath(
-                    os.path.join(os.getcwd(), self.args.html)))
                 self.html = os.getcwd() + "/" + self.args.html
-
         elif self.pageFolder is not None:
             if not os.path.isabs(self.pageFolder) and not insideaddAbstractions:
-                absolutePath = os.path.dirname(os.path.abspath(
-                    os.path.join(os.getcwd(), self.pageFolder)))
                 self.pageFolder = os.getcwd() + "/" + self.pageFolder 
-
         else:
             self.html = self.PdWebCompilerPath + "/src/index.html"
 
         if "index.html" not in str(self.html) and not insideaddAbstractions:
             myprint("The name of your html is not index.html, we will copy one index.html for webpatch!", color="red")
-
-        
-            
-
 
         if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
             os.mkdir(self.PROJECT_ROOT + "/.backup")
@@ -179,7 +163,6 @@ class webpdPatch():
             else:
                 with open(self.PROJECT_ROOT + "/index.html", "w") as file:
                     file.write(INDEX_HTML.format(os.path.basename(str(self.html))))
-            
         if not os.path.exists(self.args.patch):
             notFound = True
             for root, _, files in os.walk(self.PROJECT_ROOT):
@@ -203,12 +186,9 @@ class webpdPatch():
         if not insideaddAbstractions:
             with open(os.path.join(self.PdWebCompilerPath, "src/template.c"), "r") as file:
                 self.templateCode = file.readlines()
-            
-            # create all folders
             if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
                 os.mkdir(self.PdWebCompilerPath + "/.externals")
             if not os.path.exists(self.PROJECT_ROOT + "webpatch"):
-                
                 os.mkdir(self.PROJECT_ROOT + "webpatch")
             else:
                 shutil.rmtree(self.PROJECT_ROOT + "webpatch")
@@ -226,9 +206,7 @@ class webpdPatch():
         else:
             with open(self.PROJECT_ROOT + "webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
-
-            
-
+                
         self.librariesFolder = []
         self.confirm = self.args.confirm
         self.getPatchPath()
@@ -255,10 +233,7 @@ class webpdPatch():
                         shutil.copy(os.path.join(root, file), self.PROJECT_ROOT + "webpatch")
                     for folder in dir:
                         shutil.copytree(os.path.join(root, folder), self.PROJECT_ROOT + "webpatch/" + folder)
-
-
         self.getDynamicLibraries()
-
         if insideaddAbstractions:
             for sourceFile in self.sortedSourceFiles:
                 self.parent.sortedSourceFiles.append(sourceFile)
@@ -270,7 +245,6 @@ class webpdPatch():
             print("")
         return True
 
-
     def activeEmcc(self):
         if not os.path.exists(self.PdWebCompilerPath + "/emsdk"):
             emccGithub = "https://api.github.com/repos/emscripten-core/emsdk/tags"
@@ -281,7 +255,6 @@ class webpdPatch():
             myprint("Downloading emcc...", color="green")
             with open(self.PdWebCompilerPath + "/emcc.zip", "wb") as file:
                 file.write(response.content)
-
             with zipfile.ZipFile(self.PdWebCompilerPath + "/emcc.zip", 'r') as zip_ref:
                 zip_ref.extractall(self.PdWebCompilerPath)
                 extractFolderName = zip_ref.namelist()[0]
@@ -291,23 +264,15 @@ class webpdPatch():
                     extractFolderName,
                     self.PdWebCompilerPath +
                     "/emsdk")
-
             if platform.system() == "Windows":
-                os.system(f"{self.emcc.emsdk} install latest")
-                os.system(f"{self.emcc.emsdk} activate latest")
+                os.system(f"cmd /C {self.emcc.emsdk} install latest")
+                os.system(f"cmd /C {self.emcc.emsdk} activate latest")
             else:
                 os.environ["EMSDK_QUIET"] = "1"
                 os.system(f"chmod +x {self.emcc.emsdk}")
                 os.system(f"{self.emcc.emsdk} install latest")
                 os.system(f"{self.emcc.emsdk} activate latest")
                 os.system(f"chmod +x {self.emcc.emsdk_env}")
-
-        if platform.system() == "Windows":
-            subprocess.run(["set", "EMSDK_QUIET=1"], shell=True)
-            subprocess.run([self.emcc.emsdk_env], shell=True)
-        else:
-            os.environ["EMSDK_QUIET"] = "1"
-            subprocess.run([self.emcc.emsdk_env], shell=True)
 
 
     def importExternalObjs(self):
@@ -986,38 +951,39 @@ class webpdPatch():
         print("")
 
         if platform.system() == "Windows":
-            returnedCommand = os.system(" ".join(command))
-            if returnedCommand != 0:
+            command.insert(0, "/C")
+            command.insert(0, "cmd")
+            command = " ".join(command)          
+        
+        process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        _, stderr = process.communicate()           
+        
+        error = False
+        if isinstance(stderr, str):
+            stderrTOKENS = stderr.lower().split("\n") 
+            for key in stderrTOKENS:
+                if "warning:" in key:
+                    print("")
+                    myprint(key, color='yellow')
+                elif "error" in key and isinstance(key, str):
+                    error = True
+                    print("")
+                    myprint(key, color='red')
+                else:
+                    myprint(key)
+
+            if error:
                 myprint("There was an error compiling, READ the output", color='red')
                 sys.exit(1)
 
-        else:
-            process = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-            _, stderr = process.communicate()
-            error = False
-            if isinstance(stderr, str):
-                stderrTOKENS = stderr.lower().split("\n") 
-                for key in stderrTOKENS:
-                    if "warning:" in key:
-                        print("")
-                        myprint(key, color='yellow')
-                    elif "error" in key and isinstance(key, str):
-                        error = True
-                        print("")
-                        myprint(key, color='red')
-                    else:
-                        myprint(key)
+            else:
+                myprint("" + ("=" * 10) +
+                            " Compiled with success " + ("=" * 10) + "\n", color='green')
 
-                if error:
-                    myprint("There was an error compiling, READ the output", color='red')
-                    sys.exit(1)
-
-                else:
-                    myprint("" + ("=" * 10) +
-                               " Compiled with success " + ("=" * 10) + "\n", color='green')
-
-            process.wait()
+        process.wait()
+        
+        
         if isinstance(self.html, str):
             shutil.copy(self.html, self.PROJECT_ROOT + "webpatch")
 
@@ -1029,6 +995,3 @@ class webpdPatch():
             os.system(emrun)
         sys.exit(0)
 
-
-if __name__ == "__main__":
-    webpdPatch()
