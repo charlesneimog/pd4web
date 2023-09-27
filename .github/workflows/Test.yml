@@ -23,7 +23,8 @@ jobs:
       run: |
         pip install poetry
         poetry build && poetry install
-        pip install dist/*.whl
+        $wheels = Get-ChildItem -Path dist\*.whl
+        pip install $wheels
   
     - name: Tests
       run: |
@@ -55,7 +56,7 @@ jobs:
     - name: Install pd2wasm
       run: |  
         pip install poetry
-        poetry build && poetry install
+        poetry build
         pip install dist/*.whl
 
     - name: Tests
@@ -87,7 +88,7 @@ jobs:
       - name: Install pd2wasm
         run: |
           pip install poetry
-          poetry build && poetry install
+          poetry build 
           pip install dist/*.whl
 
       - name: Test pd2wasm

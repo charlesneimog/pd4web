@@ -38,7 +38,7 @@ class emccPaths:
             self.make = PdWebCompilerPath + '/emsdk/upstream/emscripten/emmake make '
             self.emcc = PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc '
             self.emsdk = PdWebCompilerPath + '/emsdk/emsdk '
-            self.emsdk_env = PdWebCompilerPath + '/emsdk/emsdk_env '
+            self.emsdk_env = PdWebCompilerPath + '/emsdk/emsdk_env.sh '
 
 
                         
