@@ -3,18 +3,22 @@ import tarfile
 import os
 import sys
 import shutil
+from ..helpers import myprint
+from ..helpers import emccPaths
 
-def downloadAndBuild_FFTW3(webpdPatchClass): # defined in PdWebCompiler.py
 
-    projectRoot = webpdPatchClass.PROJECT_ROOT
+def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
+    from ..pd2wasm import webpdPatch
+    webpdPatchClass: webpdPatch = webpdPatchSelf # for better autocompletion
 
+    projectRoot = webpdPatchClass.PdWebCompilerPath
     if not os.path.exists(projectRoot + "/.lib"):
         os.mkdir(projectRoot + "/.lib")
 
     if not os.path.exists(projectRoot + "/.lib/fftw-3.3.10"):
         # print in orange
         print("\n")
-        print("\033[33m" + "    Downloading FFTW3..." + "\033[0m")
+        myprint("Downloading FFTW3...", color="orange")
         response = requests.get('https://www.fftw.org/fftw-3.3.10.tar.gz')
         with open(projectRoot + '/.lib/fftw-3.3.10.tar.gz', 'wb') as f:
             f.write(response.content)
@@ -30,21 +34,18 @@ def downloadAndBuild_FFTW3(webpdPatchClass): # defined in PdWebCompiler.py
         webpdPatchClass.extraFlags.append("-lfftw3f")
         return True
 
-    # check if emconfigure and emmake are in the PATH
-    if shutil.which("emconfigure") is None or shutil.which("emmake") is None:
-        webpdPatchClass.printError("\033[91m" + "    emconfigure or emmake are not in the PATH. Please install Emscripten." + "\033[0m")
-        print("")
-        sys.exit(-1)
-
     # go to the fftw folder
     print("\n")
     print("\033[33m" + "    Building fftw3..." + "\033[0m")
     print("\n")
+    
+    compilers = emccPaths()
 
-    command1 = "cd '" + projectRoot + "/.lib/fftw-3.3.10'"
-    command1 += " && emconfigure ./configure --enable-float --disable-fortran"
-    command1 += " && emmake make"
-    os.system(command1)
+
+    command = "cd '" + projectRoot + "/.lib/fftw-3.3.10'"
+    command += f" && {compilers.configure} ./configure --enable-float --disable-fortran"
+    command += f" && {compilers.make}"
+    os.system(command)
 
     webpdPatchClass.extraFlags.append("-I" + projectRoot + "/.lib/fftw-3.3.10/api")
     webpdPatchClass.extraFlags.append("-L" + projectRoot + "/.lib/fftw-3.3.10/.libs")

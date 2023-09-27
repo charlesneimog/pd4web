@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import Optional
+from ..helpers import myprint
 
 
 class PureDataExternals:
@@ -8,7 +9,7 @@ class PureDataExternals:
         self.name = library['name']
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
-        from ..PdWebCompiler import webpdPatch
+        from ..pd2wasm import webpdPatch
         self.webpdPatch: Optional[webpdPatch]
         self.folder = ''
         self.externalsExtraFunctions = []
@@ -99,7 +100,7 @@ class PD_SUPPORTED_EXTERNALS:
 
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
-            print("\033[95m" + f"    Executing extra configs for {UsedLibrary.name}")
+            myprint("\033[95m" + f"    Executing extra configs for {UsedLibrary.name}", color="purple")
             libraryClass = self.isUsed(UsedLibrary.name)
             extraFunctionStr = UsedLibrary.extraFunc
             function = None
@@ -108,7 +109,9 @@ class PD_SUPPORTED_EXTERNALS:
                     if definedThing == extraFunctionStr:
                         function = getattr(module, extraFunctionStr)
                         break
-                
+            if function is None and extraFunctionStr != None:
+                myprint("\033[91m" + f"    Error: {extraFunctionStr} is not defined in {UsedLibrary.name}", color="red")
+
             if function is not None:      
                 function(libraryClass)
             else:

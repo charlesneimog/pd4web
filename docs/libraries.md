@@ -31,7 +31,7 @@ This table presents an overview of all PureData externals supported by <code>PdW
       <tr>
         <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
         <td> <code>coll</code> </td>
-        <td>± 197</td>
+        <td>244</td>
       </tr>
     </tbody>
     <tbody>
@@ -53,7 +53,7 @@ This table presents an overview of all PureData externals supported by <code>PdW
         <tr>
             <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
             <td> - </td>
-            <td>109</td>
+            <td>110</td>
         </tr>
     </tbody>
     

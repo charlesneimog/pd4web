@@ -1,5 +1,5 @@
-
-
+import os
+import platform
 
 def myprint(str, color=None):
     if color is None:
@@ -20,3 +20,26 @@ def myprint(str, color=None):
     else:
         print(str)
 
+
+class emccPaths:
+    def __init__(self):
+        PdWebCompilerPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        if platform.system() != "Windows":
+            PdWebCompilerPath = PdWebCompilerPath.replace("\\", "/")
+            self.cmake = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcmake.bat" cmake '
+            self.configure = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emconfigure.bat" '
+            self.make = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emmake.bat" make '
+            self.emcc = f'"{PdWebCompilerPath}\\emsdk/upstream/emscripten/emcc.bat" '
+            self.emsdk = f'"{PdWebCompilerPath}\\emsdk\\emsdk.bat" '
+            self.emsdk_env = f'"{PdWebCompilerPath}\\emsdk\\emsdk_env.bat" '
+        else:
+            self.cmake = PdWebCompilerPath + '/emsdk/upstream/emscripten/emcmake cmake '
+            self.configure = PdWebCompilerPath + '/emsdk/upstream/emscripten/emconfigure '
+            self.make = PdWebCompilerPath + '/emsdk/upstream/emscripten/emmake make '
+            self.emcc = PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc '
+            self.emsdk = PdWebCompilerPath + '/emsdk/emsdk '
+            self.emsdk_env = PdWebCompilerPath + '/emsdk/emsdk_env '
+
+
+                        
+        

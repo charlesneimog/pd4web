@@ -1,3 +1,4 @@
+#include <emscripten/em_asm.h>
 #include <emscripten/webaudio.h> // WebAudio API
 #include <z_libpd.h> // libpd
 #include <assert.h> // assert
@@ -6,17 +7,13 @@
 
 // ====================
 
-// =====================================
 // ========== AUDIO CONFIG =============
-// =====================================
 uint8_t patchAudioInputs = 1;
 uint8_t patchAudioOutputs = 2;
 uint8_t wasmAudioWorkletStack[1024 * 1024];
 int samplerate = 48000;
 
-// =====================================
 // ================ GUI ================
-// =====================================
 pthread_mutex_t WriteReadMutex = PTHREAD_MUTEX_INITIALIZER;
 
 char* HTML_IDS[] = {}; // Add this to the WebPdAssembler
@@ -26,6 +23,8 @@ typedef struct pdItem{
     const char*     receiverID;
     float           f;
     const char*     s;
+    t_atom*         list;
+    int             listSize;
     int             type;
     int             changed;
 } pdItem;
@@ -38,8 +37,7 @@ typedef struct pdItemHash{
 } pdItemHash;
 
 struct pdItemHash *receiverHash;
-// IF THERE IS MORE THAN 32 VALUES, INCREASE THIS VALUE
-int pdWebValueArraySize = 32;
+int pdWebValueArraySize = 32; // IF THERE IS MORE THAN 32 VALUES, INCREASE THIS VALUE TODO: Add this on pd2wasm
 
 // ====================
 static pdItemHash* CreatePdItemHash(int size) { 
@@ -59,6 +57,37 @@ static unsigned int HashFunction(pdItemHash* hash_table, const char* key) {
     }
     return hash % hash_table->size;
 }
+
+// ====================
+static void InsertList(pdItemHash* hash_table, const char* key, int size, t_atom* list) {
+    unsigned int index = HashFunction(hash_table, key);
+    pthread_mutex_lock(&WriteReadMutex); // Lock the mutex
+    pdItem* item = hash_table->items[index];
+    if (item == NULL &&  hash_table->count <= hash_table->size) {
+        item = (pdItem*)malloc(sizeof(pdItem));
+        item->receiverID = strdup(key);
+        item->list = malloc(sizeof(t_atom) * size);
+        memcpy(item->list, list, sizeof(t_atom) * size);
+        item->listSize = size;
+        item->type = A_GIMME;
+        item->changed = 1;
+        hash_table->items[index] = item;
+        hash_table->count++; 
+    }
+    else if (hash_table->count > hash_table->size) {
+        EM_ASM_({
+            alert("Hash table is full");
+        });
+    }
+    else if (item != NULL) {
+        item->list = list;
+        item->changed = 1;
+        item->type = A_GIMME;
+    }
+    pthread_mutex_unlock(&WriteReadMutex); // Unlock the mutex
+    return;
+}
+
 
 // ====================
 static void InsertFloat(pdItemHash* hash_table, const char* key, float f) { 
@@ -170,10 +199,16 @@ void pdprint(const char *s) {
     }, s);
 }
 
+
+// ========================================
+void receiveListfromPd(const char *src, int argc, t_atom *argv) {
+    InsertList(receiverHash, (char*)src, argc, argv);
+}
+
+
 // ========================================
 void receiveFloatfromPd(const char *receiver, float value) {    
     InsertFloat(receiverHash, (char*)receiver, value);
-
 }
 
 // ========================================
@@ -187,15 +222,12 @@ void sys_gui_midipreferences(void) {
     return;
 }
 
-// ========================================
 // ============= WEB AUDIO ================
-// ========================================
 static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int numOutputs, 
                 AudioSampleFrame *outputs, int numParams, const AudioParamFrame *params, void *userData){
-
     int outCh = outputs[0].numberOfChannels;
     float tmpOutputs[128 * 2]; 
-    libpd_process_float(2, inputs[0].data, tmpOutputs);
+    libpd_process_float(2, inputs[0].data, tmpOutputs); // TODO: ADD INPUTS AND OUTPUTS FOR pd2wasm.
     int outputIndex = 0;
     for (int i = 0; i < outCh; i++) {
         for (int j = i; j < (128 * outCh); j += 2) {
@@ -211,140 +243,16 @@ EM_JS(int, GetAudioSampleRate, (EMSCRIPTEN_WEBAUDIO_T audioContext), {
     return emscriptenGetAudioObject(audioContext).sampleRate;
 });
 
-
 // ========================================
 EM_JS(void, LoadFinished, (void), {
-    var soundIcon = document.getElementById("SoundIcon");
-    soundIcon.className = "fa-solid fa-volume-xmark fa-2x";
+    JS_LoadFinished();
 });
 
 // ========================================
 EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode), {
     audioContext = emscriptenGetAudioObject(audioContext);
     audioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
-    if (audioContext.state === "running") {
-        audioContext.suspend();
-    }
-    const startButton = document.getElementById("Start-Audio-Button");
-    startButton.onclick = () => {
-        const iconElement = document.getElementById("SoundIcon");
-        if (iconElement.classList.contains("fa-volume-xmark")) {
-            iconElement.classList.remove("fa-volume-xmark");
-            iconElement.classList.add("fa-volume-high");
-            if (iconElement.classList.contains("fa-bounce")){
-                iconElement.classList.remove("fa-bounce");
-            }
-
-            if (audioContext.state === "suspended")
-                audioContext.resume();
-            audioWorkletNode.connect(audioContext.destination);
-        } 
-        else {
-            iconElement.classList.remove("fa-volume-high");
-            iconElement.classList.add("fa-volume-xmark");
-            if (audioContext.state === "running")
-                audioContext.suspend();
-        }
-    };
-
-
-    audioWorkletNode.onprocessorerror = (event) => {
-        alert(event);
-        audioContext.suspend();
-    };
-
-
-    const inputDeviceSelect = document.getElementById("Input-Device-Select");
-    inputDeviceSelect.addEventListener("change", async () => {
-        const iconElement = document.getElementById("SoundIcon");
-        iconElement.classList.remove("fa-volume-high");
-        iconElement.classList.add("fa-volume-xmark"); 
-        iconElement.classList.add("fa-bounce");
-        if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
-        || outputDeviceSelect.value === "default") {
-            if (audioContext.state === "running")
-                audioContext.suspend();
-        } 
-        else {
-            console.log("AudioContext state: " + audioContext.state);
-            if (audioContext.state === "running")
-                audioContext.suspend();
-        }
-    });
-    const outputDeviceSelect = document.getElementById("Output-Device-Select");
-    outputDeviceSelect.addEventListener("change", async () => {
-        if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
-        || outputDeviceSelect.value === "default") {
-            await audioContext.setSinkId({ type : "none" }).then(() => {
-                console.log("Output device: " + outputDeviceSelect.value);
-                console.log("AudioContext state: " + audioContext.state);
-            });
-            
-        }
-        else {
-            await audioContext.setSinkId(outputDeviceSelect.value).then(() => {
-                console.log("Output device: " + outputDeviceSelect.value);
-                console.log("AudioContext state: " + audioContext.state);
-            });
-        }
-    });
-    var startButtonMic = document.getElementById("Start-Audio-Button");
-    async function init(stream){
-        if ("setSinkId" in AudioContext.prototype) {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const buttom = document.getElementById("Output-Device-Select");
-            devices.forEach(function(device) {
-                if (device.kind === "audiooutput" && device.deviceId !== "default") {
-                    var option = document.createElement("option");
-                    option.value = device.deviceId;
-                    option.text = device.label;
-                    // buttom.appendChild(option);
-                }
-            });
-        }
-        else {
-            console.log("Your browser not support AudioContext.setSinkId(), use Brave, Chrome or Edge instead.");
-        }
-
-        if ("setSinkId" in AudioContext.prototype) {
-            const devices = await navigator.mediaDevices.enumerateDevices();
-            const buttom = document.getElementById("Input-Device-Select");
-            devices.forEach(function(device) {
-                if (device.kind === "audioinput" && device.deviceId !== "default") {
-                        var option = document.createElement("option");
-                        option.value = device.deviceId;
-                        option.text = device.label;
-                        // buttom.appendChild(option);
-                }
-            });
-        }
-        const mic = audioContext.createMediaStreamSource(stream);
-        const clickListenerMic = (event) => {
-            if (audioContext.state !== "running") {
-                mic.connect(audioWorkletNode);
-                startButtonMic.removeEventListener("click", clickListenerMic);
-            }     
-            else {
-               audioContext.suspend();
-            }
-        };
-        startButtonMic.addEventListener("click", clickListenerMic);
-    }
-    
-    
-    navigator.mediaDevices.getUserMedia({
-                                        video: false,
-                                        audio: 
-                                            {
-                                                echoCancellation: false, 
-                                                noiseSuppression: false, 
-                                                autoGainControl: false,
-                                                channelCount: 1
-                                            }
-                                        })
-        .then((stream) => init(stream));
-
-
+    JS_AddUIButtons(audioContext, audioWorkletNode);
 });
 
 // ========================================
@@ -352,7 +260,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     if (!success){
         return;
     }
-    int outputChannelCounts[1] = {2}; // Stereo output
+    int outputChannelCounts[1] = {2}; // Stereo output TODO: Need to see how this work for more than 2 channels
     EmscriptenAudioWorkletNodeCreateOptions options = {
         .numberOfInputs = 1,
         .numberOfOutputs = 1,
@@ -362,16 +270,12 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     EMSCRIPTEN_AUDIO_WORKLET_NODE_T wasmAudioWorklet = emscripten_create_wasm_audio_worklet_node(audioContext, 
                                                             "libpd-processor", &options, &ProcessPdPatch, 0); 
     AddUIButtons(audioContext, wasmAudioWorklet);
-    printf("PdWebCompiler version 1.0.8");
-
-
+    libpd_set_listhook(receiveListfromPd);
     libpd_set_floathook(receiveFloatfromPd);
     libpd_set_symbolhook(receiveSymbolfromPd);
-
-
     libpd_set_printhook(pdprint);
     libpd_init();
-    
+
     // WebPd Load Externals
 
     // ====================
@@ -379,25 +283,20 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     for (int i = 0; i < HTML_IDS_SIZE; i++){
         libpd_bind(HTML_IDS[i]);
     }
-
-    // add webpatch/data to the search path
     libpd_add_to_search_path("webpatch/data");
-
     libpd_start_message(1); 
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
-
     libpd_init_audio(patchAudioInputs, patchAudioOutputs, GetAudioSampleRate(audioContext));
     if (!libpd_openfile("index.pd", "webpatch/data")){
         printf("Failed to open patch\n");
     }
 
-    
+    EM_ASM_({
+        JS_LoadFinished();
+    });
 
 
-
-    // Add sound off button
-    LoadFinished();
 }
 
 // ========================================
@@ -446,6 +345,26 @@ EM_JS(void, setSymbolValue, (const char* symbol, const char* value), {
 });
 
 // ========================================
+EM_JS(void, setListValue, (const char* symbol, const char* value, int clearFirst), {
+    var symbolId = UTF8ToString(symbol);
+    var element = document.getElementById(symbolId); // Find the element by ID
+    if (element === null) {
+        var myElement = document.createElement("input");
+        myElement.id = symbolId;
+        myElement.value = UTF8ToString(value);
+        myElement.style.display = "none";
+        document.body.appendChild(myElement);
+    } 
+    else {
+        if (clearFirst == 0){
+            element.value = "";
+        }
+        var list = element.value;
+        list += UTF8ToString(value);
+    }
+});
+
+// ========================================
 void PdWebCompiler_Loop(){
     for (int i = 0; i < HTML_IDS_SIZE; i++){
         pdItem* item = GetItem(receiverHash, HTML_IDS[i]);
@@ -460,6 +379,12 @@ void PdWebCompiler_Loop(){
             }
             else if(item->type == A_SYMBOL){
                 setSymbolValue(HTML_IDS[i], item->s); 
+            }
+            else if(item->type == A_GIMME){
+                for (int j = 0; j < item->listSize; j++){
+                    t_symbol *listSymbol = atom_getsymbol(item->list + j);
+                    setListValue(HTML_IDS[i], listSymbol->s_name, j);
+                }
             }
             else{
                 return;
@@ -488,7 +413,7 @@ int main(){
 
     receiverHash = CreatePdItemHash(pdWebValueArraySize);
 
-    emscripten_set_main_loop(PdWebCompiler_Loop, 30, 1);
+    emscripten_set_main_loop(PdWebCompiler_Loop, 30, 1); // 30 FPS
 
 
 }
