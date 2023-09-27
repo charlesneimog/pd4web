@@ -53,6 +53,9 @@ jobs:
     - name: Install pd2wasm
       run: |  
         pip install poetry certifi
+        CERT_PATH=$(python -m certifi)
+        export SSL_CERT_FILE=${CERT_PATH}
+        export REQUESTS_CA_BUNDLE=${CERT_PATH}
         poetry build
         pip install dist/*.whl
 
