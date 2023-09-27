@@ -957,8 +957,7 @@ class webpdPatch():
 
         indexFlag = 0
         for flag in self.extraFlags:
-            # add in command after -O3, it must be added in orde, so it must be
-            # after -O3
+            # add Extra Flags in command after -O3, it must be added in orde, so it must be
             command.insert(10 + indexFlag, flag)
             indexFlag += 1
 
@@ -983,39 +982,42 @@ class webpdPatch():
 
 
         print("")
-        myprint("" + " ".join(command), color='blue')
+        myprint(" ".join(command), color='blue')
         print("")
 
-        if platform.system() == "Windows":
-            os.system(" ".join(command))
-
-        else:
-            process = subprocess.Popen(
-                command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
-            _, stderr = process.communicate()
-            error = False
-            if isinstance(stderr, str):
-                stderrTOKENS = stderr.lower().split("\n") 
-                for key in stderrTOKENS:
-                    if "warning:" in key:
-                        print("")
-                        myprint(key, color='yellow')
-                    elif "error" in key and isinstance(key, str):
-                        error = True
-                        print("")
-                        myprint(key, color='red')
-                    else:
-                        myprint(key)
-
-                if error:
-                    myprint("There was an error compiling, READ the output", color='red')
-                    sys.exit(1)
-
+        # if platform.system() == "Windows":
+        #     returnedCommand = os.system(" ".join(command))
+        #     if returnedCommand != 0:
+        #         myprint("There was an error compiling, READ the output", color='red')
+        #         sys.exit(1)
+        #
+        # else:
+        process = subprocess.Popen(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        _, stderr = process.communicate()
+        error = False
+        if isinstance(stderr, str):
+            stderrTOKENS = stderr.lower().split("\n") 
+            for key in stderrTOKENS:
+                if "warning:" in key:
+                    print("")
+                    myprint(key, color='yellow')
+                elif "error" in key and isinstance(key, str):
+                    error = True
+                    print("")
+                    myprint(key, color='red')
                 else:
-                    myprint("" + ("=" * 10) +
-                               " Compiled with success " + ("=" * 10) + "\n", color='green')
+                    myprint(key)
 
-            process.wait()
+            if error:
+                myprint("There was an error compiling, READ the output", color='red')
+                sys.exit(1)
+
+            else:
+                myprint("" + ("=" * 10) +
+                           " Compiled with success " + ("=" * 10) + "\n", color='green')
+
+        process.wait()
         if isinstance(self.html, str):
             shutil.copy(self.html, self.PROJECT_ROOT + "webpatch")
 
