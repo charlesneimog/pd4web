@@ -2,7 +2,6 @@ name: Tests
 on:
   workflow_dispatch:
 
-
 jobs:  
   # ==============================================================================
   # =                               WINDOWS                                      =
@@ -24,6 +23,7 @@ jobs:
       run: |
         pip install poetry
         poetry build && poetry install
+        pip install dist/*.whl
   
     - name: Tests
       run: |
@@ -53,9 +53,10 @@ jobs:
         python-version: '3.11'
 
     - name: Install pd2wasm
-      run: |
-	pip install poetry
+      run: |  
+        pip install poetry
         poetry build && poetry install
+        pip install dist/*.whl
 
     - name: Tests
       run: |
@@ -85,8 +86,9 @@ jobs:
          
       - name: Install pd2wasm
         run: |
-	pip install poetry
-        poetry build && poetry install
+          pip install poetry
+          poetry build && poetry install
+          pip install dist/*.whl
 
       - name: Test pd2wasm
         run: |
