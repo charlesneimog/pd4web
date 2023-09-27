@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml/badge.svg"><img src="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml" alt="License"></a>
+  <a href="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml"><img src="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml/badge.svg" alt="License"></a>
 </p>
 
 <p align="center">
