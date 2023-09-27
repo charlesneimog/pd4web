@@ -1,4 +1,4 @@
-name: pd2wasm Tests
+name: PdWebCompiler Tests
 on:
   workflow_dispatch:
 
