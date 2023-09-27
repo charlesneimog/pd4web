@@ -19,7 +19,6 @@
 #X obj 34 37 metro 200;
 #X obj 41 7 loadbang;
 #X obj 255 74 else/biquads~;
-#X obj 255 103 convolve~;
 #X obj 266 177 earplug~;
 #X obj 266 198 dac~, f 8;
 #X obj 255 124 *~ 0.01;
@@ -36,8 +35,7 @@
 #X connect 14 3 4 0;
 #X connect 17 0 1 0;
 #X connect 18 0 17 0;
-#X connect 19 0 20 0;
-#X connect 20 0 23 0;
-#X connect 21 0 22 0;
-#X connect 21 1 22 1;
-#X connect 23 0 21 0;
+#X connect 19 0 22 0;
+#X connect 20 0 21 0;
+#X connect 20 1 21 1;
+#X connect 22 0 20 0;

@@ -3,7 +3,8 @@ import tarfile
 import os
 import sys
 import shutil
-from ..helpers import myprint
+import platform
+from ..helpers import myprint, fixPaths
 from ..helpers import emccPaths
 
 
@@ -11,26 +12,26 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
     from ..pd2wasm import webpdPatch
     webpdPatchClass: webpdPatch = webpdPatchSelf # for better autocompletion
 
-    projectRoot = webpdPatchClass.PdWebCompilerPath
-    if not os.path.exists(projectRoot + "/.lib"):
-        os.mkdir(projectRoot + "/.lib")
+    PackagePatch = webpdPatchClass.PdWebCompilerPath
 
-    if not os.path.exists(projectRoot + "/.lib/fftw-3.3.10"):
+        
+
+    if not os.path.exists(PackagePatch + "/.lib/fftw-3.3.10"):
         # print in orange
         print("\n")
         myprint("Downloading FFTW3...", color="orange")
         response = requests.get('https://www.fftw.org/fftw-3.3.10.tar.gz')
-        with open(projectRoot + '/.lib/fftw-3.3.10.tar.gz', 'wb') as f:
+        with open(fixPaths(PackagePatch + '/.lib/fftw-3.3.10.tar.gz'), 'wb') as f:
             f.write(response.content)
-        with tarfile.open(projectRoot + '/.lib/fftw-3.3.10.tar.gz', 'r:gz') as tar:
-            tar.extractall(projectRoot + '/.lib')
-        os.remove(projectRoot + '/.lib/fftw-3.3.10.tar.gz')
+        with tarfile.open(fixPaths(PackagePatch + '/.lib/fftw-3.3.10.tar.gz'), 'r:gz') as tar:
+            tar.extractall(PackagePatch + '/.lib')
+        os.remove(PackagePatch + '/.lib/fftw-3.3.10.tar.gz')
 
 
     # check if file projectRoot + "/.lib/fftw-3.3.10/.libs/libfftw3f.a" exists
-    if os.path.exists(projectRoot + "/.lib/fftw-3.3.10/.libs/libfftw3f.a"):
-        webpdPatchClass.extraFlags.append("-I" + projectRoot + "/.lib/fftw-3.3.10/api")
-        webpdPatchClass.extraFlags.append("-L" + projectRoot + "/.lib/fftw-3.3.10/.libs")
+    if os.path.exists(fixPaths(PackagePatch + "/.lib/fftw-3.3.10/.libs/libfftw3f.a")):
+        webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "/.lib/fftw-3.3.10/api"))
+        webpdPatchClass.extraFlags.append(fixPaths("-L" + PackagePatch + "/.lib/fftw-3.3.10/.libs"))
         webpdPatchClass.extraFlags.append("-lfftw3f")
         return True
 
@@ -42,13 +43,13 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
     compilers = emccPaths()
 
 
-    command = "cd '" + projectRoot + "/.lib/fftw-3.3.10'"
+    command = fixPaths("cd '" + PackagePatch + "/.lib/fftw-3.3.10'")
     command += f" && {compilers.configure} ./configure --enable-float --disable-fortran"
     command += f" && {compilers.make}"
     os.system(command)
 
-    webpdPatchClass.extraFlags.append("-I" + projectRoot + "/.lib/fftw-3.3.10/api")
-    webpdPatchClass.extraFlags.append("-L" + projectRoot + "/.lib/fftw-3.3.10/.libs")
+    webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "/.lib/fftw-3.3.10/api"))
+    webpdPatchClass.extraFlags.append(fixPaths("-L" + PackagePatch + "/.lib/fftw-3.3.10/.libs"))
     webpdPatchClass.extraFlags.append("-lfftw3f")
     return True
 
