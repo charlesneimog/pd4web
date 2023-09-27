@@ -978,7 +978,7 @@ class webpdPatch():
                 sys.exit(1)
 
             else:
-                myprint("" + ("=" * 10) +
+                myprint(("=" * 10) +
                             " Compiled with success " + ("=" * 10) + "\n", color='green')
 
         process.wait()
@@ -989,7 +989,6 @@ class webpdPatch():
 
         if self.args.server_port:
             myprint("Starting server on port " + str(self.args.server_port), color='green')
-            print("")
             emrun = self.PdWebCompilerPath + \
                 f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} .'
             os.system(emrun)

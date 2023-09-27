@@ -36,7 +36,7 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
 
     myprint("Building fftw3...", color="orange")
     compilers = emccPaths()
-    command = ("cmd /C cd '" + fixPaths(PackagePatch + "/.lib/fftw-3.3.10'"))
+    command = ("cd '" + fixPaths(PackagePatch + "/.lib/fftw-3.3.10'"))
     command += f" && {compilers.configure} ./configure --enable-float --disable-fortran"
     command += f" && {compilers.make}"
     
