@@ -897,11 +897,12 @@ class webpdPatch():
         '''
         This is where the code is compiled.
         '''
-        self.target = 'webpatch/libpd.js'
-        self.libpd_dir = self.PdWebCompilerPath + '/libpd'
-        self.src_files = 'webpatch/main.c'
+        
         memory = self.memory
         if platform.system() == "Windows":
+            self.target = self.PdWebCompilerPath  + 'webpatch\\libpd.js'
+            self.libpd_dir = self.PdWebCompilerPath + '\\libpd'
+            self.src_files = self.PdWebCompilerPath  + 'webpatch\\main.c'
             emcc = '"' + self.PdWebCompilerPath + '\\emsdk\\upstream\\emscripten\\emcc"'
             command = [emcc,
                        '-I "', 'webpatch\\includes\\"',
@@ -919,6 +920,9 @@ class webpdPatch():
                        '--preload-file', 'webpatch\\data\\',
                        ]
         else:
+            self.target = 'webpatch/libpd.js'
+            self.libpd_dir = self.PdWebCompilerPath + '/libpd'
+            self.src_files = 'webpatch/main.c'
             emcc = self.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc'
             command = [emcc,
                        '-I', 'webpatch/includes/',
