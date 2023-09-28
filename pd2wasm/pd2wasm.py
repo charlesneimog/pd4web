@@ -942,6 +942,7 @@ class webpdPatch():
             self.target = self.PROJECT_ROOT + 'webpatch\\libpd.js'
             self.libpd_dir = self.PdWebCompilerPath + '\\libpd'
             self.src_files = self.PROJECT_ROOT + 'webpatch\\main.c'
+            os.chdir(self.PROJECT_ROOT)
             emcc = self.emcc.emcc
             command = [emcc,
                        '-I ', self.PROJECT_ROOT + 'webpatch\\includes\\',
@@ -1049,4 +1050,3 @@ class webpdPatch():
                 f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} .'
             os.system(emrun)
         sys.exit(0)
-
