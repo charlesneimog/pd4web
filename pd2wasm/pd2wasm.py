@@ -1,4 +1,4 @@
-import os
+import os 
 import platform
 import sys
 import subprocess
@@ -134,6 +134,10 @@ class webpdPatch():
 
 
     def main(self, pdpatch=None, insideaddAbstractions=False):
+        '''
+        Main functions, it will call all other functions.
+        '''
+
         if pdpatch is not None:
             self.patch = pdpatch
         else:
@@ -209,7 +213,6 @@ class webpdPatch():
                 
         self.librariesFolder = []
         self.confirm = self.args.confirm
-        self.getPatchPath()
         self.mkBackup()
         self.PatchLinesExternalFound = []
         self.findExternals()
@@ -245,7 +248,11 @@ class webpdPatch():
             print("")
         return True
 
+
     def activeEmcc(self):
+        '''
+        This function will download and install emcc if it is not installed.
+        '''
         if not os.path.exists(self.PdWebCompilerPath + "/emsdk"):
             emccGithub = "https://api.github.com/repos/emscripten-core/emsdk/tags"
             response = requests.get(emccGithub)
@@ -276,6 +283,10 @@ class webpdPatch():
 
 
     def importExternalObjs(self):
+        '''
+        Each externals library can use extrafunctions, this function will
+        these functions from the externals folders.
+        '''
         externalFolder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "externals")
         module_files = [f for f in os.listdir(externalFolder) if f.endswith('.py') and not f.startswith('__')]
         module_names = [os.path.splitext(f)[0] for f in module_files]
@@ -284,7 +295,11 @@ class webpdPatch():
                 module = importlib.import_module('pd2wasm.externals.' + module_name)
                 self.externalsExtraFunctions.append(module)
 
+
     def downloadLibPd(self):
+        '''
+        It download and configure the libpd repository, source files and others.
+        '''
         if shutil.which("git") is None:
             myprint("" + "Git is not installed!", color='red')
             myprint("")
@@ -299,14 +314,11 @@ class webpdPatch():
                       " git submodule init && git submodule update" +
                       " && cd pure-data && git submodule init && git submodule update && git switch emscripten-pd54")
 
-    def getValue(self, dictionary, key):
-        if key in dictionary:
-            return dictionary[key]
-        else:
-            return ''
 
     def getSupportedLibraries(self):
-        ''' Read yaml file and get all supported libraries '''
+        ''' 
+        It reads yaml file and get all supported libraries.
+        '''
         global PD_LIBRARIES
         thisFile = os.path.dirname(os.path.realpath(__file__))
         externalFile = os.path.join(thisFile, "externals/Externals.yaml")
@@ -320,14 +332,24 @@ class webpdPatch():
             for library in supportedLibraries:
                 PdLib = PureDataExternals(library, self.PROJECT_ROOT)
                 PD_LIBRARIES.add(PdLib)
+    
 
     def searchForSpecialObject(self, line):
-        if len(line.Tokens) < 5:
+        '''
+        There is some special objects that we need extra configs.
+        This function will search for these objects and add the configs.
+        '''
+        if len(line.Tokens) < 5: # case it is array or float.
             return
 
-        if line.Tokens[4].replace("\n", "") != "clone":
-            return
+        if line.Tokens[4].replace("\n", "") == "clone":
+            self.extraConfig_CLONE(line)
+            
 
+    def extraConfig_CLONE(self, line):
+        '''
+        This function execute the extra config for clone object.
+        '''
         for token in line.Tokens:
             if not "-" in token:
                 absName = token.replace(",", "") + ".pd"
@@ -335,10 +357,8 @@ class webpdPatch():
                     for file in files:
                         if not file.endswith(".pd") and absName not in file:
                             continue
-
                         if absName != file:
                             continue
-
                         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data/" + absName):
                             myprint("" + "Copying " +
                                        absName + " to webpatch/data", color='yellow')
@@ -347,6 +367,10 @@ class webpdPatch():
                                     root, file), self.PROJECT_ROOT + "webpatch/data")
 
     def replaceVISArray(self):
+        '''
+        Visual arrays are not support by WebPd, this function will replace
+        Visual Arrays by [array define] object.
+        '''
         canvasIndex = False
         coordsIndex = False
         restoreIndex = False
@@ -405,13 +429,21 @@ class webpdPatch():
             for line in self.PatchLines:
                 file.write(line)
 
+
     def configForAbstraction(self, abstractionfile):
+        '''
+        This function copies all abstractions to webpatch/data folder.
+        '''
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
         shutil.copy(abstractionfile, self.PROJECT_ROOT + "webpatch/data")
 
 
     def copyAllDataFiles(self):
+        '''
+        This function copies all files from supported folder to webpatch/data folder.
+        TODO: Add support to copy folders specified by the user.
+        '''
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
         for folderName in ["extra", "Extras", "Audios", "libs", "Abstractions"]:
@@ -425,12 +457,18 @@ class webpdPatch():
 
     def checkIfIsSupportedObject(self, patchLine):
         pdClass = patchLine[1]
-        if pdClass == "array":
-            myprint("" +
-                       "Visual Arrays are not supported, use [array define] object", color='red')
+        if pdClass == "array": # If something go wrong and the array is not replaced, we will replace it here
+            myprint("Visual Arrays are not supported, "
+                    + "use [array define] object", color='red')
+            sys.exit(1)
+        
+        # here you add all other objects
 
 
     def findExternals(self):
+        '''
+        This function will find all externals objects in the patch.
+        '''
         for line in enumerate(self.PatchLines):
             patchLine = PatchLine()
             patchLine.patchLineIndex = line[0]
@@ -442,6 +480,7 @@ class webpdPatch():
             objName = patchLine.Tokens[4].replace(
                 "\n", "").replace(";", "").replace(",", "")
             self.checkIfIsSupportedObject(patchLine.Tokens)
+
             if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj"
                     and "/" in patchLine.Tokens[4]) and objName != "/":
                 patchLine.isExternal = True
@@ -454,7 +493,7 @@ class webpdPatch():
                     patchLine.objFound = True
                     patchLine.isExternal = False
 
-            elif self.checkIsObjIsSingle(patchLine.Tokens):
+            elif self.ObjIsLibrary(patchLine.Tokens):
                 patchLine.isExternal = True
                 patchLine.library =  objName
                 patchLine.name = patchLine.library
@@ -478,7 +517,11 @@ class webpdPatch():
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternalFound.append(patchLine)
 
-    def checkIsObjIsSingle(self, patchLine):
+
+    def ObjIsLibrary(self, patchLine):
+        '''
+        This function check if the object has the same name as the library.
+        '''
         if patchLine[1] == "obj":
             nameOfTheObject = patchLine[4].replace(";", "").replace("\n", "")
             nameOfTheObject = nameOfTheObject.replace(",", "")
@@ -487,6 +530,7 @@ class webpdPatch():
                 if LibraryClass and LibraryClass.singleObject:
                     return True
         return False
+
 
     def cfgExternals(self):
         for lineInfo in self.PatchLinesExternalFound:
@@ -520,11 +564,15 @@ class webpdPatch():
 
 
     def searchCFunction(self, lineInfo, root, file):
+        '''
+        This function search for the setup function in the C file using different
+        ways. Here you can add more ways to search for the setup function.
+        '''
         functionName = lineInfo.name
         functionName = functionName.replace("~", "_tilde")
         functionName += "_setup"
         if "." in functionName:
-            functionName = functionName.replace(".", "0x2e")
+            functionName = functionName.replace(".", "0x2e") # else use . as 0x2e
         self.regexSearch(lineInfo, functionName, os.path.join(root, file))
         if not lineInfo.objFound:
             functionName = lineInfo.name
@@ -536,6 +584,10 @@ class webpdPatch():
 
 
     def regexSearch(self, lineInfo, functionName, file):
+        '''
+        This search for the setup function using regex.  
+        '''
+
         with open(file, "r") as C_file:
             file_contents = C_file.read()
             pattern = r'void\s*{}\s*\(\s*void\s*\)'.format(
@@ -735,14 +787,10 @@ class webpdPatch():
             return False
 
 
-    def getPatchPath(self):
-        if os.path.isabs(self.args.patch):
-            self.args.patch = self.args.patch
-        else:
-            self.args.patch = os.path.join(os.getcwd(), self.args.patch)
-
-
     def mkBackup(self):
+        '''
+        This function makes a backup of the patch file.
+        '''
         if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
             os.mkdir(self.PROJECT_ROOT + "/.backup")
         Hour = datetime.datetime.now().hour
@@ -761,9 +809,56 @@ class webpdPatch():
             shutil.copy(self.args.patch, backPatchPath)
         except Exception as e:
             myprint(str(e), color='red')
+    
+
+    def extraFunctions(self):
+        '''
+        This function try to execute extra functions for the library.
+        In this function, there is headers configurations, extra flags and
+        others.
+        '''
+        for usedLibrary in PD_LIBRARIES.UsedLibraries:
+            usedLibrary.webpdPatch = self
+            if usedLibrary.name in self.externalsDict:
+                usedLibrary.UsedSourceFiles = self.externalsDict[usedLibrary.name]
+            
+            if usedLibrary.extraFuncExecuted == True:
+                continue
+
+            usedLibrary.externalsExtraFunctions = self.externalsExtraFunctions
+        
+            extraFlags = PD_LIBRARIES.executeExtraFunction(usedLibrary)
+            if extraFlags is not None:
+                for flag in extraFlags:
+                    self.extraFlags.append(flag)
+
+
+    def removeLibraryPrefix(self, patchfile):
+        '''
+        This function remove the library prefix from the patch file: else/counter => counter.
+        because after the compilation, all the externals become embedded objects.
+        '''
+        patchWithoutPrefix = []
+        with open(patchfile, "r") as file:
+            patchLines = file.readlines()
+            for line in patchLines:
+                lineTokens = line.split(" ")
+                if not len(lineTokens) < 5 and "/" in lineTokens[4]:
+                    lineTokens[4] = lineTokens[4].split("/")[1]
+                    patchWithoutPrefix.append(lineTokens)
+                else:
+                    patchWithoutPrefix.append(lineTokens)
+
+        with open(patchfile, "w") as file:
+            for line in patchWithoutPrefix:
+                file.write(" ".join(line))
 
 
     def savePdPatchModified(self):
+        '''
+        After remove all the prefix, and others things (like remove visual arrays),
+        we save the patch file that will be used by the website.
+        '''
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
         if self.insideaddAbstractions:
@@ -791,43 +886,6 @@ class webpdPatch():
                 else:
                     newLine = " ".join(newLine)
                     file.write(newLine)
-
-
-    def extraFunctions(self):
-        '''
-        This function will execute the second argument
-        '''
-        for usedLibrary in PD_LIBRARIES.UsedLibraries:
-            usedLibrary.webpdPatch = self
-            if usedLibrary.name in self.externalsDict:
-                usedLibrary.UsedSourceFiles = self.externalsDict[usedLibrary.name]
-            
-            if usedLibrary.extraFuncExecuted == True:
-                continue
-
-            usedLibrary.externalsExtraFunctions = self.externalsExtraFunctions
-        
-            extraFlags = PD_LIBRARIES.executeExtraFunction(usedLibrary)
-            if extraFlags is not None:
-                for flag in extraFlags:
-                    self.extraFlags.append(flag)
-
-
-    def removeLibraryPrefix(self, patchfile):
-        patchWithoutPrefix = []
-        with open(patchfile, "r") as file:
-            patchLines = file.readlines()
-            for line in patchLines:
-                lineTokens = line.split(" ")
-                if not len(lineTokens) < 5 and "/" in lineTokens[4]:
-                    lineTokens[4] = lineTokens[4].split("/")[1]
-                    patchWithoutPrefix.append(lineTokens)
-                else:
-                    patchWithoutPrefix.append(lineTokens)
-
-        with open(patchfile, "w") as file:
-            for line in patchWithoutPrefix:
-                file.write(" ".join(line))
 
 
     def addAbstractions(self):
@@ -876,7 +934,8 @@ class webpdPatch():
 
     def emccCompile(self):
         '''
-        This is where the code is compiled.
+        This function create the emcc command, run it and if the user passed
+        the --server-port flag, it will run the server.
         '''
         memory = self.memory
         if platform.system() == "Windows":
