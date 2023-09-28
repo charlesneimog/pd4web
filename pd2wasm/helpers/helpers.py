@@ -25,6 +25,7 @@ def fixPaths(path):
         path = path.replace("/", "\\")
         return path
     else:
+        path = path.replace("\\", "/")
         return path
 
 
