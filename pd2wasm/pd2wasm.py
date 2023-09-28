@@ -976,7 +976,7 @@ class webpdPatch():
                        '-s', 'WASM_WORKERS=1',
                        '-s', 'WASM=1',
                        '-s', 'USE_PTHREADS=1',
-                       '--preload-file', 'webpatch/data/',
+                       '--preload-file', self.PROJECT_ROOT + 'webpatch/data/',
                        ]
 
         indexFlag = 0
