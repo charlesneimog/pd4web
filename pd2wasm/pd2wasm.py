@@ -39,7 +39,7 @@ class webpdPatch():
         
         # get this folder directory
         parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://www.charlesneimog.com/PdWebCompiler")
+            formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://www.charlesneimog.github.io/PdWebCompiler")
         parser.add_argument('--patch', required=True,
                             help='Patch file (.pd) to compile')
         parser.add_argument(
@@ -63,12 +63,18 @@ class webpdPatch():
 
         parser.add_argument('--initial-memory', required=False,
                             default=32, help='Set the initial memory of the WebAssembly in MB')
+
+        parser.add_argument('--replace-helper', required=False, 
+                            default=None, help="Replace helpers.js file by your own file") 
         
         parser.add_argument('--version', action='version',
-                            version='%(prog)s 1.0.9')
+                            version='%(prog)s 1.1.0')
 
         self.args = parser.parse_args()
 
+        if pdpatch is not None:
+            self.args.patch = pdpatch 
+            
         if not os.path.isabs(self.args.patch) and not insideaddAbstractions:
             absolutePath = os.path.dirname(os.path.abspath(
                 os.path.join(os.getcwd(), self.args.patch)))
@@ -106,6 +112,7 @@ class webpdPatch():
                 self.PROJECT_ROOT = self.PROJECT_ROOT + "/"
 
         self.FoundExternals = False
+        self.jsHelper = self.args.replace_helper
         self.html = False
         self.pageFolder = self.args.page_folder
         self.parent = parent
@@ -226,8 +233,22 @@ class webpdPatch():
             self.addAbstractions()
             shutil.copy(self.PdWebCompilerPath +
                     "/src/index.html", self.PROJECT_ROOT + "webpatch/index.html")
-            shutil.copy(self.PdWebCompilerPath +
+            
+            if self.jsHelper is not None:
+                # check if the file is relative or absolute
+                if not os.path.isabs(self.jsHelper):
+                    self.jsHelper = os.getcwd() + "/" + self.jsHelper
+
+                if not os.path.exists(self.jsHelper):
+                    myprint("The file " + self.jsHelper + " does not exist!", color="red")
+                    sys.exit(1)
+
+                shutil.copy(self.jsHelper, self.PROJECT_ROOT + "webpatch/helpers.js")
+
+            else:
+                shutil.copy(self.PdWebCompilerPath +
                     "/src/helpers.js", self.PROJECT_ROOT + "webpatch/helpers.js")
+
             shutil.copy(self.PdWebCompilerPath +
                     "/src/enable-threads.js", self.PROJECT_ROOT + "webpatch/enable-threads.js")
             if self.pageFolder is not None:
@@ -392,7 +413,6 @@ class webpdPatch():
                 arrayFirstIndex = i + 1
                 arrayName = LineTokens_Next[2]
                 arrayLength = LineTokens_Next[3]
-
             j = 2
             while True:
                 if self.PatchLines[i + j].split(" ")[0] == "#A":
@@ -400,19 +420,15 @@ class webpdPatch():
                 else:
                     arrayLastIndex = i + j - 1
                     break
-
             if self.PatchLines[arrayLastIndex + 1].split(" ")[1] == "coords":
                 coordsIndex = arrayLastIndex + 1
             if self.PatchLines[arrayLastIndex + 2].split(" ")[1] == "restore":
                 restoreIndex = arrayLastIndex + 2
                 x_y_coords['x'] = self.PatchLines[restoreIndex].split(" ")[2]
                 x_y_coords['y'] = self.PatchLines[restoreIndex].split(" ")[3]
-
             if canvasIndex and coordsIndex and restoreIndex:
                 break
-
         if canvasIndex and coordsIndex and restoreIndex:
-            # from self.PatchLines, remove canvasIndex value
             self.PatchLines.pop(canvasIndex)
             arrayDefine = f"#X obj {x_y_coords['x']} {x_y_coords['y']} array define " \
                 f"{arrayName} {arrayLength};\n"
@@ -423,8 +439,6 @@ class webpdPatch():
             myprint("" + self.args.patch +
                        " has VIS array, it is not supported and was replaced by [array define]", color='yellow')
             self.replaceVISArray()
-
-        # save self.PatchLines to file
         with open(self.args.patch, "w") as file:
             for line in self.PatchLines:
                 file.write(line)
@@ -446,7 +460,7 @@ class webpdPatch():
         '''
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
-        for folderName in ["extra", "Extras", "Audios", "libs", "Abstractions"]:
+        for folderName in ["extra", "Extras", "Audios", "Libs", "libs", "Abstractions"]:
             if not os.path.exists(folderName):
                 continue
             if folderName != "Extras":
@@ -461,8 +475,6 @@ class webpdPatch():
             myprint("Visual Arrays are not supported, "
                     + "use [array define] object", color='red')
             sys.exit(1)
-        
-        # here you add all other objects
 
 
     def findExternals(self):
@@ -480,7 +492,6 @@ class webpdPatch():
             objName = patchLine.Tokens[4].replace(
                 "\n", "").replace(";", "").replace(",", "")
             self.checkIfIsSupportedObject(patchLine.Tokens)
-
             if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj"
                     and "/" in patchLine.Tokens[4]) and objName != "/":
                 patchLine.isExternal = True
@@ -492,7 +503,6 @@ class webpdPatch():
                     patchLine.isAbstraction = True
                     patchLine.objFound = True
                     patchLine.isExternal = False
-
             elif self.ObjIsLibrary(patchLine.Tokens):
                 patchLine.isExternal = True
                 patchLine.library =  objName
@@ -501,7 +511,6 @@ class webpdPatch():
                     myprint("It is an abstraction", color='red')
                 patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
                 patchLine.singleObject = True
-
             elif ("s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]):
                 receiverSymbol = patchLine.Tokens[5].replace(
                     "\n", "").replace(";", "").replace(",", "")
@@ -510,7 +519,6 @@ class webpdPatch():
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
                 patchLine.name = objName
-
             else:
                 patchLine.name = objName
             self.searchForSpecialObject(patchLine)
@@ -964,6 +972,7 @@ class webpdPatch():
             self.libpd_dir = self.PdWebCompilerPath + '/libpd'
             self.src_files = self.PROJECT_ROOT + 'webpatch/main.c'
             emcc = self.PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc'
+            os.chdir(self.PROJECT_ROOT)
             command = [emcc,
                        '-I', self.PROJECT_ROOT + 'webpatch/includes/',
                        '-I', self.libpd_dir + '/pure-data/src/',
@@ -977,7 +986,7 @@ class webpdPatch():
                        '-s', 'WASM_WORKERS=1',
                        '-s', 'WASM=1',
                        '-s', 'USE_PTHREADS=1',
-                       '--preload-file', self.PROJECT_ROOT + 'webpatch/data/',
+                       '--preload-file', 'webpatch/data/',
                        ]
 
         indexFlag = 0
