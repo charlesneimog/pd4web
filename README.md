@@ -18,6 +18,9 @@
   <a href="https://img.shields.io/pypi/pyversions/pd2wasm"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green" alt="License"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml"><img src="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml/badge.svg" alt="License"></a>
+</p>
 
 <p align="center">
   <h2 align="center">Intro</h2>
