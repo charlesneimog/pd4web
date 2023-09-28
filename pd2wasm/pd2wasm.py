@@ -897,7 +897,7 @@ class webpdPatch():
                        '-s', 'WASM_WORKERS=1',
                        '-s', 'WASM=1',
                        '-s', 'USE_PTHREADS=1',
-                       '--preload-file', self.PROJECT_ROOT + 'webpatch\\data\\',
+                       '--preload-file', 'webpatch\\data\\',
                        ]
         else:
             self.target = self.PROJECT_ROOT + 'webpatch/libpd.js'
@@ -917,7 +917,7 @@ class webpdPatch():
                        '-s', 'WASM_WORKERS=1',
                        '-s', 'WASM=1',
                        '-s', 'USE_PTHREADS=1',
-                       '--preload-file', self.PROJECT_ROOT + 'webpatch/data/',
+                       '--preload-file', 'webpatch/data/',
                        ]
 
         indexFlag = 0
@@ -940,11 +940,9 @@ class webpdPatch():
                 source = source.replace("/", "\\")
             command.append(source)
 
-
         command.append(self.src_files)
         command.append("-o")
         command.append(self.target)
-
 
         print("")
         myprint("" + " ".join(command), color='blue')
@@ -982,7 +980,6 @@ class webpdPatch():
                             " Compiled with success " + ("=" * 10) + "\n", color='green')
 
         process.wait()
-        
         
         if isinstance(self.html, str):
             shutil.copy(self.html, self.PROJECT_ROOT + "webpatch")
