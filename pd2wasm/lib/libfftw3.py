@@ -27,8 +27,8 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
         webpdPatchClass.extraFlags.append("-lfftw3f")
         return True
 
-    if platform.system() == "Windows":
-        myprint("I don't know how to compile FFTW3 for Windows, using compiled version...", color="red")
+    if platform.system() == "Windows" or platform.system() == "Darwin":
+        myprint("On Windows and Mac we use the compiled version of libfftw3", color="red")
         webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "\\.lib\\fftw-3.3.10\\api"))
         webpdPatchClass.extraFlags.append(fixPaths('-L' +  PackagePatch + '\\lib\\compiled\\'))
         webpdPatchClass.extraFlags.append("-lfftw3f")
@@ -37,7 +37,7 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
     myprint("Building fftw3...", color="orange")
     compilers = emccPaths()
     command = ("cd '" + fixPaths(PackagePatch + "/.lib/fftw-3.3.10'"))
-    command += f" && {compilers.configure} ./configure --enable-float --disable-fortran"
+    command += f" && {compilers.configure} ./configure --enable-float --disable-fortran" # for now, weaudio just use float
     command += f" && {compilers.make}"
     
     os.system(command)
