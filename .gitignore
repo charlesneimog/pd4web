@@ -3,5 +3,6 @@ __pycache__/
 dist/
 .externals/
 webpatch/
+index.html
 compile_commands.json
 pyrightconfig.json
