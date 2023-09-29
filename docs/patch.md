@@ -241,13 +241,32 @@ Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm
 
 To convert your patch you must use `pd2wasm` in the terminal. To set configurations for `pd2wasm` must use some of the flags descrited below:  
 
-* `--patch`: Define your patch name. For example, `--patch mypatch.pd`
-* `--html`: Define where is the `index.html` page. If not provided, `pd2wasm` will use the default page. `--html index.html`
-* `--confirm`: There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag. For example, `--confirm True`.
-* `--server-port`: If you want see your patch running in the web browser after the compilation process, you can use this. Normally we use the port number 8080, for example: `--server-port 8080`.
-* `--initial-memory`: If you have a big patch, maybe you will need more that `32MB` of memory, to use more memory set it using `--initial-memory 64`, for example.
+`--patch`
+
+:   Define your patch name. For example, `--patch mypatch.pd`
+
+
+`--html` 
+:   Define where is the `index.html` page. If not provided, `pd2wasm` will use the default page. `--html index.html`.
+
+`--confirm`
+:   There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag. For example, `--confirm True`.
+
+`--server-port`
+:   If you want see your patch running in the web browser after the compilation process, you can use this. Normally we use the port number 8080, for example: `--server-port 8080`.
+
+`--initial-memory`
+:   If you have a big patch, maybe you will need more that `32MB` of memory, to use more memory set it using `--initial-memory 64`, for example.
+
+`--replace-helper`
+:   Replace the `helpers.js` file, where `pd2wasm` defines functions that are called after the load of `PureData` is finished. Replace the icons for sound in/off.
+
+
+`--version`
+:   Show the version of `pd2wasm`.
 
 For example, to compile a big patch called `mygreatpiece.pd` you must run `pd2wasm --patch mygreatpiece.pd --initial-memory 64`. 
+
 
 ### <h3 style="text-align: center"><b>Common Browser Console Erros</b></h3>
 ---------------------
