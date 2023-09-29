@@ -22,11 +22,6 @@
   <a href="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml"><img src="https://github.com/charlesneimog/PdWebCompiler/actions/workflows/Test.yml/badge.svg" alt="License"></a>
 </p>
 
-<p align="center">
-  <h2 align="center">Intro</h2>
-  <br>
-</p>
-
 `PdWebCompiler` empowers you to execute PureData patches directly in web browsers using advanced Web Audio technologies. This tool distinguishes itself from alternative approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), a feat made possible largely due to the contributions of  [claudeha](https://github.com/claudeha). With `PdWebCompiler`, you can compile virtually any PureData vanilla patch, along with a wide list of externals.
 
 ##### ⚠️ Warning: Brace for Breaking Changes ⚠️
