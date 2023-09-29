@@ -227,7 +227,7 @@ class webpdPatch():
         self.addObjSetup()
         self.savePdPatchModified()
         self.saveMainFile()
-        self.extraFunctions()
+        
         if not insideaddAbstractions:
             self.copyAllDataFiles()
             self.addAbstractions()
@@ -257,13 +257,14 @@ class webpdPatch():
                         shutil.copy(os.path.join(root, file), self.PROJECT_ROOT + "webpatch")
                     for folder in dir:
                         shutil.copytree(os.path.join(root, folder), self.PROJECT_ROOT + "webpatch/" + folder)
-        self.getDynamicLibraries()
         if insideaddAbstractions:
             for sourceFile in self.sortedSourceFiles:
                 self.parent.sortedSourceFiles.append(sourceFile)
             for pdpatch in self.PROCESSED_ABSTRACTIONS:
                 self.parent.PROCESSED_ABSTRACTIONS.append(pdpatch)
         if not insideaddAbstractions:
+            self.getDynamicLibraries()
+            self.extraFunctions()
             self.emccCompile()
         if not insideaddAbstractions:
             print("")
@@ -492,8 +493,9 @@ class webpdPatch():
             objName = patchLine.Tokens[4].replace(
                 "\n", "").replace(";", "").replace(",", "")
             self.checkIfIsSupportedObject(patchLine.Tokens)
+
             if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj"
-                    and "/" in patchLine.Tokens[4]) and objName != "/":
+                    and "/" in patchLine.Tokens[4]) and self.ObjIsNotSlash(objName):
                 patchLine.isExternal = True
                 patchLine.library = patchLine.Tokens[4].split("/")[0]
                 patchLine.name = objName.split("/")[-1]
@@ -526,6 +528,11 @@ class webpdPatch():
             self.PatchLinesExternalFound.append(patchLine)
 
 
+    def ObjIsNotSlash(self, objName):
+        if objName == "/" or objName == "//" or objName == "/~" or objName == "//~":
+            return False
+        return True
+
     def ObjIsLibrary(self, patchLine):
         '''
         This function check if the object has the same name as the library.
@@ -535,6 +542,9 @@ class webpdPatch():
             nameOfTheObject = nameOfTheObject.replace(",", "")
             if nameOfTheObject in PD_LIBRARIES.LibraryNames:
                 LibraryClass = PD_LIBRARIES.get(nameOfTheObject)
+                if LibraryClass is None:
+                    myprint("Library not found: " + nameOfTheObject, color='red')
+                    return False
                 if LibraryClass and LibraryClass.singleObject:
                     return True
         return False
@@ -564,8 +574,7 @@ class webpdPatch():
                     myprint("Found Abstraction: " +
                                lineInfo.name, color='green')
                 elif lineInfo.objFound and not lineInfo.isAbstraction:
-                    myprint("Found External: " +
-                               lineInfo.name, color='green')
+                    myprint(f"Found External: {lineInfo.name} | Lib: {lineInfo.library}", color='green')
                 else:
                     myprint("Could not find " +
                                lineInfo.name, color='red')
