@@ -30,7 +30,7 @@ Given that this project is relatively new, it's important to note that there may
 
 #### Details and Documentation
 
-For comprehensive details and documentation, please visit the [Docs](charlesneimog.github.io/PdWebCompiler) section of this project.
+For comprehensive details and documentation, please visit the [Docs](https://charlesneimog.github.io/PdWebCompiler) section of this project.
 
 
 
