@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install pd2wasm
+    - name: Install pd2web
       run: |
         pip install poetry
         poetry build && poetry install
@@ -28,14 +28,14 @@ jobs:
   
     - name: Tests
       run: |
-        cd pd2wasm/tests/
+        cd pd2web/tests/
         python ./runTests.py
         
     - name: Upload Compiled website
       uses: actions/upload-artifact@v2
       with:
         name: compiledWebsite
-        path: pd2wasm/tests/
+        path: pd2web/tests/
 
 
   # ==============================================================================
@@ -55,7 +55,7 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install pd2wasm
+    - name: Install pd2web
       run: |  
         pip install poetry certifi
         CERT_PATH=$(python -m certifi)
@@ -66,7 +66,7 @@ jobs:
 
     - name: Tests
       run: |
-        cd pd2wasm/tests/
+        cd pd2web/tests/
         python3 ./runTests.py
       
 
@@ -86,17 +86,17 @@ jobs:
         with:
           python-version: '3.11'       
          
-      - name: Install pd2wasm
+      - name: Install pd2web
         run: |
           pip install poetry
           poetry build 
           pip install dist/*.whl
 
-      - name: Test pd2wasm
+      - name: Test pd2web
         run: |
-          pd2wasm --help
+          pd2web --help
 
       - name: Tests
         run: |
-          cd pd2wasm/tests/
+          cd pd2web/tests/
           python3 ./runTests.py
