@@ -121,7 +121,6 @@ class PD_SUPPORTED_EXTERNALS:
                 return []
 
     def __repr__(self) -> str:
-
         return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
 
 
@@ -134,10 +133,13 @@ class PatchLine:
     def __init__(self):
         self.isExternal = False
         self.isAbstraction = False
+        self.objwithSlash = False # for objects like /~ / and //
+        self.completLine = ''
         self.name = ''
+        self.completName = ''
         self.library = ''
-        self.patchLineIndex = 0
-        self.patchLine = ''
+        self.index = 0
+        # self.patchLine = ''
         self.objGenSym = ''
         self.singleObject = False
         self.genSymIndex = 0
@@ -173,6 +175,9 @@ class PatchLine:
 
             else:
                 return "<Special Pd Object: " + self.Tokens[0] + ">"
+
+    # def __repr__(self) -> str:
+        # return self.__str__()
 
 
     def addToUsedObject(self, PD_LIBS):
