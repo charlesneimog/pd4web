@@ -1,12 +1,12 @@
 [tool.poetry]
-name = "pd2wasm"
+name = "pd2web"
 version = "1.1.0"
-description = "pd2wasm convert a PureData patch to Wasm file."
+description = "pd2web allows run PureData patches in browsers."
 authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"
-homepage = "https://www.charlesneimog.com/PdWebCompiler"
-repository = "https://github.com/charlesneimog/PdWebCompiler"
-documentation = "https://www.charlesneimog.github.io/PdWebCompiler"
+homepage = "https://www.charlesneimog.github.io/pd2web"
+repository = "https://github.com/charlesneimog/pd2web"
+documentation = "https://www.charlesneimog.github.io/pd2web"
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -14,7 +14,7 @@ pyyaml = "^6.0.0"
 requests = "^2.31.0"
 
 [tool.poetry.scripts]
-pd2wasm = "pd2wasm:webpdPatch"
+pd2web = "pd2web:webpdPatch"
 
 [build-system]
 build-backend = "poetry.core.masonry.api"
