@@ -2,7 +2,6 @@ import os
 import shutil
 from .ExternalClass import PureDataExternals
 from ..helpers import myprint
-from ..pd2wasm import webpdPatch
 
 
 def cyclone_extra(librarySelf: PureDataExternals):

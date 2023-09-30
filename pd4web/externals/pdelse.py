@@ -2,7 +2,7 @@ import os
 import shutil
 from .ExternalClass import PureDataExternals
 from ..helpers import myprint
-from ..pd2wasm import webpdPatch
+from ..pd4web import webpdPatch
 
 def else_extra(librarySelf: PureDataExternals):
     '''
