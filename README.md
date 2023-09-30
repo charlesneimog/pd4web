@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/Test.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/Test.yml/badge.svg" alt="License"></a>
+  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/pd4web-tests.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/pd4web-tests.yml/badge.svg" alt="Tests"></a>
 </p>
 
 `pd4web` empowers you to execute PureData patches directly in web browsers using advanced Web Audio technologies. This tool distinguishes itself from alternative approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), a feat made possible largely due to the contributions of  [claudeha](https://github.com/claudeha). With `pd4web`, you can compile virtually any PureData vanilla patch, along with a wide list of externals.
