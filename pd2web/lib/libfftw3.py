@@ -7,7 +7,7 @@ import platform
 
 
 def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
-    from ..pd2wasm import webpdPatch
+    from ..pd2web import webpdPatch
     webpdPatchClass: webpdPatch = webpdPatchSelf # for better autocompletion
     PackagePatch = webpdPatchClass.PdWebCompilerPath
     
