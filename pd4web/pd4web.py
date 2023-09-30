@@ -317,7 +317,7 @@ class webpdPatch():
         module_names = [os.path.splitext(f)[0] for f in module_files]
         for module_name in module_names:
             if module_name != 'ExternalClass':
-                module = importlib.import_module('pd2wasm.externals.' + module_name)
+                module = importlib.import_module('pd4web.externals.' + module_name)
                 self.externalsExtraFunctions.append(module)
 
 
@@ -328,7 +328,7 @@ class webpdPatch():
         if shutil.which("git") is None:
             myprint("" + "Git is not installed!", color='red')
             myprint("")
-            myprint("Install git using the pd2wasm Docs https://charlesneimog.github.io/PdWebCompiler/patch/#git", color='yellow')
+            myprint("Install git using the pd4web Docs https://charlesneimog.github.io/pd4web/patch/#git", color='yellow')
             sys.exit(0)
         if not os.path.exists(self.PdWebCompilerPath + "/libpd"):
             myprint("" + "Downloading libpd...", color='yellow')

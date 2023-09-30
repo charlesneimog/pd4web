@@ -7,7 +7,7 @@ class PureDataExternals:
         self.name = library['name']
         self.repoUser = library['repoUser']
         self.repoName = library['repoName']
-        from ..pd2web import webpdPatch
+        from ..pd4web import webpdPatch
         self.webpdPatch: Optional[webpdPatch]
         self.folder = ''
         self.externalsExtraFunctions = []
