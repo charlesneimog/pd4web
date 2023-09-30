@@ -1,4 +1,0 @@
-#N canvas 621 137 810 489 8;
-#X obj 34 32 r ui_data;
-#X obj 34 53 print;
-#X connect 0 0 1 0;
