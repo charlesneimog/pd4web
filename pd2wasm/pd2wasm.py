@@ -12,6 +12,8 @@ import re
 import importlib
 import json
 
+from typing import List
+
 from .externals import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
 from .lib.DynamicLibraries import DYNAMIC_LIBRARIES
 from .helpers.helpers import myprint, emccPaths
@@ -117,6 +119,7 @@ class webpdPatch():
         self.pageFolder = self.args.page_folder
         self.parent = parent
         self.source = sourcefile
+        self.PatchLinesProcessed = []
         self.sortedSourceFiles = [] # case there is some files that need to be compiled in order
         self.PROCESSED_ABSTRACTIONS = []
         self.clearTmpFiles = self.args.clearTmpFiles
@@ -190,10 +193,10 @@ class webpdPatch():
                 sys.exit(0)
 
         with open(self.args.patch, "r") as file:
-            self.PatchLines = file.readlines()
+            self.PatchFileLines = file.readlines()
+
         self.replaceVISArray()
         self.processedAbstractions = []
-
         if not insideaddAbstractions:
             with open(os.path.join(self.PdWebCompilerPath, "src/template.c"), "r") as file:
                 self.templateCode = file.readlines()
@@ -221,7 +224,7 @@ class webpdPatch():
         self.librariesFolder = []
         self.confirm = self.args.confirm
         self.mkBackup()
-        self.PatchLinesExternalFound = []
+        self.PatchLinesExternals = []
         self.findExternals()
         self.cfgExternals()
         self.addObjSetup()
@@ -401,47 +404,47 @@ class webpdPatch():
         arrayName = ''
         arrayLength = ''
         x_y_coords = {'x': '0', 'y': '0'}
-        for i in range(len(self.PatchLines)):
-            LineTokens = self.PatchLines[i].split(" ")
+        for i in range(len(self.PatchFileLines)):
+            LineTokens = self.PatchFileLines[i].split(" ")
             if len(LineTokens) < 7:
                 continue
             if LineTokens[6] == "(subpatch)":
                 canvasIndex = i
             else:
                 continue
-            LineTokens_Next = self.PatchLines[i + 1].split(" ")
+            LineTokens_Next = self.PatchFileLines[i + 1].split(" ")
             if LineTokens_Next[1] == "array":
                 arrayFirstIndex = i + 1
                 arrayName = LineTokens_Next[2]
                 arrayLength = LineTokens_Next[3]
             j = 2
             while True:
-                if self.PatchLines[i + j].split(" ")[0] == "#A":
+                if self.PatchFileLines[i + j].split(" ")[0] == "#A":
                     j += 1
                 else:
                     arrayLastIndex = i + j - 1
                     break
-            if self.PatchLines[arrayLastIndex + 1].split(" ")[1] == "coords":
+            if self.PatchFileLines[arrayLastIndex + 1].split(" ")[1] == "coords":
                 coordsIndex = arrayLastIndex + 1
-            if self.PatchLines[arrayLastIndex + 2].split(" ")[1] == "restore":
+            if self.PatchFileLines[arrayLastIndex + 2].split(" ")[1] == "restore":
                 restoreIndex = arrayLastIndex + 2
-                x_y_coords['x'] = self.PatchLines[restoreIndex].split(" ")[2]
-                x_y_coords['y'] = self.PatchLines[restoreIndex].split(" ")[3]
+                x_y_coords['x'] = self.PatchFileLines[restoreIndex].split(" ")[2]
+                x_y_coords['y'] = self.PatchFileLines[restoreIndex].split(" ")[3]
             if canvasIndex and coordsIndex and restoreIndex:
                 break
         if canvasIndex and coordsIndex and restoreIndex:
-            self.PatchLines.pop(canvasIndex)
+            self.PatchFileLines.pop(canvasIndex)
             arrayDefine = f"#X obj {x_y_coords['x']} {x_y_coords['y']} array define " \
                 f"{arrayName} {arrayLength};\n"
-            self.PatchLines.insert(arrayFirstIndex - 1, arrayDefine)
-            self.PatchLines.pop(arrayFirstIndex)
-            self.PatchLines.pop(coordsIndex - 1)
-            self.PatchLines.pop(restoreIndex - 2)
+            self.PatchFileLines.insert(arrayFirstIndex - 1, arrayDefine)
+            self.PatchFileLines.pop(arrayFirstIndex)
+            self.PatchFileLines.pop(coordsIndex - 1)
+            self.PatchFileLines.pop(restoreIndex - 2)
             myprint("" + self.args.patch +
                        " has VIS array, it is not supported and was replaced by [array define]", color='yellow')
             self.replaceVISArray()
         with open(self.args.patch, "w") as file:
-            for line in self.PatchLines:
+            for line in self.PatchFileLines:
                 file.write(line)
 
 
@@ -482,24 +485,24 @@ class webpdPatch():
         '''
         This function will find all externals objects in the patch.
         '''
-        for line in enumerate(self.PatchLines):
+        for line in enumerate(self.PatchFileLines):
             patchLine = PatchLine()
-            patchLine.patchLineIndex = line[0]
-            patchLine.patchLine = line[1]
+            patchLine.index = line[0]
+            patchLine.completLine = line[1]
             patchLine.isExternal = False
-            patchLine.Tokens = patchLine.patchLine.split(" ")
+            patchLine.Tokens = patchLine.completLine.split(" ")
             if len(patchLine.Tokens) < 5:
                 continue
-            objName = patchLine.Tokens[4].replace(
-                "\n", "").replace(";", "").replace(",", "")
+            patchLine.completName = patchLine.Tokens[4].replace(
+                        "\n", "").replace(";", "").replace(",", "")
             self.checkIfIsSupportedObject(patchLine.Tokens)
 
             if (patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj"
-                    and "/" in patchLine.Tokens[4]) and self.ObjIsNotSlash(objName):
+                    and "/" in patchLine.Tokens[4]) and self.ObjIsNotSlash(patchLine):
                 patchLine.isExternal = True
                 patchLine.library = patchLine.Tokens[4].split("/")[0]
-                patchLine.name = objName.split("/")[-1]
-                patchLine.objGenSym = 'class_new(gensym("' + objName + '")'
+                patchLine.name = patchLine.completName.split("/")[-1]
+                patchLine.objGenSym = 'class_new(gensym("' + patchLine.completName + '")'
                 absPath = self.PROJECT_ROOT + "/" + patchLine.library + "/" + patchLine.name + ".pd"
                 if os.path.exists(absPath):
                     patchLine.isAbstraction = True
@@ -507,7 +510,7 @@ class webpdPatch():
                     patchLine.isExternal = False
             elif self.ObjIsLibrary(patchLine.Tokens):
                 patchLine.isExternal = True
-                patchLine.library =  objName
+                patchLine.library =  patchLine.completName
                 patchLine.name = patchLine.library
                 if os.path.exists(patchLine.library + ".pd"):
                     myprint("It is an abstraction", color='red')
@@ -520,16 +523,19 @@ class webpdPatch():
                     patchLine.uiReceiver = True
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
-                patchLine.name = objName
+                patchLine.name = patchLine.completName
             else:
-                patchLine.name = objName
+                patchLine.name = patchLine.completName
             self.searchForSpecialObject(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
-            self.PatchLinesExternalFound.append(patchLine)
+            self.PatchLinesExternals.append(patchLine)
+            self.PatchLinesProcessed.append(patchLine)
 
 
-    def ObjIsNotSlash(self, objName):
+    def ObjIsNotSlash(self, line: PatchLine):
+        objName = line.completName
         if objName == "/" or objName == "//" or objName == "/~" or objName == "//~":
+            line.objwithSlash = True
             return False
         return True
 
@@ -551,7 +557,7 @@ class webpdPatch():
 
 
     def cfgExternals(self):
-        for lineInfo in self.PatchLinesExternalFound:
+        for lineInfo in self.PatchLinesExternals:
             if lineInfo.isExternal:
                 foundLibrary = self.downloadExternalLibrarySrc(
                     lineInfo.library)
@@ -574,7 +580,9 @@ class webpdPatch():
                     myprint("Found Abstraction: " +
                                lineInfo.name, color='green')
                 elif lineInfo.objFound and not lineInfo.isAbstraction:
-                    myprint(f"Found External: {lineInfo.name} | Lib: {lineInfo.library}", color='green')
+                    externalSpace = 10 - len(lineInfo.name)
+                    objName = lineInfo.name + (" " * externalSpace)
+                    myprint(f"Found External: {objName}  | Lib: {lineInfo.library}", color='green')
                 else:
                     myprint("Could not find " +
                                lineInfo.name, color='red')
@@ -626,7 +634,7 @@ class webpdPatch():
         This function will add the obj_setup() inside the main.c file
         '''
         addedFunctions = []
-        for lineInfo in self.PatchLinesExternalFound:
+        for lineInfo in self.PatchLinesExternals:
             if lineInfo.functionName not in addedFunctions:
                 addedFunctions.append(lineInfo.functionName)
                 if lineInfo.isExternal and lineInfo.objFound:
@@ -850,22 +858,18 @@ class webpdPatch():
                     self.extraFlags.append(flag)
 
 
-    def removeLibraryPrefix(self, patchfile):
+    def removeLibraryPrefix(self, patchfile, patchLines: List[PatchLine]):
         '''
         This function remove the library prefix from the patch file: else/counter => counter.
         because after the compilation, all the externals become embedded objects.
         '''
         patchWithoutPrefix = []
-        with open(patchfile, "r") as file:
-            patchLines = file.readlines()
-            for line in patchLines:
-                lineTokens = line.split(" ")
-                if not len(lineTokens) < 5 and "/" in lineTokens[4]:
-                    lineTokens[4] = lineTokens[4].split("/")[1]
-                    patchWithoutPrefix.append(lineTokens)
-                else:
-                    patchWithoutPrefix.append(lineTokens)
-
+        for line in patchLines:
+            if not len(line.Tokens) < 5 and "/" in line.Tokens[4] and not line.objwithSlash:
+                line.Tokens[4] = line.Tokens[4].split("/")[1]
+                patchWithoutPrefix.append(line.Tokens)
+            else:
+                patchWithoutPrefix.append(line.Tokens)
         with open(patchfile, "w") as file:
             for line in patchWithoutPrefix:
                 file.write(" ".join(line))
@@ -885,15 +889,15 @@ class webpdPatch():
         with open(PatchFile, "w") as file:
             finalPatch = []
             thereIsAbstraction = False
-            for obj in self.PatchLinesExternalFound:
+            for obj in self.PatchLinesExternals:
                 if obj.isExternal and not obj.singleObject and not obj.isAbstraction:
-                    patchLine = obj.patchLine
+                    patchLine = obj.completLine
                     patchLineList = patchLine.split(" ")
                     patchLineList[4] = patchLineList[4].split("/")[1]
                     finalPatch.append(patchLineList)
                     thereIsAbstraction = True
                 else:
-                    patchLineList = obj.patchLine.split(" ")
+                    patchLineList = obj.completLine.split(" ")
                     finalPatch.append(patchLineList)
             for newLine in finalPatch:
                 if newLine[0] == "#N" and newLine[1] == 'canvas' and thereIsAbstraction:
@@ -912,12 +916,13 @@ class webpdPatch():
                 if patchfile.endswith(".pd") and patchfile != "index.pd":
                     # check if patch is not in PROCESSED_ABSTRACTIONS
                     if patchfile not in self.PROCESSED_ABSTRACTIONS:
-                        webpdPatch(sourcefile=self.PROJECT_ROOT + "webpatch/main.c",
-                                   pdpatch=self.PROJECT_ROOT + "webpatch/data/" + patchfile,
-                                   insideaddAbstractions=True,
-                                   runMain=True, 
-                                   parent=self)
-                        self.removeLibraryPrefix(dir + "/" + patchfile)
+                        abstraction = webpdPatch(sourcefile=self.PROJECT_ROOT + "webpatch/main.c",
+                                       pdpatch=self.PROJECT_ROOT + "webpatch/data/" + patchfile,
+                                       insideaddAbstractions=True,
+                                       runMain=True, 
+                                       parent=self)
+                        patchPath = dir + "/" + patchfile
+                        self.removeLibraryPrefix(patchPath, abstraction.PatchLinesProcessed)
                         self.PROCESSED_ABSTRACTIONS.append(patchfile)
         after_files = os.listdir(self.PROJECT_ROOT + "webpatch/data")
         if before_files == after_files:
