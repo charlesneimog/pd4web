@@ -10,7 +10,7 @@ hide:
 
 ## <h2 style="text-align: center"><b>Installing Dependencies</b></h2>
 
-<p style="text-align: center"> To compile your patch, you need to install <code>Git</code>, <code>Python</code>, and <code>pd2wasm</code>. Below we have instructions for all the main plataforms, follow the steps for your plataform.</p>
+<p style="text-align: center"> To compile your patch, you need to install <code>Git</code>, <code>Python</code>, and <code>pd4web</code>. Below we have instructions for all the main plataforms, follow the steps for your plataform.</p>
 
 --------------------------
 ### <h3 style="text-align: center"><b>Git</b></h3>
@@ -126,24 +126,24 @@ hide:
 
 
 --------------------------
-### <h3 style="text-align: center"><b>pd2wasm</b></h3>
+### <h3 style="text-align: center"><b>pd4web</b></h3>
 --------------------------
 
 
-Close all the Terminals/Powershells/Cmds opened then open it again running `python3 -m pip install pd2wasm` or, for Windows, `python -m pip install pd2wasm`.
+Close all the Terminals/Powershells/Cmds opened then open it again running `python3 -m pip install pd4web` or, for Windows, `python -m pip install pd4web`.
 
-To test if it works you can run: `pd2wasm --help`. 
+To test if it works you can run: `pd4web --help`. 
 
-It must install a lot of things. Wait for it. Finnaly run `pd2wasm --help` again, you must see something like: 
+It must install a lot of things. Wait for it. Finnaly run `pd4web --help` again, you must see something like: 
 
 !!! bash-code
 
     ``` 
-    usage: pd2wasm [-h] --patch PATCH [--html HTML] [--confirm CONFIRM]
+    usage: pd4web [-h] --patch PATCH [--html HTML] [--confirm CONFIRM]
                    [--clearTmpFiles CLEARTMPFILES] [--server-port SERVER_PORT]
                    [--initial-memory INITIAL_MEMORY] [--gui GUI] [--version]
 
-    Check the complete docs in https://www.charlesneimog.com/PdWebCompiler
+    Check the complete docs in https://www.charlesneimog.com/pd4web
 
         etc...
 
@@ -156,7 +156,7 @@ Now you can compile your patches! If it not work, you can buy support in <a href
 ## <h2 style="text-align: center"><b>Make your patch for Web</b></h2>
 -----------------------------------
 
-<p style="text-align: center"> Here, I will explain some considerations for starting a new Project using <code>PdWebCompiler</code>. </p>
+<p style="text-align: center"> Here, I will explain some considerations for starting a new Project using <code>pd4web</code>. </p>
 
 
 #### Folder Structure
@@ -211,20 +211,20 @@ After you compile your patch, will be created in the ROOT of the project a file 
 ---------------------
 #### Rules to follow when making your patch
 
-There is some rules that you need to follow to `pd2wasm` work properly. 
+There is some rules that you need to follow to `pd4web` work properly. 
 
 ---------------------
 === "Rule 1: Externals"
 
-    !!! pd2wasm-rule "RULE #1"
+    !!! pd4web-rule "RULE #1"
 
         <h3 style="text-align: center">Always use the library name in the object. So, don't type `counter` object, type `cyclone/counter`. You can also use `declare -lib else` for example. But all libraries declared in the PureData configuration will not be recognized. </h3>
         
-    This is how, for now, `pd2wasm` find the objects that are externals or embbedded in PureData. There is some automatic work around externals.
+    This is how, for now, `pd4web` find the objects that are externals or embbedded in PureData. There is some automatic work around externals.
 
 === "Rule 2: Avoid Visual Objects"
 
-    !!! pd2wasm-rule "RULE #2"
+    !!! pd4web-rule "RULE #2"
 
         <h3 style="text-align: center">Avoid the use of Visual Objects.</h3>
 
@@ -236,10 +236,10 @@ There is some rules that you need to follow to `pd2wasm` work properly.
 
 Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm` file will be loaded in the browser.
 
-### <h3 style="text-align: center"><b>pd2wasm command line</b></h3>
+### <h3 style="text-align: center"><b>pd4web command line</b></h3>
 ---------------------
 
-To convert your patch you must use `pd2wasm` in the terminal. To set configurations for `pd2wasm` must use some of the flags descrited below:  
+To convert your patch you must use `pd4web` in the terminal. To set configurations for `pd4web` must use some of the flags descrited below:  
 
 `--patch`
 
@@ -247,7 +247,7 @@ To convert your patch you must use `pd2wasm` in the terminal. To set configurati
 
 
 `--html` 
-:   Define where is the `index.html` page. If not provided, `pd2wasm` will use the default page. `--html index.html`.
+:   Define where is the `index.html` page. If not provided, `pd4web` will use the default page. `--html index.html`.
 
 `--confirm`
 :   There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag. For example, `--confirm True`.
@@ -259,13 +259,13 @@ To convert your patch you must use `pd2wasm` in the terminal. To set configurati
 :   If you have a big patch, maybe you will need more that `32MB` of memory, to use more memory set it using `--initial-memory 64`, for example.
 
 `--replace-helper`
-:   Replace the `helpers.js` file, where `pd2wasm` defines functions that are called after the load of `PureData` is finished. Replace the icons for sound in/off.
+:   Replace the `helpers.js` file, where `pd4web` defines functions that are called after the load of `PureData` is finished. Replace the icons for sound in/off.
 
 
 `--version`
-:   Show the version of `pd2wasm`.
+:   Show the version of `pd4web`.
 
-For example, to compile a big patch called `mygreatpiece.pd` you must run `pd2wasm --patch mygreatpiece.pd --initial-memory 64`. 
+For example, to compile a big patch called `mygreatpiece.pd` you must run `pd4web --patch mygreatpiece.pd --initial-memory 64`. 
 
 
 ### <h3 style="text-align: center"><b>Common Browser Console Erros</b></h3>
@@ -290,7 +290,7 @@ After you compile your patch, you should check if there is some error in the bro
         at libpd.wasm:0x18244
         ```
         
-    To solve this, you must run `pd2wasm` with the flag `--initial-memory 64` or a bigger number.
+    To solve this, you must run `pd4web` with the flag `--initial-memory 64` or a bigger number.
     
 
 === "Files Not Found"
@@ -339,7 +339,7 @@ It is important to note that it will be a string, so if you need a number you mu
 
 ### <h3 style="text-align: center"><b>Sending data to PureData</b></h3>
 
-To make some trigger or change some parameter like `gain` for your patch you must use the `sendToPureData`. They are part of the `helpers.js` script provide with `PdWebCompiler`. To receive the data you must use `receive` or `r` with the same name specified with function `sendToPureData`.
+To make some trigger or change some parameter like `gain` for your patch you must use the `sendToPureData`. They are part of the `helpers.js` script provide with `pd4web`. To receive the data you must use `receive` or `r` with the same name specified with function `sendToPureData`.
 
 For example, to send `0.7` to PureData you must use the `js` code below:
 

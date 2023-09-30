@@ -1,12 +1,12 @@
 # Documentation for Devs
 
-<p align="center"> Page to document the details of how you can contribute with <code>PdWebCompiler</code>. </p>
+<p align="center"> Page to document the details of how you can contribute with <code>pd4web</code>. </p>
 
-## <h2 align="center"> **pd2wasm** </h2>
+## <h2 align="center"> **pd4web** </h2>
 
-`PdWebCompiler` is a collection of tools with a user interface provided through a Python module called `pd2wasm`. `pd2wasm` can be divided into three main parts:
+`pd4web` is a collection of tools with a user interface provided through a Python module called `pd4web`. `pd4web` can be divided into three main parts:
 
-1. The main script, `PdWebCompiler.py`.
+1. The main script, `pd4web.py`.
 2. The `externals` folder, consisting of the main file `ExternalClass.py` and files for each library.
 3. The `lib` folder, comprising the main file main.py and files for each library.
 
@@ -100,7 +100,7 @@ SupportedLibraries:
 
 The `extraFunction` is responsible for making all extra configurations for a PureData External. The `extraFunction` is defined inside a file inside the `externals` folder. It will be automatically imported and used when you specify it on `extraFunction` key in the `Externals.yaml` file.
 
-`PdWebCompiler` configures a `.c` file for compilation. To set up the compilation, we assume that: 
+`pd4web` configures a `.c` file for compilation. To set up the compilation, we assume that: 
 
 1. All header files `(.h)` are located within the `webpatch/includes` folder.
 2. All the files to be compiled `(.c)` are located within `webpatch/externals`.
