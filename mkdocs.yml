@@ -62,7 +62,7 @@ markdown_extensions:
     - pymdownx.details
 
 
-repo_url: https://github.com/charlesneimog/PdWebCompiler
+repo_url: https://github.com/charlesneimog/pd4web
 
 extra_css:
   - extra/extra.css
