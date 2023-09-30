@@ -1,4 +1,4 @@
-name: PdWebCompiler Tests
+name: pd4web Tests
 on:
   workflow_dispatch:
 
