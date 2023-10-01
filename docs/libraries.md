@@ -23,7 +23,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
     <tbody>
         <tr>
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
-          <td><code>sfz~</code>, <code>sfont~</code></td>
+          <td><code>sfz~</code>, <code>sfont~</code></td> 
           <td>509</td>
         </tr>
     </tbody>
@@ -64,10 +64,9 @@ This table presents an overview of all PureData externals supported by <code>pd4
             <td>30</td>
         </tr>
     </tbody>
-    
-    
-    
  </table>
+ 
+ 
 
 <br>
 <p style="text-align: center">

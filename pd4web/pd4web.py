@@ -849,9 +849,7 @@ class webpdPatch():
             
             if usedLibrary.extraFuncExecuted == True:
                 continue
-
             usedLibrary.externalsExtraFunctions = self.externalsExtraFunctions
-        
             extraFlags = PD_LIBRARIES.executeExtraFunction(usedLibrary)
             if extraFlags is not None:
                 for flag in extraFlags:

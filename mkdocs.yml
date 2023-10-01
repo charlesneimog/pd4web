@@ -22,8 +22,7 @@ theme:
     - toc.follow
     - navigation.instant
     - header.autohide
-    - attr_list
-    - md_in_html
+
     
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -42,8 +41,6 @@ theme:
         name: Switch to light mode
   
 markdown_extensions:
-
-    - pymdownx.superfences
     - pymdownx.tabbed:
         alternate_style: true
     - pymdownx.emoji:
@@ -56,10 +53,14 @@ markdown_extensions:
     - pymdownx.magiclink
     - pymdownx.highlight
     - abbr
-    - attr_list
-    - md_in_html
     - admonition
     - pymdownx.details
+    - attr_list
+    - md_in_html
+    - pymdownx.superfences
+    - footnotes
+    - pymdownx.keys
+
 
 
 repo_url: https://github.com/charlesneimog/pd4web

@@ -21,7 +21,6 @@ def piro_extra(librarySelf: PureDataExternals):
     if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "libs")):
         os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "libs"))
     
-    # get fftw3 "https://api.github.com/repos/{}/{}/tags"
 
     
 
