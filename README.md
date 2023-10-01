@@ -52,7 +52,7 @@ Contribute to enabling running PureData in WebBrowsers! These are the main areas
   <tr>
     <td align="center">Compiled I</td>
     <td align="center">Live-Electronics music for Trumpet in developing yet!</td>
-    <td>< href="https://charlesneimog.github.io/Compiled-I">WebSite</a></td>
+    <td><a href="https://charlesneimog.github.io/Compiled-I">WebSite</a></td>
   </tr>
 </table>
 
