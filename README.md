@@ -2,7 +2,7 @@
   <h1 align="center">pd4web</h1>
   <p align="center">
     <a href="https://github.com/plugdata-team/plugdata/wiki">
-      <img src="https://raw.githubusercontent.com/charlesneimog/pd4web/main/docs/assets/favicon.png" alt="Logo">
+      <img src="https://raw.githubusercontent.com/charlesneimog/pd4web/main/docs/assets/favicon2.png" width="10%" alt="Logo">
     </a>
   </p>
   <h4 align="center">pd4web: Running PureData Patches in Browsers with Web Audio</h4>
