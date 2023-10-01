@@ -115,6 +115,7 @@ class PD_SUPPORTED_EXTERNALS:
             else:
                 return []
 
+            print(libraryClass.extraFlags)
             if libraryClass:
                 return libraryClass.extraFlags
             else:

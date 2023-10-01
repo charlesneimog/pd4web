@@ -61,7 +61,13 @@
          id="stop1748" /><stop
          offset="1"
          stop-color="#ffc331"
-         id="stop1750" /></linearGradient></defs><polyline
+         id="stop1750" /></linearGradient></defs><rect
+     style="fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0.371098;stroke-opacity:1"
+     id="rect1"
+     width="15.275631"
+     height="8.8389091"
+     x="15.448264"
+     y="12.591204" /><polyline
      transform="translate(-103.5,-98.499998)"
      points="104.0 99.0 148.0 99.0 148.0 124.0 104.0 124.0 104.0 99.0"
      id=".x7fb48cd26890.t7fb48cc1a7d0R obj"

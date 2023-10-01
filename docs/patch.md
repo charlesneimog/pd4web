@@ -239,7 +239,7 @@ Here I explain the steps to convert your `.pd` patch to `.wasm` file. The `.wasm
 ### <h3 style="text-align: center"><b>pd4web command line</b></h3>
 ---------------------
 
-To convert your patch you must use `pd4web` in the terminal. To set configurations for `pd4web` must use some of the flags descrited below:  
+To convert your patch you must use `pd4web` in the terminal. To set configurations for `pd4web` must use some of the flags descrited below: 
 
 `--patch`
 
@@ -271,7 +271,12 @@ For example, to compile a big patch called `mygreatpiece.pd` you must run `pd4we
 ### <h3 style="text-align: center"><b>Common Browser Console Erros</b></h3>
 ---------------------
 
-After you compile your patch, you should check if there is some error in the browser console. Below we show some of the common erros that we find when compiling our patches.
+After you compile your patch, you should check if there is some error in the browser console, use:
+
+* ++ctrl+alt+i++ :fontawesome-brands-windows: or :fontawesome-brands-linux:.
+* ++cmd+alt+i++ :fontawesome-brands-apple:. 
+
+Below we show some of the common erros that we find when compiling our patches.
 
 === "Memory"
 
