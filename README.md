@@ -35,3 +35,27 @@ Contribute to enabling running PureData in WebBrowsers! These are the main areas
 * The `pd4web/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
 * The `pd4web/src/template.c`, used to pd4web to build the `main.c` file.
 * The `pd4web/pd4web.py`, which configures the `main.c` file.
+
+<h3 align="center"> Examples</h3>
+
+<table align="center" width="100%">
+  <tr>
+    <th>Name</th>
+    <th>Description</th>
+    <th>Link</th>
+  </tr>
+  <tr>
+    <td align="center">Algorithm I</td>
+    <td align="center">It is a piece where I use <code>pmpd</code> and <code>plaits~</code> to make Algorithm Music.</td>
+    <td><a href="https://charlesneimog.github.io/Algorithm-Music/Piece-I/">WebSite</a></td>
+  </tr>
+  <tr>
+    <td align="center">Compiled I</td>
+    <td align="center">Live-Electronics music for Trumpet in developing yet!</td>
+    <td><a target="_blank" href="https://charlesneimog.github.io/Compiled-I">WebSite</a></td>
+  </tr>
+</table>
+
+
+
+
