@@ -11,16 +11,13 @@ import yaml
 import re
 import importlib
 import json
-
 from typing import List
 
 from .externals import PD_SUPPORTED_EXTERNALS, PureDataExternals, PatchLine
 from .lib.DynamicLibraries import DYNAMIC_LIBRARIES
 from .helpers.helpers import myprint, emccPaths
 
-
 ## ================== EXTERNALS THINGS ================== ##
-
 INDEX_HTML = '''
 <!doctype html>
 <html lang="en-us">
@@ -78,6 +75,7 @@ class webpdPatch():
             self.args.patch = pdpatch 
             
         if not os.path.isabs(self.args.patch) and not insideaddAbstractions:
+            print("\n")
             absolutePath = os.path.dirname(os.path.abspath(
                 os.path.join(os.getcwd(), self.args.patch)))
             self.patch = os.getcwd() + "/" + self.args.patch
@@ -155,7 +153,7 @@ class webpdPatch():
         else:
             self.patch = self.args.patch
         patchFileName = os.path.basename(self.patch)
-        myprint("\n    • Patch => " + patchFileName, color='cyan')
+        myprint("• Patch => " + patchFileName, color='cyan')
         if self.args.html is not None:
             if not os.path.isabs(self.args.html) and not insideaddAbstractions:
                 self.html = os.getcwd() + "/" + self.args.html
@@ -282,7 +280,7 @@ class webpdPatch():
             self.getDynamicLibraries()
             self.extraFunctions()
             self.emccCompile()
-            print("")
+            # print("")
         return True
 
 
@@ -998,6 +996,7 @@ class webpdPatch():
         In this function, there is headers configurations, extra flags and
         others.
         '''
+        print("")
         for usedLibrary in PD_LIBRARIES.UsedLibraries:
             usedLibrary.webpdPatch = self
             if usedLibrary.name in self.externalsDict:
