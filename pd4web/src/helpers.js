@@ -1,26 +1,31 @@
+var pdIsInitialized = false;
+
+var pdIsInitialized = false;
+
 function JS_AddUIButtons(audioContext, audioWorkletNode) {
     if (audioContext.state === "running") {
             audioContext.suspend();
         }
+
+        // ============================
         const startButton = document.getElementById("Start-Audio-Button");
         startButton.onclick = () => {
             const iconElement = document.getElementById("SoundIcon");
-            if (iconElement.classList.contains("fa-volume-xmark")) {
-                iconElement.classList.remove("fa-volume-xmark");
-                iconElement.classList.add("fa-volume-high");
-                if (iconElement.classList.contains("fa-bounce")){
-                    iconElement.classList.remove("fa-bounce");
+            if (iconElement.classList.contains("fa-volume-xmark")) { // sound is off
+                for (var i = 0; i < iconElement.classList.length; i++) {
+                    iconElement.classList.remove(iconElement.classList[i]);
                 }
-
-                if (audioContext.state === "suspended")
+                iconElement.className = "fa-solid fa-volume-high fa-2x";
+                if (audioContext.state === "suspended"){
                     audioContext.resume();
+                }
                 audioWorkletNode.connect(audioContext.destination);
             } 
-            else {
-                iconElement.classList.remove("fa-volume-high");
-                iconElement.classList.add("fa-volume-xmark");
-                if (audioContext.state === "running")
+            else { // sound is on
+                iconElement.className = "fa-solid fa-volume-xmark fa-2x";
+                if (audioContext.state === "running"){
                     audioContext.suspend();
+                }
             }
         };
         audioWorkletNode.onprocessorerror = (event) => {
@@ -28,45 +33,11 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
             audioContext.suspend();
         };
 
-        const inputDeviceSelect = document.getElementById("Input-Device-Select");
-        inputDeviceSelect.addEventListener("change", async () => {
-            const iconElement = document.getElementById("SoundIcon");
-            iconElement.classList.remove("fa-volume-high");
-            iconElement.classList.add("fa-volume-xmark"); 
-            iconElement.classList.add("fa-bounce");
-            if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
-            || outputDeviceSelect.value === "default") {
-                if (audioContext.state === "running")
-                    audioContext.suspend();
-            } 
-            else {
-                console.log("AudioContext state: " + audioContext.state);
-                if (audioContext.state === "running")
-                    audioContext.suspend();
-            }
-        });
-        const outputDeviceSelect = document.getElementById("Output-Device-Select");
-        outputDeviceSelect.addEventListener("change", async () => {
-            if(outputDeviceSelect.value === "none" || outputDeviceSelect.value === "Default" 
-            || outputDeviceSelect.value === "default") {
-                await audioContext.setSinkId({ type : "none" }).then(() => {
-                    console.log("Output device: " + outputDeviceSelect.value);
-                    console.log("AudioContext state: " + audioContext.state);
-                });
-                
-            }
-            else {
-                await audioContext.setSinkId(outputDeviceSelect.value).then(() => {
-                    console.log("Output device: " + outputDeviceSelect.value);
-                    console.log("AudioContext state: " + audioContext.state);
-                });
-            }
-        });
-        var startButtonMic = document.getElementById("Start-Audio-Button");
+               
         async function init(stream){
             if ("setSinkId" in AudioContext.prototype) {
                 const devices = await navigator.mediaDevices.enumerateDevices();
-                const buttom = document.getElementById("Output-Device-Select");
+                // const buttom = document.getElementById("Output-Device-Select");
                 devices.forEach(function(device) {
                     if (device.kind === "audiooutput" && device.deviceId !== "default") {
                         var option = document.createElement("option");
@@ -81,28 +52,28 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
             }
 
             if ("setSinkId" in AudioContext.prototype) {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const buttom = document.getElementById("Input-Device-Select");
-                devices.forEach(function(device) {
-                    if (device.kind === "audioinput" && device.deviceId !== "default") {
-                            var option = document.createElement("option");
-                            option.value = device.deviceId;
-                            option.text = device.label;
+                // const devices = await navigator.mediaDevices.enumerateDevices();
+                // const buttom = document.getElementById("Input-Device-Select");
+                // devices.forEach(function(device) {
+                    // if (device.kind === "audioinput" && device.deviceId !== "default") {
+                            // var option = document.createElement("option");
+                            // option.value = device.deviceId;
+                            // option.text = device.label;
                             // buttom.appendChild(option);
-                    }
-                });
+                    // }
+                // });
             }
             const mic = audioContext.createMediaStreamSource(stream);
-            const clickListenerMic = (event) => {
+            const clickListenerMic = (_) => {
                 if (audioContext.state !== "running") {
                     mic.connect(audioWorkletNode);
-                    startButtonMic.removeEventListener("click", clickListenerMic);
+                    startButton.removeEventListener("click", clickListenerMic);
                 }     
                 else {
                    audioContext.suspend();
                 }
             };
-            startButtonMic.addEventListener("click", clickListenerMic);
+            startButton.addEventListener("click", clickListenerMic);
         }
         
         
@@ -122,8 +93,9 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
 
 // ====================
 function JS_LoadFinished() {
+    pdIsInitialized = true;
     var soundIcon = document.getElementById("SoundIcon");
-    soundIcon.className = "fa-solid fa-volume-xmark fa-2x";
+    soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
 }
 
 
@@ -180,7 +152,7 @@ function sendString(receiver, str){
     chunkReceiver.set(str_rawThing);
     Module.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
 
-    var result = Module._pd_sendSymbol(ptrReceiver, ptrThing);
+    var result = Module._sendSymbolToPd(ptrReceiver, ptrThing);
 
     Module._webpd_free(ptrReceiver);
     Module._webpd_free(ptrThing);
@@ -190,5 +162,21 @@ function sendString(receiver, str){
     }
 }
 
-
-
+// ====================
+function sendToPureData(receiver, thing){
+    // check if receiver is a string
+    if (typeof receiver !== "string") {
+        console.error("Receiver is not a string!");
+        return;
+    }
+    if (typeof thing === "number") {
+        sendFloat(receiver, thing);
+    }
+    // check if thing is a string
+    else if (typeof thing === "string") {
+        sendString(receiver, thing);
+    }
+    else if (Array.isArray(thing)) {
+        alert("Array is not supported yet!");
+    }
+}
