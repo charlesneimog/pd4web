@@ -12,30 +12,32 @@ class PureDataExternals:
         self.folder = ''
         self.externalsExtraFunctions = []
         try:
-            self.repoAPI = library['download_source']
+            self.repoAPI = library['downloadSrc']
         except:
             self.repoAPI = False
             try:
-                self.directLink = library['direct_link']
+                self.directLink = library['directLink']
             except:
                 # print in red
                 myprint(f"Error: {self.name} doesn't have a download source", color="red")
                 sys.exit(1)
-
         try:
             self.extraFunc = library['extraFunction']
         except:
             self.extraFunc = None
-
         try:
             self.singleObject = library['singleObject']
         except:
             self.singleObject = False
-
         try:
             self.requireDynamicLibraries = library['dynamicLibraries']
         except:
             self.requireDynamicLibraries = False
+
+        try:
+            self.unsupportedObj = library['unsupportedObj']
+        except:
+            self.unsupportedObj = []
 
         self.usedObjs = []
         self.UsedSourceFiles = []
@@ -114,8 +116,6 @@ class PD_SUPPORTED_EXTERNALS:
                 function(libraryClass)
             else:
                 return []
-
-            print(libraryClass.extraFlags)
             if libraryClass:
                 return libraryClass.extraFlags
             else:
@@ -134,6 +134,7 @@ class PatchLine:
     def __init__(self):
         self.isExternal = False
         self.isAbstraction = False
+        self.isLocalAbstraction = False
         self.objwithSlash = False # for objects like /~ / and //
         self.completLine = ''
         self.name = ''
