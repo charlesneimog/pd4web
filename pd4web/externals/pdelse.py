@@ -83,16 +83,19 @@ def else_extra(librarySelf: PureDataExternals):
                         "plaits/dsp/chords/chord_bank.cc",
                         "plaits/resources.cc"
                     ]
-                    for plaitsFile in file_names:
-                        librarySelf.webpdPatch.sortedSourceFiles.append(os.path.join(plaitsFolder, plaitsFile))
 
+                    stmlib = os.path.join(plaitsFolder, "stmlib")
+                    shutil.copytree(stmlib, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "stmlib"))
+                    plaits = os.path.join(plaitsFolder, "plaits")
+                    shutil.copytree(plaits, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "plaits"))
                     
-                    plaitsIncludes = os.path.join(plaitsFolder, "plaits")
-                    shutil.copytree(plaitsIncludes, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes", "plaits"))
 
-                    stmlibrary = os.path.join(plaitsFolder, "stmlib")
-                    shutil.copytree(stmlibrary, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes", "stmlib"))
+                    externalFolder = os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals")
+                    for plaitsFile in file_names:
+                        librarySelf.webpdPatch.sortedSourceFiles.append(os.path.join(externalFolder, plaitsFile))
                                     
+                    librarySelf.webpdPatch.extraFlags.append("-I" + os.path.join(externalFolder))
+
 
         
 
