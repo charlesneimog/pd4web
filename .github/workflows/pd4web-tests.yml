@@ -8,84 +8,99 @@ jobs:
   # ==============================================================================
   windows-build:
     runs-on: windows-latest
-    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
 
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
 
-    - name: Install pd4web
-      run: |
-        pip install poetry
-        poetry build && poetry install
-        $wheels = Get-ChildItem -Path dist\*.whl
-        pip install $wheels
-  
-    - name: Tests
-      run: |
-        cd pd4web/tests/
-        python ./runTests.py
-        
-    - name: Upload Compiled website
-      uses: actions/upload-artifact@v2
-      with:
-        name: compiledWebsite
-        path: pd4web/tests/
+      - name: Install pd4web
+        run: |
+          pip install poetry
+          poetry build && poetry install
+          $wheels = Get-ChildItem -Path dist\*.whl
+          pip install $wheels
+
+      - name: Tests
+        run: |
+          cd pd4web/tests/
+          python ./runTests.py
+
+      - name: Upload Compiled website
+        uses: actions/upload-artifact@v2
+        with:
+          name: compiledWebsite
+          path: pd4web/tests/
 
 
   # ==============================================================================
   # =                               MAC INTEL                                    =
   # ==============================================================================
+  
   macos-intel-build:
     runs-on: macos-latest
-    timeout-minutes: 15
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+
     steps:
-    - uses: actions/checkout@v3
-      with:
-        submodules: recursive
-        fetch-depth: 0
-
-
-    - uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
-    - name: Install pd4web
-      run: |  
-        pip install poetry certifi
-        CERT_PATH=$(python -m certifi)
-        export SSL_CERT_FILE=${CERT_PATH}
-        export REQUESTS_CA_BUNDLE=${CERT_PATH}
-        poetry build
-        pip install dist/*.whl
-
-    - name: Tests
-      run: |
-        cd pd4web/tests/
-        python3 ./runTests.py
-      
-
-  # ==============================================================================
-  # =                               LINUX                                        =
-  # ==============================================================================
-
-  linux-build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
-      - uses: actions/setup-python@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
         with:
-          python-version: '3.11'       
-         
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pd4web
+        run: |  
+          pip install poetry certifi
+          CERT_PATH=$(python -m certifi)
+          export SSL_CERT_FILE=${CERT_PATH}
+          export REQUESTS_CA_BUNDLE=${CERT_PATH}
+          poetry build
+          pip install dist/*.whl
+
+      - name: Tests
+        run: |
+          cd pd4web/tests/
+          python3 ./runTests.py
+      
+# ==============================================================================
+# =                               LINUX                                        =
+# ==============================================================================
+
+  linux-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.10, 3.11, 3.12]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Install pd4web
         run: |
           pip install poetry
@@ -100,3 +115,4 @@ jobs:
         run: |
           cd pd4web/tests/
           python3 ./runTests.py
+
