@@ -5,21 +5,23 @@ DownloadSources:
 
 SupportedLibraries:
   - name: cyclone # name of the pd library
-    download_source: GITHUB_RELEASES # source
+    downloadSrc: GITHUB_RELEASES # source
     repoUser: porres # in this case, Github user name
     repoName: pd-cyclone # in this case, Github Repo
     version: cyclone_0.7-0 # version
     extraFunction: cyclone_extra # This library needs some extras steps, so we used a function called cyclone_extra, defined in externals.cyclone.
+    unsupportedObj: ["coll"]
 
   - name: else
-    download_source: GITHUB_RELEASES
+    downloadSrc: GITHUB_RELEASES
     repoUser: porres
     repoName: pd-else
     version: v1.0-rc9
     extraFunction: else_extra
+    unsupportedObj: ["sfz~", "sfont~"]
 
   - name: earplug~ # must be the name of object when singleObject is true
-    download_source: GITHUB_TAGS
+    downloadSrc: GITHUB_TAGS
     repoUser: pd-externals
     repoName: earplug
     extraFunction: earplug_extra
@@ -27,21 +29,21 @@ SupportedLibraries:
     singleObject: true
 
   - name: convolve~
-    direct_link: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
+    directLink: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
     repoUser: wbrent 
     repoName: convolve_tilde
     dynamicLibraries: ['fftw3']
     singleObject: true
 
   - name: timbreIDLib
-    direct_link: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
+    directLink: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
     repoUser: wbrent 
     repoName: timbreIDLib
     extraFunction: timbreID_extra
     dynamicLibraries: ['fftw3']
 
   - name: pmpd
-    download_source: GITHUB_RELEASES
+    downloadSrc: GITHUB_RELEASES
     repoUser: avilleret 
     repoName: pd-pmpd
     extraFunction: pmpd_extra
