@@ -1,3 +1,5 @@
+var pdIsInitialized = false;
+
 function JS_AddUIButtons(audioContext, audioWorkletNode) {
     if (audioContext.state === "running") {
             audioContext.suspend();
@@ -93,6 +95,7 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
 
 // ====================
 function JS_LoadFinished() {
+    pdIsInitialized = true;
     var soundIcon = document.getElementById("SoundIcon");
     soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
     var title = document.getElementById("detectedNote");
