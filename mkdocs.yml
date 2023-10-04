@@ -7,7 +7,7 @@ theme:
   custom_dir: docs/overrides
   logo_dark_mode: assets/icon-dark.svg
   logo_light_mode: assets/icon-light.svg
-  favicon: assets/favicon.png
+  favicon: assets/icon.png
   name: material
   features:
     - navigation.top
@@ -60,8 +60,6 @@ markdown_extensions:
     - pymdownx.superfences
     - footnotes
     - pymdownx.keys
-
-
 
 repo_url: https://github.com/charlesneimog/pd4web
 
