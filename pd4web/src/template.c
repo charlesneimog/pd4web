@@ -162,6 +162,7 @@ static pdItem *GetItem(pdItemHash* hash_table, char* key) {
 // =====================================
 // ============= HELPERS ===============
 // =====================================
+void pdprint(const char *s);
 
 EMSCRIPTEN_KEEPALIVE
 void* webpd_malloc(int size) {
@@ -182,7 +183,13 @@ int sendFloatToPd(const char *receiver, float value) {
 
 // ======================================
 EMSCRIPTEN_KEEPALIVE
-int sendBangToPd(const char *receiver, float value) {
+int sendSymbolToPd(const char *receiver, const char *symbol) {
+    return libpd_symbol(receiver, symbol);
+}
+
+// ======================================
+EMSCRIPTEN_KEEPALIVE
+int sendBangToPd(const char *receiver) {
     return libpd_bang(receiver);
 }
 
