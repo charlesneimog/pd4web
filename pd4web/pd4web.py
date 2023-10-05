@@ -472,11 +472,16 @@ class webpdPatch():
         '''
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
-        for folderName in ["extra", "Extras", "Audios", "Libs", "libs", "Abstractions"]:
+        for folderName in ["extra", "Extras", "Audios", "Libs", "Abstractions"]:
             if not os.path.exists(folderName):
                 continue
             if folderName != "Extras":
-                shutil.copytree(folderName, self.PROJECT_ROOT + "webpatch/data/" + folderName)
+                if os.path.exists(self.PROJECT_ROOT + "webpdPatch/data" + folderName):
+                    for root, _, files in os.walk(folderName):
+                        for file in files:
+                            shutil.copy(os.path.join(root, file), self.PROJECT_ROOT + "webpatch/data")
+                else:
+                    shutil.copytree(folderName, self.PROJECT_ROOT + "webpatch/data/" + folderName)
             else:
                 shutil.copytree(folderName, self.PROJECT_ROOT + "webpatch/Extras")
 
