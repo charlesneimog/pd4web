@@ -77,15 +77,11 @@ def testinBrowser(TestFolder):
     server.server_close()
     return 0
 
-
+# "compiledWebsite-Win.zip",
 if __name__ == '__main__':
     multiprocessing.freeze_support()
     TestFolder = os.path.dirname(os.path.realpath(__file__))
-    for file in ["compiledWebsite-Win.zip", "compiledWebsite-Mac.zip"]:
-        os.chdir(TestFolder)
-        with zipfile.ZipFile(file, 'r') as zip_ref:
-            zip_ref.extractall(TestFolder)
-        os.chdir(os.path.join(TestFolder, file.replace(".zip", "")))
+    for root, folders, files in os.walk(TestFolder):
         chrome_options = Options()
         chrome_options.add_argument('--headless')  # Run in headless mode
         chrome_options.add_argument('--enable-logging')  # Enable logging of console messages
