@@ -7,7 +7,6 @@ import multiprocessing
 import http.server
 import time
 import platform
-import zipfile
 
 
 def myprint(str, color=None):

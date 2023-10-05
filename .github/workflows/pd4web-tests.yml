@@ -50,7 +50,7 @@ jobs:
   # =    BROWSER TEST     =
   # =======================
   browser-tests-for-Windows:
-    needs: [windows-build] # List all previous jobs here
+    needs: [windows-build] 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -59,7 +59,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Download Mac Compiled
+      - name: Download Win Compiled
         uses: actions/download-artifact@v3
         with:
           name: compiledWebsite-Win
