@@ -60,7 +60,7 @@ class webpdPatch():
         parser.add_argument('--replace-helper', required=False, 
                             default=None, help="Replace helpers.js file by your own file") 
         parser.add_argument('--version', action='version',
-                            version='%(prog)s 1.1.2')
+                            version='%(prog)s 1.1.3')
 
         self.args = parser.parse_args()
 
