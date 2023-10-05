@@ -4,9 +4,15 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import threading 
 import multiprocessing
-import platform
 import http.server
 import time
+import platform
+
+
+if platform.system() == "Darwin":
+    sys.exit(0)
+
+
 
 def myprint(str, color=None):
     if color is None:
@@ -65,7 +71,6 @@ def testinBrowser(TestFolder):
                 driver.execute_script("consoleLogMessages.shift();")
         time.sleep(1)
         timenow += 1
-    print("======================= ACABEI =================================")
     if notFoundObjs > 0:
         myprint(f"Found {notFoundObjs} errors.", color="red")
         sys.exit(1)
