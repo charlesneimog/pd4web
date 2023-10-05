@@ -8,14 +8,6 @@ import platform
 import http.server
 import time
 
-notFoundObjs = 0
-sharedArrayBuffer = 0
-compilationReady = False
-compilationComplete = 0
-browserReady = False
-
-
-
 def myprint(str, color=None):
     if color is None:
         print("    " + str)
@@ -35,22 +27,8 @@ def myprint(str, color=None):
     else:
         print("    " + str)
 
-
-
 def run_pd4web(testFile, return_code):
     return_code.value = os.system(f"pd4web --patch {testFile} ")
-
-
-def run_server(TestFolder):
-    global browserReady
-    os.chdir(TestFolder)
-    server = http.server.HTTPServer(('localhost', 8080), http.server.SimpleHTTPRequestHandler)
-    server.serve_forever()
-    while not browserReady:
-        time.sleep(1)
-    server.shutdown()
-    server.server_close()
-    return
 
 
 def start_server(server):
@@ -59,11 +37,8 @@ def start_server(server):
 
 def testinBrowser(TestFolder):
     os.chdir(TestFolder)
-
-    global notFoundObjs
-    global browserReady
-    global sharedArrayBuffer
-    browserReady = False
+    sharedArrayBuffer = 0
+    notFoundObjs = 0
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--log-level=VERBOSE')
@@ -90,7 +65,7 @@ def testinBrowser(TestFolder):
                 driver.execute_script("consoleLogMessages.shift();")
         time.sleep(1)
         timenow += 1
-
+    print("======================= ACABEI =================================")
     if notFoundObjs > 0:
         myprint(f"Found {notFoundObjs} errors.", color="red")
         sys.exit(1)
@@ -102,46 +77,36 @@ def testinBrowser(TestFolder):
     return 0
 
 
-TestFolder = os.path.dirname(os.path.realpath(__file__))
+if __name__ == '__main__':
+    multiprocessing.freeze_support()
+    TestFolder = os.path.dirname(os.path.realpath(__file__))
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')  # Run in headless mode
+    chrome_options.add_argument('--enable-logging')  # Enable logging of console messages
+    driver = webdriver.Chrome(options=chrome_options)
+    compilationErrors = 0
+    for root, folders, files in os.walk(TestFolder):
+        for folder in folders:
+            if folder != ".backup" and folder != "webpatch":
+                for root, folders, files in os.walk(os.path.join(TestFolder, folder)):
+                    for file in files:
+                        if file.endswith(".pd") and file == f"{folder}.pd":        
+                            testFile = os.path.join(TestFolder, folder, f"{folder}.pd")        
+                            fileRoot = os.path.join(TestFolder, folder)
+                            os.chdir(fileRoot)
+                            return_code = multiprocessing.Value('i', 0)
+                            pd4web_process = multiprocessing.Process(target=run_pd4web, args=(testFile, return_code))
+                            pd4web_process.start()
+                            pd4web_process.join()
+                            exit_code = return_code.value
+                            testinBrowser(fileRoot)                          
 
-# Set up Chrome in headless mode
-chrome_options = Options()
-chrome_options.add_argument('--headless')  # Run in headless mode
-chrome_options.add_argument('--enable-logging')  # Enable logging of console messages
-driver = webdriver.Chrome(options=chrome_options)
-
-compilationErrors = 0
-for root, folders, files in os.walk(TestFolder):
-    for folder in folders:
-        if folder != ".backup" and folder != "webpatch":
-            for root, folders, files in os.walk(os.path.join(TestFolder, folder)):
-                for file in files:
-                    if file.endswith(".pd") and file == f"{folder}.pd":        
-                        testFile = os.path.join(TestFolder, folder, f"{folder}.pd")        
-                        fileRoot = os.path.join(TestFolder, folder)
-                        os.chdir(fileRoot)
-                        return_code = multiprocessing.Value('i', 0)
-                        pd4web_process = multiprocessing.Process(target=run_pd4web, args=(testFile, return_code))
-                        pd4web_process.start()
-                        pd4web_process.join()
-                        exit_code = return_code.value
-                        testinBrowser(fileRoot)
-
-
-
-                        # run server
-
-
-
-
-                        
-
-if compilationErrors > 0:
-    print(f"Found {compilationErrors} errors.")
-    sys.exit(1)
-else:
-    print("All tests passed.")
-    sys.exit(0)
+    if compilationErrors > 0:
+        print(f"Found {compilationErrors} errors.")
+        sys.exit(1)
+    else:
+        print("All tests passed.")
+        sys.exit(0)
 
 
 
