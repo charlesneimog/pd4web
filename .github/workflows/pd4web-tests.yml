@@ -118,3 +118,9 @@ jobs:
           cd pd4web/tests/
           python3 ./runTests.py
 
+  trigger-only-if-all-passed:
+    needs: [windows-build, macos-intel-build, linux-test] # List all previous jobs here
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Only If All Passed
+        run: echo "All previous jobs have passed."

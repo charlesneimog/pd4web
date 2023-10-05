@@ -44,9 +44,9 @@ def testinBrowser(TestFolder):
     options.add_argument('--log-level=VERBOSE')
     options.add_argument('--enable-logging')  # Enable logging of console messages
     driver = webdriver.Chrome(options=options)
-    server = http.server.HTTPServer(('localhost', 8080), http.server.SimpleHTTPRequestHandler)
+    server = http.server.HTTPServer(('127.0.0.1', 8080), http.server.SimpleHTTPRequestHandler)
     threading.Thread(target=start_server, args=(server,)).start()
-    driver.get('http://localhost:8080')
+    driver.get('http://127.0.0.1:8080')
     timenow = 0
     while timenow < 5:
         for logtype in driver.log_types:
