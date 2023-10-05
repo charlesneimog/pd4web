@@ -51,6 +51,7 @@ class webpdPatch():
             required=False,
             help='Folder with html, css, js and all others files to be used in the Web Page. If not defined, we use the default one')
 
+        parser.add_argument('--no_browser', action='store_true', help='Set the flag to True')
 
         parser.add_argument('--confirm', required=False,
                             help='There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag')
@@ -519,7 +520,7 @@ class webpdPatch():
             patchLine.Tokens = patchLine.completLine.split(" ")
             if len(patchLine.Tokens) < 5 or patchLine.Tokens[1] != "obj":
                 self.checkIfIsDeclare(patchLine.Tokens)
-                self.PatchLinesExternals.append(patchLine)
+                self.PatchLinesProcessed.append(patchLine)
                 continue
             patchLine.completName = patchLine.Tokens[4].replace(
                         "\n", "").replace(";", "").replace(",", "")
@@ -1231,6 +1232,11 @@ class webpdPatch():
         if self.args.server_port:
             myprint("Starting server on port " + str(self.args.server_port), color='green')
             emrun = self.PdWebCompilerPath + \
-                f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} .'
+                f'/emsdk/upstream/emscripten/emrun --port {self.args.server_port} '
+            if self.args.no_browser:
+                emrun += "--no_browser "
+            emrun += " . "
+        
+
             os.system(emrun)
         sys.exit(0)
