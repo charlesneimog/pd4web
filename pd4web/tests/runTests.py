@@ -3,7 +3,9 @@ import sys
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 import threading 
+import multiprocessing
 import platform
+import http.server
 import time
 
 notFoundObjs = 0
@@ -34,15 +36,30 @@ def myprint(str, color=None):
         print("    " + str)
 
 
-def compile(testFile):
-    global compilationReady
-    global compilationComplete
-    compilationReady = False
-    compilationComplete = os.system(f"pd4web --patch {testFile} --server-port 8080 --no_browser")
-    compilationReady = True
+
+def run_pd4web(testFile, return_code):
+    return_code.value = os.system(f"pd4web --patch {testFile} ")
 
 
-def testinBrowser():
+def run_server(TestFolder):
+    global browserReady
+    os.chdir(TestFolder)
+    server = http.server.HTTPServer(('localhost', 8080), http.server.SimpleHTTPRequestHandler)
+    server.serve_forever()
+    while not browserReady:
+        time.sleep(1)
+    server.shutdown()
+    server.server_close()
+    return
+
+
+def start_server(server):
+    server.serve_forever()
+
+
+def testinBrowser(TestFolder):
+    os.chdir(TestFolder)
+
     global notFoundObjs
     global browserReady
     global sharedArrayBuffer
@@ -52,6 +69,8 @@ def testinBrowser():
     options.add_argument('--log-level=VERBOSE')
     options.add_argument('--enable-logging')  # Enable logging of console messages
     driver = webdriver.Chrome(options=options)
+    server = http.server.HTTPServer(('localhost', 8080), http.server.SimpleHTTPRequestHandler)
+    threading.Thread(target=start_server, args=(server,)).start()
     driver.get('http://localhost:8080')
     timenow = 0
     while timenow < 5:
@@ -61,6 +80,8 @@ def testinBrowser():
                 if "SharedArrayBuffer" in entry["message"]:
                     myprint(entry["message"], color="red")
                     sharedArrayBuffer += 1
+                else:
+                    myprint(entry["message"], color="yellow")
             captured_messages = driver.execute_script("return consoleLogMessages;")
             for message in captured_messages:
                 if "#X: no such object" in message:
@@ -74,9 +95,11 @@ def testinBrowser():
         myprint(f"Found {notFoundObjs} errors.", color="red")
         sys.exit(1)
     else:
-        myprint("All tests passed.", color="green")
+        myprint("All browser tests passed.", color="green")
     driver.quit()
-    browserReady = True
+    server.shutdown()
+    server.server_close()
+    return 0
 
 
 TestFolder = os.path.dirname(os.path.realpath(__file__))
@@ -86,8 +109,6 @@ chrome_options = Options()
 chrome_options.add_argument('--headless')  # Run in headless mode
 chrome_options.add_argument('--enable-logging')  # Enable logging of console messages
 driver = webdriver.Chrome(options=chrome_options)
-
-
 
 compilationErrors = 0
 for root, folders, files in os.walk(TestFolder):
@@ -99,18 +120,19 @@ for root, folders, files in os.walk(TestFolder):
                         testFile = os.path.join(TestFolder, folder, f"{folder}.pd")        
                         fileRoot = os.path.join(TestFolder, folder)
                         os.chdir(fileRoot)
-                        thread = threading.Thread(target=compile, args=(testFile,))
-                        thread.start()
-                        while not compilationReady:
-                            time.sleep(1)
-                        serverThread = threading.Thread(target=testinBrowser)
-                        serverThread.start()
-                        time.sleep(1)
-                        while not browserReady:
-                            time.sleep(1)
+                        return_code = multiprocessing.Value('i', 0)
+                        pd4web_process = multiprocessing.Process(target=run_pd4web, args=(testFile, return_code))
+                        pd4web_process.start()
+                        pd4web_process.join()
+                        exit_code = return_code.value
+                        testinBrowser(fileRoot)
 
-                        # kill pd4web
-                        os.system("killall pd4web")
+
+
+                        # run server
+
+
+
 
                         
 
