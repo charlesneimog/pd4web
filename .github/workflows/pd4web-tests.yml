@@ -28,7 +28,7 @@ jobs:
 
       - name: Install pd4web
         run: |
-          pip install poetry
+          pip install poetry selenium
           poetry build && poetry install
           $wheels = Get-ChildItem -Path dist\*.whl
           pip install $wheels
@@ -69,7 +69,7 @@ jobs:
 
       - name: Install pd4web
         run: |  
-          pip install poetry certifi
+          pip install poetry certifi selenium
           CERT_PATH=$(python -m certifi)
           export SSL_CERT_FILE=${CERT_PATH}
           export REQUESTS_CA_BUNDLE=${CERT_PATH}
@@ -105,7 +105,7 @@ jobs:
 
       - name: Install pd4web
         run: |
-          pip install poetry
+          pip install poetry selenium
           poetry build 
           pip install dist/*.whl
 
