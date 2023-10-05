@@ -1,0 +1,14 @@
+#N canvas 142 245 845 544 8;
+#X obj 37 15 inlet;
+#X obj 37 112 else/plaits~ -midi -trigger -model 11;
+#X obj 37 36 metro 500;
+#X obj 154 51 loadbang;
+#X msg 154 72 60;
+#X obj 37 180 outlet~;
+#X obj 128 184 outlet~;
+#X connect 0 0 2 0;
+#X connect 1 0 5 0;
+#X connect 1 1 6 0;
+#X connect 2 0 1 0;
+#X connect 3 0 4 0;
+#X connect 4 0 1 0;

@@ -8,42 +8,68 @@ jobs:
   # ==============================================================================
   # =                               WINDOWS                                      =
   # ==============================================================================
-  # windows-build:
-    # runs-on: windows-latest
-    # strategy:
-    #   matrix:
-    #     python-version: ['3.10']
-    #
-    # steps:
-    #   - name: Checkout code
-    #     uses: actions/checkout@v3
-    #     with:
-    #       submodules: recursive
-    #       fetch-depth: 0
-    #
-    #   - name: Set up Python ${{ matrix.python-version }}
-    #     uses: actions/setup-python@v3
-    #     with:
-    #       python-version: ${{ matrix.python-version }}
-    #
-    #   - name: Install pd4web
-    #     run: |
-    #       pip install poetry selenium
-    #       poetry build && poetry install
-    #       $wheels = Get-ChildItem -Path dist\*.whl
-    #       pip install $wheels
-    #
-      # - name: Tests
-      #   run: |
-      #     cd pd4web/tests/
-      #     python ./runTests.py
-      #
-      # - name: Upload Compiled website
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: compiledWebsite-Win
-      #     path: pd4web/tests/
+  windows-build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.10']
 
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install pd4web
+        run: |
+          pip install poetry selenium
+          poetry build && poetry install
+          $wheels = Get-ChildItem -Path dist\*.whl
+          pip install $wheels
+
+      - name: Tests
+        run: |
+          cd pd4web/tests/
+          python ./runTests.py
+
+      - name: Upload Compiled website
+        uses: actions/upload-artifact@v3
+        with:
+          name: compiledWebsite-Win
+          path: pd4web/tests/
+
+
+
+  # =======================
+  # =    BROWSER TEST     =
+  # =======================
+  browser-tests-for-Windows:
+    needs: [windows-build] # List all previous jobs here
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Download Mac Compiled
+        uses: actions/download-artifact@v3
+        with:
+          name: compiledWebsite-Win
+          path: pd4web/tests/
+
+      - name: Test Compiled Code
+        run: |
+          cd pd4web/tests/
+          pip install selenium
+          python3 ./runBrowserTest.py
 
   # ==============================================================================
   # =                               MAC INTEL                                    =
@@ -86,6 +112,37 @@ jobs:
         with:
           name: compiledWebsite-Mac
           path: pd4web/tests/
+    
+  # =======================
+  # =    BROWSER TEST     =
+  # =======================
+  browser-tests-for-MAC:
+    needs: [macos-intel-build] # List all previous jobs here
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Download Mac Compiled
+        uses: actions/download-artifact@v3
+        with:
+          name: compiledWebsite-Mac
+          path: pd4web/tests/
+
+      - name: list files
+        run: | 
+          cd pd4web/tests/1_SimplePatch && ls -a -l
+
+      - name: Test Compiled Code
+        run: |
+          cd pd4web/tests/
+          pip install selenium
+          python3 ./runBrowserTest.py
+
+
       
 # ==============================================================================
 # =                               LINUX                                        =
@@ -126,54 +183,12 @@ jobs:
 
 
 # ==============================================================================
-# =                               BROWSER TEST                                 =
-# ==============================================================================
-  browser-tests-for-MAC-and-PC:
-    # windows-build, 
-    needs: [macos-intel-build, linux-test] # List all previous jobs here
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-
-      - name: Download Mac Compiled
-        uses: actions/download-artifact@v3
-        with:
-          name: compiledWebsite-Mac
-          path: pd4web/tests/
-
-      # - name: Download Windows Compiled
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: compiledWebsite-Win
-      #     path: pd4web/tests/
-          
-      - name: list files
-        run: | 
-          cd pd4web/tests/ && ls -a -l
-
-      - name: list files
-        run: | 
-          cd pd4web/ && ls -a -l
-
-      - name: Test Mac/Windows Compilation
-        run: |
-          cd pd4web/tests/
-          pip install selenium
-          python3 ./runBrowserTest.py
-
-
-
-# ==============================================================================
 # =                               UPLOAD TO PACKAGE                            =
 # ==============================================================================
 
   upload-to-pip:
-    needs: [browser-tests-for-MAC-and-PC]
+    if: github.event_name == 'release'
+    needs: [browser-tests-for-MAC, browser-tests-for-Windows, linux-test]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -191,8 +206,8 @@ jobs:
     - name: Build package
       run: poetry build
       
-    # - name: Publish package
-    #   uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-    #   with:
-    #     user: __token__
-    #     password: ${{ secrets.PYPI_API_TOKEN }}
+    - name: Publish package
+      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      with:
+        user: __token__
+        password: ${{ secrets.PYPI_API_TOKEN }}
