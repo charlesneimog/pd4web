@@ -18,6 +18,7 @@
         <meta name="twitter:url" content="" />
         <meta name="twitter:card" content="" />
         <link rel="shortcut icon" href="favicon.ico">
+        <script src="./enable-threads.js"></script>
         <link href="https://fonts.googleapis.com/css?family=Karla:400,700" rel="stylesheet">
 		<link href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
@@ -250,5 +251,36 @@
             pd4web is a project by <a href="https://charlesneimog.github.io/">Charles K. Neimog</a>
         </p>
     </div>
+    <script>
+        // Execute JavaScript on the page to capture messages from libpd.js
+
+        var consoleLogMessages = [];
+        var originalConsoleLog = console.log;
+        console.log = function() {
+            var logMessage = Array.from(arguments).join(' ');
+            consoleLogMessages.push(logMessage);
+            originalConsoleLog.apply(console, arguments);
+        };
+
+
+        
+
+        function captureLibPdMessages() {
+            window.onerror = function (message, source, lineno, colno, error) {
+                capturedMessages.push({
+                    message: message,
+                    source: source,
+                    lineno: lineno,
+                    colno: colno,
+                    error: error
+                });
+            };
+            window.message = function (message) {
+                capturedMessages.push(message);
+            };
+        }
+        captureLibPdMessages();
+    </script>
+
 </html>
 
