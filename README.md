@@ -10,12 +10,13 @@
 
 <p align="center">
   <a href="https://github.com/charlesneimog/pd4web/releases/latest"><img src="https://img.shields.io/github/release/charlesneimog/pd4web?include_prereleases" alt="Release"></a>
-  <a href="https://pypistats.org/packages/pd4web"><img src="https://img.shields.io/pypi/dm/pd4web" alt="Downloads"></a>
   <a href="https://pypistats.org/packages/pd4web"><img src="https://img.shields.io/pypi/pyversions/pd4web" alt="Version"></a>
+  <a href="https://zenodo.org/badge/latestdoi/685549750"><img src="https://zenodo.org/badge/685549750.svg" alt="DOI"></a>
 </p>
 
 <p align="center">
-  <a href="https://img.shields.io/pypi/pyversions/pd4web"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green" alt="License"></a>
+    <a href="https://pypistats.org/packages/pd4web"><img src="https://img.shields.io/pypi/dm/pd4web" alt="Downloads"></a>
+    <a href="https://img.shields.io/pypi/pyversions/pd4web"><img src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux-green" alt="License"></a>
 </p>
 
 <p align="center">
