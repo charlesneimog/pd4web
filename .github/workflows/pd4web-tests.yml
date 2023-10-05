@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -63,7 +63,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -105,7 +105,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -155,6 +155,7 @@ jobs:
       - name: Test Mac/Windows Compilation
         run: |
           cd pd4web/tests/
+          pip install selenium
           python3 ./runBrowserTest.py
 
 
@@ -163,7 +164,7 @@ jobs:
 # =                               UPLOAD TO PACKAGE                            =
 # ==============================================================================
 
-  trigger-only-if-all-passed:
+  upload-to-pip:
     needs: [browser-tests-for-MAC-and-PC]
     runs-on: ubuntu-latest
     steps:
