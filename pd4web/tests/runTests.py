@@ -9,11 +9,6 @@ import time
 import platform
 
 
-if platform.system() == "Darwin":
-    sys.exit(0)
-
-
-
 def myprint(str, color=None):
     if color is None:
         print("    " + str)
@@ -103,8 +98,13 @@ if __name__ == '__main__':
                             pd4web_process = multiprocessing.Process(target=run_pd4web, args=(testFile, return_code))
                             pd4web_process.start()
                             pd4web_process.join()
+                            # check if there is return_value in return_code
                             exit_code = return_code.value
-                            testinBrowser(fileRoot)                          
+                            if exit_code != 0:
+                                myprint(f"Found {exit_code} errors.", color="red")
+                                compilationErrors += 1
+                            if platform.system() != "Linux": # just test in browser on Linux
+                                testinBrowser(fileRoot)                          
 
     if compilationErrors > 0:
         print(f"Found {compilationErrors} errors.")

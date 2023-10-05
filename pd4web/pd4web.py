@@ -41,32 +41,24 @@ class webpdPatch():
             formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://www.charlesneimog.github.io/PdWebCompiler")
         parser.add_argument('--patch', required=True,
                             help='Patch file (.pd) to compile')
-        parser.add_argument(
-            '--html',
+        parser.add_argument('--html',
             required=False,
             help='HTML used to load and render the Web Page. If not defined, we use the default one')
-
-        parser.add_argument(
-            '--page-folder',
+        parser.add_argument('--page-folder',
             required=False,
             help='Folder with html, css, js and all others files to be used in the Web Page. If not defined, we use the default one')
-
         parser.add_argument('--no_browser', action='store_true', help='Set the flag to True')
-
-        parser.add_argument('--confirm', required=False,
+        parser.add_argument('--compile-all', action='store_true', help='Set the flag to True')
+        parser.add_argument('--confirm', action='store_true',
                             help='There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag')
         parser.add_argument('--clearTmpFiles', required=False,
                             default=False, help='Remove all TempFiles, like .externals folder')
-
         parser.add_argument('--server-port', required=False,
                             default=False, help='Set the port to start the server')
-
         parser.add_argument('--initial-memory', required=False,
                             default=32, help='Set the initial memory of the WebAssembly in MB')
-
         parser.add_argument('--replace-helper', required=False, 
                             default=None, help="Replace helpers.js file by your own file") 
-        
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.1.2')
 
@@ -118,6 +110,7 @@ class webpdPatch():
 
         self.FoundExternals = False
         self.jsHelper = self.args.replace_helper
+        self.compile_all = self.args.compile_all
         self.html = False
         self.pageFolder = self.args.page_folder
         self.parent = parent
