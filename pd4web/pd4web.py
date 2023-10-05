@@ -96,6 +96,7 @@ class webpdPatch():
             os.mkdir(self.PdWebCompilerPath + "/.externals")
 
         self.externalsExtraFunctions = []
+        self.addedObjects = []
         self.supportedObjects = {}
         self.unsupportedObjects = {}
         if not insideaddAbstractions:
@@ -106,6 +107,7 @@ class webpdPatch():
         else:
             self.downloadSources = parent.downloadSources
             self.externalsExtraFunctions = parent.externalsExtraFunctions        
+            self.addedObjects = parent.addedObjects
 
         if self.PROJECT_ROOT[-1] != "/" and (self.PROJECT_ROOT[-1] != "\\"):
             if platform.system() == "Windows":
@@ -275,6 +277,7 @@ class webpdPatch():
             [self.parent.sortedSourceFiles.append(sourceFile) for sourceFile in self.sortedSourceFiles]
             [self.parent.PROCESSED_ABSTRACTIONS.append(pdpatch) for pdpatch in self.PROCESSED_ABSTRACTIONS]
             [self.parent.unsupportedObjects.append(obj) for obj in self.unsupportedObjects]
+            self.parent.addedObjects = self.addedObjects
 
         if not insideaddAbstractions:
             self.getDynamicLibraries()
@@ -720,10 +723,9 @@ class webpdPatch():
         '''
         This function will add the obj_setup() inside the main.c file
         '''
-        addedFunctions = []
         for lineInfo in self.PatchLinesExternals:
-            if lineInfo.functionName not in addedFunctions:
-                addedFunctions.append(lineInfo.functionName)
+            if lineInfo.functionName not in self.addedObjects:
+                self.addedObjects.append(lineInfo.functionName)
                 if lineInfo.isExternal and lineInfo.objFound:
                     start_index = None
                     end_index = None
