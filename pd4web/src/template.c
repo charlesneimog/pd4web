@@ -76,7 +76,7 @@ static void InsertList(pdItemHash* hash_table, const char* key, int size, t_atom
     }
     else if (hash_table->count > hash_table->size) {
         EM_ASM_({
-            alert("Hash table is full");
+            alert("Hash table is full, please report this in github.com/charlesneimog/pd4web");
         });
     }
     else if (item != NULL) {
@@ -105,7 +105,7 @@ static void InsertFloat(pdItemHash* hash_table, const char* key, float f) {
     }
     else if (hash_table->count > hash_table->size) {
         EM_ASM_({
-            alert("Hash table is full");
+            alert("Hash table is full, please report this in github.com/charlesneimog/pd4web");
         });
     }
     else if (item != NULL) {
@@ -133,7 +133,7 @@ static void InsertSymbol(pdItemHash* hash_table, const char* key, const char* th
     }
     else if (hash_table->count > hash_table->size) {
         EM_ASM_({
-            alert("Hash table is full");
+            alert("Hash table is full, please report this in github.com/charlesneimog/pd4web");
         });
     }
     else if (item != NULL) {
@@ -296,9 +296,11 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     libpd_finish_message("pd", "dsp");
     libpd_init_audio(patchAudioInputs, patchAudioOutputs, GetAudioSampleRate(audioContext));
     if (!libpd_openfile("index.pd", "webpatch/data")){
-        printf("Failed to open patch\n");
+        EM_ASM_({
+            alert("Failed to open patch!");
+        });
+        return;
     }
-
     EM_ASM_({
         JS_LoadFinished();
     });
@@ -321,7 +323,6 @@ void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOO
 EM_JS(void, setFloatValue, (const char* symbol, float value), {
     var symbolId = UTF8ToString(symbol);
     var element = document.getElementById(symbolId); // Find the element by ID
-
     if (element === null) {
         var myElement = document.createElement("input");
         myElement.id = symbolId;
@@ -375,52 +376,42 @@ EM_JS(void, setListValue, (const char* symbol, const char* value, int clearFirst
 void PdWebCompiler_Loop(){
     for (int i = 0; i < HTML_IDS_SIZE; i++){
         pdItem* item = GetItem(receiverHash, HTML_IDS[i]);
-        if (item == NULL) {
+        if (item == NULL)
             continue;
-        }
-        
         if (item->changed){
             item->changed = 0;
-            if (item->type == A_FLOAT){
+            if (item->type == A_FLOAT)
                 setFloatValue(HTML_IDS[i], item->f);
-            }
-            else if(item->type == A_SYMBOL){
+            else if(item->type == A_SYMBOL)
                 setSymbolValue(HTML_IDS[i], item->s); 
-            }
-            else if(item->type == A_GIMME){
+            else if(item->type == A_GIMME)
                 for (int j = 0; j < item->listSize; j++){
                     t_symbol *listSymbol = atom_getsymbol(item->list + j);
                     setListValue(HTML_IDS[i], listSymbol->s_name, j);
                 }
-            }
             else{
+                EM_ASM_({
+                    alert("Unknown type");
+                });
                 return;
             }
+            
         }
     }
 }
 
 // ========================================
 int main(){
-    
     srand(time(NULL));
     assert(!emscripten_current_thread_is_audio_worklet());
 
     EmscriptenWebAudioCreateAttributes attrs = {
             .latencyHint = "interactive",
     };
-
     EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(&attrs);
-
     samplerate = GetAudioSampleRate(context);
-
     emscripten_start_wasm_audio_worklet_thread_async(context, wasmAudioWorkletStack, 
         sizeof(wasmAudioWorkletStack), WebAudioWorkletThreadInitialized, 0);
-
-
     receiverHash = CreatePdItemHash(pdWebValueArraySize);
-
     emscripten_set_main_loop(PdWebCompiler_Loop, 30, 1); // 30 FPS
-
-
 }

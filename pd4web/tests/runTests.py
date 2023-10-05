@@ -103,7 +103,7 @@ if __name__ == '__main__':
                             if exit_code != 0:
                                 myprint(f"Found {exit_code} errors.", color="red")
                                 compilationErrors += 1
-                            if platform.system() != "Linux": # just test in browser on Linux
+                            if platform.system() == "Linux": # just test in browser on Linux
                                 testinBrowser(fileRoot)                          
 
     if compilationErrors > 0:
