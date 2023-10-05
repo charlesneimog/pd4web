@@ -27,7 +27,7 @@ def downloadAndBuild_FFTW3(webpdPatchSelf): # defined in PdWebCompiler.py
         webpdPatchClass.extraFlags.append("-lfftw3f")
         return True
 
-    if platform.system() == "Windows" or platform.system() == "Darwin":
+    if platform.system() == "Windows" or platform.system() == "Darwin" or not webpdPatchClass.compile_all:
         myprint("On Windows and Mac we use the compiled version of libfftw3", color="red")
         webpdPatchClass.extraFlags.append(fixPaths("-I" + PackagePatch + "\\.lib\\fftw-3.3.10\\api"))
         webpdPatchClass.extraFlags.append(fixPaths('-L' +  PackagePatch + '\\lib\\compiled\\'))
