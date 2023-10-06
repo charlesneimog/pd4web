@@ -36,17 +36,14 @@ class webpdPatch():
                  insideaddAbstractions=False, runMain=True, parent=[]) -> None:
         self.PdWebCompilerPath = os.path.dirname(os.path.realpath(__file__))
         self.emcc = emccPaths()
-        
         # get this folder directory
         parser = argparse.ArgumentParser(
-            formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://www.charlesneimog.github.io/PdWebCompiler")
+            formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://charlesneimog.github.io/pd4web")
         parser.add_argument('--patch', required=True,
                             help='Patch file (.pd) to compile')
-        parser.add_argument('--html',
-            required=False,
+        parser.add_argument('--html', required=False,
             help='HTML used to load and render the Web Page. If not defined, we use the default one')
-        parser.add_argument('--page-folder',
-            required=False,
+        parser.add_argument('--page-folder', required=False,
             help='Folder with html, css, js and all others files to be used in the Web Page. If not defined, we use the default one')
         parser.add_argument('--no_browser', action='store_true', help='Set the flag to True')
         parser.add_argument('--compile-all', action='store_true', help='Set the flag to True')
@@ -61,13 +58,10 @@ class webpdPatch():
         parser.add_argument('--replace-helper', required=False, 
                             default=None, help="Replace helpers.js file by your own file") 
         parser.add_argument('--version', action='version',
-                            version='%(prog)s 1.1.3')
-
+                            version='%(prog)s 1.2.0')
         self.args = parser.parse_args()
-
         if pdpatch is not None:
             self.args.patch = pdpatch 
-            
         if not os.path.isabs(self.args.patch) and not insideaddAbstractions:
             print("\n")
             absolutePath = os.path.dirname(os.path.abspath(
@@ -76,19 +70,14 @@ class webpdPatch():
             self.source = sourcefile
             self.PROJECT_ROOT = absolutePath
             os.chdir(absolutePath)
-            
         elif insideaddAbstractions and parent != []:
             self.PROJECT_ROOT = parent.PROJECT_ROOT
-            
         elif os.path.isabs(self.args.patch) and not insideaddAbstractions:
             self.PROJECT_ROOT = os.path.dirname(self.args.patch)
-
         if not os.path.exists(self.PdWebCompilerPath + "/.lib"):
             os.mkdir(self.PdWebCompilerPath + "/.lib")
-
         if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
             os.mkdir(self.PdWebCompilerPath + "/.externals")
-
         self.externalsExtraFunctions = []
         self.addedObjects = []
         self.supportedObjects = {}
@@ -102,13 +91,11 @@ class webpdPatch():
             self.downloadSources = parent.downloadSources
             self.externalsExtraFunctions = parent.externalsExtraFunctions        
             self.addedObjects = parent.addedObjects
-
         if self.PROJECT_ROOT[-1] != "/" and (self.PROJECT_ROOT[-1] != "\\"):
             if platform.system() == "Windows":
                 self.PROJECT_ROOT = self.PROJECT_ROOT + "\\"
             else:
                 self.PROJECT_ROOT = self.PROJECT_ROOT + "/"
-
         self.FoundExternals = False
         self.jsHelper = self.args.replace_helper
         self.compile_all = self.args.compile_all
@@ -144,7 +131,6 @@ class webpdPatch():
         '''
         Main functions, it will call all other functions.
         '''
-
         if pdpatch is not None:
             self.patch = pdpatch
         else:
@@ -159,14 +145,11 @@ class webpdPatch():
                 self.pageFolder = os.getcwd() + "/" + self.pageFolder 
         else:
             self.html = self.PdWebCompilerPath + "/src/index.html"
-
         if "index.html" not in str(self.html) and not insideaddAbstractions:
             myprint("The name of your html is not index.html, we will copy one index.html for webpatch!", 
                     color="yellow", type='warning')
-
         if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
             os.mkdir(self.PROJECT_ROOT + "/.backup")
-
         if not insideaddAbstractions:
             if os.path.exists(self.PROJECT_ROOT + "index.html"):
                 myprint("index.html already exists in the root folder, " \
@@ -190,10 +173,8 @@ class webpdPatch():
             if notFound:
                 myprint("Patch not found: The current folder is " + str(os.getcwd()), color="red")
                 sys.exit(0)
-
         with open(self.args.patch, "r") as file:
             self.PatchFileLines = file.readlines()
-
         self.replaceVisualArray()
         self.processedAbstractions = []
         if not insideaddAbstractions:
@@ -225,7 +206,6 @@ class webpdPatch():
         else:
             with open(self.PROJECT_ROOT + "webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
-                
         self.librariesFolder = []
         self.confirm = self.args.confirm
         self.mkBackup()
@@ -239,28 +219,22 @@ class webpdPatch():
         self.addObjSetup()
         self.savePdPatchModified()
         self.saveMainFile()
-        
         if not insideaddAbstractions:
             self.copyAllDataFiles()
             self.processAbstractions()
             shutil.copy(self.PdWebCompilerPath +
                     "/src/index.html", self.PROJECT_ROOT + "webpatch/index.html")
-            
             if self.jsHelper is not None:
                 # check if the file is relative or absolute
                 if not os.path.isabs(self.jsHelper):
                     self.jsHelper = os.getcwd() + "/" + self.jsHelper
-
                 if not os.path.exists(self.jsHelper):
                     myprint("The file " + self.jsHelper + " does not exist!", color="red")
                     sys.exit(1)
-
                 shutil.copy(self.jsHelper, self.PROJECT_ROOT + "webpatch/helpers.js")
-
             else:
                 shutil.copy(self.PdWebCompilerPath +
                     "/src/helpers.js", self.PROJECT_ROOT + "webpatch/helpers.js")
-
             shutil.copy(self.PdWebCompilerPath +
                     "/src/enable-threads.js", self.PROJECT_ROOT + "webpatch/enable-threads.js")
             if self.pageFolder is not None:
@@ -269,18 +243,15 @@ class webpdPatch():
                         shutil.copy(os.path.join(root, file), self.PROJECT_ROOT + "webpatch")
                     for folder in dir:
                         shutil.copytree(os.path.join(root, folder), self.PROJECT_ROOT + "webpatch/" + folder)
-
         if insideaddAbstractions:
             [self.parent.sortedSourceFiles.append(sourceFile) for sourceFile in self.sortedSourceFiles]
             [self.parent.PROCESSED_ABSTRACTIONS.append(pdpatch) for pdpatch in self.PROCESSED_ABSTRACTIONS]
             [self.parent.unsupportedObjects.append(obj) for obj in self.unsupportedObjects]
             self.parent.addedObjects = self.addedObjects
-
         if not insideaddAbstractions:
             self.cfgDynamicLibraries()
             self.extraFunctions()
             self.emccCompile()
-            # print("")
         return True
 
 
@@ -410,7 +381,6 @@ class webpdPatch():
         if not os.path.exists(externalsJson):
             with open(externalsJson, "w") as file:
                 json.dump({}, file, indent=4)
-
         with open(externalsJson, "r") as file:
             externalsDict = json.load(file)
         externalsDict["puredata"] = {}
@@ -452,7 +422,6 @@ class webpdPatch():
         for file in files:
             if file.endswith(".pd"):
                 localAbstractions.append(file.split(".pd")[0])
-
         self.localAbstractions = localAbstractions
         
 
@@ -469,16 +438,15 @@ class webpdPatch():
             self.getAllSupportedObjects()
 
 
-    def searchForSpecialObject(self, line):
+    def searchForSpecialObject(self, patchLine):
         '''
         There is some special objects that we need extra configs.
         This function will search for these objects and add the configs.
         '''
-        if len(line.Tokens) < 5: # case it is array or float.
+        if len(patchLine.Tokens) < 5: # case it is array or float.
             return
-
-        if line.Tokens[4].replace("\n", "") == "clone":
-            self.extraConfigClone(line)
+        if patchLine.Tokens[4].replace("\n", "") == "clone":
+            self.extraConfigClone(patchLine)
             
 
     def extraConfigClone(self, line):
@@ -598,7 +566,6 @@ class webpdPatch():
             myprint("Visual Arrays are not supported, "
                     + "use [array define] object", color='red')
             sys.exit(1)
-
         objName = patchLine.name
         objLib = patchLine.library
         if objLib in self.unsupportedObjects:
@@ -651,14 +618,11 @@ class webpdPatch():
             else:
                 if patchLine.completName in self.supportedObjects["puredata"]["objs"]:
                     patchLine.name = patchLine.completName
-
                 elif patchLine.completName in self.localAbstractions:
                     patchLine.name = patchLine.completName
-
                 else:
                     myprint("Object not found: " + patchLine.completName, color='red')
                     sys.exit(1)
-
             self.checkIfIsSupportedObject(patchLine)
             self.searchForSpecialObject(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
@@ -840,7 +804,6 @@ class webpdPatch():
                             self.templateCode.insert(
                                 start_index + 1, functionName)
                             break
-
                     start_index = None
                     end_index = None
                     for i, line in enumerate(self.templateCode):
@@ -900,35 +863,26 @@ class webpdPatch():
                     myprint("Could not find " +
                                libraryName, color='red')
                     sys.exit(-1)
-
                 LibraryClass.PROJECT_ROOT = self.PROJECT_ROOT
-
                 if os.path.exists(os.path.join(self.PdWebCompilerPath + "/.externals/" + libraryName)):
                     LibraryClass.folder = os.path.join(self.PdWebCompilerPath + "/.externals/" + libraryName)
                     return True
-
                 GithutAPI = PD_LIBRARIES.getDownloadURL(LibraryClass, self.downloadSources)
+                myprint("Downloading " +  libraryName, color='yellow')
                 if GithutAPI is None:
                     myprint("LibURL is not a string or None", color='red')
                     sys.exit(-1)
-
                 elif GithutAPI == False:  # means that is a direct link
                     response = requests.get(LibraryClass.directLink)
-
                 elif isinstance(GithutAPI, str):  # is a GithubAPI link
                     response = requests.get(GithutAPI)
                     responseJson = response.json()
                     sourceCodeLink = responseJson[0]["zipball_url"]
                     response = requests.get(sourceCodeLink)
-
                 else:
                     myprint("The link of the srcs of " +
                                libraryName + " is not valid", color='red')
                     sys.exit(-1)
-
-                myprint("Downloading " +
-                           libraryName, color='yellow')
-
                 if not os.path.exists(self.PdWebCompilerPath + "/.externals"):
                     os.mkdir(self.PdWebCompilerPath + "/.externals")
 
@@ -950,12 +904,10 @@ class webpdPatch():
                     "/.externals/" +
                     libraryName +
                     ".zip")
-                
                 self.enumerateExternals(LibraryClass.folder, libraryName)
                 self.enumeratePureDataObjs()
                 self.getAllSupportedObjects()
                 return True
-
             except Exception as e:
                 myprint("" + str(e), color='red')
                 myprint("" + str(responseJson["message"]), color='red')
@@ -975,7 +927,6 @@ class webpdPatch():
                 file = os.path.join(root, file)
                 if os.path.getmtime(file) < time.time() - 3 * 86400:
                     os.remove(file)
-
         if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
             os.mkdir(self.PROJECT_ROOT + "/.backup")
         Hour = datetime.datetime.now().hour
@@ -1164,13 +1115,11 @@ class webpdPatch():
                        '-s', 'USE_PTHREADS=1',
                        '--preload-file', 'webpatch/data/',
                        ]
-
         indexFlag = 0
         for flag in self.extraFlags:
             # add Extra Flags in command after -O3, it must be added in orde, so it must be
             command.insert(10 + indexFlag, flag)
             indexFlag += 1
-
         for root, _, files in os.walk(self.PROJECT_ROOT + "webpatch/externals"):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
@@ -1185,17 +1134,14 @@ class webpdPatch():
         command.append(self.src_files)
         command.append("-o")
         command.append(self.target)
-
         commandToPrint = command.copy()
         for line in enumerate(commandToPrint):
             # from commandToPrint remove all self.PdWebCompilerPath and self.PROJECT_ROOT
             commandToPrint[line[0]] = line[1].replace(self.PdWebCompilerPath, "")
             commandToPrint[line[0]] = line[1].replace(self.PROJECT_ROOT, "")
-                
         print("")
-        myprint("" + " ".join(commandToPrint), color='light_grey')
+        myprint(" ".join(commandToPrint), color='light_grey')
         print("")
-
         if platform.system() == "Windows":
             command.insert(0, "/C")
             command.insert(0, "cmd")
