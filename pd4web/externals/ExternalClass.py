@@ -139,7 +139,7 @@ class PatchLine:
         self.completLine = ''
         self.name = ''
         self.completName = ''
-        self.library = ''
+        self.library = 'puredata'
         self.index = 0
         # self.patchLine = ''
         self.objGenSym = ''
