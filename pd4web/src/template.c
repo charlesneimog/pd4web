@@ -242,6 +242,7 @@ static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int
             outputIndex++;
         }
     }
+    libpd_bang("pd4webtick");
 	return EM_TRUE;
 }
 

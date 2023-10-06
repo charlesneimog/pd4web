@@ -1,24 +1,41 @@
 import os
 import platform
 
-def myprint(str, color=None):
+def myprint(text, color=None, bright=False, type=None):
     if color is None:
-        print("    " + str)
-        return
-    if color == 'red':
-        print("\033[91m" + "    " + str + "\033[0m")
-    elif color == 'green':
-        print("\033[92m" + "    " + str + "\033[0m")
-    elif color == 'yellow':
-        print("\033[93m" + "    " + str + "\033[0m")
-    elif color == 'blue':
-        print("\033[94m" + "    " + str + "\033[0m")
-    elif color == 'magenta':
-        print("\033[95m" + "    " + str + "\033[0m")
-    elif color == 'cyan':
-        print("\033[96m" + "    " + str + "\033[0m")
+        color_code = ''
     else:
-        print("    " + str)
+        color_code = {
+            'red': '\033[91;1m' if bright else '\033[91m',
+            'green': '\033[92;1m' if bright else '\033[92m',
+            'yellow': '\033[93;1m' if bright else '\033[93m',
+            'blue': '\033[94;1m' if bright else '\033[94m',
+            'magenta': '\033[95;1m' if bright else '\033[95m',
+            'cyan': '\033[96;1m' if bright else '\033[96m',
+            'lightgray': '\033[97;1m' if bright else '\033[97m',
+            'darkgray': '\033[90;1m' if bright else '\033[90m',
+            'lightred': '\033[91;1m' if bright else '\033[91m',
+            'lightgreen': '\033[92;1m' if bright else '\033[92m',
+            'lightyellow': '\033[93;1m' if bright else '\033[93m',
+            'lightblue': '\033[94;1m' if bright else '\033[94m',
+            'lightmagenta': '\033[95;1m' if bright else '\033[95m',
+            'lightcyan': '\033[96;1m' if bright else '\033[96m',
+            'white': '\033[97;1m' if bright else '\033[97m',
+            'blackbold': '\033[1m',
+            'blackunderline': '\033[4m',
+            'dark_grey': '\033[90m',
+        }.get(color.lower(), '')
+    reset_code = '\033[0m'
+
+    tab = " " * 4
+    if type == "error":
+        print(tab + color_code + "ERROR: " + text + reset_code)
+    elif type == "warning":
+        print(tab + color_code + "WARNING: " + text + reset_code)
+
+    else:
+        print(tab + color_code + text + reset_code)
+
 
 def fixPaths(path):
     if platform.system() == "Windows":
@@ -27,9 +44,6 @@ def fixPaths(path):
     else:
         path = path.replace("\\", "/")
         return path
-
-
-
 
 class emccPaths:
     def __init__(self):
