@@ -7,6 +7,7 @@ import multiprocessing
 import http.server
 import time
 import platform
+import zipfile
 
 
 def myprint(str, color=None):
@@ -38,8 +39,10 @@ def start_server(server):
 
 def testinBrowser(TestFolder):
     os.chdir(TestFolder)
+    myprint(f"Testing {TestFolder} in browser...", color="blue")
     sharedArrayBuffer = 0
     notFoundObjs = 0
+    nullErrors = 0
     options = webdriver.ChromeOptions()
     options.add_argument('--headless')
     options.add_argument('--log-level=VERBOSE')
@@ -49,13 +52,16 @@ def testinBrowser(TestFolder):
     threading.Thread(target=start_server, args=(server,)).start()
     driver.get('http://127.0.0.1:8080')
     timenow = 0
-    while timenow < 5:
+    while timenow < 10:
         for logtype in driver.log_types:
             logs = driver.get_log(logtype)
             for entry in logs:
                 if "SharedArrayBuffer" in entry["message"]:
                     myprint(entry["message"], color="red")
                     sharedArrayBuffer += 1
+                elif "Uncaught RuntimeError" in entry["message"]:
+                    myprint(entry["message"], color="red")
+                    nullErrors += 1
                 else:
                     myprint(entry["message"], color="yellow")
             captured_messages = driver.execute_script("return consoleLogMessages;")
@@ -66,15 +72,18 @@ def testinBrowser(TestFolder):
                 driver.execute_script("consoleLogMessages.shift();")
         time.sleep(1)
         timenow += 1
-    if notFoundObjs > 0:
+    if nullErrors > 0:
         myprint(f"Found {notFoundObjs} errors.", color="red")
+        driver.quit()
+        server.shutdown()
+        server.server_close()
         sys.exit(1)
     else:
         myprint("All browser tests passed.", color="green")
     driver.quit()
     server.shutdown()
     server.server_close()
-    return 0
+    return nullErrors 
 
 # "compiledWebsite-Win.zip",
 if __name__ == '__main__':
@@ -96,7 +105,7 @@ if __name__ == '__main__':
                                 fileRoot = os.path.join(TestFolder, folder)
                                 os.chdir(fileRoot)
                                 if platform.system() == "Linux": # just test in browser on Linux
-                                    testinBrowser(fileRoot)                          
+                                   compilationErrors += testinBrowser(fileRoot)                          
         if compilationErrors > 0:
             print(f"Found {compilationErrors} errors.")
             sys.exit(1)
