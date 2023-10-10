@@ -47,4 +47,10 @@ SupportedLibraries:
     repoUser: avilleret 
     repoName: pd-pmpd
     extraFunction: pmpd_extra
+  
+  - name: grainer~
+    downloadSrc: GITHUB_TAGS
+    repoUser: charlesneimog
+    repoName: grainer_tilde
+    singleObject: true
 
