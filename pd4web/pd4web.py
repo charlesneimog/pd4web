@@ -39,7 +39,7 @@ class webpdPatch():
         # get this folder directory
         parser = argparse.ArgumentParser(
             formatter_class=argparse.RawTextHelpFormatter, description="Check the complete docs in https://charlesneimog.github.io/pd4web")
-        parser.add_argument('--patch', required=True,
+        parser.add_argument('--patch', required=False,
                             help='Patch file (.pd) to compile')
         parser.add_argument('--html', required=False,
             help='HTML used to load and render the Web Page. If not defined, we use the default one')
@@ -47,6 +47,7 @@ class webpdPatch():
             help='Folder with html, css, js and all others files to be used in the Web Page. If not defined, we use the default one')
         parser.add_argument('--no_browser', action='store_true', help='Set the flag to True')
         parser.add_argument('--compile-all', action='store_true', help='Set the flag to True')
+        parser.add_argument('--active-emcc', action='store_true', help='Set the flag to True')
         parser.add_argument('--confirm', action='store_true',
                             help='There is some automatic way check if the external is correct, but it is not always accurate. If you want to confirm if the external is correct, use this flag')
         parser.add_argument('--clearTmpFiles', required=False,
@@ -60,6 +61,9 @@ class webpdPatch():
         parser.add_argument('--version', action='version',
                             version='%(prog)s 1.2.0')
         self.args = parser.parse_args()
+        if self.args.active_emcc:
+            self.activeEmcc()
+            sys.exit(0)
         if pdpatch is not None:
             self.args.patch = pdpatch 
         if not os.path.isabs(self.args.patch) and not insideaddAbstractions:
@@ -136,7 +140,7 @@ class webpdPatch():
         else:
             self.patch = self.args.patch
         patchFileName = os.path.basename(self.patch)
-        myprint("• Patch => " + patchFileName, color='blue')
+        myprint("Patch => " + patchFileName, color='blue')
         if self.args.html is not None:
             if not os.path.isabs(self.args.html) and not insideaddAbstractions:
                 self.html = os.getcwd() + "/" + self.args.html
@@ -147,14 +151,14 @@ class webpdPatch():
             self.html = self.PdWebCompilerPath + "/src/index.html"
         if "index.html" not in str(self.html) and not insideaddAbstractions:
             myprint("The name of your html is not index.html, we will copy one index.html for webpatch!", 
-                    color="yellow", type='warning')
+                    color="yellow")
         if not os.path.exists(self.PROJECT_ROOT + "/.backup"):
             os.mkdir(self.PROJECT_ROOT + "/.backup")
         if not insideaddAbstractions:
             if os.path.exists(self.PROJECT_ROOT + "index.html"):
                 myprint("index.html already exists in the root folder, " \
                         "please change his name or delete it, making backup and deleting it.", 
-                        color="yellow", type='warning')
+                        color="yellow")
                 shutil.copy(self.PROJECT_ROOT + "index.html", self.PROJECT_ROOT + ".backup/index.html")
             else:
                 with open(self.PROJECT_ROOT + "/index.html", "w") as file:
@@ -286,6 +290,10 @@ class webpdPatch():
                 os.system(f"{self.emcc.emsdk} install latest")
                 os.system(f"{self.emcc.emsdk} activate latest")
                 os.system(f"chmod +x {self.emcc.emsdk_env}")
+        if self.args.active_emcc:
+            # os.system(f"{self.emcc.emsdk} activate latest")
+            os.system(f"{self.emcc.emsdk_env}")
+            sys.exit(0)
 
 
     def importExternalObjs(self):
@@ -763,24 +771,25 @@ class webpdPatch():
             self.regexSearch(lineInfo, functionName, os.path.join(root, file))
 
 
-    def regexSearch(self, lineInfo, functionName, file):
+    def regexSearch(self, lineInfo: PatchLine, functionName, file):
         '''
         This search for the setup function using regex.  
         '''
         with open(file, "r") as C_file:
             file_contents = C_file.read()
-            pattern = r'void\s*{}\s*\(\s*void\s*\)'.format(
-                re.escape(functionName))
-            matches = re.finditer(pattern, file_contents, re.DOTALL)
-            listMatches = list(matches)
-            if len(listMatches) > 0:
-                shutil.copy(C_file.name, self.PROJECT_ROOT + "webpatch/externals")
-                lineInfo.objFound = True
-                lineInfo.functionName = functionName
-                if lineInfo.library not in self.externalsDict:
-                    self.externalsDict[lineInfo.library] = [C_file.name]
-                else:
-                    self.externalsDict[lineInfo.library].append(C_file.name)
+            patterns = [r'void\s*{}\s*\(\s*void\s*\)', r'void\s+{}\s*\(\s*\)']
+            for pattern in patterns:
+                pattern = pattern.format(re.escape(functionName))
+                matches = re.finditer(pattern, file_contents, re.DOTALL)
+                listMatches = list(matches)
+                if len(listMatches) > 0:
+                    shutil.copy(C_file.name, self.PROJECT_ROOT + "webpatch/externals")
+                    lineInfo.objFound = True
+                    lineInfo.functionName = functionName
+                    if lineInfo.library not in self.externalsDict:
+                        self.externalsDict[lineInfo.library] = [C_file.name]
+                    else:
+                        self.externalsDict[lineInfo.library].append(C_file.name)
 
 
     def addObjSetup(self):

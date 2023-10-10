@@ -18,6 +18,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
           <th>Library Name</th>
           <th>Not Supported Objects</th>
           <th>Numbers of Objects</th>
+          <th>Main Dev</th>
         </tr>
     </thead>
     <tbody>
@@ -25,6 +26,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
           <td><code>sfz~</code>, <code>sfont~</code></td> 
           <td>509</td>
+          <td>Alexandre Porres</th>
         </tr>
     </tbody>
     <tbody>
@@ -32,6 +34,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
         <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
         <td> <code>coll</code> </td>
         <td>244</td>
+        <td>Alexandre Porres</th>
       </tr>
     </tbody>
     <tbody>
@@ -39,6 +42,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
         <td><a href="https://github.com/pd-externals/earplug/">earplug</a></td>
         <td> - </td>
         <td>1</td>
+        <td>Dan Wilcox</th>
       </tr>
     </tbody>
     <tbody>
@@ -46,6 +50,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
             <td><a href="https://github.com/wbrent/convolve_tilde/">convolve~</a></td>
             <td> - </td>
             <td>1</td>
+            <td>Willian Brent</td>
         </tr>
     </tbody>
 
@@ -54,6 +59,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
             <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
             <td> - </td>
             <td>110</td>
+            <td>Willian Brent</td>
         </tr>
     </tbody>
     
@@ -62,6 +68,16 @@ This table presents an overview of all PureData externals supported by <code>pd4
             <td><a href="  https://github.com/avilleret/pd-pmpd">pmpd</a></td>
             <td> - </td>
             <td>30</td>
+            <td>Cyrille Henry</td>
+        </tr>
+    </tbody>
+    
+    <tbody>
+        <tr>
+            <td><a href="  https://github.com/charlesneimog/grainer_tilde">grainer~</a></td>
+            <td> - </td>
+            <td>1</td>
+            <td>Pablo Di Liscia</td>
         </tr>
     </tbody>
  </table>

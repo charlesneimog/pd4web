@@ -1,7 +1,7 @@
 import os
 import platform
 
-def myprint(text, color=None, bright=False, type=None):
+def myprint(text, color=None, bright=False):
     if color is None:
         color_code = ''
     else:
@@ -28,13 +28,21 @@ def myprint(text, color=None, bright=False, type=None):
     reset_code = '\033[0m'
 
     tab = " " * 4
-    if type == "error":
-        print(tab + color_code + "ERROR: " + text + reset_code)
-    elif type == "warning":
-        print(tab + color_code + "WARNING: " + text + reset_code)
+    if color == "red":
+        print(tab + color_code + "🔴️ ERROR: " + text + reset_code)
+    elif color == "yellow":
+        print(tab + color_code + "🟡️ WARNING: " + text + reset_code)
 
+    elif color == "green":
+        print(tab + color_code + "🟢️ " + text + reset_code)
+    elif color == "blue":
+        print(tab + color_code + "🔵️ " + text + reset_code)
+    elif color == "magenta":
+        print(tab + color_code + "🟣️ " + text + reset_code)
     else:
         print(tab + color_code + text + reset_code)
+        
+
 
 
 def fixPaths(path):
@@ -65,7 +73,7 @@ class emccPaths:
             self.make = PdWebCompilerPath + '/emsdk/upstream/emscripten/emmake make '
             self.emcc = PdWebCompilerPath + '/emsdk/upstream/emscripten/emcc '
             self.emsdk = PdWebCompilerPath + '/emsdk/emsdk '
-            self.emsdk_env = PdWebCompilerPath + '/emsdk/emsdk_env.sh '
+            self.emsdk_env = "source " + PdWebCompilerPath + '/emsdk/emsdk_env.sh '
 
 
                         
