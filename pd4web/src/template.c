@@ -291,7 +291,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     for (int i = 0; i < HTML_IDS_SIZE; i++){
         libpd_bind(HTML_IDS[i]);
     }
-    libpd_add_to_search_path("webpatch/data");
+    libpd_add_to_search_path("webpatch/data/");
+    libpd_add_to_search_path("webpatch/data/Audios/");
     libpd_start_message(1); 
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
