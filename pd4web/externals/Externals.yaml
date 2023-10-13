@@ -54,3 +54,9 @@ SupportedLibraries:
     repoName: grainer_tilde
     singleObject: true
 
+
+  - name: fftease
+    directLink: https://github.com/ericlyon/pd-fftease/archive/refs/heads/master.zip # wait for new release
+    repoUser: ericlyon
+    repoName: pd-fftease
+    extraFunction: fftease_extra
