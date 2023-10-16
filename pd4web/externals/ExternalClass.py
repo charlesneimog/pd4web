@@ -1,41 +1,46 @@
 import sys
 from typing import Optional
+
 from ..helpers import myprint
+
 
 class PureDataExternals:
     def __init__(self, library, projectRoot) -> None:
-        self.name = library['name']
-        self.repoUser = library['repoUser']
-        self.repoName = library['repoName']
+        self.name = library["name"]
+        self.repoUser = library["repoUser"]
+        self.repoName = library["repoName"]
         from ..pd4web import webpdPatch
+
         self.webpdPatch: Optional[webpdPatch]
-        self.folder = ''
+        self.folder = ""
         self.externalsExtraFunctions = []
         try:
-            self.repoAPI = library['downloadSrc']
+            self.repoAPI = library["downloadSrc"]
         except:
             self.repoAPI = False
             try:
-                self.directLink = library['directLink']
+                self.directLink = library["directLink"]
             except:
                 # print in red
-                myprint(f"Error: {self.name} doesn't have a download source", color="red")
+                myprint(
+                    f"Error: {self.name} doesn't have a download source", color="red"
+                )
                 sys.exit(1)
         try:
-            self.extraFunc = library['extraFunction']
+            self.extraFunc = library["extraFunction"]
         except:
             self.extraFunc = None
         try:
-            self.singleObject = library['singleObject']
+            self.singleObject = library["singleObject"]
         except:
             self.singleObject = False
         try:
-            self.requireDynamicLibraries = library['dynamicLibraries']
+            self.requireDynamicLibraries = library["dynamicLibraries"]
         except:
             self.requireDynamicLibraries = False
 
         try:
-            self.unsupportedObj = library['unsupportedObj']
+            self.unsupportedObj = library["unsupportedObj"]
         except:
             self.unsupportedObj = []
 
@@ -71,20 +76,17 @@ class PD_SUPPORTED_EXTERNALS:
         self.LibraryNames.append(PureDataExternals.name)
         self.totalOfLibraries += 1
 
-
     def get(self, name):
         for i in self.PureDataExternals:
             if i.name == name:
                 return i
         return None
 
-
     def isUsed(self, name):
         for i in self.UsedLibraries:
             if i.name == name:
                 return i
         return False
-
 
     def getDownloadURL(self, libraryName, supportedDownloads):
         if libraryName.repoAPI == False:
@@ -93,10 +95,11 @@ class PD_SUPPORTED_EXTERNALS:
         else:
             try:
                 # print("LINK: ", supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName))
-                return supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName)
+                return supportedDownloads[libraryName.repoAPI].format(
+                    libraryName.repoUser, libraryName.repoName
+                )
             except:
                 return None
-
 
     def executeExtraFunction(self, UsedLibrary):
         if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
@@ -110,9 +113,12 @@ class PD_SUPPORTED_EXTERNALS:
                         function = getattr(module, extraFunctionStr)
                         break
             if function is None and extraFunctionStr != None:
-                myprint(f"Error: {extraFunctionStr} is not defined in {UsedLibrary.name}", color="red")
+                myprint(
+                    f"Error: {extraFunctionStr} is not defined in {UsedLibrary.name}",
+                    color="red",
+                )
 
-            if function is not None:      
+            if function is not None:
                 function(libraryClass)
             else:
                 return []
@@ -124,10 +130,8 @@ class PD_SUPPORTED_EXTERNALS:
     def __repr__(self) -> str:
         return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
 
-
     def __str__(self) -> str:
         return f"<PD_EXTERNALS | Total: {self.totalOfLibraries}>"
-
 
 
 class PatchLine:
@@ -135,52 +139,50 @@ class PatchLine:
         self.isExternal = False
         self.isAbstraction = False
         self.isLocalAbstraction = False
-        self.objwithSlash = False # for objects like /~ / and //
-        self.completLine = ''
-        self.name = ''
-        self.completName = ''
-        self.library = 'puredata'
+        self.objwithSlash = False  # for objects like /~ / and //
+        self.completLine = ""
+        self.name = ""
+        self.completName = ""
+        self.library = "puredata"
         self.index = 0
         # self.patchLine = ''
-        self.objGenSym = ''
+        self.objGenSym = ""
         self.singleObject = False
         self.genSymIndex = 0
-        self.functionName = ''
+        self.functionName = ""
         self.objFound = False
         self.uiReceiver = False
-        self.uiSymbol = ''
+        self.uiSymbol = ""
         self.Tokens = []
 
     def __str__(self) -> str:
         if self.isExternal:
             return "<Obj: " + self.name + " | Lib: " + self.library + ">"
         else:
-            if self.Tokens[0] == '#X':
-                if self.Tokens[1] == 'obj':
-                    removeNewLines = self.Tokens[4].replace('\n', '')
-                    return "<Pd Object: " + self.Tokens[1] + " | " + removeNewLines + ">"
-                elif self.Tokens[1] == 'connect': 
+            if self.Tokens[0] == "#X":
+                if self.Tokens[1] == "obj":
+                    removeNewLines = self.Tokens[4].replace("\n", "")
+                    return (
+                        "<Pd Object: " + self.Tokens[1] + " | " + removeNewLines + ">"
+                    )
+                elif self.Tokens[1] == "connect":
                     return "<Pd Connection>"
-                elif self.Tokens[1] == 'text':
+                elif self.Tokens[1] == "text":
                     return "<Pd Text>"
-                elif self.Tokens[1] == 'msg':
+                elif self.Tokens[1] == "msg":
                     return "<Pd Message>"
-                elif self.Tokens[1] == 'floatatom':
+                elif self.Tokens[1] == "floatatom":
                     return "<Pd Float>"
-                elif self.Tokens[1] == 'restore':
+                elif self.Tokens[1] == "restore":
                     return "<Pd Restore>"
                 else:
                     return "<Pd Object: " + str(self.Tokens) + ">"
-                
-            elif self.Tokens[0] == '#A':
+
+            elif self.Tokens[0] == "#A":
                 return "<Array Data>"
 
             else:
                 return "<Special Pd Object: " + self.Tokens[0] + ">"
-
-    # def __repr__(self) -> str:
-        # return self.__str__()
-
 
     def addToUsedObject(self, PD_LIBS):
         if self.isExternal:
