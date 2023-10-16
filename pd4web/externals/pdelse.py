@@ -1,39 +1,49 @@
 import os
 import shutil
-from .ExternalClass import PureDataExternals
-from ..helpers import myprint
 import sys
 
+from ..helpers import myprint
+from .ExternalClass import PureDataExternals
+
+
 def else_extra(librarySelf: PureDataExternals):
-    '''
+    """
     This function copy some things that I already need to compile some externals in cyclone
-    '''
+    """
     # librarySelf.webpdPatch.PROJECT_ROOT
-    if not os.path.exists(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes")):
+    if not os.path.exists(
+        os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes")
+    ):
         os.makedirs(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes"))
     folder = os.path.join(librarySelf.folder, "Code_source", "shared")
 
     for file in os.listdir(folder):
         if file.endswith(".h"):
-            shutil.copy(os.path.join(folder, file),
-                        os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes"))
+            shutil.copy(
+                os.path.join(folder, file),
+                os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "includes"),
+            )
 
     for file in os.listdir(folder):
         if file.endswith(".c"):
-            shutil.copy(os.path.join(folder, file),
-                        os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals"))
+            shutil.copy(
+                os.path.join(folder, file),
+                os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals"),
+            )
 
-    os.remove(os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "s_elseutf8.c"))
+    os.remove(
+        os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "s_elseutf8.c")
+    )
     librarySelf.extraFuncExecuted = True
-    if 'sfz~' in librarySelf.usedObjs:
+    if "sfz~" in librarySelf.usedObjs:
         myprint("sfz~ object is not supported yet", color="red")
         sys.exit(1)
 
-    elif 'sfont~' in librarySelf.usedObjs:
+    elif "sfont~" in librarySelf.usedObjs:
         myprint("sfont~ object is not supported yet!", color="red")
         sys.exit(1)
 
-    elif 'plaits~' in librarySelf.usedObjs:
+    elif "plaits~" in librarySelf.usedObjs:
         # inside the library folder, search recursively for the file plaits~.cpp
         plaitsFile = None
         for root, _, files in os.walk(librarySelf.folder):
@@ -81,21 +91,32 @@ def else_extra(librarySelf: PureDataExternals):
                         "plaits/dsp/fm/algorithms.cc",
                         "plaits/dsp/fm/dx_units.cc",
                         "plaits/dsp/chords/chord_bank.cc",
-                        "plaits/resources.cc"
+                        "plaits/resources.cc",
                     ]
 
                     stmlib = os.path.join(plaitsFolder, "stmlib")
-                    shutil.copytree(stmlib, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "stmlib"))
+                    shutil.copytree(
+                        stmlib,
+                        os.path.join(
+                            librarySelf.PROJECT_ROOT, "webpatch", "externals", "stmlib"
+                        ),
+                    )
                     plaits = os.path.join(plaitsFolder, "plaits")
-                    shutil.copytree(plaits, os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals", "plaits"))
-                    
+                    shutil.copytree(
+                        plaits,
+                        os.path.join(
+                            librarySelf.PROJECT_ROOT, "webpatch", "externals", "plaits"
+                        ),
+                    )
 
-                    externalFolder = os.path.join(librarySelf.PROJECT_ROOT, "webpatch", "externals")
+                    externalFolder = os.path.join(
+                        librarySelf.PROJECT_ROOT, "webpatch", "externals"
+                    )
                     for plaitsFile in file_names:
-                        librarySelf.webpdPatch.sortedSourceFiles.append(os.path.join(externalFolder, plaitsFile))
-                                    
-                    librarySelf.webpdPatch.extraFlags.append("-I" + os.path.join(externalFolder))
+                        librarySelf.webpdPatch.sortedSourceFiles.append(
+                            os.path.join(externalFolder, plaitsFile)
+                        )
 
-
-        
-
+                    librarySelf.webpdPatch.extraFlags.append(
+                        "-I" + os.path.join(externalFolder)
+                    )
