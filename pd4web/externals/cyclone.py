@@ -34,4 +34,14 @@ def cyclone_extra(librarySelf: PureDataExternals):
             "webpatch/externals/file.c",
         )
 
+    if "prepend" in librarySelf.usedObjs:
+        shutil.copy(
+            librarySelf.PROJECT_ROOT + "webpatch/includes/common/grow.c",
+            "webpatch/externals/grow.c",
+        )
+        shutil.copy(
+            librarySelf.PROJECT_ROOT + "webpatch/includes/common/grow.h",
+            "webpatch/includes/grow.h",
+        )
+
     librarySelf.extraFuncExecuted = True
