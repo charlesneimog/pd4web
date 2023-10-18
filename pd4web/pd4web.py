@@ -31,9 +31,6 @@ INDEX_HTML = """
 </html>
 """
 
-# TODO:: Put all the local abstractions in data folder
-# BUG:: It is not possible to load externals audios when patches are inside subfolders.
-
 
 class webpdPatch:
     def __init__(
@@ -303,16 +300,12 @@ class webpdPatch:
                 self.PROJECT_ROOT + "webpatch/enable-threads.js",
             )
             if self.pageFolder is not None:
-                for root, dirs, files in os.walk(self.pageFolder):
-                    for file in files:
-                        shutil.copy(
-                            os.path.join(root, file), self.PROJECT_ROOT + "webpatch"
-                        )
-                    for folder in dirs:
-                        shutil.copytree(
-                            os.path.join(root, folder),
-                            self.PROJECT_ROOT + "webpatch/" + folder,
-                        )
+                shutil.copytree(
+                    self.pageFolder,
+                    os.path.join(self.PROJECT_ROOT, "webpatch"),
+                    dirs_exist_ok=True,
+                )
+
         if insideaddAbstractions:
             [
                 self.parent.sortedSourceFiles.append(sourceFile)
@@ -732,6 +725,9 @@ class webpdPatch:
                     patchLine.uiReceiver = True
                     patchLine.uiSymbol = receiverSymbol
                     self.uiReceiversSymbol.append(receiverSymbol)
+                    myprint(
+                        "UI Sender object detected: " + receiverSymbol, color="blue"
+                    )
                 patchLine.name = patchLine.completName
             else:
                 if patchLine.completName in self.supportedObjects["puredata"]["objs"]:
@@ -743,6 +739,7 @@ class webpdPatch:
                     sys.exit(1)
             self.checkIfIsSupportedObject(patchLine)
             self.searchForSpecialObject(patchLine)
+            # print(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternals.append(patchLine)
             self.PatchLinesProcessed.append(patchLine)
@@ -889,8 +886,18 @@ class webpdPatch:
         """
         This search for the setup function using regex.
         """
-        with open(file, "r") as C_file:
-            file_contents = C_file.read()
+        with open(
+            file,
+            "r",
+            encoding="utf-8",
+            errors="ignore",
+        ) as C_file:
+            try:
+                file_contents = C_file.read()
+            except Exception as e:
+                myprint("Could not read file: " + file + " using utf-8", color="red")
+                myprint(str(e), color="red")
+                sys.exit(1)
             patterns = [r"void\s*{}\s*\(\s*void\s*\)", r"void\s+{}\s*\(\s*\)"]
             for pattern in patterns:
                 pattern = pattern.format(re.escape(functionName))
