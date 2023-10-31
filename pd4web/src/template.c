@@ -19,10 +19,6 @@
 #include <emscripten/webaudio.h> /* WebAudio API  */
 #include <z_libpd.h>             /* libpd */
 
-// Externals Objects Declarations
-
-// ====================
-
 // ========== AUDIO CONFIG =============
 uint8_t patchAudioInputs = 1;
 uint8_t patchAudioOutputs = 2;
@@ -58,6 +54,15 @@ int pdWebValueArraySize = 32;
                               VALUE TODO: Add this on pd2wasm */
 
 // ====================
+void safe_memcpy(void *dest, size_t destSize, const void *src, size_t srcSize) {
+  if (dest && src && destSize >= srcSize) {
+    memcpy(dest, src, srcSize);
+  } else {
+    EM_ASM_({ alert("Error on memcpy"); });
+  }
+}
+
+// ====================
 static pdItemHash *CreatePdItemHash(int size) {
   pdItemHash *hash_table = (pdItemHash *)malloc(sizeof(pdItemHash));
   hash_table->size = size;
@@ -86,7 +91,8 @@ static void InsertList(pdItemHash *hash_table, const char *key, int size,
     item = (pdItem *)malloc(sizeof(pdItem));
     item->receiverID = strdup(key);
     item->list = malloc(sizeof(t_atom) * size);
-    memcpy(item->list, list, sizeof(t_atom) * size);
+    // memcpy(item->list, list, sizeof(t_atom) * size);
+    safe_memcpy(item->list, sizeof(t_atom) * size, list, sizeof(t_atom) * size);
     item->listSize = size;
     item->type = A_GIMME;
     item->changed = 1;
@@ -190,7 +196,8 @@ void webpd_free(void *ptr) { free(ptr); }
 // ======================================
 EMSCRIPTEN_KEEPALIVE
 int sendFloatToPd(const char *receiver, float value) {
-  return libpd_float(receiver, value);
+  libpd_float(receiver, value);
+  return 0;
 }
 
 // ======================================
@@ -295,10 +302,6 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   libpd_set_printhook(pdprint);
   libpd_init();
 
-  // WebPd Load Externals
-
-  // ====================
-
   for (int i = 0; i < HTML_IDS_SIZE; i++) {
     libpd_bind(HTML_IDS[i]);
   }
@@ -314,6 +317,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
     return;
   }
   EM_ASM_({ JS_LoadFinished(); });
+  printf("Block size: %d\n", libpd_blocksize());
 }
 
 // ========================================
@@ -332,97 +336,53 @@ void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
 // ========================================
 // clang-format off
 EM_JS(void, setFloatValue, (const char* symbol, float value), {
-    var symbolId = UTF8ToString(symbol);
-    var element = document.getElementById(symbolId); // Find the element by ID
-    if (element === null) {
-        var myElement = document.createElement("input");
-        myElement.id = symbolId;
-        myElement.value = value;
-        myElement.style.display = "none";
-        document.body.appendChild(myElement);
-    } 
-    else {
-        element.value = value;
+    if (typeof JS_setFloat === "function"){
+        JS_setFloat(UTF8ToString(symbol), value);
     }
 });
-
 
 // ========================================
 EM_JS(void, setSymbolValue, (const char* symbol, const char* value), {
-    var symbolId = UTF8ToString(symbol);
-    var element = document.getElementById(symbolId); // Find the element by ID
-
-    if (element === null) {
-        var myElement = document.createElement("input");
-        myElement.id = symbolId;
-        myElement.value = UTF8ToString(value);
-        myElement.style.display = "none";
-        document.body.appendChild(myElement);
-    } 
-    else {
-        element.value = UTF8ToString(value);
+    if (typeof JS_setSymbol === "function"){
+        JS_setSymbol(UTF8ToString(symbol), UTF8ToString(value));
     }
 });
 
-// ========================================
-EM_JS(void, setListValue, (const char* symbol, const char* value, int clearFirst), {
-    var symbolId = UTF8ToString(symbol);
-    var element = document.getElementById(symbolId); // Find the element by ID
-    if (element === null) {
-        var myElement = document.createElement("input");
-        myElement.id = symbolId;
-        myElement.value = UTF8ToString(value);
-        myElement.style.display = "none";
-        document.body.appendChild(myElement);
-    } 
-    else {
-        if (clearFirst == 0){
-            element.value = "";
-        }
-        var list = element.value;
-        list += UTF8ToString(value);
-    }
-});
-
+// clang-format on
 // ========================================
 void PdWebCompiler_Loop() {
-    for (int i = 0; i < HTML_IDS_SIZE; i++) {
-        pdItem *item = GetItem(receiverHash, HTML_IDS[i]);
-        if (item == NULL)
-            continue;
-        if (item->changed) {
-            item->changed = 0;
-            if (item->type == A_FLOAT) {
-                setFloatValue(HTML_IDS[i], item->f);
-            } else if (item->type == A_SYMBOL) {
-                setSymbolValue(HTML_IDS[i], item->s);
-            } else if (item->type == A_GIMME) {
-                for (int j = 0; j < item->listSize; j++) {
-                    t_symbol *listSymbol = atom_getsymbol(item->list + j);
-                    setListValue(HTML_IDS[i], listSymbol->s_name, j);
-                }
-            } else {
-                EM_ASM_({ alert("Unknown type"); });
-                return;
-            }
-        }
+  for (int i = 0; i < HTML_IDS_SIZE; i++) {
+    pdItem *item = GetItem(receiverHash, HTML_IDS[i]);
+    if (item == NULL)
+      continue;
+    if (item->changed) {
+      item->changed = 0;
+      if (item->type == A_FLOAT) {
+        setFloatValue(HTML_IDS[i], item->f);
+      } else if (item->type == A_SYMBOL) {
+        setSymbolValue(HTML_IDS[i], item->s);
+      } else {
+        EM_ASM_({ alert("Unknown type"); });
+        return;
+      }
     }
+  }
 }
 
 // ========================================
 int main() {
-    srand(time(NULL));
-    assert(!emscripten_current_thread_is_audio_worklet());
+  srand(time(NULL));
+  assert(!emscripten_current_thread_is_audio_worklet());
 
-    EmscriptenWebAudioCreateAttributes attrs = {
-        .latencyHint = "interactive",
-    };
-    EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(&attrs);
-    samplerate = GetAudioSampleRate(context);
-    emscripten_start_wasm_audio_worklet_thread_async(
-        context, wasmAudioWorkletStack, sizeof(wasmAudioWorkletStack),
-        WebAudioWorkletThreadInitialized, 0);
-    receiverHash = CreatePdItemHash(pdWebValueArraySize);
-    emscripten_set_main_loop(PdWebCompiler_Loop, 30,
-                             1); /* 30 FPS TODO: check this from pd4web */
+  EmscriptenWebAudioCreateAttributes attrs = {
+      .latencyHint = "interactive",
+  };
+  EMSCRIPTEN_WEBAUDIO_T context = emscripten_create_audio_context(&attrs);
+  samplerate = GetAudioSampleRate(context);
+  emscripten_start_wasm_audio_worklet_thread_async(
+      context, wasmAudioWorkletStack, sizeof(wasmAudioWorkletStack),
+      WebAudioWorkletThreadInitialized, 0);
+  receiverHash = CreatePdItemHash(pdWebValueArraySize);
+  emscripten_set_main_loop(PdWebCompiler_Loop, 30,
+                           1); /* 30 FPS TODO: check this from pd4web */
 }
