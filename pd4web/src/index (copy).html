@@ -1,0 +1,225 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>pd4web Template html</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta property="og:title" content="" />
+    <meta property="og:image" content="" />
+    <meta property="og:url" content="" />
+    <meta property="og:site_name" content="" />
+    <meta property="og:description" content="" />
+    <meta name="twitter:title" content="" />
+    <meta name="twitter:image" content="" />
+    <meta name="twitter:url" content="" />
+    <meta name="twitter:card" content="" />
+    <link rel="shortcut icon" href="favicon.ico" />
+    <script src="./enable-threads.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css?family=Karla:400,700"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Karla", Arial, sans-serif;
+        line-height: 1.8;
+        font-size: 16px;
+        font-weight: 400;
+        background: #fafafa;
+        color: gray;
+      }
+
+      #footer {
+        position: fixed;
+        bottom: 0;
+        width: 80%;
+        height: 60px; /* Height of the footer */
+      }
+    </style>
+  </head>
+  <body
+    style="background-color: #f0f0f0; margin-left: 10%; margin-right: 10%"
+    ;
+  >
+    <div id="page-container">
+      <div style="display: flex; align-items: center; justify-content: center">
+        <a id="Start-Audio-Button">
+          <i
+            id="SoundIcon"
+            class="fa-solid fa-spinner fa-spin-pulse fa-2x custom-icon"
+          ></i>
+        </a>
+        <div style="display: flex; align-items: center">
+          <select
+            id="Input-Device-Select"
+            style="text-align: center; display: none"
+          >
+            <option value="default">Default</option>
+          </select>
+        </div>
+        <div style="display: flex; align-items: center">
+          <select
+            id="Output-Device-Select"
+            style="text-align: center; display: none"
+          >
+            <option value="default">Default</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <script src="./helpers.js"></script>
+    <script src="./libpd.js"></script>
+  </body>
+  <br />
+  <div style="display: flex; align-items: center; justify-content: center">
+    <div id="pdPatch" style="border: 1px solid black; border-radius: 5px"></div>
+  </div>
+  <script>
+    // Execute JavaScript on the page to capture messages from libpd.js
+    const ZOOM_LEVEL = 2;
+    // document.body.style.zoom = "100%";
+
+    var consoleLogMessages = [];
+    var originalConsoleLog = console.log;
+    console.log = function () {
+      var logMessage = Array.from(arguments).join(" ");
+      consoleLogMessages.push(logMessage);
+      originalConsoleLog.apply(console, arguments);
+    };
+
+    function captureLibPdMessages() {
+      window.onerror = function (message, source, lineno, colno, error) {
+        capturedMessages.push({
+          message: message,
+          source: source,
+          lineno: lineno,
+          colno: colno,
+          error: error,
+        });
+      };
+      window.message = function (message) {
+        capturedMessages.push(message);
+      };
+    }
+    // captureLibPdMessages();
+
+    function openPatch(file) {
+      console.log("\n");
+      let dpi = window.devicePixelRatio;
+      console.log("DPI: ", dpi);
+
+      var request = new XMLHttpRequest();
+      var patchLines = [];
+      var objId = 0;
+      let id = 0; // gui id
+      request.open("GET", file, true);
+      request.onreadystatechange = function () {
+        if (request.readyState === 4) {
+          if (request.status === 200 || request.status == 0) {
+            var lines = request.responseText.split("\n");
+            let canvasLevel = 0; // 0: no canvas, 1: main canvas, 2~: subcanvases
+            for (let line of lines) {
+              line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
+              const args = line.split(" ");
+              const type = args.slice(0, 2).join(" ");
+              switch (type) {
+                case "#N canvas":
+                  canvasLevel++;
+                  if (canvasLevel === 1 && args.length === 7) {
+                    canvasWidth = parseInt(args[4]);
+                    canvasHeight = parseInt(args[5]);
+                    const pdPatchCanvas = document.getElementById("pdPatch");
+                    pdPatchCanvas.style.width = canvasWidth + "px";
+                    pdPatchCanvas.style.height = canvasHeight + "px";
+                  }
+                  break;
+                case "#X obj":
+                  const pdPatchCanvas = document.getElementById("pdPatch");
+                  const objName = args[4];
+                  switch (objName) {
+                    case "tgl":
+                      const data = {};
+                      data.x_pos = parseInt(args[2]);
+                      data.y_pos = parseInt(args[3]);
+                      data.type = args[4];
+                      data.size = parseInt(args[5]);
+                      data.init = parseInt(args[6]);
+                      data.send = args[7];
+                      data.receive = args[8];
+                      data.label = args[9] === "empty" ? "" : args[9];
+                      data.x_off = parseInt(args[10]);
+                      data.y_off = parseInt(args[11]);
+                      data.font = parseInt(args[12]);
+                      data.fontsize = parseInt(args[13]);
+                      data.bg_color = isNaN(args[14])
+                        ? args[14]
+                        : parseInt(args[14]);
+                      data.fg_color = isNaN(args[15])
+                        ? args[15]
+                        : parseInt(args[15]);
+                      data.label_color = isNaN(args[16])
+                        ? args[16]
+                        : parseInt(args[16]);
+                      data.init_value = parseFloat(args[17]);
+                      data.default_value = parseFloat(args[18]);
+                      data.value =
+                        data.init && data.init_value ? data.default_value : 0;
+                      data.id = `${data.type}_${id++}`;
+                      // TODO: Fix case the zoom used by the used is != of 100
+
+                      const svgNS = "http://www.w3.org/2000/svg"; // SVG namespace
+                      const svg = document.createElementNS(svgNS, "svg");
+                      const rect = document.createElementNS(svgNS, "rect");
+                      rect.setAttribute("x", data.x_pos);
+                      rect.setAttribute("y", data.y_pos);
+                      rect.setAttribute("width", data.size * ZOOM_LEVEL);
+                      rect.setAttribute("height", data.size * ZOOM_LEVEL);
+                      rect.setAttribute("fill", data.bg_color);
+                      rect.setAttribute("stroke", data.fg_color);
+                      rect.setAttribute("stroke-width", 1);
+                      // add rect listener
+                      svg.appendChild(rect);
+                      const pdPatchDiv = document.getElementById("pdPatch");
+                      pdPatchDiv.appendChild(svg); // create and svg inside the pdCanvas
+                      break;
+
+                    case "vsl":
+                      console.log("Not implemented yet");
+                      break;
+                    case "hsl":
+                      console.log("Not implemented yet");
+                      break;
+                    case "nbx":
+                      console.log("Not implemented yet");
+                      break;
+                    case "bng":
+                      console.log("Not implemented yet");
+                      break;
+                    default:
+                      console.log("Not implemented yet");
+                      break;
+                  }
+              }
+            }
+          }
+        }
+      };
+      request.send(null);
+    }
+
+    openPatch("./test1.pd");
+  </script>
+</html>

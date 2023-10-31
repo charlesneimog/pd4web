@@ -94,6 +94,13 @@ class webpdPatch:
             help="Set the initial memory of the WebAssembly in MB",
         )
         parser.add_argument(
+            "--no-root-html",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Do not create the index.html in the root folder",
+        )
+        parser.add_argument(
             "--replace-helper",
             required=False,
             default=None,
@@ -132,6 +139,8 @@ class webpdPatch:
             self.downloadLibPd()
             self.importExternalObjs()
             self.getSupportedLibraries()
+            self.C_functionsDeclarationStarted = False
+            self.C_functionsCalledStarted = False
         else:
             self.downloadSources = parent.downloadSources
             self.externalsExtraFunctions = parent.externalsExtraFunctions
@@ -172,12 +181,13 @@ class webpdPatch:
         """
         Main functions, it will call all other functions.
         """
+
         if pdpatch is not None:
             self.patch = pdpatch
         else:
             self.patch = self.args.patch
         patchFileName = os.path.basename(self.patch)
-        myprint("Patch => " + patchFileName, color="blue")
+        myprint("Patch => " + self.patch, color="blue")
         if self.args.html is not None:
             if not os.path.isabs(self.args.html) and not insideaddAbstractions:
                 self.html = os.getcwd() + "/" + self.args.html
@@ -205,9 +215,10 @@ class webpdPatch:
                     self.PROJECT_ROOT + "index.html",
                     self.PROJECT_ROOT + ".backup/index.html",
                 )
-            else:
+            elif not self.args.no_root_html:
                 with open(self.PROJECT_ROOT + "/index.html", "w") as file:
                     file.write(INDEX_HTML.format(os.path.basename(str(self.html))))
+
         if not os.path.exists(self.args.patch):
             notFound = True
             for root, _, files in os.walk(self.PROJECT_ROOT):
@@ -260,6 +271,12 @@ class webpdPatch:
         else:
             with open(self.PROJECT_ROOT + "webpatch/main.c", "r") as file:
                 self.templateCode = file.readlines()
+
+        if insideaddAbstractions:
+            self.C_functionsDeclarationStarted = (
+                self.parent.C_functionsDeclarationStarted
+            )
+            self.C_functionsCalledStarted = self.parent.C_functionsCalledStarted
         self.librariesFolder = []
         self.confirm = self.args.confirm
         self.mkBackup()
@@ -319,7 +336,12 @@ class webpdPatch:
                 self.parent.unsupportedObjects.append(obj)
                 for obj in self.unsupportedObjects
             ]
+            self.C_functionsDeclarationStarted = (
+                self.parent.C_functionsDeclarationStarted
+            )
+            self.C_functionsCalledStarted = self.parent.C_functionsCalledStarted
             self.parent.addedObjects = self.addedObjects
+
         if not insideaddAbstractions:
             self.cfgDynamicLibraries()
             self.extraFunctions()
@@ -499,13 +521,13 @@ class webpdPatch:
         """
         localAbstractions = []
         if not os.path.isabs(self.args.patch):
-            # get complete path
             self.args.patch = os.path.abspath(self.args.patch)
         files = os.listdir(os.path.dirname(self.args.patch))
         for file in files:
             if file.endswith(".pd"):
                 localAbstractions.append(file.split(".pd")[0])
         self.localAbstractions = localAbstractions
+        # print(localAbstractions)
 
     def getAllSupportedObjects(self):
         """
@@ -734,12 +756,12 @@ class webpdPatch:
                     patchLine.name = patchLine.completName
                 elif patchLine.completName in self.localAbstractions:
                     patchLine.name = patchLine.completName
+                    myprint("Local Abstraction: " + patchLine.name, color="green")
                 else:
                     myprint("Object not found: " + patchLine.completName, color="red")
                     sys.exit(1)
             self.checkIfIsSupportedObject(patchLine)
             self.searchForSpecialObject(patchLine)
-            # print(patchLine)
             patchLine.addToUsedObject(PD_LIBRARIES)
             self.PatchLinesExternals.append(patchLine)
             self.PatchLinesProcessed.append(patchLine)
@@ -921,26 +943,26 @@ class webpdPatch:
                 self.addedObjects.append(lineInfo.functionName)
                 if lineInfo.isExternal and lineInfo.objFound:
                     start_index = None
-                    end_index = None
                     for i, line in enumerate(self.templateCode):
-                        if "// Externals Objects Declarations" in line:
-                            start_index = i
-                        if "// ====================" in line:
-                            end_index = i
-                        if start_index is not None and end_index is not None:
+                        if "#include <z_libpd.h>" in line:
+                            start_index = i + 1
+                        if start_index is not None:
                             functionName = "void " + lineInfo.functionName + "(void);\n"
+                            if self.C_functionsDeclarationStarted == False:
+                                functionName += "\n"
+                                self.C_functionsDeclarationStarted = True
                             self.templateCode.insert(start_index + 1, functionName)
                             break
                     start_index = None
-                    end_index = None
                     for i, line in enumerate(self.templateCode):
-                        if "// WebPd Load Externals" in line:
-                            start_index = i
-                        if "// ====================" in line:
-                            end_index = i
-                        if start_index is not None and end_index is not None:
+                        if "libpd_init();" in line:
+                            start_index = i + 1
+                        if start_index is not None:
                             functionName = lineInfo.functionName
-                            functionName = "    " + functionName + "();\n"
+                            functionName = "  " + functionName + "();\n"
+                            if self.C_functionsCalledStarted == False:
+                                functionName += "\n"
+                                self.C_functionsCalledStarted = True
                             self.templateCode.insert(start_index + 1, functionName)
                             break
         HTML_IDS = None
@@ -1139,6 +1161,10 @@ class webpdPatch:
             PatchFile = self.args.patch
         else:
             PatchFile = self.PROJECT_ROOT + "webpatch/data/index.pd"
+
+        if "webpatch" not in PatchFile:
+            return
+
         with open(PatchFile, "w") as file:
             finalPatch = []
             thereIsAbstraction = False
@@ -1162,6 +1188,9 @@ class webpdPatch:
                     file.write(newLine)
 
     def processAbstractions(self):
+        """
+        The function process libraries functions Abstractions of libraries.
+        """
         before_files = os.listdir(self.PROJECT_ROOT + "webpatch/data")
         for dir, _, files in os.walk(self.PROJECT_ROOT + "webpatch/data"):
             for patchfile in files:
@@ -1233,11 +1262,11 @@ class webpdPatch:
                 self.libpd_dir + "\\libpd_wrapper\\",
                 "-L ",
                 self.PdWebCompilerPath + "\\lib\\compiled\\",
+                "-DPD",
                 "-lpd",
                 "-O3",
                 "-s",
                 f"INITIAL_MEMORY={memory}mb",
-                # '-s', 'ALLOW_MEMORY_GROWTH=1', # wait to solve problem
                 "-s",
                 "AUDIO_WORKLET=1",
                 "-s",
@@ -1265,6 +1294,7 @@ class webpdPatch:
                 self.libpd_dir + "/libpd_wrapper/",
                 "-L",
                 self.PdWebCompilerPath + "/lib/compiled/",
+                "-DPD",
                 "-lpd",
                 "-O3",
                 "-s",
@@ -1283,8 +1313,7 @@ class webpdPatch:
             ]
         indexFlag = 0
         for flag in self.extraFlags:
-            # add Extra Flags in command after -O3, it must be added in orde, so it must be
-            command.insert(10 + indexFlag, flag)
+            command.insert(11 + indexFlag, flag)
             indexFlag += 1
         for root, _, files in os.walk(self.PROJECT_ROOT + "webpatch/externals"):
             for file in files:
@@ -1302,7 +1331,6 @@ class webpdPatch:
         command.append(self.target)
         commandToPrint = command.copy()
         for line in enumerate(commandToPrint):
-            # from commandToPrint remove all self.PdWebCompilerPath and self.PROJECT_ROOT
             commandToPrint[line[0]] = line[1].replace(self.PdWebCompilerPath, "")
             commandToPrint[line[0]] = line[1].replace(self.PROJECT_ROOT, "")
         print("")
@@ -1340,6 +1368,7 @@ class webpdPatch:
                     ("=" * 10) + " Compiled with success " + ("=" * 10) + "\n",
                     color="green",
                 )
+
         process.wait()
         if isinstance(self.html, str):
             shutil.copy(self.html, self.PROJECT_ROOT + "webpatch")
