@@ -527,7 +527,6 @@ class webpdPatch:
             if file.endswith(".pd"):
                 localAbstractions.append(file.split(".pd")[0])
         self.localAbstractions = localAbstractions
-        # print(localAbstractions)
 
     def getAllSupportedObjects(self):
         """
@@ -558,7 +557,7 @@ class webpdPatch:
         for token in line.Tokens:
             if not "-" in token:
                 absName = token.replace(",", "") + ".pd"
-                for root, _, files in os.walk(self.PdWebCompilerPath):
+                for root, _, files in os.walk(self.PROJECT_ROOT):
                     for file in files:
                         if not file.endswith(".pd") and absName not in file:
                             continue
