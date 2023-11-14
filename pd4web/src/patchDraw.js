@@ -1,6 +1,12 @@
 const ZOOM_LEVEL = 2;
 var fontSize = 12;
 
+window.addEventListener("resize", function () {
+  // Your code to handle the window resize goes here
+  console.log("Window resized!");
+  // TODO: I believe that we need to redraw everything
+});
+
 var consoleLogMessages = [];
 var originalConsoleLog = console.log;
 console.log = function () {
@@ -62,7 +68,7 @@ function set_font_engine_sanity() {
     test_text = "struct theremin float x float y";
   canvas.id = "font_sanity_checker_canvas";
   document.body.appendChild(canvas);
-  ctx.font = "11.65px DejaVu Sans Mono";
+  ctx.font = "13.65px DejaVu Sans Mono";
   if (Math.floor(ctx.measureText(test_text).width) <= 217) {
     font_engine_sanity = true;
   } else {
@@ -74,7 +80,7 @@ function set_font_engine_sanity() {
 function suboptimal_font_map() {
   return {
     // pd_size: gui_size
-    8: 8.45,
+    8: 12,
     12: 11.4,
     16: 16.45,
     24: 23.3,
@@ -153,12 +159,8 @@ function create_item(type, args) {
 }
 
 function configure_item(item, attributes) {
-  // draw_vis from g_template sends attributes
-  // as a ["attr1",val1, "attr2", val2, etc.] array,
-  // so we check for that here
   var value, i, attr;
   if (Array.isArray(attributes)) {
-    // we should check to make sure length is even here...
     for (i = 0; i < attributes.length; i += 2) {
       value = attributes[i + 1];
       item.setAttributeNS(
@@ -178,10 +180,312 @@ function configure_item(item, attributes) {
   }
 }
 
+// ============
+// Object Types
+// ============
+function draw_Bang(args) {
+  var bng = {};
+  bng.x_pos = parseInt(args[2]);
+  bng.y_pos = parseInt(args[3]);
+  bng.type = args[4];
+  bng.size = parseInt(args[5]);
+  bng.init = parseInt(args[6]);
+  bng.send = args[7];
+  bng.receive = args[8];
+  bng.label = args[9] === "empty" ? "" : args[9];
+  bng.x_off = parseInt(args[10]);
+  bng.y_off = parseInt(args[11]);
+  bng.font = parseInt(args[12]);
+  bng.fontsize = parseInt(args[13]);
+  bng.bg_color = isNaN(args[14]) ? args[14] : parseInt(args[14]);
+  bng.fg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
+  bng.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+  bng.init_value = parseFloat(args[17]);
+  bng.default_value = parseFloat(args[18]);
+  bng.value = bng.init && bng.init_value ? bng.default_value : 0;
+  // bng.id = `${bng.type}_${id++}`;
+
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+
+  var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  svg.style.userSelect = "none";
+  rect.setAttributeNS(null, "x", bng.x_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "y", bng.y_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "width", bng.size * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "height", bng.size * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "rx", 1);
+  rect.setAttribute("fill", "rgba(0,0,0,0)");
+  rect.setAttribute("stroke", "black");
+  rect.setAttribute("stroke-width", 1);
+  // rect.setAttribute("id", "bng_" + objId);
+  var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", (bng.x_pos + bng.size / 2) * ZOOM_LEVEL);
+  circle.setAttribute("cy", (bng.y_pos + bng.size / 2) * ZOOM_LEVEL);
+  circle.setAttribute("r", bng.size - 1);
+  circle.setAttribute("fill", "rgba(0,0,0,0)");
+  circle.setAttribute("stroke", "black");
+  circle.setAttribute("stroke-width", 1);
+  // circle.setAttribute("id", "bng_" + objId);
+  svg.appendChild(circle);
+  svg.appendChild(rect);
+  svg.onclick = function (event) {
+    var eventTarget = event.target;
+    var parent = eventTarget.parentNode;
+    var children = parent.childNodes;
+    var circle = children[0];
+    circle.setAttribute("fill", "black");
+    setTimeout(function () {
+      circle.setAttribute("fill", "rgba(0,0,0,0)");
+    }, 150);
+  };
+  return svg;
+}
+
+// ============
+function draw_Tgl(args) {
+  var data = {};
+  data.x_pos = parseInt(args[2]);
+  data.y_pos = parseInt(args[3]);
+  data.type = args[4];
+  data.size = parseInt(args[5]);
+  data.init = parseInt(args[6]);
+  data.send = args[7];
+  data.receive = args[8];
+  data.label = args[9] === "empty" ? "" : args[9];
+  data.x_off = parseInt(args[10]);
+  data.y_off = parseInt(args[11]);
+  data.font = parseInt(args[12]);
+  data.fontsize = parseInt(args[13]);
+  data.bg_color = isNaN(args[14]) ? args[14] : parseInt(args[14]);
+  data.fg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
+  data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+  data.init_value = parseFloat(args[17]);
+  data.default_value = parseFloat(args[18]);
+  data.value = data.init && data.init_value ? data.default_value : 0;
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttributeNS(null, "x", data.x_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "y", data.y_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "width", data.size * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "height", data.size * ZOOM_LEVEL);
+  rect.setAttribute("fill", "rgba(0,0,0,0)");
+  rect.setAttribute("stroke", data.fg_color);
+  rect.setAttribute("stroke-width", 1);
+  rect.setAttributeNS(null, "rx", 1);
+  var x1 = data.x_pos * ZOOM_LEVEL;
+  var y1 = data.y_pos * ZOOM_LEVEL;
+  var x2 = x1 + data.size * ZOOM_LEVEL;
+  var y2 = y1 + data.size * ZOOM_LEVEL;
+  var x3 = x1 + 3;
+  var y3 = y2 - 3;
+  var x4 = x2 - 3;
+  var y4 = y1 + 3;
+
+  var line1 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line1.setAttribute("x1", x1 + 3);
+  line1.setAttribute("y1", y1 + 3);
+  line1.setAttribute("x2", x2 - 3);
+  line1.setAttribute("y2", y2 - 3);
+  line1.setAttribute("stroke", "none");
+  line1.setAttribute("stroke-width", ZOOM_LEVEL);
+
+  var line2 = document.createElementNS("http://www.w3.org/2000/svg", "line");
+  line2.setAttribute("x1", x3);
+  line2.setAttribute("y1", y3);
+  line2.setAttribute("x2", x4);
+  line2.setAttribute("y2", y4);
+  line2.setAttribute("stroke", "none");
+  line2.setAttribute("stroke-width", ZOOM_LEVEL);
+  svg.appendChild(line1);
+  svg.appendChild(line2);
+  svg.appendChild(rect);
+  svg.setAttribute("receive", data.receive);
+  svg.style.userSelect = "none";
+  svg.onclick = function (event) {
+    var eventTarget = event.target;
+    var parent = eventTarget.parentNode;
+    var receive = parent.getAttribute("receive");
+    var children = parent.childNodes;
+    var line1 = children[0];
+    var line2 = children[1];
+    if (line1.getAttribute("stroke") === "black") {
+      line1.setAttribute("stroke", "none");
+      line2.setAttribute("stroke", "none");
+      sendFloat(receive, 0);
+    } else {
+      line1.setAttribute("stroke", "black");
+      line2.setAttribute("stroke", "black");
+      sendFloat(receive, 1);
+    }
+  };
+  return svg;
+}
+
+// ============
+function draw_Vsl(args) {
+  const vsl = {};
+  vsl.x_pos = parseInt(args[2]);
+  vsl.y_pos = parseInt(args[3]);
+  vsl.type = args[4];
+  vsl.width = parseInt(args[5]);
+  vsl.height = parseInt(args[6]);
+  vsl.bottom = parseInt(args[7]);
+  vsl.top = parseInt(args[8]);
+  vsl.log = parseInt(args[9]);
+  vsl.init = parseInt(args[10]);
+  vsl.send = args[11];
+  vsl.receive = args[12];
+  vsl.label = args[13] === "empty" ? "" : args[13];
+  vsl.x_off = parseInt(args[14]);
+  vsl.y_off = parseInt(args[15]);
+  vsl.font = parseInt(args[16]);
+  vsl.fontsize = parseInt(args[17]);
+  vsl.bg_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
+  vsl.fg_color = isNaN(args[19]) ? args[19] : parseInt(args[19]);
+  vsl.label_color = isNaN(args[20]) ? args[20] : parseInt(args[20]);
+  vsl.default_value = parseFloat(args[21]);
+  vsl.steady_on_click = parseFloat(args[22]);
+  vsl.value = vsl.init ? vsl.default_value : 0;
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+  rect.setAttributeNS(null, "x", vsl.x_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "y", vsl.y_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "width", vsl.width * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "height", vsl.height * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "rx", 2);
+  rect.setAttribute("fill", "rgba(0,0,0,0)");
+  rect.setAttribute("stroke", vsl.fg_color);
+  rect.setAttribute("stroke-width", 1);
+
+  // total range of slider
+  var rangePd = vsl.top - vsl.bottom;
+  var rangePx = vsl.height;
+  var rangeInit = vsl.init;
+  var rangeValue = vsl.value;
+
+  var horizontalLine = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "line",
+  );
+  horizontalLine.setAttribute("x1", vsl.x_pos * ZOOM_LEVEL);
+  horizontalLine.setAttribute("y1", (vsl.y_pos + 10) * ZOOM_LEVEL);
+  horizontalLine.setAttribute("x2", (vsl.x_pos + vsl.width) * ZOOM_LEVEL);
+  horizontalLine.setAttribute("y2", (vsl.y_pos + 10) * ZOOM_LEVEL);
+  horizontalLine.setAttribute("stroke", "black");
+  horizontalLine.setAttribute("stroke-width", 4);
+  horizontalLine.setAttribute("id", "vslpos");
+  svg.setAttribute("maxValue", vsl.top);
+  svg.setAttribute("minValue", vsl.bottom);
+
+  svg.appendChild(horizontalLine);
+  svg.style.userSelect = "none";
+  svg.addEventListener("click", function (event) {
+    let rect = event.target;
+    let svg = rect.parentNode;
+    let horizontalLine = svg.getElementById("vslpos");
+    let y = event.offsetY;
+    if (horizontalLine) {
+      horizontalLine.setAttribute("y1", y);
+      horizontalLine.setAttribute("y2", y);
+      var minValue = svg.getAttribute("minValue");
+      var maxValue = svg.getAttribute("maxValue");
+      var rangePd = maxValue - minValue;
+      var percentage =
+        (y - (vsl.y_pos * ZOOM_LEVEL + 4)) /
+        ((vsl.y_pos + vsl.height - 4) * ZOOM_LEVEL -
+          (vsl.y_pos * ZOOM_LEVEL + 4));
+      if (percentage > 1) {
+        percentage = 1;
+      }
+      if (percentage < 0) {
+        percentage = 0;
+      }
+
+      var finalValue = rangePd * percentage + minValue;
+      console.log("finalValue", finalValue);
+
+      // TODO: Do math to make this work
+
+      return;
+    }
+  });
+  svg.addEventListener("mousemove", function (event) {
+    if (event.buttons !== 1) {
+      return;
+    }
+    var rect = event.target;
+    var svg = rect.parentNode;
+    var horizontalLine = svg.getElementById("vslpos");
+    var minValue = svg.getAttribute("minValue");
+    var maxValue = svg.getAttribute("maxValue");
+    var rangePd = maxValue - minValue;
+    var y = event.offsetY;
+    if (horizontalLine) {
+      if (y < vsl.y_pos * ZOOM_LEVEL + 4) {
+        y = vsl.y_pos * ZOOM_LEVEL + 4;
+      } else if (y > (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4) {
+        y = (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4;
+      }
+      horizontalLine.setAttribute("y1", y);
+      horizontalLine.setAttribute("y2", y);
+      // Calculate the percentage position within the valid range
+      var percentage =
+        1 -
+        (y - (vsl.y_pos * ZOOM_LEVEL + 4)) /
+          ((vsl.y_pos + vsl.height - 4) * ZOOM_LEVEL -
+            (vsl.y_pos * ZOOM_LEVEL + 4));
+
+      // Map the percentage to the range [0, 1]
+      if (percentage > 1) {
+        percentage = 1;
+      }
+      if (percentage < 0) {
+        percentage = 0;
+      }
+      var finalValue = rangePd * percentage + minValue;
+      console.log("finalValue", finalValue);
+
+      return;
+    }
+  });
+  svg.appendChild(rect);
+  return svg;
+}
+
+function draw_Text(args) {
+  if (args.length > 4) {
+    const data = {};
+    data.type = args[1];
+    data.x_pos = parseInt(args[2]) * ZOOM_LEVEL;
+    data.y_pos = parseInt(args[3]) * ZOOM_LEVEL;
+    data.comment = [];
+    const lines = args
+      .slice(4)
+      .join(" ")
+      .replace(/ \\,/g, ",")
+      .replace(/\\; /g, ";\n")
+      .replace(/ ;/g, ";")
+      .split("\n");
+    for (const line of lines) {
+      const lines = line.match(/.{1,60}(\s|$)/g);
+      for (const line of lines) {
+        data.comment.push(line.trim());
+      }
+    }
+    data.texts = [];
+    for (let i = 0; i < data.comment.length; i++) {
+      const text = create_item("text", gui_text_text(data, i));
+      text.textContent = data.comment[i];
+      data.texts.push(text);
+    }
+  }
+}
+
+// ============
+// ============
+// ============
 function openPatch(file) {
-  console.log("\n");
   var request = new XMLHttpRequest();
-  var patchLines = [];
   var objId = 0;
   let id = 0; // gui id
   request.open("GET", file, true);
@@ -190,6 +494,7 @@ function openPatch(file) {
       if (request.status === 200 || request.status == 0) {
         var lines = request.responseText.split("\n");
         let canvasLevel = 0; // 0: no canvas, 1: main canvas, 2~: subcanvases
+        const canvas = document.getElementById("pdPatch");
         for (let line of lines) {
           line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
           objId++;
@@ -213,348 +518,34 @@ function openPatch(file) {
                 canvas.style.boxShadow = "0px 0px 5px 0px rgba(0,0,0,0.75)";
               }
               break;
-
             case "#X obj":
-              const canvas = document.getElementById("pdPatch");
               const objName = args[4];
               switch (objName) {
                 case "tgl":
-                  if (
-                    canvasLevel === 1 &&
-                    args.length === 19 &&
-                    args[7] === "empty" &&
-                    args[8] === "empty"
-                  ) {
-                    console.log("toggle");
+                  if (!(args[7] === "empty" || args[8] === "empty")) {
+                    canvas.appendChild(draw_Tgl(args));
                   }
-                  var data = {};
-                  data.x_pos = parseInt(args[2]);
-                  data.y_pos = parseInt(args[3]);
-                  data.type = args[4];
-                  data.size = parseInt(args[5]);
-                  data.init = parseInt(args[6]);
-                  data.send = args[7];
-                  data.receive = args[8];
-                  data.label = args[9] === "empty" ? "" : args[9];
-                  data.x_off = parseInt(args[10]);
-                  data.y_off = parseInt(args[11]);
-                  data.font = parseInt(args[12]);
-                  data.fontsize = parseInt(args[13]);
-                  data.bg_color = isNaN(args[14])
-                    ? args[14]
-                    : parseInt(args[14]);
-                  data.fg_color = isNaN(args[15])
-                    ? args[15]
-                    : parseInt(args[15]);
-                  data.label_color = isNaN(args[16])
-                    ? args[16]
-                    : parseInt(args[16]);
-                  data.init_value = parseFloat(args[17]);
-                  data.default_value = parseFloat(args[18]);
-                  data.value =
-                    data.init && data.init_value ? data.default_value : 0;
-                  data.id = `${data.type}_${id++}`;
-                  var svg = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "svg",
-                  );
-
-                  var rect = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "rect",
-                  );
-                  rect.setAttributeNS(null, "x", data.x_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "y", data.y_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "width", data.size * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "height", data.size * ZOOM_LEVEL);
-                  // fill is transparent
-                  rect.setAttribute("fill", "rgba(0,0,0,0)");
-                  rect.setAttribute("stroke", data.fg_color);
-                  rect.setAttribute("stroke-width", 1);
-                  rect.setAttribute("id", "toggle_" + objId);
-                  rect.setAttributeNS(null, "rx", 1);
-
-                  var line1Id = "line1_" + objId;
-                  var line2Id = "line2_" + objId;
-                  var x1 = data.x_pos * ZOOM_LEVEL;
-                  var y1 = data.y_pos * ZOOM_LEVEL;
-                  var x2 = x1 + data.size * ZOOM_LEVEL;
-                  var y2 = y1 + data.size * ZOOM_LEVEL;
-                  var x3 = x1 + 3;
-                  var y3 = y2 - 3;
-                  var x4 = x2 - 3;
-                  var y4 = y1 + 3;
-
-                  var line1 = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "line",
-                  );
-                  line1.setAttribute("x1", x1 + 3);
-                  line1.setAttribute("y1", y1 + 3);
-                  line1.setAttribute("x2", x2 - 3);
-                  line1.setAttribute("y2", y2 - 3);
-                  line1.setAttribute("stroke", "none");
-                  line1.setAttribute("stroke-width", ZOOM_LEVEL);
-                  line1.setAttribute("id", line1Id);
-
-                  var line2 = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "line",
-                  );
-                  line2.setAttribute("x1", x3);
-                  line2.setAttribute("y1", y3);
-                  line2.setAttribute("x2", x4);
-                  line2.setAttribute("y2", y4);
-                  line2.setAttribute("stroke", "none");
-                  line2.setAttribute("stroke-width", ZOOM_LEVEL);
-                  line2.setAttribute("id", line2Id);
-                  svg.appendChild(line1);
-                  svg.appendChild(line2);
-                  svg.appendChild(rect);
-                  svg.onclick = function (event) {
-                    var eventTarget = event.target;
-                    var parent = eventTarget.parentNode;
-                    var children = parent.childNodes;
-                    var line1 = children[0];
-                    var line2 = children[1];
-                    if (line1.getAttribute("stroke") === "black") {
-                      line1.setAttribute("stroke", "none");
-                      line2.setAttribute("stroke", "none");
-                    } else {
-                      line1.setAttribute("stroke", "black");
-                      line2.setAttribute("stroke", "black");
-                    }
-                  };
-                  canvas.appendChild(svg);
                   break;
 
                 case "vsl":
-                  const vsl = {};
-                  vsl.x_pos = parseInt(args[2]);
-                  vsl.y_pos = parseInt(args[3]);
-                  vsl.type = args[4];
-                  vsl.width = parseInt(args[5]);
-                  vsl.height = parseInt(args[6]);
-                  vsl.bottom = parseInt(args[7]);
-                  vsl.top = parseInt(args[8]);
-                  vsl.log = parseInt(args[9]);
-                  vsl.init = parseInt(args[10]);
-                  vsl.send = args[11];
-                  vsl.receive = args[12];
-                  vsl.label = args[13] === "empty" ? "" : args[13];
-                  vsl.x_off = parseInt(args[14]);
-                  vsl.y_off = parseInt(args[15]);
-                  vsl.font = parseInt(args[16]);
-                  vsl.fontsize = parseInt(args[17]);
-                  vsl.bg_color = isNaN(args[18])
-                    ? args[18]
-                    : parseInt(args[18]);
-                  vsl.fg_color = isNaN(args[19])
-                    ? args[19]
-                    : parseInt(args[19]);
-                  vsl.label_color = isNaN(args[20])
-                    ? args[20]
-                    : parseInt(args[20]);
-                  vsl.default_value = parseFloat(args[21]);
-                  vsl.steady_on_click = parseFloat(args[22]);
-                  vsl.value = vsl.init ? vsl.default_value : 0;
-                  vsl.id = `${vsl.type}_${id++}`;
-                  // create svg rect
-                  var svg = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "svg",
-                  );
-                  var rect = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "rect",
-                  );
-                  rect.setAttributeNS(null, "x", vsl.x_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "y", vsl.y_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "width", vsl.width * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "height", vsl.height * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "rx", 2);
-                  rect.setAttribute("fill", "rgba(0,0,0,0)");
-                  rect.setAttribute("stroke", vsl.fg_color);
-                  rect.setAttribute("stroke-width", 1);
-                  rect.setAttribute("id", "vsl_" + objId);
-
-                  // total range of slider
-                  var rangePd = vsl.top - vsl.bottom;
-                  var rangePx = vsl.height;
-                  var rangeInit = vsl.init;
-                  var rangeValue = vsl.value;
-
-                  console.log("vsl", rangeInit);
-                  var horizontalLine = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "line",
-                  );
-                  horizontalLine.setAttribute("x1", vsl.x_pos * ZOOM_LEVEL);
-                  horizontalLine.setAttribute("y1", vsl.y_pos * ZOOM_LEVEL);
-                  horizontalLine.setAttribute(
-                    "x2",
-                    (vsl.x_pos + vsl.width) * ZOOM_LEVEL,
-                  );
-                  horizontalLine.setAttribute("y2", vsl.y_pos * ZOOM_LEVEL);
-                  horizontalLine.setAttribute("stroke", "black");
-                  horizontalLine.setAttribute("stroke-width", 4);
-                  horizontalLine.setAttribute("id", "vslpos");
-                  svg.appendChild(horizontalLine);
-
-                  svg.addEventListener("click", function (event) {
-                    var rect = event.target;
-                    var svg = rect.parentNode;
-                    var horizontalLine = svg.getElementById("vslpos");
-                    var y = event.offsetY;
-                    if (horizontalLine) {
-                      horizontalLine.setAttribute("y1", y);
-                      horizontalLine.setAttribute("y2", y);
-                      return;
-                    }
-                  });
-                  svg.addEventListener("mousemove", function (event) {
-                    if (event.buttons !== 1) {
-                      return;
-                    }
-                    var rect = event.target;
-                    var svg = rect.parentNode;
-                    var horizontalLine = svg.getElementById("vslpos");
-                    var y = event.offsetY;
-                    if (horizontalLine) {
-                      if (y < vsl.y_pos * ZOOM_LEVEL + 4) {
-                        y = vsl.y_pos * ZOOM_LEVEL + 4;
-                      } else if (
-                        y >
-                        (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4
-                      ) {
-                        y = (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4;
-                      }
-                      horizontalLine.setAttribute("y1", y);
-                      horizontalLine.setAttribute("y2", y);
-                      return;
-                    }
-                  });
-                  svg.appendChild(rect);
-                  canvas.appendChild(svg);
+                  canvas.appendChild(draw_Vsl(args));
                   break;
                 case "hsl":
+                  console.log("hsl");
                   break;
                 case "nbx":
+                  console.log("nbx");
                   break;
                 case "bng":
-                  var bng = {};
-                  bng.x_pos = parseInt(args[2]);
-                  bng.y_pos = parseInt(args[3]);
-                  bng.type = args[4];
-                  bng.size = parseInt(args[5]);
-                  bng.init = parseInt(args[6]);
-                  bng.send = args[7];
-                  bng.receive = args[8];
-                  bng.label = args[9] === "empty" ? "" : args[9];
-                  bng.x_off = parseInt(args[10]);
-                  bng.y_off = parseInt(args[11]);
-                  bng.font = parseInt(args[12]);
-                  bng.fontsize = parseInt(args[13]);
-                  bng.bg_color = isNaN(args[14])
-                    ? args[14]
-                    : parseInt(args[14]);
-                  bng.fg_color = isNaN(args[15])
-                    ? args[15]
-                    : parseInt(args[15]);
-                  bng.label_color = isNaN(args[16])
-                    ? args[16]
-                    : parseInt(args[16]);
-                  bng.init_value = parseFloat(args[17]);
-                  bng.default_value = parseFloat(args[18]);
-                  bng.value =
-                    bng.init && bng.init_value ? bng.default_value : 0;
-                  bng.id = `${bng.type}_${id++}`;
-
-                  var svg = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "svg",
-                  );
-
-                  var rect = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "rect",
-                  );
-                  rect.setAttributeNS(null, "x", bng.x_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "y", bng.y_pos * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "width", bng.size * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "height", bng.size * ZOOM_LEVEL);
-                  rect.setAttributeNS(null, "rx", 1);
-                  rect.setAttribute("fill", "rgba(0,0,0,0)");
-                  rect.setAttribute("stroke", "black");
-                  rect.setAttribute("stroke-width", 1);
-                  rect.setAttribute("id", "bng_" + objId);
-                  var circle = document.createElementNS(
-                    "http://www.w3.org/2000/svg",
-                    "circle",
-                  );
-                  circle.setAttribute(
-                    "cx",
-                    (bng.x_pos + bng.size / 2) * ZOOM_LEVEL,
-                  );
-                  circle.setAttribute(
-                    "cy",
-                    (bng.y_pos + bng.size / 2) * ZOOM_LEVEL,
-                  );
-                  circle.setAttribute("r", bng.size - 1);
-                  circle.setAttribute("fill", "rgba(0,0,0,0)");
-                  circle.setAttribute("stroke", "black");
-                  circle.setAttribute("stroke-width", 1);
-                  circle.setAttribute("id", "bng_" + objId);
-                  svg.appendChild(circle);
-                  svg.appendChild(rect);
-                  svg.onclick = function (event) {
-                    var eventTarget = event.target;
-                    var parent = eventTarget.parentNode;
-                    var children = parent.childNodes;
-                    var circle = children[0];
-                    circle.setAttribute("fill", "black");
-                    setTimeout(function () {
-                      circle.setAttribute("fill", "rgba(0,0,0,0)");
-                    }, 150);
-                  };
-                  canvas.appendChild(svg);
+                  canvas.appendChild(draw_Bang(args));
                   break;
-
                 default:
-                  console.log("Not implemented yet");
+                  alert("Unknown object type: " + objName);
                   break;
               }
               break;
             case "#X text":
-              if (args.length > 4) {
-                const data = {};
-                data.type = args[1];
-                data.x_pos = parseInt(args[2]) * ZOOM_LEVEL;
-                data.y_pos = parseInt(args[3]) * ZOOM_LEVEL;
-                data.comment = [];
-                const lines = args
-                  .slice(4)
-                  .join(" ")
-                  .replace(/ \\,/g, ",")
-                  .replace(/\\; /g, ";\n")
-                  .replace(/ ;/g, ";")
-                  .split("\n");
-                for (const line of lines) {
-                  const lines = line.match(/.{1,60}(\s|$)/g);
-                  for (const line of lines) {
-                    data.comment.push(line.trim());
-                  }
-                }
-                data.id = `${data.type}_${id++}`;
-
-                // create svg
-                data.texts = [];
-                for (let i = 0; i < data.comment.length; i++) {
-                  const text = create_item("text", gui_text_text(data, i));
-                  text.textContent = data.comment[i];
-                  data.texts.push(text);
-                }
-              }
+              draw_Text(args);
               break;
           }
         }
