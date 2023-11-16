@@ -312,6 +312,8 @@ function draw_Nbx(args) {
   nbx.y_pos = parseInt(args[3]);
   nbx.minValue = parseFloat(args[5]);
   nbx.maxValue = parseFloat(args[6]);
+  nbx.sender = args[11];
+  nbx.receiver = args[12];
   nbx.initValue = args[21];
 
   var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -358,14 +360,21 @@ function draw_Nbx(args) {
   text.setAttribute("id", "nbxtext");
   text.textContent = nbx.initValue;
   svg.appendChild(text);
+  svg.setAttribute("receiver", nbx.receiver);
   svg.style.userSelect = "none";
 
   svg.onclick = function (event) {
     var eventTarget = event.target;
     var parent = eventTarget.parentNode;
+    console.log(parent);
     var text = parent.getElementById("nbxtext");
+    text.setAttribute("fill", "red");
     var value = prompt("Please enter new value", text.textContent);
     text.textContent = value;
+    sendFloat(parent.getAttribute("receiver"), parseFloat(value));
+    console.log(parent.getAttribute("receiver"));
+    text.setAttribute("fill", "black");
+    console.log("value: " + value);
   };
   return svg;
 }
@@ -641,7 +650,6 @@ function openPatch(file) {
                     canvas.appendChild(draw_Tgl(args));
                   }
                   break;
-
                 case "vsl":
                   canvas.appendChild(draw_Vsl(args));
                   break;
