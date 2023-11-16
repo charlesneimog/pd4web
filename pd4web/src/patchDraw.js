@@ -7,29 +7,6 @@ window.addEventListener("resize", function () {
   // TODO: I believe that we need to redraw everything
 });
 
-var consoleLogMessages = [];
-var originalConsoleLog = console.log;
-console.log = function () {
-  var logMessage = Array.from(arguments).join(" ");
-  consoleLogMessages.push(logMessage);
-  originalConsoleLog.apply(console, arguments);
-};
-
-function captureLibPdMessages() {
-  window.onerror = function (message, source, lineno, colno, error) {
-    capturedMessages.push({
-      message: message,
-      source: source,
-      lineno: lineno,
-      colno: colno,
-      error: error,
-    });
-  };
-  window.message = function (message) {
-    capturedMessages.push(message);
-  };
-}
-
 function gobj_font_y_kludge(fontsize) {
   switch (fontsize) {
     case 8:
@@ -203,10 +180,7 @@ function draw_Bang(args) {
   bng.init_value = parseFloat(args[17]);
   bng.default_value = parseFloat(args[18]);
   bng.value = bng.init && bng.init_value ? bng.default_value : 0;
-  // bng.id = `${bng.type}_${id++}`;
-
   var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-
   var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   svg.style.userSelect = "none";
   rect.setAttributeNS(null, "x", bng.x_pos * ZOOM_LEVEL);
@@ -242,6 +216,16 @@ function draw_Bang(args) {
 }
 
 // ============
+function draw_Obj(args) {
+  let obj = {};
+  obj.x_pos = parseInt(args[2]);
+  obj.y_pos = parseInt(args[3]);
+  obj.objText = args.slice(4).join(" ").replace(/;/g, "");
+  let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  return svg;
+}
+
+// ============
 function draw_Tgl(args) {
   var data = {};
   data.x_pos = parseInt(args[2]);
@@ -264,14 +248,14 @@ function draw_Tgl(args) {
   data.value = data.init && data.init_value ? data.default_value : 0;
   var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttributeNS(null, "x", data.x_pos * ZOOM_LEVEL);
-  rect.setAttributeNS(null, "y", data.y_pos * ZOOM_LEVEL);
-  rect.setAttributeNS(null, "width", data.size * ZOOM_LEVEL);
-  rect.setAttributeNS(null, "height", data.size * ZOOM_LEVEL);
+  rect.setAttribute("x", data.x_pos * ZOOM_LEVEL);
+  rect.setAttribute("y", data.y_pos * ZOOM_LEVEL);
+  rect.setAttribute("width", data.size * ZOOM_LEVEL);
+  rect.setAttribute("height", data.size * ZOOM_LEVEL);
   rect.setAttribute("fill", "rgba(0,0,0,0)");
   rect.setAttribute("stroke", data.fg_color);
   rect.setAttribute("stroke-width", 1);
-  rect.setAttributeNS(null, "rx", 1);
+  rect.setAttribute("rx", 1);
   var x1 = data.x_pos * ZOOM_LEVEL;
   var y1 = data.y_pos * ZOOM_LEVEL;
   var x2 = x1 + data.size * ZOOM_LEVEL;
@@ -317,6 +301,71 @@ function draw_Tgl(args) {
       line2.setAttribute("stroke", "black");
       sendFloat(receive, 1);
     }
+  };
+  return svg;
+}
+
+// ============
+function draw_Nbx(args) {
+  const nbx = {};
+  nbx.x_pos = parseInt(args[2]);
+  nbx.y_pos = parseInt(args[3]);
+  nbx.minValue = parseFloat(args[5]);
+  nbx.maxValue = parseFloat(args[6]);
+  nbx.initValue = args[21];
+
+  var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+
+  // draw the box and put it in x_pos and y_pos position
+  rect.setAttributeNS(null, "x", nbx.x_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "y", nbx.y_pos * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "width", 40 * ZOOM_LEVEL);
+  rect.setAttributeNS(null, "height", 10 * ZOOM_LEVEL);
+  // rect.setAttributeNS(null, "rx", 2);
+  rect.setAttribute("fill", "rgba(0,0,0,0)");
+  rect.setAttribute("stroke", "black");
+  rect.setAttribute("stroke-width", 0.5);
+
+  // write and triangle
+  var x1 = nbx.x_pos * ZOOM_LEVEL;
+  var y1 = nbx.y_pos * ZOOM_LEVEL + 1;
+
+  var x2 = nbx.x_pos * ZOOM_LEVEL;
+  var y2 = nbx.y_pos * ZOOM_LEVEL + 10 * ZOOM_LEVEL - 1;
+
+  var x3 = nbx.x_pos * ZOOM_LEVEL + 5 * ZOOM_LEVEL;
+  var y3 = nbx.y_pos * ZOOM_LEVEL + 5 * ZOOM_LEVEL - 0.5;
+
+  // Create a polygon element (triangle)
+  var triangle = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "polygon",
+  );
+  triangle.setAttribute("points", `${x1},${y1} ${x2},${y2} ${x3},${y3}`);
+  triangle.setAttribute("fill", "black");
+  triangle.setAttribute("stroke", "black");
+  svg.appendChild(triangle);
+  svg.appendChild(rect);
+
+  // draw the number 0 in the inside the box
+  var fontSize = 20;
+  var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+  text.setAttribute("x", nbx.x_pos * ZOOM_LEVEL + 7 * ZOOM_LEVEL);
+  text.setAttribute("y", nbx.y_pos * ZOOM_LEVEL + fontSize * 0.8);
+  text.setAttribute("fill", "black");
+  text.setAttribute("font-size", fontSize + "px");
+  text.setAttribute("id", "nbxtext");
+  text.textContent = nbx.initValue;
+  svg.appendChild(text);
+  svg.style.userSelect = "none";
+
+  svg.onclick = function (event) {
+    var eventTarget = event.target;
+    var parent = eventTarget.parentNode;
+    var text = parent.getElementById("nbxtext");
+    var value = prompt("Please enter new value", text.textContent);
+    text.textContent = value;
   };
   return svg;
 }
@@ -376,6 +425,7 @@ function draw_Vsl(args) {
   horizontalLine.setAttribute("id", "vslpos");
   svg.setAttribute("maxValue", vsl.top);
   svg.setAttribute("minValue", vsl.bottom);
+  svg.setAttribute("receive", vsl.receive);
 
   svg.appendChild(horizontalLine);
   svg.style.userSelect = "none";
@@ -383,29 +433,34 @@ function draw_Vsl(args) {
     let rect = event.target;
     let svg = rect.parentNode;
     let horizontalLine = svg.getElementById("vslpos");
-    let y = event.offsetY;
+    var minValue = svg.getAttribute("minValue");
+    var maxValue = svg.getAttribute("maxValue");
+    var rangePd = maxValue - minValue;
+    var y = event.offsetY;
     if (horizontalLine) {
+      if (y < vsl.y_pos * ZOOM_LEVEL + 4) {
+        y = vsl.y_pos * ZOOM_LEVEL + 4;
+      } else if (y > (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4) {
+        y = (vsl.y_pos + vsl.height) * ZOOM_LEVEL - 4;
+      }
       horizontalLine.setAttribute("y1", y);
       horizontalLine.setAttribute("y2", y);
-      var minValue = svg.getAttribute("minValue");
-      var maxValue = svg.getAttribute("maxValue");
-      var rangePd = maxValue - minValue;
+      // Calculate the percentage position within the valid range
       var percentage =
+        1 -
         (y - (vsl.y_pos * ZOOM_LEVEL + 4)) /
-        ((vsl.y_pos + vsl.height - 4) * ZOOM_LEVEL -
-          (vsl.y_pos * ZOOM_LEVEL + 4));
+          ((vsl.y_pos + vsl.height - 4) * ZOOM_LEVEL -
+            (vsl.y_pos * ZOOM_LEVEL + 4));
+
+      // Map the percentage to the range [0, 1]
       if (percentage > 1) {
         percentage = 1;
       }
       if (percentage < 0) {
         percentage = 0;
       }
-
       var finalValue = rangePd * percentage + minValue;
-      console.log("finalValue", finalValue);
-
-      // TODO: Do math to make this work
-
+      sendFloat(svg.getAttribute("receive"), finalValue);
       return;
     }
   });
@@ -443,7 +498,7 @@ function draw_Vsl(args) {
         percentage = 0;
       }
       var finalValue = rangePd * percentage + minValue;
-      console.log("finalValue", finalValue);
+      sendFloat(svg.getAttribute("receive"), finalValue);
 
       return;
     }
@@ -452,7 +507,7 @@ function draw_Vsl(args) {
   return svg;
 }
 
-function draw_Text(args) {
+function draw_TextOld(args) {
   if (args.length > 4) {
     const data = {};
     data.type = args[1];
@@ -478,6 +533,66 @@ function draw_Text(args) {
       text.textContent = data.comment[i];
       data.texts.push(text);
     }
+  }
+}
+function draw_Text(args) {
+  if (args.length > 4) {
+    const data = {};
+    data.type = args[1];
+    data.x_pos = parseInt(args[2]) * ZOOM_LEVEL;
+    data.y_pos = parseInt(args[3]) * ZOOM_LEVEL;
+    data.comment = [];
+    const lines = args
+      .slice(4)
+      .join(" ")
+      .replace(/ \\,/g, ",")
+      .replace(/\\; /g, ";\n")
+      .replace(/ ;/g, ";")
+      .split("\n");
+    for (const line of lines) {
+      const lines = line.match(/.{1,60}(\s|$)/g);
+      for (const line of lines) {
+        data.comment.push(line.trim());
+      }
+    }
+    // create svg to draw text
+    let text = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    text.setAttribute("x", data.x_pos);
+    text.setAttribute("y", data.y_pos);
+    text.setAttribute("width", 100);
+    text.setAttribute("height", 100);
+    text.setAttribute("id", "text");
+    text.setAttribute("class", "unclickable");
+    text.style.userSelect = "none";
+    // create text createElement
+    let textElement = document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "text",
+    );
+    textElement.setAttribute("x", data.x_pos);
+    textElement.setAttribute("y", data.y_pos);
+    textElement.setAttribute("fill", "black");
+    textElement.setAttribute("font-size", fontSize + "px");
+    textElement.setAttribute("id", "textElement");
+    textElement.setAttribute("class", "unclickable");
+    textElement.style.userSelect = "none";
+    text.appendChild(textElement);
+    // create tspan
+    let tspan = document.createElementNS("http://www.w3.org/2000/svg", "tspan");
+    tspan.setAttribute("x", data.x_pos);
+    tspan.setAttribute("y", data.y_pos);
+    tspan.setAttribute("fill", "black");
+    tspan.setAttribute("font-size", fontSize + "px");
+    tspan.setAttribute("id", "tspan");
+    tspan.setAttribute("class", "unclickable");
+    tspan.style.userSelect = "none";
+    textElement.appendChild(tspan);
+    // create textNode
+    let textNode = document.createTextNode(data.comment[0]);
+    tspan.appendChild(textNode);
+    // append text to canvas
+    let canvas = document.getElementById("pdPatch");
+    canvas.appendChild(text);
   }
 }
 
@@ -531,16 +646,16 @@ function openPatch(file) {
                   canvas.appendChild(draw_Vsl(args));
                   break;
                 case "hsl":
-                  console.log("hsl");
+                  // console.log("hsl");
                   break;
                 case "nbx":
-                  console.log("nbx");
+                  canvas.appendChild(draw_Nbx(args));
                   break;
                 case "bng":
                   canvas.appendChild(draw_Bang(args));
                   break;
                 default:
-                  alert("Unknown object type: " + objName);
+                  canvas.appendChild(draw_Obj(args));
                   break;
               }
               break;
@@ -556,5 +671,5 @@ function openPatch(file) {
 }
 
 document.addEventListener("DOMContentLoaded", function () {
-  openPatch("./test1.pd");
+  openPatch("./data/index.pd");
 });
