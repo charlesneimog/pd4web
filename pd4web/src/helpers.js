@@ -2,6 +2,8 @@ var pdIsInitialized = false;
 window.pd4webGuiValues = {};
 
 function JS_AddUIButtons(audioContext, audioWorkletNode) {
+  console.log("Latency: " + parseInt(audioContext.baseLatency * 1000));
+
   if (audioContext.state === "running") {
     audioContext.suspend();
   }
@@ -80,6 +82,7 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
     .getUserMedia({
       video: false,
       audio: {
+        latency: 0,
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
