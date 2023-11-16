@@ -12,8 +12,6 @@ import time
 import zipfile
 from typing import List
 
-
-
 import requests
 import yaml
 
@@ -317,6 +315,10 @@ class webpdPatch:
             shutil.copy(
                 self.PdWebCompilerPath + "/src/enable-threads.js",
                 self.PROJECT_ROOT + "webpatch/enable-threads.js",
+            )
+            shutil.copy(
+                self.PdWebCompilerPath + "/src/patchDraw.js",
+                self.PROJECT_ROOT + "webpatch/patchDraw.js",
             )
             if self.pageFolder is not None:
                 shutil.copytree(
