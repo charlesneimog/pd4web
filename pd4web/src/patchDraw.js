@@ -317,6 +317,7 @@ function draw_Nbx(args) {
   nbx.initValue = args[21];
 
   var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("id", nbx.receiver);
   var rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
 
   // draw the box and put it in x_pos and y_pos position
@@ -350,7 +351,6 @@ function draw_Nbx(args) {
   svg.appendChild(triangle);
   svg.appendChild(rect);
 
-  // draw the number 0 in the inside the box
   var fontSize = 20;
   var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
   text.setAttribute("x", nbx.x_pos * ZOOM_LEVEL + 7 * ZOOM_LEVEL);
@@ -372,9 +372,7 @@ function draw_Nbx(args) {
     var value = prompt("Please enter new value", text.textContent);
     text.textContent = value;
     sendFloat(parent.getAttribute("receiver"), parseFloat(value));
-    console.log(parent.getAttribute("receiver"));
     text.setAttribute("fill", "black");
-    console.log("value: " + value);
   };
   return svg;
 }
