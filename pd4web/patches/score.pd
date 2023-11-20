@@ -1,0 +1,10 @@
+#N canvas 610 152 375 402 8;
+#X obj 5 5 inlet;
+#X obj 5 72 route score delay;
+#X obj 5 102 symbol;
+#X obj 5 165 s ui_pd4webscore{};
+#X obj 46 147 s ui_pd4webscore-delay{};
+#X connect 0 0 1 0;
+#X connect 1 0 2 0;
+#X connect 1 1 4 0;
+#X connect 2 0 3 0;
