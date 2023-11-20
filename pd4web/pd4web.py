@@ -629,7 +629,14 @@ class webpdPatch:
         """
         if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
             os.mkdir(self.PROJECT_ROOT + "webpatch/data")
-        shutil.copy(abstractionfile, self.PROJECT_ROOT + "webpatch/data")
+
+        if os.path.exists(
+            self.PROJECT_ROOT + "webpatch/data/" + os.path.basename(abstractionfile)
+        ):
+            print("Abstraction already exists: " + abstractionfile)
+            return
+
+        # shutil.copy(abstractionfile, self.PROJECT_ROOT + "webpatch/data")
 
     def copyAllDataFiles(self):
         """
@@ -816,9 +823,18 @@ class webpdPatch:
         for root, _, files in os.walk(libPath):
             for file in files:
                 if file.endswith(".pd") and objName == file.split(".pd")[0]:
-                    shutil.copy(
-                        os.path.join(root, file), self.PROJECT_ROOT + "/webpatch/data/"
-                    )
+                    # check if file already in webpatch/data
+                    if os.path.exists(
+                        self.PROJECT_ROOT + "webpatch/data/" + file
+                    ) or os.path.exists(
+                        self.PROJECT_ROOT + "webpatch/data/" + file + ".pd"
+                    ):
+                        pass
+                    else:
+                        shutil.copy(
+                            os.path.join(root, file),
+                            self.PROJECT_ROOT + "/webpatch/data/",
+                        )
                     patchLine.isAbstraction = True
                     patchLine.objFound = True
                     patchLine.isExternal = False
