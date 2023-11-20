@@ -553,30 +553,13 @@ class webpdPatch:
         if patchLine.Tokens[4].replace("\n", "") == "clone":
             self.extraConfigClone(patchLine)
 
-    def extraConfigClone(self, line):
+    def extraConfigClone(self, patchLine: PatchLine):
         """
         This function execute the extra config for clone object.
         """
-        for token in line.Tokens:
-            if not "-" in token:
-                absName = token.replace(",", "") + ".pd"
-                for root, _, files in os.walk(self.PROJECT_ROOT):
-                    for file in files:
-                        if not file.endswith(".pd") and absName not in file:
-                            continue
-                        if absName != file:
-                            continue
-                        if not os.path.exists(
-                            self.PROJECT_ROOT + "webpatch/data/" + absName
-                        ):
-                            myprint(
-                                "" + "Copying " + absName + " to webpatch/data",
-                                color="yellow",
-                            )
-                            shutil.copy(
-                                os.path.join(root, file),
-                                self.PROJECT_ROOT + "webpatch/data",
-                            )
+        # from patchLine Tokens, remove 4 first Tokens
+        usedTokens = patchLine.Tokens[4:]
+        # TODO: Needs investigation
 
     def replaceVisualArray(self):
         """
