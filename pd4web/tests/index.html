@@ -1,7 +1,11 @@
 <!doctype html>
 <html>
   <head>
+    <script>
+      var consoleLogMessages = [];
+    </script>
     <meta charset="utf-8" />
+
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>pd4web Template html</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -94,28 +98,27 @@
   </div>
   <script src="./patchDraw.js"></script>
   <script>
-    // THIS CODE IS JUST FOR INTERNAL TESTES, YOU CAN REMOVE IT.
-    // var originalConsoleLog = console.log;
-    // console.log = function () {
-    //   var logMessage = Array.from(arguments).join(" ");
-    //   consoleLogMessages.push(logMessage);
-    //   originalConsoleLog.apply(console, arguments);
-    // };
-    //
-    // function captureLibPdMessages() {
-    //   window.onerror = function (message, source, lineno, colno, error) {
-    //     capturedMessages.push({
-    //       message: message,
-    //       source: source,
-    //       lineno: lineno,
-    //       colno: colno,
-    //       error: error,
-    //     });
-    //   };
-    //   window.message = function (message) {
-    //     capturedMessages.push(message);
-    //   };
-    // }
-    // captureLibPdMessages();
+    var originalConsoleLog = console.log;
+    console.log = function () {
+      var logMessage = Array.from(arguments).join(" ");
+      consoleLogMessages.push(logMessage);
+      originalConsoleLog.apply(console, arguments);
+    };
+
+    function captureLibPdMessages() {
+      window.onerror = function (message, source, lineno, colno, error) {
+        capturedMessages.push({
+          message: message,
+          source: source,
+          lineno: lineno,
+          colno: colno,
+          error: error,
+        });
+      };
+      window.message = function (message) {
+        capturedMessages.push(message);
+      };
+    }
+    captureLibPdMessages();
   </script>
 </html>

@@ -1,6 +1,0 @@
-<?xml version="1.0"?>
-<analyzerinfo hash="377191751137666110">
-        <error id="internalAstError" severity="error" msg="Syntax Error: AST broken, &apos;if&apos; doesn&apos;t have two operands." verbose="Syntax Error: AST broken, &apos;if&apos; doesn&apos;t have two operands." file0="/home/neimog/Documents/Git/pd4web/pd4web/src/template.c">
-            <location file="/home/neimog/Documents/Git/pd4web/pd4web/src/template.c" line="337" column="8"/>
-        </error>
-</analyzerinfo>

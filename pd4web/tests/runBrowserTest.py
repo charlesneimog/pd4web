@@ -29,9 +29,6 @@ def myprint(str, color=None):
     else:
         print("    " + str)
 
-def run_pd4web(testFile, return_code):
-    return_code.value = os.system(f"pd4web --patch {testFile} ")
-
 
 def start_server(server):
     server.serve_forever()

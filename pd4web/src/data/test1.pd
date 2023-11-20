@@ -1,8 +1,0 @@
-#N canvas 263 136 1000 436 8;
-#X obj 3 3 tgl 15 0 startpiece_send startpiece_receive empty 0 -8 0 8 #fcfcfc #000000 #000000 0 1;
-#X obj 36 3 bng 15 250 50 0 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000;
-#X obj 126 24 vsl 15 128 0 127 0 1 empty empty empty 0 -9 0 8 #fcfcfc #000000 #000000 12700 1;
-#X obj 126 161 nbx 5 14 3 2345 0 0 empty empty empty 0 0 0 8 #fcfcfc #000000 #000000 0 256;
-#X text 162 22 Hello world! AUDAS ASDOIJFAS ASD9F ASDOFAHSD FOAS ASDFHAS DOFAI;
-#X obj 238 97 nbx 5 14 -1e+37 1e+37 0 1 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000 65 256;
-#X connect 2 0 3 0;

@@ -19,24 +19,10 @@
 #include <emscripten/webaudio.h> /* WebAudio API  */
 #include <z_libpd.h>             /* libpd */
 
-// ========== CONFIG =============
-
-// -DINPUT_CHANNELS=1 -DOUTPUT_CHANNELS=2
-#ifndef INPUT_CHANNELS
-#define INPUT_CHANNELS 1
-#endif
-
-#ifndef OUTPUT_CHANNELS
-#define OUTPUT_CHANNELS 2
-#endif
-
-#ifndef SAMPLE_RATE
-#define SAMPLE_RATE 48000
-#endif
-
+// ========== AUDIO CONFIG =============
+uint8_t patchAudioInputs = 1;
+uint8_t patchAudioOutputs = 2;
 uint8_t wasmAudioWorkletStack[1024 * 1024];
-uint8_t inputChannelsNumber = INPUT_CHANNELS;
-uint8_t outputChannelsNumber = OUTPUT_CHANNELS;
 int samplerate = 48000;
 
 // ================ GUI ================
@@ -64,6 +50,8 @@ typedef struct pdItemHash {
 
 struct pdItemHash *receiverHash;
 int pdWebValueArraySize = 32;
+/* IF THERE IS MORE THAN 32 VALUES, INCREASE THIS
+                              VALUE TODO: Add this on pd2wasm */
 
 // ====================
 void safe_memcpy(void *dest, size_t destSize, const void *src, size_t srcSize) {
@@ -288,7 +276,6 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
     audioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
     JS_AddUIButtons(audioContext, audioWorkletNode);
 });
-
 // clang-format on
 // ========================================
 void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
@@ -296,9 +283,11 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   if (!success) {
     return;
   }
-  int outputChannelCounts[1] = {OUTPUT_CHANNELS};
+  int outputChannelCounts[1] = {2};
+  /* Stereo output TODO: Need to see how this
+    work for more than 2 channels */
   EmscriptenAudioWorkletNodeCreateOptions options = {
-      .numberOfInputs = INPUT_CHANNELS,
+      .numberOfInputs = 1,
       .numberOfOutputs = 1,
       .outputChannelCounts = outputChannelCounts,
   };
@@ -321,7 +310,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   libpd_start_message(1);
   libpd_add_float(1.0f);
   libpd_finish_message("pd", "dsp");
-  libpd_init_audio(inputChannelsNumber, outputChannelsNumber, samplerate);
+  libpd_init_audio(patchAudioInputs, patchAudioOutputs,
+                   GetAudioSampleRate(audioContext));
   if (!libpd_openfile("index.pd", "webpatch/data")) {
     EM_ASM_({ alert("Failed to open patch!"); });
     return;
@@ -371,7 +361,6 @@ void PdWebCompiler_Loop() {
         setFloatValue(HTML_IDS[i], item->f);
       } else if (item->type == A_SYMBOL) {
         setSymbolValue(HTML_IDS[i], item->s);
-        // TODO: Add list and bang
       } else {
         EM_ASM_({ alert("Unknown type"); });
         return;
