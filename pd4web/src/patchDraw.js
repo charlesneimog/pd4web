@@ -1,12 +1,6 @@
 const ZOOM_LEVEL = 2;
 var fontSize = 12;
 
-window.addEventListener("resize", function () {
-  // Your code to handle the window resize goes here
-  console.log("Window resized!");
-  // TODO: I believe that we need to redraw everything
-});
-
 function gobj_font_y_kludge(fontsize) {
   switch (fontsize) {
     case 8:
@@ -162,13 +156,14 @@ function configure_item(item, attributes) {
 // ============
 function draw_Bang(args) {
   var bng = {};
+  // TODO: FIX THIS
   bng.x_pos = parseInt(args[2]);
   bng.y_pos = parseInt(args[3]);
   bng.type = args[4];
   bng.size = parseInt(args[5]);
   bng.init = parseInt(args[6]);
   bng.send = args[7];
-  bng.receive = args[8];
+  bng.receive = args[10];
   bng.label = args[9] === "empty" ? "" : args[9];
   bng.x_off = parseInt(args[10]);
   bng.y_off = parseInt(args[11]);
@@ -191,7 +186,6 @@ function draw_Bang(args) {
   rect.setAttribute("fill", "rgba(0,0,0,0)");
   rect.setAttribute("stroke", "black");
   rect.setAttribute("stroke-width", 1);
-  // rect.setAttribute("id", "bng_" + objId);
   var circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
   circle.setAttribute("cx", (bng.x_pos + bng.size / 2) * ZOOM_LEVEL);
   circle.setAttribute("cy", (bng.y_pos + bng.size / 2) * ZOOM_LEVEL);
@@ -199,19 +193,65 @@ function draw_Bang(args) {
   circle.setAttribute("fill", "rgba(0,0,0,0)");
   circle.setAttribute("stroke", "black");
   circle.setAttribute("stroke-width", 1);
-  // circle.setAttribute("id", "bng_" + objId);
+
   svg.appendChild(circle);
   svg.appendChild(rect);
+  svg.setAttribute("receive", bng.receive);
   svg.onclick = function (event) {
     var eventTarget = event.target;
     var parent = eventTarget.parentNode;
     var children = parent.childNodes;
     var circle = children[0];
     circle.setAttribute("fill", "black");
+    sendBang(parent.getAttribute("receive"));
     setTimeout(function () {
       circle.setAttribute("fill", "rgba(0,0,0,0)");
     }, 150);
   };
+  return svg;
+}
+
+function draw_Score(args) {
+  let score = {};
+  score.x_pos = parseInt(args[2]);
+  score.y_pos = parseInt(args[3]);
+  score.type = args[4];
+  score.width = parseInt(args[5]);
+  score.height = parseInt(args[6]);
+
+  console.log(args);
+  console.log(score.width, score.height);
+
+  score.receiveNumberId = score.type.replace("pd4webscore", "");
+
+  // make a img element with width and height, make outline
+  let svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("x", score.x_pos * ZOOM_LEVEL);
+  svg.setAttribute("y", score.y_pos * ZOOM_LEVEL);
+  svg.setAttribute("width", score.width * ZOOM_LEVEL);
+  svg.setAttribute("height", score.height * ZOOM_LEVEL);
+
+  let foreignObject = document.createElementNS(
+    "http://www.w3.org/2000/svg",
+    "foreignObject",
+  );
+  foreignObject.setAttribute("x", score.x_pos * ZOOM_LEVEL);
+  foreignObject.setAttribute("y", score.y_pos * ZOOM_LEVEL);
+  foreignObject.setAttribute("width", score.width * ZOOM_LEVEL);
+  foreignObject.setAttribute("height", score.height * ZOOM_LEVEL);
+
+  // Create img element
+  let imgElement = document.createElement("img");
+
+  // Set img element attributes
+  imgElement.setAttribute("width", score.width * ZOOM_LEVEL);
+  imgElement.setAttribute("height", score.height * ZOOM_LEVEL);
+  imgElement.setAttribute("id", "ui_pd4webscore" + score.receiveNumberId);
+  console.log("ID IS " + "pd4webscore" + score.receiveNumberId);
+
+  foreignObject.appendChild(imgElement);
+
+  svg.appendChild(foreignObject);
   return svg;
 }
 
@@ -609,7 +649,7 @@ function draw_Text(args) {
 function openPatch(file) {
   var request = new XMLHttpRequest();
   var objId = 0;
-  let id = 0; // gui id
+  // let id = 0; // gui id
   request.open("GET", file, true);
   request.onreadystatechange = function () {
     if (request.readyState === 4) {
@@ -628,6 +668,7 @@ function openPatch(file) {
               if (canvasLevel === 1 && args.length === 7) {
                 var canvasWidth = parseInt(args[4]);
                 var canvasHeight = parseInt(args[5]);
+                console.log(canvasWidth, canvasHeight);
                 fontSize = parseInt(args[6]);
                 const canvas = document.getElementById("pdPatch");
                 canvas.setAttribute(
@@ -636,7 +677,6 @@ function openPatch(file) {
                 );
                 canvas.setAttribute("width", canvasWidth);
                 canvas.setAttribute("height", canvasHeight);
-                // add small shadow for canvas
                 canvas.style.boxShadow = "0px 0px 5px 0px rgba(0,0,0,0.75)";
               }
               break;
@@ -661,7 +701,9 @@ function openPatch(file) {
                   canvas.appendChild(draw_Bang(args));
                   break;
                 default:
-                  canvas.appendChild(draw_Obj(args));
+                  if (objName.includes("pd4webscore")) {
+                    canvas.appendChild(draw_Score(args));
+                  }
                   break;
               }
               break;

@@ -82,10 +82,10 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
     .getUserMedia({
       video: false,
       audio: {
-        latency: 0,
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
+        // latency: 0,
         channelCount: 1,
       },
     })
@@ -106,6 +106,15 @@ function JS_setFloat(symbol, value) {
 
 // ====================
 function JS_setSymbol(symbol, value) {
+  if (symbol.includes("pd4webscore")) {
+    let img = document.getElementById(symbol);
+    console.log(symbol, img);
+    if (img === null) {
+      console.error("Image with id " + symbol + " not found!");
+      return;
+    }
+    img.src = value;
+  }
   window.pd4webGuiValues[symbol] = value;
 }
 
@@ -186,16 +195,14 @@ function sendString(receiver, str) {
 
 // ====================
 function sendToPureData(receiver, thing) {
-  // check if receiver is a string
   if (typeof receiver !== "string") {
     console.error("Receiver is not a string!");
     return;
   }
+
   if (typeof thing === "number") {
     sendFloat(receiver, thing);
-  }
-  // check if thing is a string
-  else if (typeof thing === "string") {
+  } else if (typeof thing === "string") {
     sendString(receiver, thing);
   } else if (Array.isArray(thing)) {
     alert("Array is not supported yet!");
