@@ -269,8 +269,7 @@ class webpdPatch:
                 shutil.rmtree(self.PROJECT_ROOT + "webpatch/includes")
                 os.mkdir(self.PROJECT_ROOT + "webpatch/includes")
         else:
-            with open(self.PROJECT_ROOT + "webpatch/main.c", "r") as file:
-                self.templateCode = file.readlines()
+            self.templateCode = self.parent.templateCode
 
         if insideaddAbstractions:
             self.C_functionsDeclarationStarted = (
@@ -289,7 +288,6 @@ class webpdPatch:
         self.cfgExternalThing()
         self.addObjSetup()
         self.savePdPatchModified()
-        self.saveMainFile()
         if not insideaddAbstractions:
             self.copyAllDataFiles()
             self.processAbstractions()
@@ -349,6 +347,7 @@ class webpdPatch:
         if not insideaddAbstractions:
             self.cfgDynamicLibraries()
             self.extraFunctions()
+            self.saveMainFile()
             self.emccCompile()
         return True
 
