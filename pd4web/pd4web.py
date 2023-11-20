@@ -1185,7 +1185,6 @@ class webpdPatch:
         for dir, _, files in os.walk(self.PROJECT_ROOT + "webpatch/data"):
             for patchfile in files:
                 if patchfile.endswith(".pd") and patchfile != "index.pd":
-                    # check if patch is not in PROCESSED_ABSTRACTIONS
                     if patchfile not in self.PROCESSED_ABSTRACTIONS:
                         abstraction = webpdPatch(
                             sourcefile=self.PROJECT_ROOT + "webpatch/main.c",
