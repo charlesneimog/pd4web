@@ -1168,25 +1168,14 @@ class webpdPatch:
 
         with open(PatchFile, "w") as file:
             finalPatch = []
-            thereIsAbstraction = False
             for obj in self.PatchLinesExternals:
                 if obj.isExternal and not obj.singleObject and not obj.isAbstraction:
                     patchLine = obj.completLine
                     patchLineList = patchLine.split(" ")
                     patchLineList[4] = patchLineList[4].split("/")[1]
-                    finalPatch.append(patchLineList)
-                    thereIsAbstraction = True
+                    file.write(" ".join(patchLineList))
                 else:
-                    patchLineList = obj.completLine.split(" ")
-                    finalPatch.append(patchLineList)
-            for newLine in finalPatch:
-                if newLine[0] == "#N" and newLine[1] == "canvas" and thereIsAbstraction:
-                    newLine = " ".join(newLine)
-                    file.write(newLine)
-                    file.write("#X declare -path data;\n")
-                else:
-                    newLine = " ".join(newLine)
-                    file.write(newLine)
+                    finalPatch.append(obj.completLine)
 
     def processAbstractions(self):
         """
