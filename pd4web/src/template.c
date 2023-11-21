@@ -388,7 +388,7 @@ int main() {
   emscripten_start_wasm_audio_worklet_thread_async(
       context, wasmAudioWorkletStack, sizeof(wasmAudioWorkletStack),
       WebAudioWorkletThreadInitialized, 0);
-  receiverHash = CreatePdItemHash(pdWebValueArraySize);
+  receiverHash = CreatePdItemHash(HTML_IDS_SIZE);
   emscripten_set_main_loop(PdWebCompiler_Loop, 30,
                            1); /* 30 FPS TODO: check this from pd4web */
 }
