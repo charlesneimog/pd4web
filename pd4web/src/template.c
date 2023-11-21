@@ -28,9 +28,6 @@ int samplerate = 48000;
 // ================ GUI ================
 pthread_mutex_t WriteReadMutex = PTHREAD_MUTEX_INITIALIZER;
 
-char *HTML_IDS[] = {};
-int HTML_IDS_SIZE = 0;
-
 typedef struct pdItem {
   const char *receiverID;
   float f;
@@ -49,9 +46,6 @@ typedef struct pdItemHash {
 } pdItemHash;
 
 struct pdItemHash *receiverHash;
-int pdWebValueArraySize = 32;
-/* IF THERE IS MORE THAN 32 VALUES, INCREASE THIS
-                              VALUE TODO: Add this on pd2wasm */
 
 // ====================
 void safe_memcpy(void *dest, size_t destSize, const void *src, size_t srcSize) {
@@ -72,26 +66,34 @@ static pdItemHash *CreatePdItemHash(int size) {
 }
 
 // ====================
-static unsigned int HashFunction(pdItemHash *hash_table, const char *key) {
-  unsigned long hash = 5381;
-  int c;
-  while ((c = *key++)) {
-    hash = ((hash << 5) + hash) + c;
+static int findIndex(const char *key) {
+  int index = -1;
+  for (int i = 0; i < HTML_IDS_SIZE; i++) {
+    if (strcmp(HTML_IDS[i], key) == 0) {
+      index = i;
+      break;
+    }
   }
-  return hash % hash_table->size;
+  if (index == -1) {
+    EM_ASM_({
+      alert("Key not found in HTML_IDS, please report this in " +
+            "github.com/charlesneimog/pd4web");
+    });
+    return 0;
+  }
+  return index;
 }
 
 // ====================
 static void InsertList(pdItemHash *hash_table, const char *key, int size,
                        t_atom *list) {
-  unsigned int index = HashFunction(hash_table, key);
+  unsigned int index = findIndex(key);
   pthread_mutex_lock(&WriteReadMutex);
   pdItem *item = hash_table->items[index];
   if (item == NULL && hash_table->count <= hash_table->size) {
     item = (pdItem *)malloc(sizeof(pdItem));
     item->receiverID = strdup(key);
     item->list = malloc(sizeof(t_atom) * size);
-    // memcpy(item->list, list, sizeof(t_atom) * size);
     safe_memcpy(item->list, sizeof(t_atom) * size, list, sizeof(t_atom) * size);
     item->listSize = size;
     item->type = A_GIMME;
@@ -114,7 +116,7 @@ static void InsertList(pdItemHash *hash_table, const char *key, int size,
 
 // ====================
 static void InsertFloat(pdItemHash *hash_table, const char *key, float f) {
-  unsigned int index = HashFunction(hash_table, key);
+  unsigned int index = findIndex(key);
   pthread_mutex_lock(&WriteReadMutex);
   pdItem *item = hash_table->items[index];
   if (item == NULL && hash_table->count <= hash_table->size) {
@@ -142,7 +144,7 @@ static void InsertFloat(pdItemHash *hash_table, const char *key, float f) {
 // ====================
 static void InsertSymbol(pdItemHash *hash_table, const char *key,
                          const char *thing) {
-  unsigned int index = HashFunction(hash_table, key);
+  unsigned int index = findIndex(key);
   pthread_mutex_lock(&WriteReadMutex);
   pdItem *item = hash_table->items[index];
   if (item == NULL && hash_table->count <= hash_table->size) {
@@ -169,7 +171,7 @@ static void InsertSymbol(pdItemHash *hash_table, const char *key,
 
 // ====================
 static pdItem *GetItem(pdItemHash *hash_table, char *key) {
-  unsigned int index = HashFunction(hash_table, key);
+  unsigned int index = findIndex(key);
   pthread_mutex_lock(&WriteReadMutex);
 
   pdItem *item = hash_table->items[index];
@@ -281,7 +283,6 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
     JS_AddUIButtons(audioContext, audioWorkletNode);
 });
 // clang-format on
-// ========================================
 
 // ========================================
 void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
@@ -290,8 +291,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
     return;
   }
   int outputChannelCounts[1] = {2};
-  /* Stereo output TODO: Need to see how this
-    work for more than 2 channels */
+  // TODO: Thing about this in multichannel
   EmscriptenAudioWorkletNodeCreateOptions options = {
       .numberOfInputs = 1,
       .numberOfOutputs = 1,

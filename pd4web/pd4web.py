@@ -141,7 +141,9 @@ class webpdPatch:
             self.getSupportedLibraries()
             self.C_functionsDeclarationStarted = False
             self.C_functionsCalledStarted = False
+            self.uiReceiversSymbol = []
         else:
+            self.uiReceiversSymbol = parent.uiReceiversSymbol
             self.downloadSources = parent.downloadSources
             self.externalsExtraFunctions = parent.externalsExtraFunctions
             self.addedObjects = parent.addedObjects
@@ -338,13 +340,19 @@ class webpdPatch:
                 self.parent.unsupportedObjects.append(obj)
                 for obj in self.unsupportedObjects
             ]
+            [
+                self.parent.uiReceiversSymbol.append(obj)
+                for obj in self.uiReceiversSymbol
+            ]
             self.C_functionsDeclarationStarted = (
                 self.parent.C_functionsDeclarationStarted
             )
             self.C_functionsCalledStarted = self.parent.C_functionsCalledStarted
             self.parent.addedObjects = self.addedObjects
+            self.parent.templateCode = self.templateCode
 
         if not insideaddAbstractions:
+            self.configUiReceivers()
             self.cfgDynamicLibraries()
             self.extraFunctions()
             self.saveMainFile()
@@ -966,26 +974,37 @@ class webpdPatch:
                                 self.C_functionsCalledStarted = True
                             self.templateCode.insert(start_index + 1, functionName)
                             break
-        HTML_IDS = None
-        HTML_IDS_SIZE = None
+
+    def configUiReceivers(self):
+        """
+        This function add ui receivers to save data in the window.pd4webUiValues
+
+        """
+        threadMutexIndex = None
         for i, line in enumerate(self.templateCode):
-            if "char *HTML_IDS[] = {};" in line:  # TODO: CHANGE THIS TO BETTER WAY
-                HTML_IDS = i
-            if "int HTML_IDS_SIZE = 0;" in line:
-                HTML_IDS_SIZE = i
-            if HTML_IDS is not None and HTML_IDS_SIZE is not None:
-                lenUIReceiver = len(self.uiReceiversSymbol)
-                self.templateCode[HTML_IDS] = "char* HTML_IDS[] = {"
-                for i, uiReceiver in enumerate(self.uiReceiversSymbol):
-                    if i == lenUIReceiver - 1:
-                        self.templateCode[HTML_IDS] += '"' + uiReceiver + '"'
-                    else:
-                        self.templateCode[HTML_IDS] += '"' + uiReceiver + '", '
-                self.templateCode[HTML_IDS] += "};\n"
-                self.templateCode[HTML_IDS_SIZE] = (
-                    "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n"
-                )
+            if "pthread_mutex_t WriteReadMutex = PTHREAD_MUTEX_INITIALIZER" in line:
+                threadMutexIndex = i
+                print("Found thread mutex")
                 break
+
+        if threadMutexIndex is not None:
+            lenUIReceiver = len(self.uiReceiversSymbol)
+            self.templateCode.insert(threadMutexIndex + 1, "")
+            htmlIds = "char* HTML_IDS[] = {"
+            for i, uiReceiver in enumerate(self.uiReceiversSymbol):
+                if i == lenUIReceiver - 1:
+                    htmlIds += '"' + uiReceiver + '"'
+                else:
+                    htmlIds += '"' + uiReceiver + '", '
+            htmlIds += "};\n"
+            self.templateCode.insert(threadMutexIndex + 2, htmlIds)
+            self.templateCode.insert(
+                threadMutexIndex + 3,
+                "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n",
+            )
+            self.templateCode.insert(
+                threadMutexIndex + 4, f"int pdWebValueArraySize = {lenUIReceiver};\n"
+            )
         return True
 
     def saveMainFile(self):
