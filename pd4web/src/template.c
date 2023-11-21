@@ -237,6 +237,10 @@ static void receiveSymbolfromPd(const char *receiver, const char *thing) {
 }
 
 // ========================================
+static void receiveBangfromPd(const char *receiver) {
+  InsertSymbol(receiverHash, (char *)receiver, "bang");
+}
+// ========================================
 // to remove warning about not defined
 void sys_gui_midipreferences(void) { return; }
 
@@ -278,6 +282,8 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
 });
 // clang-format on
 // ========================================
+
+// ========================================
 void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
                                   EM_BOOL success, void *userData) {
   if (!success) {
@@ -299,6 +305,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   libpd_set_listhook(receiveListfromPd);
   libpd_set_floathook(receiveFloatfromPd);
   libpd_set_symbolhook(receiveSymbolfromPd);
+  libpd_set_banghook(receiveBangfromPd);
   libpd_set_printhook(pdprint);
   libpd_init();
 
@@ -317,7 +324,6 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
     return;
   }
   EM_ASM_({ JS_LoadFinished(); });
-  printf("Block size: %d\n", libpd_blocksize());
 }
 
 // ========================================
