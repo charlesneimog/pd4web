@@ -1002,9 +1002,6 @@ class webpdPatch:
                 threadMutexIndex + 3,
                 "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n",
             )
-            self.templateCode.insert(
-                threadMutexIndex + 4, f"int pdWebValueArraySize = {lenUIReceiver};\n"
-            )
         return True
 
     def saveMainFile(self):
