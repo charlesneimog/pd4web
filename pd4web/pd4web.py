@@ -107,7 +107,7 @@ class webpdPatch:
             default=None,
             help="Replace helpers.js file by your own file",
         )
-        parser.add_argument("--version", action="version", version="%(prog)s 1.2.1")
+        parser.add_argument("--version", action="version", version="%(prog)s 1.2.2")
         self.args = parser.parse_args()
         if self.args.active_emcc:
             self.activeEmcc()
