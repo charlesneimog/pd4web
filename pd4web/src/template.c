@@ -229,6 +229,15 @@ void receiveListfromPd(const char *src, int argc, t_atom *argv) {
 }
 
 // ========================================
+static void receiveMessageFromPd(const char *src, const char *sym, int argc,
+                                 t_atom *argv) {
+
+  if (argc == 0) {
+    InsertSymbol(receiverHash, (char *)src, (char *)sym);
+  }
+}
+
+// ========================================
 void receiveFloatfromPd(const char *receiver, float value) {
   InsertFloat(receiverHash, (char *)receiver, value);
 }
@@ -306,6 +315,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   libpd_set_floathook(receiveFloatfromPd);
   libpd_set_symbolhook(receiveSymbolfromPd);
   libpd_set_banghook(receiveBangfromPd);
+  libpd_set_messagehook(receiveMessageFromPd);
+
   libpd_set_printhook(pdprint);
   libpd_init();
 
@@ -344,6 +355,8 @@ void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
 EM_JS(void, setFloatValue, (const char* symbol, float value), {
     if (typeof JS_setFloat === "function"){
         JS_setFloat(UTF8ToString(symbol), value);
+    } else{
+        console.log("JS_setFloat not defined");
     }
 });
 
@@ -351,9 +364,31 @@ EM_JS(void, setFloatValue, (const char* symbol, float value), {
 EM_JS(void, setSymbolValue, (const char* symbol, const char* value), {
     if (typeof JS_setSymbol === "function"){
         JS_setSymbol(UTF8ToString(symbol), UTF8ToString(value));
+    } else{
+        console.log("JS_setSymbol not defined");
     }
 });
 
+// ========================================
+EM_JS(void, clearListValue, (const char* symbol), {
+    if (typeof JS_setList === "function"){
+        window.pd4webGuiValues[symbol] = [];
+    } else{
+        console.log("JS_setList not defined");
+    }
+});
+// ========================================
+EM_JS(void, setListValueFloat, (const char* symbol, int isfloat, const char* valueSymbol, float valueFloat), {
+    if (typeof JS_setList === "function"){
+        if (isfloat){
+            JS_setList(UTF8ToString(symbol), valueFloat);
+        } else{
+            JS_setList(UTF8ToString(symbol), UTF8ToString(valueSymbol));
+        }
+    } else{
+        console.log("JS_setList not defined");
+    }
+});
 // clang-format on
 // ========================================
 void PdWebCompiler_Loop() {
@@ -367,7 +402,19 @@ void PdWebCompiler_Loop() {
         setFloatValue(HTML_IDS[i], item->f);
       } else if (item->type == A_SYMBOL) {
         setSymbolValue(HTML_IDS[i], item->s);
-      } else {
+      } else if (item->type == A_GIMME) {
+        clearListValue(HTML_IDS[i]);
+        for (int j = 0; j < item->listSize; j++) {
+          if (item->list[j].a_type == A_FLOAT) {
+            setListValueFloat(HTML_IDS[i], 1, NULL, item->list[j].a_w.w_float);
+          } else if (item->list[j].a_type == A_SYMBOL) {
+            setListValueFloat(HTML_IDS[i], 0,
+                              item->list[j].a_w.w_symbol->s_name, 0);
+          }
+        }
+      }
+
+      else {
         EM_ASM_({ alert("Unknown type"); });
         return;
       }
