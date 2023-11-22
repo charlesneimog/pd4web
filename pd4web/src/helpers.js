@@ -119,6 +119,14 @@ function JS_setSymbol(symbol, value) {
 }
 
 // ====================
+function JS_setList(symbol, value) {
+  if (window.pd4webGuiValues[symbol] === undefined) {
+    window.pd4webGuiValues[symbol] = [];
+  }
+  window.pd4webGuiValues[symbol].push(value);
+}
+
+// ====================
 function sendFloat(receiver, f) {
   if (Module === undefined) {
     alert("Module is undefined!");
