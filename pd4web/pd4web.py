@@ -51,6 +51,7 @@ class webpdPatch:
         parser.add_argument(
             "--patch", required=False, help="Patch file (.pd) to compile"
         )
+
         parser.add_argument(
             "--html",
             required=False,
@@ -751,6 +752,9 @@ class webpdPatch:
                         "UI Sender object detected: " + receiverSymbol, color="blue"
                     )
                 patchLine.name = patchLine.completName
+
+            # TODO: Floats and Intergers are accepted as objects
+
             else:
                 if patchLine.completName in self.supportedObjects["puredata"]["objs"]:
                     patchLine.name = patchLine.completName
@@ -984,7 +988,6 @@ class webpdPatch:
         for i, line in enumerate(self.templateCode):
             if "pthread_mutex_t WriteReadMutex = PTHREAD_MUTEX_INITIALIZER" in line:
                 threadMutexIndex = i
-                print("Found thread mutex")
                 break
 
         if threadMutexIndex is not None:
