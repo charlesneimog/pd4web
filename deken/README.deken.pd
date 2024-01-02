@@ -1,0 +1,13 @@
+#N canvas 476 73 598 565 12;
+#X obj 59 44 cnv 5 5 22 empty empty Thanks\ for\ downloading\ [pd4web]\ by\ Charles\ K.\ Neimog! 10 12 0 15 #000000 #202020 0;
+#X text 59 83 The [pd4web] package. It is a PureData interface to work with the actual pd4web \, a Python script. To use this \, you need to install Python and py4pd. After a simple setup \, that will take computer time but not human efforts \, you will be able to compile almost all you PureData patches for web enviroments., f 71;
+#X text 59 175 With [pd4web] I also distribute some abstractions that make special things \, like the score visualisation for websites. I hope that this can be usefull., f 71;
+#X obj 62 268 py4pd;
+#X text 116 268 <= This object need to work!;
+#X obj 42 467 py4pd;
+#X msg 42 399 pip install pd4web;
+#X text 184 396 Click on this message and wait \, this will make a lot of work on background \, so don't close PureData., f 53;
+#X obj 42 492 tgl 20 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 1;
+#X text 78 492 You can close when this toogle is active., f 53;
+#X connect 5 0 8 0;
+#X connect 6 0 5 0;
