@@ -5,117 +5,60 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>pd4web Template html</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="" />
-    <meta name="keywords" content="" />
-    <meta name="author" content="" />
-    <meta property="og:title" content="" />
-    <meta property="og:image" content="" />
-    <meta property="og:url" content="" />
-    <meta property="og:site_name" content="" />
-    <meta property="og:description" content="" />
-    <meta name="twitter:title" content="" />
-    <meta name="twitter:image" content="" />
-    <meta name="twitter:url" content="" />
-    <meta name="twitter:card" content="" />
+    <meta
+      name="description"
+      content="PureData patch compiled using pd4web by Charles K. Neimog"
+    />
+    <meta property="og:title" content="Pd4web Patch" />
+    <meta property="og:url" content="https://charlesneimog.github.io/pd4web/" />
+    <meta property="og:site_name" content="Pd4web Compiler" />
     <link rel="shortcut icon" href="favicon.ico" />
     <script src="./enable-threads.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css?family=Karla:400,700"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css?family=Playfair+Display:400,400i,700"
-      rel="stylesheet"
-    />
+    <!-- TODO: Try to remove font-awesome -->
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
     />
-    <style>
-      body {
-        font-family: "Karla", Arial, sans-serif;
-        line-height: 1.8;
-        font-size: 16px;
-        font-weight: 400;
-        background: #ffffff;
-        color: gray;
-      }
-
-      #footer {
-        position: fixed;
-        bottom: 0;
-        width: 80%;
-        height: 60px; /* Height of the footer */
-      }
-    </style>
-  </head>
-  <body style="margin-left: 10%; margin-right: 10%; overflow: hidden">
-    <div id="page-container">
-      <div style="display: flex; align-items: center; justify-content: center">
-        <a id="Start-Audio-Button">
-          <i
-            id="SoundIcon"
-            class="fa-solid fa-spinner fa-spin-pulse fa-2xl"
-          ></i>
-        </a>
-        <a id="FullScreen-Trigger" style="margin-left: 20px">
-          <i class="fa-solid fa-expand fa-2xl"></i>
-        </a>
-        <div style="display: flex; align-items: center">
-          <select
-            id="Input-Device-Select"
-            style="text-align: center; display: none"
-          >
-            <option value="default">Default</option>
-          </select>
-        </div>
-        <div style="display: flex; align-items: center">
-          <select
-            id="Output-Device-Select"
-            style="text-align: center; display: none"
-          >
-            <option value="default">Default</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
+    <link rel="stylesheet" href="css/main.css" />
+    <link rel="stylesheet" href="css/dejavu.css" />
     <script src="./helpers.js"></script>
     <script src="./libpd.js"></script>
+  </head>
+  <body>
+    <div
+      id="pdbuttons"
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 15px;
+        margin-top: 10px;
+        margin-bottom: 20px;
+      "
+    >
+      <a id="Start-Audio-Button">
+        <i id="SoundIcon" class="fa-solid fa-spinner fa-spin-pulse fa-2xl"></i>
+      </a>
+    </div>
+    <hr />
+
+    <div
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: rgba(130, 130, 130, 0.3) 0px 0px 0px 1px;
+        height: 50vh;
+      "
+    >
+      <svg
+        id="canvas"
+        width="100%"
+        height="100%"
+        viewBox="0 0 450 300"
+        preserveAspectRatio="xMidYMin meet"
+      ></svg>
+    </div>
+    <script src="./gui.js"></script>
   </body>
-  <br />
-  <div style="display: flex; align-items: center; justify-content: center">
-    <svg
-      id="pdPatch"
-      viewBox="0 0 150 150"
-      preserveAspectRatio="xMidYMin meet"
-      style="border: 0px solid black; border-radius: 5px"
-    ></svg>
-  </div>
-  <script src="./patchDraw.js"></script>
-  <script>
-    // THIS CODE IS JUST FOR INTERNAL TESTES, YOU CAN REMOVE IT.
-    // var originalConsoleLog = console.log;
-    // console.log = function () {
-    //   var logMessage = Array.from(arguments).join(" ");
-    //   consoleLogMessages.push(logMessage);
-    //   originalConsoleLog.apply(console, arguments);
-    // };
-    //
-    // function captureLibPdMessages() {
-    //   window.onerror = function (message, source, lineno, colno, error) {
-    //     capturedMessages.push({
-    //       message: message,
-    //       source: source,
-    //       lineno: lineno,
-    //       colno: colno,
-    //       error: error,
-    //     });
-    //   };
-    //   window.message = function (message) {
-    //     capturedMessages.push(message);
-    //   };
-    // }
-    // captureLibPdMessages();
-  </script>
 </html>
