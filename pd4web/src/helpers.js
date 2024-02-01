@@ -7,45 +7,40 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
   if (audioContext.state === "running") {
     audioContext.suspend();
   }
-
-  // ============================
   const startButton = document.getElementById("Start-Audio-Button");
-  startButton.onclick = () => {
-    // sendBang("pd4web-dsp-started");
-    const iconElement = document.getElementById("SoundIcon");
-    if (iconElement.classList.contains("fa-volume-xmark")) {
-      // sound is off
-      for (var i = 0; i < iconElement.classList.length; i++) {
-        iconElement.classList.remove(iconElement.classList[i]);
+  if (startButton !== null) {
+    startButton.onclick = () => {
+      const iconElement = document.getElementById("SoundIcon");
+      if (iconElement.classList.contains("fa-volume-xmark")) {
+        for (var i = 0; i < iconElement.classList.length; i++) {
+          iconElement.classList.remove(iconElement.classList[i]);
+        }
+        iconElement.className = "fa-solid fa-volume-high fa-2x";
+        if (audioContext.state === "suspended") {
+          audioContext.resume();
+        }
+        audioWorkletNode.connect(audioContext.destination);
+      } else {
+        // sound is on
+        iconElement.className = "fa-solid fa-volume-xmark fa-2x";
+        if (audioContext.state === "running") {
+          audioContext.suspend();
+        }
       }
-      iconElement.className = "fa-solid fa-volume-high fa-2x";
-      if (audioContext.state === "suspended") {
-        audioContext.resume();
-      }
-      audioWorkletNode.connect(audioContext.destination);
-    } else {
-      // sound is on
-      iconElement.className = "fa-solid fa-volume-xmark fa-2x";
-      if (audioContext.state === "running") {
-        audioContext.suspend();
-      }
-    }
-  };
-  audioWorkletNode.onprocessorerror = (event) => {
-    alert(event);
-    audioContext.suspend();
-  };
-
+    };
+    audioWorkletNode.onprocessorerror = (event) => {
+      alert(event);
+      audioContext.suspend();
+    };
+  }
   async function init(stream) {
     if ("setSinkId" in AudioContext.prototype) {
       const devices = await navigator.mediaDevices.enumerateDevices();
-      // const buttom = document.getElementById("Output-Device-Select");
       devices.forEach(function (device) {
         if (device.kind === "audiooutput" && device.deviceId !== "default") {
           var option = document.createElement("option");
           option.value = device.deviceId;
           option.text = device.label;
-          // buttom.appendChild(option);
         }
       });
     } else {
@@ -75,7 +70,9 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
         audioContext.suspend();
       }
     };
-    startButton.addEventListener("click", clickListenerMic);
+    if (startButton !== null) {
+      startButton.addEventListener("click", clickListenerMic);
+    }
   }
 
   navigator.mediaDevices
@@ -96,6 +93,10 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
 function JS_LoadFinished() {
   pdIsInitialized = true;
   var soundIcon = document.getElementById("SoundIcon");
+  if (soundIcon === null) {
+    console.log("SoundIcon not found!");
+    return;
+  }
   soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
 }
 
