@@ -318,8 +318,20 @@ class webpdPatch:
                 self.PROJECT_ROOT + "webpatch/enable-threads.js",
             )
             shutil.copy(
-                self.PdWebCompilerPath + "/src/patchDraw.js",
-                self.PROJECT_ROOT + "webpatch/patchDraw.js",
+                self.PdWebCompilerPath + "/src/gui.js",
+                self.PROJECT_ROOT + "webpatch/gui.js",
+            )
+            # check if webpatch/css folder exists
+            if not os.path.exists(self.PROJECT_ROOT + "webpatch/css"):
+                os.mkdir(self.PROJECT_ROOT + "webpatch/css")
+
+            shutil.copy(
+                self.PdWebCompilerPath + "/src/css/main.css",
+                self.PROJECT_ROOT + "webpatch/css/main.css",
+            )
+            shutil.copy(
+                self.PdWebCompilerPath + "/src/css/dejavu.css",
+                self.PROJECT_ROOT + "webpatch/css/dejavu.css",
             )
             if self.pageFolder is not None:
                 shutil.copytree(
