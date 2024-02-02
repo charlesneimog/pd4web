@@ -100,7 +100,9 @@ function JS_LoadFinished() {
   soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
 }
 
-// ====================
+// =======================
+// ==== SET VARIABLES ====
+// =======================
 function JS_setFloat(symbol, value) {
   window.pd4webGuiValues[symbol] = value;
 }
@@ -127,7 +129,9 @@ function JS_setList(symbol, value) {
   window.pd4webGuiValues[symbol].push(value);
 }
 
-// ====================
+// ======================================
+// ==== SEND DATA FROM WEBSITE TO PD ====
+// ======================================
 function sendFloat(receiver, f) {
   if (Module === undefined) {
     alert("Module is undefined!");
