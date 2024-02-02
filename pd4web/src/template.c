@@ -75,10 +75,6 @@ static int findIndex(const char *key) {
     }
   }
   if (index == -1) {
-    EM_ASM_({
-      alert("Key not found in HTML_IDS, please report this in " +
-            "github.com/charlesneimog/pd4web");
-    });
     return 0;
   }
   return index;
@@ -211,6 +207,13 @@ int sendSymbolToPd(const char *receiver, const char *symbol) {
 // ======================================
 EMSCRIPTEN_KEEPALIVE
 int sendBangToPd(const char *receiver) { return libpd_bang(receiver); }
+
+// ======================================
+EMSCRIPTEN_KEEPALIVE
+int bindGuiReceiver(const char *receiver) {
+  libpd_bind(receiver);
+  return 0;
+}
 
 // ======================================
 // ============= libpd HOOKS ============
