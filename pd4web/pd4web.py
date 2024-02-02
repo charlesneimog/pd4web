@@ -307,11 +307,11 @@ class webpdPatch:
                         "The file " + self.jsHelper + " does not exist!", color="red"
                     )
                     sys.exit(1)
-                shutil.copy(self.jsHelper, self.PROJECT_ROOT + "webpatch/helpers.js")
+                shutil.copy(self.jsHelper, self.PROJECT_ROOT + "webpatch/main.js")
             else:
                 shutil.copy(
-                    self.PdWebCompilerPath + "/src/helpers.js",
-                    self.PROJECT_ROOT + "webpatch/helpers.js",
+                    self.PdWebCompilerPath + "/src/main.js",
+                    self.PROJECT_ROOT + "webpatch/main.js",
                 )
             shutil.copy(
                 self.PdWebCompilerPath + "/src/enable-threads.js",
@@ -587,6 +587,8 @@ class webpdPatch:
         Visual arrays are not support by pd4web, this function will replace
         Visual Arrays by [array define] object.
         """
+        return
+        # BUG: SOLVE THIS BUG
         canvasIndex = False
         coordsIndex = False
         restoreIndex = False
@@ -711,6 +713,26 @@ class webpdPatch:
                 )
                 sys.exit(1)
 
+
+    def addGuiReceivers(self, patchLine: PatchLine):
+        if patchLine.Tokens[4] not in ['bng', 'tgl', 'vsl', 'hsl', 'vradio', 'hradio']: 
+            return
+
+        goodGuiObjs = {"vradio": [20, 10], "hradio": [20, 10], "vsl": [23, 12], "hsl": [23, 12], "nbx": 
+                       [23, 12], "tgl": [19, 7], "bng": [19, 7]}
+        
+        goodArgs = goodGuiObjs[patchLine.completName][0]
+        if len(patchLine.Tokens) != goodArgs:
+            return
+
+        receiverSymbolIndex = goodGuiObjs[patchLine.completName][1]
+        receiverSymbol = patchLine.Tokens[receiverSymbolIndex]
+        myprint(
+            "GUI Receiver detected: " + receiverSymbol, color="blue"
+        )
+        self.uiReceiversSymbol.append(receiverSymbol)
+
+
     def findExternalsObjs(self):
         """
         This function will find all externals objects in the patch.
@@ -728,6 +750,8 @@ class webpdPatch:
                 patchLine.Tokens[4].replace("\n", "").replace(";", "").replace(",", "")
             )
 
+            self.addGuiReceivers(patchLine)
+
             if (
                 patchLine.Tokens[0] == "#X"
                 and patchLine.Tokens[1] == "obj"
@@ -741,6 +765,10 @@ class webpdPatch:
                 )
                 self.isLocalAbstraction(patchLine)  # update the patchLine
                 self.isLibAbstraction(patchLine)  # update the patchLine
+
+                # Get Gui Receivers
+                
+
             elif self.checkIfIsUniqueObj(patchLine):
                 patchLine.isExternal = True
                 patchLine.library = patchLine.completName
@@ -749,6 +777,8 @@ class webpdPatch:
                     myprint("It is an abstraction", color="red")
                 patchLine.objGenSym = 'gensym("' + patchLine.library + '")'
                 patchLine.singleObject = True
+
+
             elif "s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]:
                 receiverSymbol = (
                     patchLine.Tokens[5]
