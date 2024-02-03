@@ -29,8 +29,8 @@
 
 * Zack Lee for the GUI interface for patches;
 * Jonathan Wilkes, Ivica Ico Bukvic, and the Purr Data team;
-* Claude Heiland-Allen for creating [empd](https://mathr.co.uk/empd/) which was super helpful for building the emscripten backend;
-* Chris McCormick and Dan Wilcox for the inspiration for the project;
+* Claude Heiland-Allen for creating [empd](https://mathr.co.uk/empd/);
+* Dan Wilcox for [libpd](https://github.com/libpd/libpd);
 * Miller Puckette and the Pd community for developing and maintaining Pd;
 
 
