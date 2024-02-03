@@ -26,6 +26,7 @@
 `pd4web` empowers you to execute PureData patches directly in web browsers using advanced Web Audio technologies. This tool distinguishes itself from alternative approaches like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), a feat made possible largely due to the contributions of  [claudeha](https://github.com/claudeha). With `pd4web`, you can compile virtually any PureData vanilla patch, along with a wide list of externals.
 
 <h3 align="center">Acknowledgements</h3>
+
 * Zack Lee for the GUI interface for patches;
 * Jonathan Wilkes, Ivica Ico Bukvic, and the Purr Data team;
 * Claude Heiland-Allen for creating [empd](https://mathr.co.uk/empd/) which was super helpful for building the emscripten backend;
