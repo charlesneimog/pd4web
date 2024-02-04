@@ -797,6 +797,7 @@ function gui_radio_rect(data) {
   return {
     x: data.x_pos,
     y: data.y_pos,
+    stroke: "black",
     width: width,
     height: height,
     fill: colfromload(data.bg_color),
@@ -995,10 +996,10 @@ function gui_vu_rect(data) {
 function gui_vu_dB_rects(data) {
   // inside this vu_rect I need to write 40 retangles
   var all_rects = [];
-  var mini_rects_width = data.width - 2;
-  var mini_rects_height = (data.height - 4) / 40;
-  var minirect_x = data.x_pos + 1;
-  var minirect_y = data.y_pos + 2;
+  var mini_rects_width = data.width - 6;
+  var mini_rects_height = (data.height - 2) / 40;
+  var minirect_x = data.x_pos + 3;
+  var minirect_y = data.y_pos + 1;
   for (var i = 0; i < 40; i++) {
     var color = "#000000";
     if (i == 39) {
@@ -1021,7 +1022,7 @@ function gui_vu_dB_rects(data) {
       display: "none",
       width: mini_rects_width,
       index: i,
-      height: mini_rects_height,
+      height: mini_rects_height - 1,
       id: `${data.id}_mini_rect_${i}`,
     };
     var newrect = create_item("rect", mini_rect);
