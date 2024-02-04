@@ -715,18 +715,23 @@ class webpdPatch:
 
 
     def addGuiReceivers(self, patchLine: PatchLine):
-        if patchLine.Tokens[4] not in ['bng', 'tgl', 'vsl', 'hsl', 'vradio', 'hradio']: 
+        if patchLine.Tokens[4] not in ['bng', 'tgl', 'vsl', 'hsl', 'vradio', 'hradio', 'vu']: 
             return
 
-        goodGuiObjs = {"vradio": [20, 10], "hradio": [20, 10], "vsl": [23, 12], "hsl": [23, 12], "nbx": 
-                       [23, 12], "tgl": [19, 7], "bng": [19, 7]}
-        
+        goodGuiObjs = {"vradio": [20, 10], "hradio": [20, 10],
+                       "vsl": [23, 12], "hsl": [23, 12],
+                       "nbx": [23, 12], "tgl": [19, 7],
+                       "bng": [19, 10], "vu": [17, 7]
+                       }
+
         goodArgs = goodGuiObjs[patchLine.completName][0]
         if len(patchLine.Tokens) != goodArgs:
             return
 
         receiverSymbolIndex = goodGuiObjs[patchLine.completName][1]
         receiverSymbol = patchLine.Tokens[receiverSymbolIndex]
+        if receiverSymbol == "empty":
+            return
         myprint(
             "GUI Receiver detected: " + receiverSymbol, color="blue"
         )
