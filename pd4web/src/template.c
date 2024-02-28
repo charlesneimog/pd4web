@@ -179,46 +179,60 @@ static pdItem *GetItem(pdItemHash *hash_table, char *key) {
   return NULL;
 }
 
-// =====================================
-// ============= HELPERS ===============
-// =====================================
+// ╭─────────────────────────────────────╮
+// │               Helpers               │
+// ╰─────────────────────────────────────╯
 void pdprint(const char *s);
 
 EMSCRIPTEN_KEEPALIVE
 void *webpd_malloc(int size) { return malloc(size); }
 
-// ======================================
 EMSCRIPTEN_KEEPALIVE
 void webpd_free(void *ptr) { free(ptr); }
 
-// ======================================
+// ╭─────────────────────────────────────╮
+// │        Send Data to PureData        │
+// ╰─────────────────────────────────────╯
 EMSCRIPTEN_KEEPALIVE
 int sendFloatToPd(const char *receiver, float value) {
   libpd_float(receiver, value);
   return 0;
 }
 
-// ======================================
 EMSCRIPTEN_KEEPALIVE
 int sendSymbolToPd(const char *receiver, const char *symbol) {
   return libpd_symbol(receiver, symbol);
 }
 
-// ======================================
+// ─────────────────────────────────────
 EMSCRIPTEN_KEEPALIVE
 int sendBangToPd(const char *receiver) { return libpd_bang(receiver); }
 
-// ======================================
+// ───────── Send List Of Atoms ─────────
+EMSCRIPTEN_KEEPALIVE
+int startListMessage(int maxlen) { return libpd_start_message(maxlen); }
+
+EMSCRIPTEN_KEEPALIVE void addSymbolToList(const char *symbol) {
+  return libpd_add_symbol(symbol);
+}
+
+EMSCRIPTEN_KEEPALIVE
+void addFloatToList(float value) { return libpd_add_float(value); }
+
+EMSCRIPTEN_KEEPALIVE int FinishAndSendList(const char *symbol) {
+  return libpd_finish_list(symbol);
+}
+
+// ─────────────────────────────────────
 EMSCRIPTEN_KEEPALIVE
 int bindGuiReceiver(const char *receiver) {
   libpd_bind(receiver);
   return 0;
 }
 
-// ======================================
-// ============= libpd HOOKS ============
-// ======================================
-
+// ╭─────────────────────────────────────╮
+// │             LibPd Hooks             │
+// ╰─────────────────────────────────────╯
 void pdprint(const char *s) {
   if (s[0] == '\n') {
     return;
@@ -226,39 +240,39 @@ void pdprint(const char *s) {
   EM_ASM_({ console.log(UTF8ToString($0)); }, s);
 }
 
-// ========================================
+// ─────────────────────────────────────
 void receiveListfromPd(const char *src, int argc, t_atom *argv) {
   InsertList(receiverHash, (char *)src, argc, argv);
 }
 
-// ========================================
+// ─────────────────────────────────────
 static void receiveMessageFromPd(const char *src, const char *sym, int argc,
                                  t_atom *argv) {
-
   if (argc == 0) {
     InsertSymbol(receiverHash, (char *)src, (char *)sym);
   }
 }
 
-// ========================================
+// ─────────────────────────────────────
 void receiveFloatfromPd(const char *receiver, float value) {
   InsertFloat(receiverHash, (char *)receiver, value);
 }
 
-// ========================================
+// ─────────────────────────────────────
 static void receiveSymbolfromPd(const char *receiver, const char *thing) {
   InsertSymbol(receiverHash, (char *)receiver, (char *)thing);
 }
 
-// ========================================
+// ─────────────────────────────────────
 static void receiveBangfromPd(const char *receiver) {
   InsertSymbol(receiverHash, (char *)receiver, "bang");
 }
-// ========================================
-// to remove warning about not defined
+// ─────────────────────────────────────
 void sys_gui_midipreferences(void) { return; }
 
-// ============= WEB AUDIO ================
+// ╭─────────────────────────────────────╮
+// │           Audio Processor           │
+// ╰─────────────────────────────────────╯
 static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs,
                               int numOutputs, AudioSampleFrame *outputs,
                               int numParams, const AudioParamFrame *params,
@@ -296,7 +310,9 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
 });
 // clang-format on
 
-// ========================================
+// ╭─────────────────────────────────────╮
+// │          audioWorkletNode           │
+// ╰─────────────────────────────────────╯
 void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
                                   EM_BOOL success, void *userData) {
   if (!success) {
@@ -340,7 +356,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   EM_ASM_({ JS_LoadFinished(); });
 }
 
-// ========================================
+// ─────────────────────────────────────
 void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
                                       EM_BOOL success, void *userData) {
   if (!success) {
@@ -394,6 +410,7 @@ EM_JS(void, setListValueFloat, (const char* symbol, int isfloat, const char* val
 });
 // clang-format on
 // ========================================
+// This send the data from PureData to the GUI
 void PdWebCompiler_Loop() {
   for (int i = 0; i < HTML_IDS_SIZE; i++) {
     pdItem *item = GetItem(receiverHash, HTML_IDS[i]);

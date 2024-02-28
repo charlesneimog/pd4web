@@ -129,9 +129,31 @@ function JS_setList(symbol, value) {
   window.pd4webGuiValues[symbol].push(value);
 }
 
-// ======================================
-// ==== SEND DATA FROM WEBSITE TO PD ====
-// ======================================
+//╭─────────────────────────────────────╮
+//│  JavaScript Functions to Send Data  │
+//│                to Pd                │
+//╰─────────────────────────────────────╯
+
+function sendBang(receiver) {
+  if (Module === undefined) {
+    alert("Module is undefined!");
+    return;
+  }
+  var str_rawReceiver = new TextEncoder().encode(receiver);
+  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = Module.HEAPU8.subarray(
+    ptrReceiver,
+    ptrReceiver + str_rawReceiver.length,
+  );
+  chunkReceiver.set(str_rawReceiver);
+  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  if (Module._sendBangToPd(ptrReceiver) !== 0) {
+    console.error("Error sending float to pd");
+  }
+  Module._webpd_free(ptrReceiver);
+}
+
+// ─────────────────────────────────────
 function sendFloat(receiver, f) {
   if (Module === undefined) {
     alert("Module is undefined!");
@@ -152,27 +174,7 @@ function sendFloat(receiver, f) {
   Module._webpd_free(ptrReceiver);
 }
 
-// ====================
-function sendBang(receiver) {
-  if (Module === undefined) {
-    alert("Module is undefined!");
-    return;
-  }
-  var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
-    ptrReceiver,
-    ptrReceiver + str_rawReceiver.length,
-  );
-  chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
-  if (Module._sendBangToPd(ptrReceiver) !== 0) {
-    console.error("Error sending float to pd");
-  }
-  Module._webpd_free(ptrReceiver);
-}
-
-// ====================
+// ─────────────────────────────────────
 function sendString(receiver, str) {
   if (pdIsInitialized === false) {
     console.log("Pd is not initialized yet!");
@@ -206,7 +208,50 @@ function sendString(receiver, str) {
   }
 }
 
-// ====================
+// ─────────────────────────────────────
+function sendList(receiver, array) {
+  if (pdIsInitialized === false) {
+    console.log("Pd is not initialized yet!");
+    return;
+  }
+  var str_rawReceiver = new TextEncoder().encode(receiver);
+  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = Module.HEAPU8.subarray(
+    ptrReceiver,
+    ptrReceiver + str_rawReceiver.length,
+  );
+  chunkReceiver.set(str_rawReceiver);
+  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+
+  var arrayLen = array.length;
+  Module._startListMessage(arrayLen);
+
+  // ───────── add things to list ─────────
+  for (var i = 0; i < arrayLen; i++) {
+    if (typeof array[i] === "number") {
+      Module._addFloatToList(array[i]);
+    } else if (typeof array[i] === "string") {
+      var str_rawThing = new TextEncoder().encode(array[i]);
+      var ptrThing = Module._webpd_malloc(str_rawThing.length + 1);
+      var chunkReceiver = Module.HEAPU8.subarray(
+        ptrThing,
+        ptrThing + str_rawThing.length,
+      );
+      chunkReceiver.set(str_rawThing);
+      Module.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
+      Module._addSymbolToList(ptrThing);
+      Module._webpd_free(ptrThing);
+    } else {
+      console.error("Type not supported yet!");
+    }
+  }
+
+  // ───────────── Send list ──────────
+  Module._finishListMessage(ptrReceiver);
+  Module._webpd_free(ptrReceiver);
+}
+
+// ─────────────────────────────────────
 function sendToPureData(receiver, thing) {
   if (typeof receiver !== "string") {
     console.error("Receiver is not a string!");
