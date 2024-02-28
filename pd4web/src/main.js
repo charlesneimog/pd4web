@@ -1,9 +1,9 @@
 var pdIsInitialized = false;
 window.pd4webGuiValues = {};
-window.subscribedData = {};
-// let window.subscribedData = {};
 
 function JS_AddUIButtons(audioContext, audioWorkletNode) {
+  console.log("Latency: " + parseInt(audioContext.baseLatency * 1000));
+
   if (audioContext.state === "running") {
     audioContext.suspend();
   }
@@ -50,7 +50,6 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
     }
 
     if ("setSinkId" in AudioContext.prototype) {
-      // TODO: choose audio out from browser
       // const devices = await navigator.mediaDevices.enumerateDevices();
       // const buttom = document.getElementById("Input-Device-Select");
       // devices.forEach(function(device) {
@@ -83,7 +82,8 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
         echoCancellation: false,
         noiseSuppression: false,
         autoGainControl: false,
-        channelCount: 1, //  TODO: This must be defined by pd4web.py
+        // latency: 0,
+        channelCount: 1,
       },
     })
     .then((stream) => init(stream));
@@ -100,9 +100,60 @@ function JS_LoadFinished() {
   soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
 }
 
-// ======================================
-// ==== SEND DATA FROM WEBSITE TO PD ====
-// ======================================
+// =======================
+// ==== SET VARIABLES ====
+// =======================
+function JS_setFloat(symbol, value) {
+  window.pd4webGuiValues[symbol] = value;
+}
+
+// ====================
+function JS_setSymbol(symbol, value) {
+  if (symbol.includes("pd4webscore")) {
+    let img = document.getElementById(symbol);
+    console.log(symbol, img);
+    if (img === null) {
+      console.error("Image with id " + symbol + " not found!");
+      return;
+    }
+    img.src = value;
+  }
+  window.pd4webGuiValues[symbol] = value;
+}
+
+// ====================
+function JS_setList(symbol, value) {
+  if (window.pd4webGuiValues[symbol] === undefined) {
+    window.pd4webGuiValues[symbol] = [];
+  }
+  window.pd4webGuiValues[symbol].push(value);
+}
+
+//╭─────────────────────────────────────╮
+//│  JavaScript Functions to Send Data  │
+//│                to Pd                │
+//╰─────────────────────────────────────╯
+
+function sendBang(receiver) {
+  if (Module === undefined) {
+    alert("Module is undefined!");
+    return;
+  }
+  var str_rawReceiver = new TextEncoder().encode(receiver);
+  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = Module.HEAPU8.subarray(
+    ptrReceiver,
+    ptrReceiver + str_rawReceiver.length,
+  );
+  chunkReceiver.set(str_rawReceiver);
+  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  if (Module._sendBangToPd(ptrReceiver) !== 0) {
+    console.error("Error sending float to pd");
+  }
+  Module._webpd_free(ptrReceiver);
+}
+
+// ─────────────────────────────────────
 function sendFloat(receiver, f) {
   if (Module === undefined) {
     alert("Module is undefined!");
@@ -123,48 +174,7 @@ function sendFloat(receiver, f) {
   Module._webpd_free(ptrReceiver);
 }
 
-// ====================
-function bindGuiReceiver(receiver) {
-  console.log("bindGuiReceiver for " + receiver);
-  if (Module === undefined) {
-    alert("Module is undefined!");
-    return;
-  }
-  var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
-    ptrReceiver,
-    ptrReceiver + str_rawReceiver.length,
-  );
-  chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
-  if (Module._bindGuiReceiver(ptrReceiver) !== 0) {
-    console.error("Error binding gui receiver to pd");
-  }
-  Module._webpd_free(ptrReceiver);
-}
-
-// ====================
-function sendBang(receiver) {
-  if (Module === undefined) {
-    alert("Module is undefined!");
-    return;
-  }
-  var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
-    ptrReceiver,
-    ptrReceiver + str_rawReceiver.length,
-  );
-  chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
-  if (Module._sendBangToPd(ptrReceiver) !== 0) {
-    console.error("Error sending float to pd");
-  }
-  Module._webpd_free(ptrReceiver);
-}
-
-// ====================
+// ─────────────────────────────────────
 function sendString(receiver, str) {
   if (pdIsInitialized === false) {
     console.log("Pd is not initialized yet!");
@@ -198,7 +208,50 @@ function sendString(receiver, str) {
   }
 }
 
-// ====================
+// ─────────────────────────────────────
+function sendList(receiver, array) {
+  if (pdIsInitialized === false) {
+    console.log("Pd is not initialized yet!");
+    return;
+  }
+  var str_rawReceiver = new TextEncoder().encode(receiver);
+  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = Module.HEAPU8.subarray(
+    ptrReceiver,
+    ptrReceiver + str_rawReceiver.length,
+  );
+  chunkReceiver.set(str_rawReceiver);
+  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+
+  var arrayLen = array.length;
+  Module._startListMessage(arrayLen);
+
+  // ───────── add things to list ─────────
+  for (var i = 0; i < arrayLen; i++) {
+    if (typeof array[i] === "number") {
+      Module._addFloatToList(array[i]);
+    } else if (typeof array[i] === "string") {
+      var str_rawThing = new TextEncoder().encode(array[i]);
+      var ptrThing = Module._webpd_malloc(str_rawThing.length + 1);
+      var chunkReceiver = Module.HEAPU8.subarray(
+        ptrThing,
+        ptrThing + str_rawThing.length,
+      );
+      chunkReceiver.set(str_rawThing);
+      Module.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
+      Module._addSymbolToList(ptrThing);
+      Module._webpd_free(ptrThing);
+    } else {
+      console.error("Type not supported yet!");
+    }
+  }
+
+  // ───────────── Send list ──────────
+  Module._FinishAndSendList(ptrReceiver);
+  Module._webpd_free(ptrReceiver);
+}
+
+// ─────────────────────────────────────
 function sendToPureData(receiver, thing) {
   if (typeof receiver !== "string") {
     console.error("Receiver is not a string!");
@@ -212,89 +265,4 @@ function sendToPureData(receiver, thing) {
   } else if (Array.isArray(thing)) {
     alert("Array is not supported yet!");
   }
-}
-// =======================
-// ==== SET VARIABLES ====
-// =======================
-function JS_setFloat(source, value) {
-  if (source in window.subscribedData) {
-    for (const data of window.subscribedData[source]) {
-      switch (data.type) {
-        case "bng":
-          gui_bng_update_circle(data);
-          break;
-        case "tgl":
-          data.value = value;
-          gui_tgl_update_cross(data);
-          break;
-        case "vsl":
-        case "hsl":
-          gui_slider_set(data, value);
-          gui_slider_bang(data);
-          break;
-        case "vradio":
-        case "hradio":
-          data.value = Math.min(
-            Math.max(Math.floor(value), 0),
-            data.number - 1,
-          );
-          gui_radio_update_button(data);
-          sendFloat(data.send, data.value);
-          break;
-        case "vu":
-          data.value = value;
-          gui_vu_update_gain(data);
-      }
-    }
-  } else {
-    window.pd4webGuiValues[source] = value;
-  }
-}
-
-// ====================
-function JS_setSymbol(source, value) {
-  // TODO: rename to receivedFloatFromPd
-  if (value == "bang") {
-    if (source in window.subscribedData) {
-      for (const data of window.subscribedData[source]) {
-        switch (data.type) {
-          case "bng":
-            gui_bng_update_circle(data);
-            break;
-          case "tgl":
-            data.value = data.value ? 0 : data.default_value;
-            gui_tgl_update_cross(data);
-            break;
-          case "vsl":
-          case "hsl":
-            gui_slider_bang(data);
-            break;
-          case "vradio":
-          case "hradio":
-            sendFloat(data.send, data.value);
-            break;
-        }
-      }
-    }
-  } else {
-    if (source in window.subscribedData) {
-      for (const data of window.subscribedData[source]) {
-        switch (data.type) {
-          case "bng":
-            gui_bng_update_circle(data);
-            break;
-        }
-      }
-    } else {
-      window.pd4webGuiValues[source] = value;
-    }
-  }
-}
-
-// ====================
-function JS_setList(source, value) {
-  if (window.pd4webGuiValues[source] === undefined) {
-    window.pd4webGuiValues[source] = [];
-  }
-  window.pd4webGuiValues[source].push(value);
 }

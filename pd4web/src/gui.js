@@ -1344,8 +1344,11 @@ function gui_text_text(data, line_index) {
 
 //--------------------- patch handling ----------------------------
 function updatePatchDivSize(content) {
-  const lines = content.split(";\n");
   const patchDiv = document.getElementById("patchDiv");
+  if (patchDiv == null) {
+    return;
+  }
+  const lines = content.split(";\n");
   var args = lines[0].split(" ");
   const canvasWidth = parseInt(args[4]);
   const canvasHeight = parseInt(args[5]);
