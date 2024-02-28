@@ -44,11 +44,11 @@
 
 <h3 align="center">Questions, doubts, help</h3>
 
-* Check the Discussions Sections: https://github.com/charlesneimog/pd4web/discussions/.
+* Check the Discussions Sections [here](https://github.com/charlesneimog/pd4web/discussions/).
 
 <h3 align="center">Issues</h3>
 
-* Check the Discussions Sections: https://github.com/charlesneimog/pd4web/issues.
+* Check the Discussions Issues [here](https://github.com/charlesneimog/pd4web/issues/).
 
 <h3 align="center">Acknowledgements</h3>
 
