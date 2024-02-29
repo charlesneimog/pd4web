@@ -402,8 +402,7 @@ class webpdPatch:
                 os.system(f"{self.emcc.emsdk} activate latest")
                 os.system(f"chmod +x {self.emcc.emsdk_env}")
         if self.args.active_emcc:
-            # os.system(f"{self.emcc.emsdk} activate latest")
-            os.system(f"{self.emcc.emsdk_env}")
+            os.system(f"{self.emcc.emsdk} activate latest")
             sys.exit(0)
 
     def importExternalObjs(self):
