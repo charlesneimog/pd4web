@@ -330,13 +330,22 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
       emscripten_create_wasm_audio_worklet_node(audioContext, "libpd-processor",
                                                 &options, &ProcessPdPatch, 0);
   AddUIButtons(audioContext, wasmAudioWorklet);
+
   libpd_set_listhook(receiveListfromPd);
   libpd_set_floathook(receiveFloatfromPd);
   libpd_set_symbolhook(receiveSymbolfromPd);
   libpd_set_banghook(receiveBangfromPd);
   libpd_set_messagehook(receiveMessageFromPd);
-
   libpd_set_printhook(pdprint);
+
+  // TODO:
+  // void libpd_set_noteonhook(const t_libpd_noteonhook hook)
+  // void libpd_set_controlchangehook(const t_libpd_controlchangehook hook)
+  // void libpd_set_pitchbendhook(const t_libpd_pitchbendhook hook)
+  // void libpd_set_aftertouchhook(const t_libpd_aftertouchhook hook)
+  // void libpd_set_polyaftertouchhook(const t_libpd_polyaftertouchhook hook) {
+  // libpd_set_midibytehook(const t_libpd_midibytehook hook);
+
   libpd_init();
 
   for (int i = 0; i < HTML_IDS_SIZE; i++) {
