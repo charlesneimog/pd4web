@@ -30,18 +30,32 @@
 
 <details>
   <summary><b>1. Simple Patch</b></summary>
-  <img src="https://github.com/charlesneimog/pd4web/assets/31707161/7a7d23c9-04c5-4b05-8a62-04c97a654ce2" width="80%" alt="Logo">
-
+  <p align="center">
+    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Simple-patch.png" width="80%" alt="Logo">
+  </p>
 </details>
 
 <details>
   <summary><b>2. Interaction with p5js</b></summary>
-
-  https://github.com/charlesneimog/pd4web/assets/31707161/64952bbd-6755-44d7-b875-a78a877e00e1
-
+<p align="center">
+    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Compiled-I.png" width="70%" alt="Logo">
+</p>
+<p align="center">
+    <a href="https://charlesneimog.github.io/Projeto/">WebSite</a>
+</p>
 </details>
 
+<details>
+  <summary><b>3. Live Score (VexFlow) </b></summary>
+<p align="center">
+    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Canticos.png" width="70%" alt="Logo">
+</p>
+<p align="center">
+    <a href="https://charlesneimog.github.io/Canticos-de-Silicio-I/webpatch/">WebSite</a>
+</p>
+</details>
 
+-----
 <h3 align="center">Questions, doubts, help</h3>
 
 * Check the Discussions Sections [here](https://github.com/charlesneimog/pd4web/discussions/).
@@ -71,25 +85,6 @@ Contribute to enabling running PureData in WebBrowsers! These are the main areas
 * The `pd4web/src/template.c`, used to pd4web to build the `main.c` file.
 * The `pd4web/pd4web.py`, which configures the `main.c` file.
 
-<h3 align="center"> Examples</h3>
-
-<table align="center" width="100%">
-  <tr>
-    <th>Name</th>
-    <th>Description</th>
-    <th>Link</th>
-  </tr>
-  <tr>
-    <td align="center">Algorithm I</td>
-    <td align="center">It is a piece where I use <code>pmpd</code> and <code>plaits~</code> to make Algorithm Music.</td>
-    <td><a href="https://charlesneimog.github.io/Algorithm-Music/Piece-I/">WebSite</a></td>
-  </tr>
-  <tr>
-    <td align="center">Compiled I</td>
-    <td align="center">Live-Electronics music for Trumpet in developing yet!</td>
-    <td><a href="https://charlesneimog.github.io/Compiled-I">WebSite</a></td>
-  </tr>
-</table>
 
 
 
