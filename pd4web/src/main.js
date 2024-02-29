@@ -100,14 +100,14 @@ function JS_LoadFinished() {
   soundIcon.className = "fa-solid fa-volume-xmark fa-beat fa-2x";
 }
 
-// =======================
-// ==== SET VARIABLES ====
-// =======================
+//╭─────────────────────────────────────╮
+//│   Save Variables from [s ui_...]    │
+//╰─────────────────────────────────────╯
 function JS_setFloat(symbol, value) {
   window.pd4webGuiValues[symbol] = value;
 }
 
-// ====================
+// ─────────────────────────────────────
 function JS_setSymbol(symbol, value) {
   if (symbol.includes("pd4webscore")) {
     let img = document.getElementById(symbol);
@@ -121,7 +121,7 @@ function JS_setSymbol(symbol, value) {
   window.pd4webGuiValues[symbol] = value;
 }
 
-// ====================
+// ─────────────────────────────────────
 function JS_setList(symbol, value) {
   if (window.pd4webGuiValues[symbol] === undefined) {
     window.pd4webGuiValues[symbol] = [];
@@ -133,7 +133,6 @@ function JS_setList(symbol, value) {
 //│  JavaScript Functions to Send Data  │
 //│                to Pd                │
 //╰─────────────────────────────────────╯
-
 function sendBang(receiver) {
   if (Module === undefined) {
     alert("Module is undefined!");
@@ -262,6 +261,8 @@ function sendToPureData(receiver, thing) {
     sendFloat(receiver, thing);
   } else if (typeof thing === "string") {
     sendString(receiver, thing);
+  } else if (Array.isArray(thing)) {
+    sendList(receiver, thing);
   } else if (Array.isArray(thing)) {
     alert("Array is not supported yet!");
   }

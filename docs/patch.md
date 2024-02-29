@@ -307,6 +307,48 @@ Below we show some of the common erros that we find when compiling our patches.
     This is a big problem, it means that you are not using a `https` server. Because of security, we can use some features of browser without being in a secure enviroment. So if you are putting you website in a `http` server, Shared Array will be not defined. To solve this search how to use `https` to host your website.
 
 -----------------------------------
+## <h2 style="text-align: center"><b>About User Interfaces</b></h2>
+-----------------------------------
+
+Thanks to the work of Zack Lee, `pd4web` has a basic patch User Interface that can render `tgl`, `vsl`, `hsl`, `vu`, `bng`, `nbx`, `vradio`, `hradio`, `cnv` and `text` (comment). 
+
+**You must set** what do you want to render by configure receivers and senders in the objects properties. Check the image below:
+
+---
+<p markdown align="center">
+![Image title](img/gui-patches.png){ width="70%" }
+</p>
+---
+
+If you don't want to use this GUI you must to code the GUI yourself. This can be hard for beginners. I did some work with GUI in [Canticos de Silício](https://charlesneimog.github.io/Canticos-de-Silicio-I/webpatch/) ([VexFlow](https://www.vexflow.com/)), [Projeto](https://charlesneimog.github.io/Projeto/) ([p5js](https://p5js.org/)), and [Algorithm I](https://charlesneimog.github.io/Algorithm-Music/Piece-I/) (HTML and CSS).
+
+### <h3 style="text-align: center"><b>Receiving data from PureData</b></h3>
+
+To get some data from PureData you must first send the data using `send` or `s` object. To differentiate the data that you send inside your own patch and the things that you want to send to web enviroment we use the `ui_` identifier. For example, if you use `s mygain` the values sent to `mygain` will be not avaible in the web enviroment. But, if you use `s ui_mygain` or `send ui_mygain` you will be able to get this data from the Web Enviroment.
+
+To get this data you use these JavaScript snippet.
+
+``` js
+const value = window.pd4webGuiValues['ui_mygain'];
+```
+
+### <h3 style="text-align: center"><b>Sending data to PureData</b></h3>
+
+To make some trigger or change some parameter like `gain` in your patch you must use the `sendToPureData` function. It is part of the `main.js` script provide with `pd4web`. To receive the data you must use `receive` or `r` with the same name specified with function `sendToPureData`.
+
+Check the examples:
+
+``` js
+sendToPureData("float", 0.7);
+sendToPureData("list", [1, 2, "test"]);
+sendToPureData("symbol", "myword");
+sendToPureData("bang", "bang");
+```
+
+to receive this data you must create `r float`, `r list`, `r symbol` or `r bang`.
+
+
+-----------------------------------
 ## <h2 style="text-align: center"><b>Put the patch online</b></h2>
 -----------------------------------
 
@@ -323,38 +365,3 @@ If you don't have any website, you can use the free github pages. It provides a 
 <h2 style="text-align: center"> I will upload one video soon!</h2>
 
 I hope that is can be usefull.
-
------------------------------------
-## <h2 style="text-align: center"><b>Making a <code>html</code> GUI</b></h2>
------------------------------------
-
-This is the hard part of the process, and for now you must know how to use `html` and maybe `css`. I will try to release some templates for `html`, but for now, you should make them by yourself. When you build your `index.html`, you must know that is possible to make your web GUI comunitate with PureData and Vice-versa. For that you should include the `helpers.js` file in your `index.html`. 
-
-### <h3 style="text-align: center"><b>Receiving data from PureData</b></h3>
-
-To get some data from PureData you must first send the data using `send` or `s` object. To differentiate the data that you send inside your own patch and the things that you want to send to web GUI we use the `ui_` identifier. For example, if you use `s mygain` it will not work, you can't get this data from the `html`. You must use `s ui_mygain` or `send ui_mygain`.
-
-To get this data you use these JavaScript snippet.
-
-``` js
-const forceValue7 = document.getElementById('ui_mygain');
-```
-
-It is important to note that it will be a string, so if you need a number you must use `parseInt` or `parseFloat`.
-
-### <h3 style="text-align: center"><b>Sending data to PureData</b></h3>
-
-To make some trigger or change some parameter like `gain` for your patch you must use the `sendToPureData`. They are part of the `helpers.js` script provide with `pd4web`. To receive the data you must use `receive` or `r` with the same name specified with function `sendToPureData`.
-
-For example, to send `0.7` to PureData you must use the `js` code below:
-
-``` js
-sendToPureData("mygain", 0.7);
-```
-
-to receive this data you must create one `r mygain`. 
-
-!!! warning
-    It is important to note that `libpd.js` must be loaded to use this function.
-
-
