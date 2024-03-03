@@ -1,3 +1,4 @@
+var PdModule = undefined;
 var pdIsInitialized = false;
 window.pd4webGuiValues = {};
 
@@ -83,7 +84,7 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
         noiseSuppression: false,
         autoGainControl: false,
         // latency: 0,
-        channelCount: 1,
+        channelCount: 1, // TODO: Change this
       },
     })
     .then((stream) => init(stream));
@@ -134,43 +135,43 @@ function JS_setList(symbol, value) {
 //│                to Pd                │
 //╰─────────────────────────────────────╯
 function sendBang(receiver) {
-  if (Module === undefined) {
+  if (PdModule === undefined) {
     alert("Module is undefined!");
     return;
   }
   var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
+  var ptrReceiver = PdModule._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
     ptrReceiver,
     ptrReceiver + str_rawReceiver.length,
   );
   chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
-  if (Module._sendBangToPd(ptrReceiver) !== 0) {
+  PdModule.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  if (PdModule._sendBangToPd(ptrReceiver) !== 0) {
     console.error("Error sending float to pd");
   }
-  Module._webpd_free(ptrReceiver);
+  PdModule._webpd_free(ptrReceiver);
 }
 
 // ─────────────────────────────────────
 function sendFloat(receiver, f) {
-  if (Module === undefined) {
+  if (PdModule === undefined) {
     alert("Module is undefined!");
     return;
   }
   var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
+  var ptrReceiver = PdModule._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
     ptrReceiver,
     ptrReceiver + str_rawReceiver.length,
   );
   chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
-  const result = Module._sendFloatToPd(ptrReceiver, f);
+  PdModule.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  const result = PdModule._sendFloatToPd(ptrReceiver, f);
   if (result !== 0) {
     console.error("Error sending float to pd");
   }
-  Module._webpd_free(ptrReceiver);
+  PdModule._webpd_free(ptrReceiver);
 }
 
 // ─────────────────────────────────────
@@ -180,27 +181,27 @@ function sendString(receiver, str) {
     return;
   }
   var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
+  var ptrReceiver = PdModule._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
     ptrReceiver,
     ptrReceiver + str_rawReceiver.length,
   );
   chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  PdModule.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
 
   var str_rawThing = new TextEncoder().encode(str);
-  var ptrThing = Module._webpd_malloc(str_rawThing.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
+  var ptrThing = PdModule._webpd_malloc(str_rawThing.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
     ptrThing,
     ptrThing + str_rawThing.length,
   );
   chunkReceiver.set(str_rawThing);
-  Module.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
+  PdModule.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
 
-  var result = Module._sendSymbolToPd(ptrReceiver, ptrThing);
+  var result = PdModule._sendSymbolToPd(ptrReceiver, ptrThing);
 
-  Module._webpd_free(ptrReceiver);
-  Module._webpd_free(ptrThing);
+  PdModule._webpd_free(ptrReceiver);
+  PdModule._webpd_free(ptrThing);
 
   if (result !== 0) {
     console.error("Error sending float to pd");
@@ -214,40 +215,40 @@ function sendList(receiver, array) {
     return;
   }
   var str_rawReceiver = new TextEncoder().encode(receiver);
-  var ptrReceiver = Module._webpd_malloc(str_rawReceiver.length + 1);
-  var chunkReceiver = Module.HEAPU8.subarray(
+  var ptrReceiver = PdModule._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
     ptrReceiver,
     ptrReceiver + str_rawReceiver.length,
   );
   chunkReceiver.set(str_rawReceiver);
-  Module.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  PdModule.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
 
   var arrayLen = array.length;
-  Module._startListMessage(arrayLen);
+  PdModule._startListMessage(arrayLen);
 
   // ───────── add things to list ─────────
   for (var i = 0; i < arrayLen; i++) {
     if (typeof array[i] === "number") {
-      Module._addFloatToList(array[i]);
+      PdModule._addFloatToList(array[i]);
     } else if (typeof array[i] === "string") {
       var str_rawThing = new TextEncoder().encode(array[i]);
-      var ptrThing = Module._webpd_malloc(str_rawThing.length + 1);
-      var chunkReceiver = Module.HEAPU8.subarray(
+      var ptrThing = PdModule._webpd_malloc(str_rawThing.length + 1);
+      var chunkReceiver = PdModule.HEAPU8.subarray(
         ptrThing,
         ptrThing + str_rawThing.length,
       );
       chunkReceiver.set(str_rawThing);
-      Module.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
-      Module._addSymbolToList(ptrThing);
-      Module._webpd_free(ptrThing);
+      PdModule.HEAPU8[ptrThing + str_rawThing.length] = 0; // Null-terminate the string
+      PdModule._addSymbolToList(ptrThing);
+      PdModule._webpd_free(ptrThing);
     } else {
       console.error("Type not supported yet!");
     }
   }
 
   // ───────────── Send list ──────────
-  Module._FinishAndSendList(ptrReceiver);
-  Module._webpd_free(ptrReceiver);
+  PdModule._FinishAndSendList(ptrReceiver);
+  PdModule._webpd_free(ptrReceiver);
 }
 
 // ─────────────────────────────────────
@@ -267,3 +268,37 @@ function sendToPureData(receiver, thing) {
     alert("You is trying to send to PureData a type not supported yet!");
   }
 }
+
+//╭─────────────────────────────────────╮
+//│            Load PureData            │
+//╰─────────────────────────────────────╯
+function loadScript(url, callback) {
+  var script = document.createElement("script");
+  script.type = "text/javascript";
+  script.src = url;
+
+  if (script.readyState) {
+    script.onreadystatechange = function () {
+      if (script.readyState === "loaded" || script.readyState === "complete") {
+        script.onreadystatechange = null;
+        if (callback) callback();
+      }
+    };
+  } else {
+    script.onload = function () {
+      if (callback) callback();
+    };
+  }
+  document.head.appendChild(script);
+}
+
+// ─────────────────────────────────────
+loadScript("./libpd.js", function () {
+  PureData().then((module) => {
+    PdModule = module;
+  });
+
+  loadScript("./gui.js", function () {
+    initGui();
+  });
+});

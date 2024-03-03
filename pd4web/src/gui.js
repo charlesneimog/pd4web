@@ -7,12 +7,11 @@
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
 
-const isMobile =
-  typeof window.orientation !== "undefined" ||
-  navigator.userAgent.indexOf("IEMobile") !== -1;
+const isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
 const canvas = document.getElementById("canvas");
 const loading = document.getElementById("loading");
 const filter = document.getElementById("filter");
+window.subscribedData = {};
 let currentFile = "";
 let canvasWidth = 450;
 let canvasHeight = 300;
@@ -297,7 +296,7 @@ function gui_subscribe(data) {
   } else {
     window.subscribedData[data.receive] = [data];
   }
-  bindGuiReceiver(data.receive);
+  // bindGuiReceiver(data.receive);
 }
 
 function gui_unsubscribe(data) {
@@ -1338,7 +1337,7 @@ function gui_text_text(data, line_index) {
     "font-size": pd_fontsize_to_gui_fontsize(fontSize) + "px",
     "font-weight": "normal",
     id: `${data.id}_text_${line_index}`,
-    class: "unclickable",
+    class: "comment unclickable",
   };
 }
 
@@ -1769,7 +1768,7 @@ function openPatch(content, filename) {
         break;
       case "#X text":
         if (args.length > 4 && canvasLevel === 1) {
-          console.log(canvasLevel);
+          // console.log(canvasLevel);
           const data = {};
           data.type = args[1];
           data.x_pos = parseInt(args[2]);
@@ -1824,13 +1823,3 @@ async function initGui() {
       console.error("Error fetching main.pd:", error);
     });
 }
-
-function waitForInitialization() {
-  if (pdIsInitialized) {
-    initGui();
-  } else {
-    setTimeout(waitForInitialization, 200);
-  }
-}
-
-waitForInitialization();
