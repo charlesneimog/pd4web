@@ -21,6 +21,10 @@ body {
   background-color: rgb(255, 255, 255);
 }
 
+.comment {
+  color: #000000;
+}
+
 .border {
   stroke: black;
   stroke-width: 1;
@@ -53,4 +57,3 @@ body {
   align-items: center;
   background-color: rgba(200, 204, 207, 0.5);
 }
-
