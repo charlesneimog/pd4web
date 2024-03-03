@@ -312,7 +312,7 @@ Below we show some of the common erros that we find when compiling our patches.
 
 Thanks to the work of Zack Lee, `pd4web` has a basic patch User Interface that can render `tgl`, `vsl`, `hsl`, `vu`, `bng`, `nbx`, `vradio`, `hradio`, `cnv` and `text` (comment). 
 
-**You must set** what do you want to render by configure receivers and senders in the objects properties. Check the image below:
+**You must set** what do you want to render by configure receivers and senders in the objects properties. Check the image below, where I configure a `tgl` (toggle GUI object) to be rendered:
 
 ---
 <p markdown align="center">
