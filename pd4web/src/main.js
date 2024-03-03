@@ -104,32 +104,86 @@ function JS_LoadFinished() {
 //╭─────────────────────────────────────╮
 //│   Save Variables from [s ui_...]    │
 //╰─────────────────────────────────────╯
-function JS_setFloat(symbol, value) {
-  window.pd4webGuiValues[symbol] = value;
-}
-
-// ─────────────────────────────────────
-function JS_setSymbol(symbol, value) {
-  if (symbol.includes("pd4webscore")) {
-    let img = document.getElementById(symbol);
-    console.log(symbol, img);
-    if (img === null) {
-      console.error("Image with id " + symbol + " not found!");
-      return;
+function JS_setFloat(source, value) {
+  if (source in subscribedData) {
+    for (const data of subscribedData[source]) {
+      switch (data.type) {
+        case "bng":
+          gui_bng_update_circle(data);
+          break;
+        case "tgl":
+          data.value = value;
+          gui_tgl_update_cross(data);
+          break;
+        case "vsl":
+        case "hsl":
+          gui_slider_set(data, value);
+          gui_slider_bang(data);
+          break;
+        case "vradio":
+        case "hradio":
+          data.value = Math.min(
+            Math.max(Math.floor(value), 0),
+            data.number - 1,
+          );
+          gui_radio_update_button(data);
+          sendFloat(data.send, data.value);
+          break;
+      }
     }
-    img.src = value;
+  } else {
+    window.pd4webGuiValues[source] = value;
   }
-  window.pd4webGuiValues[symbol] = value;
 }
 
 // ─────────────────────────────────────
-function JS_setList(symbol, value) {
-  if (window.pd4webGuiValues[symbol] === undefined) {
-    window.pd4webGuiValues[symbol] = [];
+function JS_setSymbol(source, value) {
+  if (value == "bang") {
+    if (source in subscribedData) {
+      for (const data of subscribedData[source]) {
+        switch (data.type) {
+          case "bng":
+            gui_bng_update_circle(data);
+            break;
+          case "tgl":
+            data.value = data.value ? 0 : data.default_value;
+            gui_tgl_update_cross(data);
+            break;
+          case "vsl":
+          case "hsl":
+            gui_slider_bang(data);
+            break;
+          case "vradio":
+          case "hradio":
+            sendFloat(data.send, data.value);
+            break;
+        }
+      }
+    }
+  } else {
+    if (source in subscribedData) {
+      for (const data of subscribedData[source]) {
+        switch (data.type) {
+          case "bng":
+            gui_bng_update_circle(data);
+            break;
+        }
+      }
+    } else {
+      window.pd4webGuiValues[source] = value;
+    }
   }
-  window.pd4webGuiValues[symbol].push(value);
 }
 
+// ─────────────────────────────────────
+function JS_setList(source, value) {
+  if (window.pd4webGuiValues[source] === undefined) {
+    window.pd4webGuiValues[source] = [];
+  }
+  window.pd4webGuiValues[source].push(value);
+}
+
+// ─────────────────────────────────────
 //╭─────────────────────────────────────╮
 //│  JavaScript Functions to Send Data  │
 //│                to Pd                │
@@ -248,6 +302,27 @@ function sendList(receiver, array) {
 
   // ───────────── Send list ──────────
   PdModule._FinishAndSendList(ptrReceiver);
+  PdModule._webpd_free(ptrReceiver);
+}
+
+// ─────────────────────────────────────
+function bindGuiReceiver(receiver) {
+  console.log("bindGuiReceiver for " + receiver);
+  if (PdModule === undefined) {
+    alert("Module is undefined!");
+    return;
+  }
+  var str_rawReceiver = new TextEncoder().encode(receiver);
+  var ptrReceiver = PdModule._webpd_malloc(str_rawReceiver.length + 1);
+  var chunkReceiver = PdModule.HEAPU8.subarray(
+    ptrReceiver,
+    ptrReceiver + str_rawReceiver.length,
+  );
+  chunkReceiver.set(str_rawReceiver);
+  PdModule.HEAPU8[ptrReceiver + str_rawReceiver.length] = 0; // Null-terminate the string
+  if (PdModule._bindGuiReceiver(ptrReceiver) !== 0) {
+    console.error("Error binding gui receiver to pd");
+  }
   PdModule._webpd_free(ptrReceiver);
 }
 

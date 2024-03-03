@@ -296,7 +296,7 @@ function gui_subscribe(data) {
   } else {
     window.subscribedData[data.receive] = [data];
   }
-  // bindGuiReceiver(data.receive);
+  bindGuiReceiver(data.receive);
 }
 
 function gui_unsubscribe(data) {
