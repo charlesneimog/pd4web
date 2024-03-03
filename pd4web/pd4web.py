@@ -102,16 +102,29 @@ class webpdPatch:
             help="Do not create the index.html in the root folder",
         )
         parser.add_argument(
+            "--nogui",
+            required=False,
+            action="store_true",
+            default=False,
+            help="If set to False, it will not load the GUI interface.",
+        )
+        parser.add_argument(
             "--replace-helper",
             required=False,
             default=None,
             help="Replace helpers.js file by your own file",
         )
-        parser.add_argument("--version", action="version", version="%(prog)s 1.2.2")
+        parser.add_argument("--version", action="version", version="%(prog)s 1.2.3")
         self.args = parser.parse_args()
         if self.args.active_emcc:
             self.activeEmcc()
             sys.exit(0)
+
+        if self.args.nogui:
+            self.GUI = False
+        else:
+            self.GUI = True 
+
         if pdpatch is not None:
             self.args.patch = pdpatch
         if not os.path.isabs(self.args.patch) and not insideaddAbstractions:
@@ -135,6 +148,7 @@ class webpdPatch:
         self.addedObjects = []
         self.supportedObjects = {}
         self.unsupportedObjects = {}
+        self.uiHasReceivers = 0
         if not insideaddAbstractions:
             self.activeEmcc()
             self.downloadLibPd()
@@ -735,6 +749,7 @@ class webpdPatch:
             "GUI Receiver detected: " + receiverSymbol, color="blue"
         )
         self.uiReceiversSymbol.append(receiverSymbol)
+        self.uiHasReceivers = 1
 
 
     def findExternalsObjs(self):
@@ -1051,6 +1066,18 @@ class webpdPatch:
                 threadMutexIndex + 3,
                 "int HTML_IDS_SIZE = " + str(lenUIReceiver) + ";\n",
             )
+
+            if self.GUI:
+                self.templateCode.insert(
+                    threadMutexIndex + 4,
+                    "int RENDER_GUI = 1;\n",
+                )
+            else:
+                self.templateCode.insert(
+                    threadMutexIndex + 4,
+                    "int RENDER_GUI = 0;\n",
+                )
+
         return True
 
     def saveMainFile(self):
@@ -1299,6 +1326,14 @@ class webpdPatch:
         self.removeLibraryPrefix(
             self.PROJECT_ROOT + "webpatch/data/index.pd", self.PatchLinesProcessed
         )
+
+        if self.GUI and self.uiHasReceivers == 0:
+            print("\n")
+            myprint("You are trying to use a GUI patch without GUI receivers.", color="red")
+            myprint("Check https://charlesneimog.github.io/pd4web/patch/#about-user-interfaces", color="red")
+            myprint("Use the --nogui flag to disable the GUI mode.\n", color="red")
+
+
         memory = self.memory
         if platform.system() == "Windows":
             self.target = self.PROJECT_ROOT + "webpatch\\libpd.js"

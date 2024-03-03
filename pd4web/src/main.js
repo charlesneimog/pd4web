@@ -374,6 +374,6 @@ loadScript("./libpd.js", function () {
   });
 
   loadScript("./gui.js", function () {
-    initGui();
+    // initGui();
   });
 });

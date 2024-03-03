@@ -363,6 +363,10 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
     return;
   }
   EM_ASM_({ JS_LoadFinished(); });
+
+  if (RENDER_GUI) {
+    EM_ASM_({ initGui(); });
+  }
 }
 
 // ─────────────────────────────────────
