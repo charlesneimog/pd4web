@@ -5,7 +5,7 @@
       <img src="https://raw.githubusercontent.com/charlesneimog/pd4web/main/docs/assets/icon.svg" width="10%" alt="Logo">
     </a>
   </p>
-  <h4 align="center">pd4web: Running PureData Patches in Browsers with Web Audio</h4>
+  <h4 align="center">pd4web: Running PureData Patches with Externals on Web</h4>
 </p>
 
 <p align="center">
