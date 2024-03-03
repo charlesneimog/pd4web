@@ -263,7 +263,7 @@ function sendToPureData(receiver, thing) {
     sendString(receiver, thing);
   } else if (Array.isArray(thing)) {
     sendList(receiver, thing);
-  } else if (Array.isArray(thing)) {
-    alert("Array is not supported yet!");
+  } else {
+    alert("You is trying to send to PureData a type not supported yet!");
   }
 }
