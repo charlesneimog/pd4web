@@ -5,3 +5,5 @@ dist/
 webpatch/
 compile_commands.json
 pyrightconfig.json
+pd4web/src/build
+build
