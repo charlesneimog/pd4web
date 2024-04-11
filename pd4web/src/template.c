@@ -23,7 +23,7 @@
 uint8_t patchAudioInputs = 1;
 uint8_t patchAudioOutputs = 2;
 uint8_t wasmAudioWorkletStack[1024 * 1024];
-int samplerate = 48000;
+int samplerate = 48000; // TODO: Get sample rate from browser.
 
 // ================ GUI ================
 pthread_mutex_t WriteReadMutex = PTHREAD_MUTEX_INITIALIZER;
@@ -288,7 +288,7 @@ static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs,
       outputIndex++;
     }
   }
-  libpd_bang("pd4webtick");
+  libpd_bang("pd4webtick"); // rethink this
   return EM_TRUE;
 }
 // ========================================
@@ -308,8 +308,8 @@ EM_JS(void, AddUIButtons, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
     audioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
     JS_AddUIButtons(audioContext, audioWorkletNode);
 });
-// clang-format on
 
+// clang-format on
 // ╭─────────────────────────────────────╮
 // │          audioWorkletNode           │
 // ╰─────────────────────────────────────╯
@@ -329,6 +329,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
   EMSCRIPTEN_AUDIO_WORKLET_NODE_T wasmAudioWorklet =
       emscripten_create_wasm_audio_worklet_node(audioContext, "libpd-processor",
                                                 &options, &ProcessPdPatch, 0);
+
   AddUIButtons(audioContext, wasmAudioWorklet);
 
   libpd_set_listhook(receiveListfromPd);
@@ -377,6 +378,7 @@ void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
   }
   WebAudioWorkletProcessorCreateOptions opts = {
       .name = "libpd-processor",
+
   };
   emscripten_create_wasm_audio_worklet_processor_async(
       audioContext, &opts, AudioWorkletProcessorCreated, 0);
