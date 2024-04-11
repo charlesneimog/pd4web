@@ -416,7 +416,7 @@ class webpdPatch:
                 os.system(f"{self.emcc.emsdk} activate latest")
                 os.system(f"chmod +x {self.emcc.emsdk_env}")
         if self.args.active_emcc:
-            os.system(f"{self.emcc.emsdk} activate latest")
+            os.system(f"{self.emcc.emsdk} activate")
             sys.exit(0)
 
     def importExternalObjs(self):
@@ -454,14 +454,14 @@ class webpdPatch:
             myprint("" + "Downloading libpd...", color="yellow")
             os.mkdir(self.PdWebCompilerPath + "/libpd")
             os.system(
-                "git clone https://github.com/charlesneimog/libpd.git "
+                "git clone https://github.com/libpd/libpd.git "
                 + f"{self.PdWebCompilerPath}/libpd --recursive"
             )
-            os.system(
-                f"cd {self.PdWebCompilerPath}/libpd && git switch emscripten-pd54 &&"
-                " git submodule init && git submodule update"
-                + " && cd pure-data && git submodule init && git submodule update && git switch emscripten-pd54"
-            )
+            # os.system(
+            #     f"cd {self.PdWebCompilerPath}/libpd && git switch emscripten-pd54 &&"
+            #     " git submodule init && git submodule update"
+            #     + " && cd pure-data && git submodule init && git submodule update && git switch emscripten-pd54"
+            # )
 
     def getSupportedLibraries(self):
         """

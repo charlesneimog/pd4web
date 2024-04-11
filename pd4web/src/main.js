@@ -63,6 +63,7 @@ function JS_AddUIButtons(audioContext, audioWorkletNode) {
       // });
     }
     const mic = audioContext.createMediaStreamSource(stream);
+    console.log(audioContext);
     const clickListenerMic = (_) => {
       if (audioContext.state !== "running") {
         mic.connect(audioWorkletNode);
