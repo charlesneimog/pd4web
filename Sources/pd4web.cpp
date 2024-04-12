@@ -166,7 +166,7 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate = SAMPLE_RATE,
+        // .sampleRate = SAMPLE_RATE,
     };
 
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
@@ -182,7 +182,7 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
 
     libpd_set_printhook(receivePrint);
 
-    // libpd_set_banghook(receiveBang);
+    // libpd_set_banghoo(receiveBang);
     // libpd_set_floathook(receiveFloat);
     // libpd_set_symbolhook(receiveSymbol);
     // libpd_set_listhook(receiveList);
@@ -206,9 +206,7 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
     if (!libpd_openfile("index.pd", "./")) {
         printf("Failed to open patch\n");
         return;
-    } else {
-        printf("Patch opened\n");
-    }
+    } 
 
     pdInit = true;
     ResumeAudio();

@@ -6,7 +6,9 @@ set(CMAKE_CXX_COMPILER emcc)
 #╭──────────────────────────────────────╮
 #│            Configurations            │
 #╰──────────────────────────────────────╯
-
+if (PATCH)
+    set(PATCH ${PATCH})
+endif()
 
 if (INIT_MEMORY)
     set(INIT_MEMORY ${INIT_MEMORY})
@@ -17,7 +19,7 @@ endif()
 if (LIBPD_TAG)
     set(LIBPD_TAG ${LIBPD_TAG})
 else()
-    set(LIBPD_TAG "master")
+    set(LIBPD_TAG "master") ## TODO: Need to set next realease
 endif()
 
 #╭──────────────────────────────────────╮
@@ -39,7 +41,8 @@ if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/libpd/CMakeLists.txt")
 endif()
 
 # Add libpd as a subdirectory
-set(PD_EXTRA OFF)
+cmake_policy(SET CMP0077 NEW)
+# set(PD_EXTRA OFF)
 add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/libpd)
 
 #╭──────────────────────────────────────╮
@@ -87,7 +90,8 @@ execute_process(
 #╭──────────────────────────────────────╮
 #│           EmScripten Flags           │
 #╰──────────────────────────────────────╯
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Sources@/")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Patches@/")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPD -sUSE_PTHREADS=1 -sAUDIO_WORKLET=1 -sWASM_WORKERS=1")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-command-line-argument -DPD -DPDINSTANCE -sINITIAL_MEMORY=${INIT_MEMORY}MB")
 

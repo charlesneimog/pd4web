@@ -1,9 +1,12 @@
-#N canvas 6 31 951 1011 10;
+#N canvas 963 31 951 1011 10;
 #X obj 63 54 osc~ 440;
 #X obj 63 76 *~ 0.2;
 #X obj 63 119 dac~;
-#X obj 188 93 bang~;
-#X obj 188 115 print;
+#X obj 124 29 bang~;
+#X obj 124 51 print;
+#X obj 224 228 midiout;
+#X obj 234 177 midiin;
+#X obj 276 72 sysexin;
 #X connect 0 0 1 0;
 #X connect 1 0 2 0;
 #X connect 1 0 2 1;
