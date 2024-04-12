@@ -1,0 +1,14 @@
+#N canvas 6 31 951 487 10;
+#X obj 558 116 loadbang;
+#X obj 558 162 print;
+#X obj 558 139 72;
+#X obj 52 131 noteout;
+#X obj 109 131 ctlout;
+#X obj 158 131 pgmout;
+#X obj 209 131 bendout;
+#X obj 52 153 touchout;
+#X obj 119 153 polytouchout;
+#X obj 213 153 midiout;
+#X text 278 141 - MIDI output;
+#X connect 0 0 2 0;
+#X connect 2 0 1 0;
