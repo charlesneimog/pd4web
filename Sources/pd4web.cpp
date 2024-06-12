@@ -60,9 +60,10 @@ EM_JS(void, JsSuspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 
 // This functions will be used to create the WebAudio Worklet Processor.
 
-static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int numOutputs,
-                              AudioSampleFrame *outputs, int numParams,
-                              const AudioParamFrame *params, void *userData) {
+static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs,
+                              int numOutputs, AudioSampleFrame *outputs,
+                              int numParams, const AudioParamFrame *params,
+                              void *userData) {
 
     int inCh = inputs[0].numberOfChannels;
     int outCh = outputs[0].numberOfChannels;
@@ -71,18 +72,20 @@ static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int
     libpd_process_float(2, inputs[0].data, outChsArrays);
 
     int outputIndex = 0;
+
     for (int i = 0; i < outCh; i++) {
         for (int j = i; j < (128 * outCh); j += 2) {
             outputs[0].data[outputIndex] = outChsArrays[j];
             outputIndex++;
         }
     }
+
     return EM_TRUE;
 }
 
 // ─────────────────────────────────────
-static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
-                                         void *userData) {
+static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext,
+                                         EM_BOOL success, void *userData) {
     if (!success) {
         Alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
@@ -96,15 +99,16 @@ static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_
         .outputChannelCounts = nOutChannelsArray,
     };
 
-    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
-        audioContext, "pd4web", &options, &ProcessPdPatch, 0);
+    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode =
+        emscripten_create_wasm_audio_worklet_node(audioContext, "pd4web",
+                                                  &options, &ProcessPdPatch, 0);
 
     GetMicAccess(audioContext, AudioWorkletNode, N_CH_IN);
 }
 
 // ─────────────────────────────────────
-static void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
-                                             void *userData) {
+static void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
+                                             EM_BOOL success, void *userData) {
 
     if (!success) {
         return;
@@ -114,8 +118,8 @@ static void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
         .name = "pd4web",
     };
 
-    emscripten_create_wasm_audio_worklet_processor_async(audioContext, &opts,
-                                                         &AudioWorkletProcessorCreated, 0);
+    emscripten_create_wasm_audio_worklet_processor_async(
+        audioContext, &opts, &AudioWorkletProcessorCreated, 0);
 }
 
 // ─────────────────────────────────────
@@ -134,7 +138,8 @@ void Pd4Web::receivePrint(const char *s) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::receiveMessage(const char *source, const char *symbol, int argc, t_atom *argv) {
+void Pd4Web::receiveMessage(const char *source, const char *symbol, int argc,
+                            t_atom *argv) {
     std::ostringstream ss;
     for (int i = 0; i < argc; ++i) {
         if (argv[i].a_type == A_FLOAT) {
@@ -161,22 +166,25 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
     srand(time(NULL));
     assert(!emscripten_current_thread_is_audio_worklet());
 
-    printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
-           PD4WEB_MICRO_VERSION);
+    printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION,
+           PD4WEB_MINOR_VERSION, PD4WEB_MICRO_VERSION);
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
         // .sampleRate = SAMPLE_RATE,
     };
 
-    EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
+    EMSCRIPTEN_WEBAUDIO_T AudioContext =
+        emscripten_create_audio_context(&attrs);
 
-    emscripten_start_wasm_audio_worklet_thread_async(AudioContext, wasmAudioWorkletStack,
-                                                     sizeof(wasmAudioWorkletStack),
-                                                     WebAudioWorkletThreadInitialized, 0);
+    emscripten_start_wasm_audio_worklet_thread_async(
+        AudioContext, wasmAudioWorkletStack, sizeof(wasmAudioWorkletStack),
+        WebAudioWorkletThreadInitialized, 0);
 
-    t_libpd_printhook libpd_printhook = (t_libpd_printhook)libpd_print_concatenator;
-    t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)receivePrint;
+    t_libpd_printhook libpd_printhook =
+        (t_libpd_printhook)libpd_print_concatenator;
+    t_libpd_printhook libpd_concatenated_printhook =
+        (t_libpd_printhook)receivePrint;
 
     Context = AudioContext;
 
@@ -206,7 +214,7 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
     if (!libpd_openfile("index.pd", "./")) {
         printf("Failed to open patch\n");
         return;
-    } 
+    }
 
     pdInit = true;
     ResumeAudio();
