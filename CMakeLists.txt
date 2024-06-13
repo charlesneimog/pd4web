@@ -39,7 +39,7 @@ if (PATCH)
     set(PATCH "${PATCH_DIR}/${PATCH}")
     message(STATUS "Compiling Patch ${PATCH}")
 else()
-    set(PATCH "${CMAKE_CURRENT_SOURCE_DIR}/Patches@/")
+    set(PATCH "${CMAKE_CURRENT_SOURCE_DIR}/Resources/Patches@/")
 endif()
 
 #╭──────────────────────────────────────╮
