@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.15...3.25)
+cmake_minimum_required(VERSION 3.19)
 project(pd4web)
 
 set(CMAKE_CXX_COMPILER emcc)
@@ -60,9 +60,6 @@ if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/libpd/CMakeLists.txt")
     endif()
 endif()
 
-# Add libpd as a subdirectory
-# cmake_policy(SET CMP0077 NEW)
-# set(PD_EXTRA OFF)
 add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/libpd)
 
 #╭──────────────────────────────────────╮
