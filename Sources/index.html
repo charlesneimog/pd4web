@@ -62,12 +62,35 @@
       class="pd4web-sound-off"
       id="turnAudioOn"
     ></span>
+    <div
+      id="patchDiv"
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-left: 5%;
+        margin-right: 5%;
+        border-radius: 10px;
+        box-shadow:
+          rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+          rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+        height: 70%;
+      "
+    >
+      <svg
+        id="canvas"
+        height="100%"
+        width="100%"
+        preserveAspectRatio="xMidYMin meet"
+      ></svg>
+    </div>
     <script>
       // ╭─────────────────────────────────────╮
       // │      Load Pd4Web audio engine       │
       // ╰─────────────────────────────────────╯
-      let Pd4Web = null;
+
       // Don't remove this
+      let Pd4Web = null;
       Module.onRuntimeInitialized = () => {
         Pd4Web = new Module.Pd4Web();
       };
@@ -95,7 +118,15 @@
           clickableSpan.classList.remove("pd4web-sound-off");
           clickableSpan.classList.add("pd4web-sound-loading");
           await new Promise((resolve) => setTimeout(resolve, 33));
-          Pd4Web.init(); // This is the unique important thing here
+
+          Pd4Web.init(); // <== This is the unique important thing here, running this from any click event will work.
+
+          const vec = [1, "oi", "teste"];
+          value = Pd4Web.sendList("r_list", vec);
+          if (value) {
+            console.log("Received list: ", value);
+          }
+
           clickableSpan.classList.remove("pd4web-sound-loading");
           clickableSpan.classList.add("pd4web-sound-on");
         });
