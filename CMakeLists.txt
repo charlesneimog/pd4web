@@ -3,15 +3,6 @@ project(pd4web)
 
 set(CMAKE_CXX_COMPILER emcc)
 
-#╭──────────────────────────────────────╮
-#│           Clear old patch            │
-#╰──────────────────────────────────────╯
-add_custom_target(clean-webpatch
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Sources/index.html ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
-    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Sources/enable-threads.js ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
-)
 
 #╭──────────────────────────────────────╮
 #│            Configurations            │
@@ -43,8 +34,21 @@ else()
 endif()
 
 #╭──────────────────────────────────────╮
+#│           Clear old patch            │
+#╰──────────────────────────────────────╯
+add_custom_target(clean-webpatch
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Sources/index.html ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Sources/enable-threads.js ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Sources/gui.js ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/Resources/Patches/*.pd ${CMAKE_CURRENT_SOURCE_DIR}/webpatch
+)
+
+#╭──────────────────────────────────────╮
 #│                libpd                 │
 #╰──────────────────────────────────────╯
+
 include(ExternalProject)
 find_package(Git REQUIRED)
 
@@ -60,7 +64,16 @@ if(NOT EXISTS "${CMAKE_CURRENT_BINARY_DIR}/libpd/CMakeLists.txt")
     endif()
 endif()
 
+
+set(PD_EXTRA off)
 add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/libpd)
+
+#╭──────────────────────────────────────╮
+#│          Audio Definitions           │
+#╰──────────────────────────────────────╯
+add_compile_definitions(N_CH_IN=${N_CH_IN})
+add_compile_definitions(N_CH_OUT=${N_CH_OUT})
+add_compile_definitions(SAMPLE_RATE=${SAMPLE_RATE})
 
 #╭──────────────────────────────────────╮
 #│               Objects                │

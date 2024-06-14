@@ -8,7 +8,7 @@
 // Code From: https://github.com/cuinjune/PdWebParty
 
 const isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
-const canvas = document.getElementById("canvas");
+var canvas;
 const loading = document.getElementById("loading");
 const filter = document.getElementById("filter");
 window.subscribedData = {};
@@ -296,7 +296,11 @@ function gui_subscribe(data) {
   } else {
     window.subscribedData[data.receive] = [data];
   }
-  bindGuiReceiver(data.receive);
+  if (Pd4Web) {
+    Pd4Web.bindReceiver(data.receive);
+  } else {
+    console.error("Pd4Web not found");
+  }
 }
 
 function gui_unsubscribe(data) {
@@ -727,8 +731,9 @@ function gui_slider_bang(data) {
   if (out < 1.0e-10 && out > -1.0e-10) {
     out = 0;
   }
-  // (data.send, out);
-  sendFloat(data.receive, out);
+  if (Pd4Web) {
+    Pd4Web.sendFloat(data.receive, out);
+  }
 }
 
 function gui_slider_onmousedown(data, e, id) {
@@ -1249,15 +1254,21 @@ function set_font_engine_sanity() {
     ctx = canvas.getContext("2d"),
     test_text = "struct theremin float x float y";
   canvas.id = "font_sanity_checker_canvas";
-  document.body.appendChild(canvas);
+
+  if (document.body) {
+    document.body.appendChild(canvas);
+  }
   ctx.font = "11.65px DejaVu Sans Mono";
   if (Math.floor(ctx.measureText(test_text).width) <= 217) {
     font_engine_sanity = true;
   } else {
     font_engine_sanity = false;
   }
-  canvas.parentNode.removeChild(canvas);
+  if (canvas.parentNode) {
+    canvas.parentNode.removeChild(canvas);
+  }
 }
+
 set_font_engine_sanity();
 
 function font_stack_is_maintained_by_troglodytes() {
@@ -1366,14 +1377,15 @@ function updatePatchDivSize(content) {
 }
 
 // ================== patch handling ==================
-function openPatch(content, filename) {
+function openPatch(content) {
   let maxNumInChannels = 0;
   let canvasLevel = 0; // 0: no canvas, 1: main canvas, 2~: subcanvases
   let id = 0; // gui id
+
   while (canvas.lastChild) {
-    // clear svg
     canvas.removeChild(canvas.lastChild);
   }
+
   const lines = content.split(";\n");
   for (let line of lines) {
     line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
@@ -1806,8 +1818,9 @@ function openPatch(content, filename) {
   }
 }
 
-async function initGui() {
-  var file = "./data/index.pd";
+async function Pd4WebInitGui() {
+  canvas = document.getElementById("canvas");
+  var file = "./index.pd";
   fetch(file)
     .then((response) => {
       if (!response.ok) {
@@ -1817,9 +1830,9 @@ async function initGui() {
     })
     .then((textContent) => {
       updatePatchDivSize(textContent);
-      openPatch(textContent, file);
+      openPatch(textContent);
     })
     .catch((error) => {
-      console.error("Error fetching main.pd:", error);
+      console.error("Error fetching index.pd:", error);
     });
 }
