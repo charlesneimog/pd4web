@@ -8,3 +8,5 @@ pyrightconfig.json
 pd4web/src/build
 build
 .cache/clangd/index
+Sources/pd4web-old
+Sources/pd4web2
