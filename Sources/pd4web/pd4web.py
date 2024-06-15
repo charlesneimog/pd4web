@@ -480,7 +480,6 @@ class webpdPatch:
                 PdLib = PureDataExternals(library, self.PROJECT_ROOT)
                 PD_LIBRARIES.add(PdLib)
                 self.unsupportedObjects[library["name"]] = PdLib.unsupportedObj
-        self.unsupportedObjects["puredata"] = ["bang~"]
 
     def enumerateExternals(self, libraryFolder, libraryName):
         """

@@ -188,7 +188,7 @@ void Pd4Web::SuspendAudio() { JsSuspendAudioWorkLet(Context); }
 // ╭─────────────────────────────────────╮
 // │           Receivers Hooks           │
 // ╰─────────────────────────────────────╯
-static void rPrint(const char *message) {
+static void ReceivePrint(const char *message) {
     if (message[0] == '\n') {
         return;
     }
@@ -277,25 +277,10 @@ void Pd4Web::UnbindReceiver() {
     return;
 }
 
-// ─────────────────────────────────────
-void Pd4Web::receiveMessage(const char *source, const char *symbol, int argc, t_atom *argv) {
-    std::ostringstream ss;
-    for (int i = 0; i < argc; ++i) {
-        if (argv[i].a_type == A_FLOAT) {
-            ss << argv[i].a_w.w_float;
-        } else if (argv[i].a_type == A_SYMBOL) {
-            ss << argv[i].a_w.w_symbol->s_name;
-        }
-        if (i != argc - 1) {
-            ss << ',';
-        }
-    }
-}
-
 // ╭─────────────────────────────────────╮
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
-EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
+void Pd4Web::Init() {
     uint32_t SR = GetSampleRate();
     float NInCh = GetNInputChannels();
     float NOutCh = GetNOutputChannels();
@@ -323,11 +308,11 @@ EMSCRIPTEN_KEEPALIVE void Pd4Web::Init() {
                                                      WebAudioWorkletThreadInitialized, 0);
 
     t_libpd_printhook libpd_printhook = (t_libpd_printhook)libpd_print_concatenator;
-    t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)rPrint;
+    t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)ReceivePrint;
 
     Context = AudioContext;
 
-    libpd_set_printhook(rPrint);
+    libpd_set_printhook(ReceivePrint);
     libpd_set_banghook(ReceiveBang);
     libpd_set_floathook(ReceiveFloat);
     libpd_set_symbolhook(ReceiveSymbol);

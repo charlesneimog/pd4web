@@ -63,7 +63,7 @@ class PureDataExternals:
         return f"<Dev: {self.repoUser} | User: {self.repoName}>"
 
 
-class PD_SUPPORTED_EXTERNALS:
+class Pd4WebExternals:
     def __init__(self) -> None:
         self.PureDataExternals = []
         self.LibraryNames = []
