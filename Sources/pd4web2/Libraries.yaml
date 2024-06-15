@@ -1,0 +1,66 @@
+DownloadSources:
+  GITHUB_RELEASES: "https://api.github.com/repos/{}/{}/releases"
+  GITHUB_TAGS: "https://api.github.com/repos/{}/{}/tags"
+
+SupportedLibraries:
+  - name: cyclone # name of the pd library
+    downloadSrc: GITHUB_RELEASES # source
+    repoUser: porres # in this case, Github user name
+    repoName: pd-cyclone # in this case, Github Repo
+    version: cyclone_0.7-0 # version
+    extraFunction: cyclone_extra # This library needs some extras steps, so we used a function called cyclone_extra, defined in externals.cyclone.
+    unsupportedObj: ["coll"]
+
+  - name: else
+    downloadSrc: GITHUB_RELEASES
+    repoUser: porres
+    repoName: pd-else
+    version: v1.0-rc9
+    extraFunction: else_extra
+    unsupportedObj: ["sfz~", "sfont~"]
+
+  - name: earplug~ # must be the name of object when singleObject is true
+    downloadSrc: GITHUB_TAGS
+    repoUser: pd-externals
+    repoName: earplug
+    extraFunction: earplug_extra
+    version: 0.3.0
+    singleObject: true
+
+  - name: convolve~
+    directLink: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
+    repoUser: wbrent
+    repoName: convolve_tilde
+    dynamicLibraries: ["fftw3"]
+    singleObject: true
+
+  - name: timbreIDLib
+    directLink: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
+    repoUser: wbrent
+    repoName: timbreIDLib
+    extraFunction: timbreID_extra
+    dynamicLibraries: ["fftw3"]
+
+  - name: pmpd
+    downloadSrc: GITHUB_RELEASES
+    repoUser: avilleret
+    repoName: pd-pmpd
+    extraFunction: pmpd_extra
+
+  - name: grainer~
+    downloadSrc: GITHUB_TAGS
+    repoUser: charlesneimog
+    repoName: grainer_tilde
+    singleObject: true
+
+  - name: fftease
+    directLink: https://github.com/ericlyon/pd-fftease/archive/refs/heads/master.zip # wait for new release
+    repoUser: ericlyon
+    repoName: pd-fftease
+    extraFunction: fftease_extra
+
+  - name: percolate
+    directLink: https://github.com/charlesneimog/pd-percolate/archive/refs/heads/master.zip
+    repoUser: charlesneimog
+    repoName: pd-percolate
+    extraFunction: percolate_extra
