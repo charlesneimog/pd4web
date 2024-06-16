@@ -10,3 +10,4 @@ build
 .cache/clangd/index
 Sources/pd4web-old
 Sources/pd4web2
+Sources/pd4web/Externals/else

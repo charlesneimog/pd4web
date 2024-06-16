@@ -42,39 +42,44 @@ class ExternalLibraries:
             self.totalOfLibraries = len(supportedLibraries)
 
     class LibraryClass:
-        def __init__(self, LibraryData) -> None:
+        def __init__(self, LibraryData, DownloadSources) -> None:
             self.name = LibraryData["name"]
             self.repoUser = LibraryData["repoUser"]
             self.repoName = LibraryData["repoName"]
-
             self.folder = ""
             self.externalsExtraFunctions = []
-            try:
+            self.DownloadSources = DownloadSources
+            self.DownloadLink = ""
+
+            if "downloadSrc" in LibraryData:
                 self.repoAPI = LibraryData["downloadSrc"]
-            except:
+            else:
                 self.repoAPI = False
-                try:
-                    self.directLink = LibraryData["directLink"]
-                except:
-                    # print in red
+                if "directLink" in LibraryData:
+                    self.downloadSrc = LibraryData["directLink"]
+                else:
                     raise Exception("Error: {self.name} doesn't have a download source")
-                   
-            try:
+
+            self.GetLinkForDownload() # PAREI_AQUI: Implementar construtor do link completo
+
+            if "extraFunction" in LibraryData:
                 self.extraFunc = LibraryData["extraFunction"]
-            except:
+            else:
                 self.extraFunc = None
-            try:
+                   
+            if "singleObject" in LibraryData:
                 self.singleObject = LibraryData["singleObject"]
-            except:
+            else:
                 self.singleObject = False
-            try:
+
+            if "dynamicLibraries" in LibraryData:
                 self.requireDynamicLibraries = LibraryData["dynamicLibraries"]
-            except:
+            else:
                 self.requireDynamicLibraries = False
 
-            try:
+            if "unsupportedObj" in LibraryData:
                 self.unsupportedObj = LibraryData["unsupportedObj"]
-            except:
+            else:
                 self.unsupportedObj = []
 
             self.usedObjs = []
@@ -83,11 +88,22 @@ class ExternalLibraries:
             self.unsupportedObjects = {}
             self.extraFlags = []
 
+        def GetLinkForDownload(self):
+            if self.repoAPI:
+                if self.repoAPI in self.DownloadSources:
+                    self.downloadLink = self.DownloadSources[self.repoAPI]
+                    return self.downloadLink.format(self.repoUser, self.repoName)
+                else:
+                    raise Exception(f"Error: {self.name} doesn't have a download source")
+            else:
+                return self.downloadSrc
+
 
     def GetLibrary(self, LibraryName):
         Library = next((lib for lib in self.SupportedLibraries if lib['name'] == LibraryName), None)
-        Library = self.LibraryClass(Library)
+        Library = self.LibraryClass(Library, self.DownloadSources)
         return Library 
+
 
 
     def isSupportedLibrary(self, name):
