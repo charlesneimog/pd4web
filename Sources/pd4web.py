@@ -1,6 +1,6 @@
 import os
 
-from pd4web2 import ExternalLibraries, GetCode, Patch
+from pd4web import ExternalLibraries, GetCode, Patch
 
 
 class Pd4Web():

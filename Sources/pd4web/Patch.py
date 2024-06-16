@@ -1,5 +1,7 @@
 # import something
+import json
 import os
+import re
 
 from .Helpers import getPrintValue, pd4web_print
 from .Libraries import ExternalLibraries
@@ -35,6 +37,38 @@ class PatchLine:
 
     def GetChInCount(self):
         pass
+
+    def GetLibraryExternals(self, LibraryFolder: str, LibraryName: str):
+        """
+        Recursively enumerate all external and abstractions and save the JSON file.
+        """
+        self.LibraryScriptDir = os.path.dirname(os.path.realpath(__file__))
+        externalsJson = os.path.join(self.LibraryScriptDir, "Objects.json")
+        if os.path.exists(externalsJson):
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+        else:
+            externalsDict = {}
+        extObjs = []
+        absObjs = []
+        externalsDict[LibraryName] = {}
+        for root, _, files in os.walk(LibraryFolder):
+            for file in files:
+                if file.endswith(".c") or file.endswith(".cpp"):
+                    with open(os.path.join(root, file), "r") as c_file:
+                        file_contents = c_file.read()
+                        pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
+                        matches = re.finditer(pattern, file_contents)
+                        for match in matches:
+                            objectName = match.group(1)
+                            extObjs.append(objectName)
+                if file.endswith(".pd"):
+                    if "-help.pd" not in file:
+                        absObjs.append(file.split(".pd")[0])
+        externalsDict[LibraryName]["objs"] = extObjs
+        externalsDict[LibraryName]["abs"] = absObjs
+        with open(externalsJson, "w") as file:
+            json.dump(externalsDict, file, indent=4)
 
     def GetLibraryData(self) -> ExternalLibraries.LibraryClass:
         # TODO: Need to revise this code

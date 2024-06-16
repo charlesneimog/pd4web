@@ -1,5 +1,6 @@
 import os
 import sys
+import zipfile
 
 import requests
 
@@ -25,68 +26,59 @@ class GetCode():
 
     def DownloadLink(self, PatchLine: PatchLine):
         LibraryClass = PatchLine.GetLibraryData()
-        if LibraryClass.repoAPI == False:
-            return False
-
-        print("Downloading " + PatchLine.Library)
-
+        return LibraryClass.GetLinkForDownload()
 
     def DownloadLibrarySourceCode(self, PatchLine: PatchLine):
-        ResponseJson = {"message": "Unknown error"}
         LibraryName = PatchLine.Library
         if self.Libraries.isSupportedLibrary(LibraryName):
-            if os.path.exists(os.path.join(self.LibraryScriptDir + "/Libraries/" + LibraryName)):
+            if os.path.exists(os.path.join(self.LibraryScriptDir + "/Externals/" + LibraryName)):
                 return True
 
-            GithutAPI = self.DownloadLink(PatchLine)
-            return;
+            # check if self.Libraries.SupportedLibraries/ExternalLibraries exist
+            if not os.path.exists(self.LibraryScriptDir + "/Externals"):
+                os.makedirs(self.LibraryScriptDir + "/Externals")
 
-                # pd4web_print("Downloading " + LibraryName, color="yellow")
-                #
-                # if GithutAPI is None:
-                #     raise Exception("LibURL is not a string or None")
-                # elif GithutAPI == False:  # means that is a direct link
-                #     response = requests.get(LibraryClass.directLink)
-                # elif isinstance(GithutAPI, str):  # is a GithubAPI link
-                #     response = requests.get(GithutAPI)
-                #     responseJson = response.json()
-                #     sourceCodeLink = responseJson[0]["zipball_url"]
-                #     response = requests.get(sourceCodeLink)
-                # else:
-                #     raise Exception("The link of the srcs of " + LibraryName + " is not valid")
-                #
-                # if not os.path.exists(self.LibraryScriptDir + "/Libraries"):
-                #     os.mkdir(self.LibraryScriptDir + "/Libraries")
-                #
-                # with open(self.LibraryScriptDir + "/Libraries/" + LibraryName + ".zip", "wb") as file:
-                #     file.write(response.content)
-                #
-                # with zipfile.ZipFile(self.LibraryScriptDir + "/Libraries/" + LibraryName + ".zip", "r") as zip_ref:
-                #     zip_ref.extractall(self.LibraryScriptDir + "/Libraries")
-                #     extractFolderName = zip_ref.namelist()[0]
-                #     os.rename(
-                #         self.LibraryScriptDir + "/Libraries/" + extractFolderName,
-                #         self.LibraryScriptDir + "/Libraries/" + LibraryName,
-                #     )
-                #
-                # LibraryClass.folder = os.path.join(
-                #     os.getcwd(), self.LibraryScriptDir + "/Libraries/" + LibraryName
-                # )
-                # os.remove(
-                #     self.LibraryScriptDir + "/Libraries/" + LibraryName + ".zip"
-                # )
-                #
-                # self.enumerateExternals(LibraryClass.folder, libraryName)
-                # self.enumeratePureDataObjs()
-                # self.getAllSupportedObjects()
-                # return True
+            LinkForSourceCode = self.DownloadLink(PatchLine)
+            response = requests.get(LinkForSourceCode)
+            responseJson = response.json()
+            sourceCodeLink = responseJson[0]["zipball_url"]
+            try:
+                response = requests.get(sourceCodeLink, stream=True)
+                if response.status_code != 200:
+                    raise Exception(f"Error: {response.status_code}")
+                total_size = int(response.headers.get('content-length', 0))
+                chunk_size = 1024
+                num_bars = 40
+                pd4web_print(f"Downloading {LibraryName}...", color="yellow")
+                with open(self.LibraryScriptDir + "/Externals/" + LibraryName + ".zip", 'wb') as file:
+                    downloaded_size = 0
+                    for data in response.iter_content(chunk_size):
+                        file.write(data)
+                        downloaded_size += len(data)
+                        try:
+                            progress = downloaded_size / total_size
+                            num_hashes = int(progress * num_bars)
+                            progress_bar = '#' * num_hashes + '-' * (num_bars - num_hashes)
+                            
+                            # Print progress bar
+                            sys.stdout.write(f'\r    🟡 |{progress_bar}| {progress:.2%}')
+                            sys.stdout.flush()
+                        except ZeroDivisionError:
+                            pass
+                print()
+            except Exception as e:
+                raise Exception(f"Error: {e}")
 
-            # except Exception as e:
-            #     pd4web_print("" + str(e), color="red")
-            #     pd4web_print("" + str(ResponseJson["message"]), color="red")
-            #     pd4web_print("" + str(e), color="red")
-            #     raise Exception("Error downloading " + LibraryName)
-            # else:
-            #     raise Exception(getPrintValue("red") + LibraryName + " is not a supported library" + getPrintValue("reset"))
-            return False
+            with zipfile.ZipFile(self.LibraryScriptDir + "/Externals/" + LibraryName + ".zip", "r") as zip_ref:
+                zip_ref.extractall(self.LibraryScriptDir + "/Externals")
+                extractFolderName = zip_ref.namelist()[0]
+                os.rename(
+                    self.LibraryScriptDir + "/Externals/" + extractFolderName,
+                    self.LibraryScriptDir + "/Externals/" + LibraryName,
+                )
+            LibraryFolder = self.LibraryScriptDir + "/Externals/" + LibraryName
+            os.remove(self.LibraryScriptDir + "/Externals/" + LibraryName + ".zip")
+            PatchLine.GetLibraryExternals(LibraryFolder, LibraryName)
+            return True
+
 
