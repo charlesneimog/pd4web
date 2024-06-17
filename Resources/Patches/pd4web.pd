@@ -1,4 +1,4 @@
-#N canvas 963 28 951 1014 10;
+#N canvas 6 28 951 1014 10;
 #X declare -lib else;
 #X obj 6 36 *~ 0.1;
 #X obj 6 81 dac~;
@@ -13,6 +13,7 @@
 #X obj 178 226 else/plaits~;
 #X obj 304 23 declare -lib else;
 #X obj 117 203 4;
+#X obj 284 209 else/plaits~;
 #X connect 0 0 1 0;
 #X connect 0 0 1 1;
 #X connect 2 0 0 0;

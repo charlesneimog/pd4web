@@ -4,11 +4,13 @@ import re
 
 from .Helpers import pd4web_print
 from .Libraries import ExternalLibraries
+from .Super import Pd4Web
 
 
 class PdObjects():
-    def __init__(self, ProjectRoot):
-        self.PROJECT_ROOT = ProjectRoot
+    def __init__(self, Pd4Web: Pd4Web):
+        self.Pd4Web = Pd4Web
+        self.PROJECT_ROOT = Pd4Web.PROJECT_ROOT
 
         self.InitVariables()
 
@@ -24,7 +26,7 @@ class PdObjects():
         self.LibraryNames = []
         self.UsedLibraries = []
         self.UsedLibrariesNames = []
-        self.ExternalsLibraries = ExternalLibraries(self.PROJECT_ROOT)
+        self.Libraries = self.Pd4Web.Libraries
 
         self.LibraryNames = []
         self.unsupportedObjects = {}
@@ -37,7 +39,7 @@ class PdObjects():
         return self.__repr__()
 
     def get(self, name):
-        LibraryData = self.ExternalsLibraries.GetLibrary(name)
+        LibraryData = self.Libraries.GetLibrary(name)
         return LibraryData 
 
     def isExtraObject(self, name):

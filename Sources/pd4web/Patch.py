@@ -6,6 +6,7 @@ import re
 from .Helpers import getPrintValue, pd4web_print
 from .Libraries import ExternalLibraries
 from .Objects import PdObjects
+from .Super import Pd4Web
 
 
 class PatchLine:
@@ -70,10 +71,20 @@ class PatchLine:
         with open(externalsJson, "w") as file:
             json.dump(externalsDict, file, indent=4)
 
+    def addToUsedObject(self, PdObjects: PdObjects):
+        if self.Library != "puredata":
+            self.LibraryData = PdObjects.get(self.Library)
+            if self.LibraryData is None:
+                raise ValueError(getPrintValue("red") + "Library not supported: " + self.Library + getPrintValue("reset"))
+        else:
+            self.TotalObjects = PdObjects.getSupportedObjects()
+
+    # ──────────────────────────────────────
     def GetLibraryData(self) -> ExternalLibraries.LibraryClass:
         # TODO: Need to revise this code
         return self.LibraryData 
 
+    # ──────────────────────────────────────
     def __str__(self) -> str:
         if self.isExternal:
             return "< External Obj: " + self.name + " | Lib: " + self.Library + " >"
@@ -106,17 +117,11 @@ class PatchLine:
             else:
                 return "< Special Pd Object: " + self.Tokens[0] + " >"
 
+    # ──────────────────────────────────────
     def __repr__(self):
         return self.__str__()
 
-
-    def addToUsedObject(self, PdObjects: PdObjects):
-        if self.Library != "puredata":
-            self.LibraryData = PdObjects.get(self.Library)
-            if self.LibraryData is None:
-                raise ValueError(getPrintValue("red") + "Library not supported: " + self.Library + getPrintValue("reset"))
-        else:
-            self.TotalObjects = PdObjects.getSupportedObjects()
+    # ──────────────────────────────────────
 
 
 #╭──────────────────────────────────────╮
@@ -125,19 +130,20 @@ class PatchLine:
 #│           about externals            │
 #╰──────────────────────────────────────╯
 class Patch():
-    def __init__(self, patch: str, ExternalLibraries: ExternalLibraries):
-        if os.path.exists(patch):
-            self.patchFile = patch
+    def __init__(self, Pd4Web: Pd4Web):
+        self.Pd4Web = Pd4Web
+        if os.path.exists(Pd4Web.Patch):
+            self.patchFile = Pd4Web.Patch
         else:
             raise ValueError("Patch not found")
 
         # Read Line by Line
         with open(self.patchFile, "r") as file:
-            self.patchLines = file.readlines()
+            self.PatchLines = file.readlines()
 
         # Init Supported Libraries
         self.InitVariables()
-        self.PdObjects = PdObjects(self.PROJECT_ROOT)
+        self.PdObjects = PdObjects(Pd4Web)
 
         # Main Functions
         self.Execute()
@@ -153,7 +159,7 @@ class Patch():
 
     def Execute(self):
         # Abstractions
-        self.getAbstractions()
+        self.GetAbstractions()
 
         # Find Externals in Patch 
         self.ProcessPatch()
@@ -162,18 +168,18 @@ class Patch():
     # ╭──────────────────────────────────────╮
     # │             Abstractions             │
     # ╰──────────────────────────────────────╯
-    def getAbstractions(self):
+    def GetAbstractions(self):
         """
         This function list all pd patch in the same folder of the main patch.
         """
-        localAbstractions = []
+        LocalAbstractions = []
         files = os.listdir(os.path.dirname(self.PROJECT_ROOT))
 
         for file in files:
             if file.endswith(".pd"):
-                localAbstractions.append(file.split(".pd")[0])
+                LocalAbstractions.append(file.split(".pd")[0])
 
-        self.localAbstractions = localAbstractions
+        self.LocalAbstractions = LocalAbstractions
 
     # ╭──────────────────────────────────────╮
     # │        Find Externals Objects        │
@@ -208,7 +214,7 @@ class Patch():
                     return True
         return False
 
-    def searchForSpecialObject(self, patchLine):
+    def SearchForSpecialObject(self, patchLine):
         """
         There is some special objects that we need extra configs.
         This function will search for these objects and add the configs.
@@ -228,7 +234,7 @@ class Patch():
         """
         This function will find all externals objects in the patch.
         """
-        for line in enumerate(self.patchLines):
+        for line in enumerate(self.PatchLines):
             patchLine = PatchLine()
             patchLine.index, patchLine.completLine = line
             patchLine.isExternal = False
@@ -284,7 +290,8 @@ class Patch():
             if "ui_" in receiverSymbol:
                 patchLine.uiReceiver = True
                 patchLine.uiSymbol = receiverSymbol
-                self.UiReceiversSymbol.append(receiverSymbol)
+
+                self.Pd4Web.UiReceiversSymbol.append(receiverSymbol) 
                 pd4web_print(
                     "UI Sender object detected: " + receiverSymbol, color="blue"
                 )
@@ -299,15 +306,21 @@ class Patch():
             if patchLine.completName in self.PdObjects.getSupportedObjects()["puredata"]["objs"]:
                 patchLine.name = patchLine.completName
                 patchLine.isExternal = False
-            elif patchLine.completName in self.localAbstractions:
+            elif patchLine.completName in self.LocalAbstractions:
                 patchLine.name = patchLine.completName
                 pd4web_print("Local Abstraction: " + patchLine.name, color="green")
             else:
                 raise ValueError("\n\n" + getPrintValue("red") + "Object not found: " + patchLine.completName + getPrintValue("reset"))
 
-        self.searchForSpecialObject(patchLine)
+        self.SearchForSpecialObject(patchLine)
         patchLine.addToUsedObject(self.PdObjects)
         self.PatchLinesProcessed.append(patchLine)
+        self.AddUsedObject(patchLine)
+
+    def AddUsedObject(self, PatchLine: PatchLine):
+        if not any(obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name for obj in self.Pd4Web.UsedObjects):
+            self.Pd4Web.UsedObjects.append({"Lib": PatchLine.Library, "Obj": PatchLine.name})
+
 
     def SearchForExtraObjects(self):
         for obj in self.PatchLinesProcessed:

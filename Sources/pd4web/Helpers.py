@@ -1,6 +1,16 @@
 import os
 import platform
+import sys
+import traceback
 
+
+def RedExceptions(exc_type, exc_value, exc_traceback):
+    ''' Just to print exceptions in red '''
+    formatted_exception = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    print(f"\033[91m{formatted_exception}\033[0m")
+
+
+sys.excepthook = RedExceptions
 
 def pd4web_print(text, color=None, bright=False):
     try:
