@@ -5,6 +5,8 @@ import zipfile
 import requests
 import yaml
 
+from .Super import Pd4Web
+
 #╭──────────────────────────────────────╮
 #│    In this file we have all code     │
 #│ related to get the Libraries Source  │
@@ -12,8 +14,9 @@ import yaml
 #╰──────────────────────────────────────╯
 
 class ExternalLibraries:
-    def __init__(self, projectRoot : str) -> None:
-        self.PROJECT_ROOT = projectRoot
+    def __init__(self, Pd4Web: Pd4Web) -> None:
+        self.Pd4Web = Pd4Web
+        self.PROJECT_ROOT = Pd4Web.PROJECT_ROOT
         self.GetSupportedLibraries()
 
         return
@@ -88,6 +91,14 @@ class ExternalLibraries:
             self.unsupportedObjects = {}
             self.extraFlags = []
 
+        def __str__(self):
+            return f"< Library: {self.name} >"
+
+        def __repr__(self):
+            return self.__str__()
+
+
+
         def GetLinkForDownload(self):
             if self.repoAPI:
                 if self.repoAPI in self.DownloadSources:
@@ -112,9 +123,6 @@ class ExternalLibraries:
         else:
             return False
 
-
-
-
     def AddUsedLibraries(self, LibraryName):
         self.UsedLibraries.append(LibraryName)
 
@@ -129,10 +137,10 @@ class ExternalLibraries:
     def getUsedObjs(self):
         return self.UsedObjects
 
-    # def __repr__(self) -> str:
-    #     return f"<Dev: {self.repoUser} | User: {self.repoName}>"
-    #
-    # def __str__(self) -> str:
-    #     return f"<Dev: {self.repoUser} | User: {self.repoName}>"
+    def __repr__(self) -> str:
+        return f"< Externals Libraries: {self.totalOfLibraries} >"
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
