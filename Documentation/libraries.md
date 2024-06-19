@@ -115,29 +115,3 @@ This table presents an overview of all PureData externals supported by <code>pd4
 If there is some object of these supported libraries that not work, please report in <a href="https://github.com/charlesneimog/pd4web/issues">Github</a>.
 </p>
 
-### <h3 style="text-align: center">PureData not Supported Objects</h3>
-
-
-<table class="special-table">
-    <thead>
-        <tr>
-          <th>Object Name</th>
-          <th>Replacement</th>
-          <th>Observations</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>bang~</code></td>
-          <td><code>r pd4webtick</code></td>
-          <td>It bangs each 128 samples, the vector size of pd4web.</td>
-        </tr>
-    </tbody>
-    <tbody>
-        <tr>
-          <td><code>array</code></td>
-          <td><code>array define NAME</code></td>
-          <td>Its replacement is automatic</td>
-        </tr>
-    </tbody>
-</table>

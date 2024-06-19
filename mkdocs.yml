@@ -1,10 +1,9 @@
 site_name: pd4web
-   
-copyright: Copyright &copy 2023 | Charles K. Neimog | University of São Paulo. 
-
+docs_dir: Documentation
+copyright: Copyright &copy 2023 | Charles K. Neimog | University of São Paulo.
 theme:
   logo: assets/icon-light.svg
-  custom_dir: docs/overrides
+  custom_dir: Documentation/overrides
   logo_dark_mode: assets/icon-dark.svg
   logo_light_mode: assets/icon-light.svg
   favicon: assets/icon.png
@@ -12,7 +11,7 @@ theme:
   features:
     - navigation.top
     - navigation.sections
-    - content.code.annotate 
+    - content.code.annotate
     - content.code.copy
     - navigation.tabs
     - navigation.tabs.sticky
@@ -22,8 +21,6 @@ theme:
     - toc.follow
     - navigation.instant
     - header.autohide
-
-    
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -39,42 +36,36 @@ theme:
       toggle:
         icon: material/lightbulb-outline
         name: Switch to light mode
-  
 markdown_extensions:
-    - pymdownx.tabbed:
-        alternate_style: true
-    - pymdownx.emoji:
-        emoji_index: !!python/name:materialx.emoji.twemoji
-        emoji_generator: !!python/name:materialx.emoji.to_svg
-    - pymdownx.extra
-    - pymdownx.details
-    - pymdownx.inlinehilite
-    - pymdownx.tasklist
-    - pymdownx.magiclink
-    - pymdownx.highlight
-    - abbr
-    - admonition
-    - pymdownx.details
-    - attr_list
-    - md_in_html
-    - pymdownx.superfences
-    - footnotes
-    - pymdownx.keys
-
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.extra
+  - pymdownx.details
+  - pymdownx.inlinehilite
+  - pymdownx.tasklist
+  - pymdownx.magiclink
+  - pymdownx.highlight
+  - abbr
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - pymdownx.superfences
+  - footnotes
+  - pymdownx.keys
 repo_url: https://github.com/charlesneimog/pd4web
-
 extra_css:
   - extra/extra.css
-  
 extra_javascript:
   - js/index_slider.js
-  
 nav:
-    - index.md
-    - patch.md
-    - libraries.md
-    - devs.md
-
+  - index.md
+  - patch.md
+  - libraries.md
+  - devs.md
 extra:
   social:
     - icon: fontawesome/brands/instagram
@@ -83,5 +74,3 @@ extra:
       link: https://www.github.com/charlesneimog/
     - icon: fontawesome/solid/paper-plane
       link: mailto:charlesneimog@outlook.com
-
-
