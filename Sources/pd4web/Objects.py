@@ -4,7 +4,7 @@ import re
 
 from .Helpers import pd4web_print
 from .Libraries import ExternalLibraries
-from .Super import Pd4Web
+from .Pd4Web import Pd4Web
 
 
 class PdObjects():

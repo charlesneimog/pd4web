@@ -6,7 +6,7 @@ import re
 from .Helpers import getPrintValue, pd4web_print
 from .Libraries import ExternalLibraries
 from .Objects import PdObjects
-from .Super import Pd4Web
+from .Pd4Web import Pd4Web
 
 
 class PatchLine:
@@ -56,7 +56,7 @@ class PatchLine:
         for root, _, files in os.walk(LibraryFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
-                    with open(os.path.join(root, file), "r") as c_file:
+                    with open(os.path.join(root, file), "r", encoding='utf-8') as c_file:
                         file_contents = c_file.read()
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)

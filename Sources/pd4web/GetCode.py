@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import subprocess
 import sys
 import zipfile
 
@@ -8,7 +9,7 @@ import requests
 
 from .Helpers import getPrintValue, pd4web_print
 from .Patch import PatchLine
-from .Super import Pd4Web
+from .Pd4Web import Pd4Web
 
 
 class GetCode():
@@ -20,17 +21,13 @@ class GetCode():
 
         self.Patch = Pd4Web.ProcessedPatch
         self.Libraries = Pd4Web.Libraries
-        self.GetExternalsSourceCode()
-
-        #╭──────────────────────────────────────╮
-        #│  Here, we already have most part of  │
-        #│           the source code.           │
-        #│  Now we need to check if we need to  │
-        #│run extra functions for some objects. │
-        #│  These extra function include extra  │
-        #│    .c|.cpp files, includes, also     │
-        #│          extraflags, etc...          │
-        #╰──────────────────────────────────────╯
+        OK = self.GetExternalsSourceCode()
+        if not OK:
+            raise Exception("Error: Could not get the externals source code")
+        # ╭──────────────────────────────────────╮
+        # │   Here we have the source, now we    │
+        # │  need to compile it using CMakeList  │
+        # ╰──────────────────────────────────────╯
 
         self.CheckIfNeedExtraFunctions()
 
@@ -39,9 +36,9 @@ class GetCode():
         self.ExternalsExtraFlags = {}
         self.ExternalsDynamicLibraries = {}
 
-    def DownloadLink(self, PatchLine: PatchLine):
+    def GetLibraryData(self, PatchLine: PatchLine):
         LibraryClass = PatchLine.GetLibraryData()
-        return LibraryClass.GetLinkForDownload()
+        return LibraryClass
 
     def DownloadLibrarySourceCode(self, PatchLine: PatchLine):
         LibraryName = PatchLine.Library
@@ -51,12 +48,20 @@ class GetCode():
             if not os.path.exists(self.Pd4Web.PD4WEB_ROOT + "/Externals"):
                 os.makedirs(self.Pd4Web.PD4WEB_ROOT + "/Externals")
 
-            LinkForSourceCode = self.DownloadLink(PatchLine)
-            response = requests.get(LinkForSourceCode)
-            responseJson = response.json()
-            sourceCodeLink = responseJson[0]["zipball_url"]
-            try:
-                response = requests.get(sourceCodeLink, stream=True)
+            LibraryData = self.GetLibraryData(PatchLine)
+            if LibraryData.Source:
+                Link = LibraryData.GetLinkForDownload()
+                Folder = self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName 
+                if not os.path.exists(Folder):
+                    os.makedirs(Folder)
+                os.system(f"git clone {Link} {Folder}")
+                os.chdir(Folder)
+                TagName = LibraryData.Version
+                os.system(f"git checkout {TagName}")
+                os.system('git submodule update --init --recursive --depth 1')
+            else:
+                LibraryDirectLink = LibraryData.DirectLink
+                response = requests.get(LibraryDirectLink, stream=True)
                 if response.status_code != 200:
                     raise Exception(f"Error: {response.status_code}")
                 total_size = int(response.headers.get('content-length', 0))
@@ -64,33 +69,33 @@ class GetCode():
                 num_bars = 40
                 pd4web_print(f"Downloading {LibraryName}...", color="yellow")
                 with open(self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName + ".zip", 'wb') as file:
-                    downloaded_size = 0
-                    for data in response.iter_content(chunk_size):
-                        file.write(data)
-                        downloaded_size += len(data)
-                        try:
-                            progress = downloaded_size / total_size
-                            num_hashes = int(progress * num_bars)
-                            progress_bar = '#' * num_hashes + '-' * (num_bars - num_hashes)
-                            
-                            # Print progress bar
-                            sys.stdout.write(f'\r    🟡 |{progress_bar}| {progress:.2%}')
+                        downloaded_size = 0
+                        for data in response.iter_content(chunk_size):
+                            file.write(data)
+                            downloaded_size += len(data)
+                            if total_size:
+                                progress = downloaded_size / total_size
+                                num_hashes = int(progress * num_bars)
+                                progress_bar = '#' * num_hashes + '-' * (num_bars - num_hashes)
+                                sys.stdout.write(f'\r    🟡 |{progress_bar}| {progress:.2%}')
+                            else:
+                                num_hashes = int(downloaded_size / chunk_size) % num_bars
+                                progress_bar = '#' * num_hashes + '-' * (num_bars - num_hashes)
+                                sys.stdout.write(f'\r    🟡 |{progress_bar}| {downloaded_size} bytes')
                             sys.stdout.flush()
-                        except ZeroDivisionError:
-                            pass
-                print()
-            except Exception as e:
-                raise Exception(f"Error: {e}")
 
-            with zipfile.ZipFile(self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName + ".zip", "r") as zip_ref:
-                zip_ref.extractall(self.Pd4Web.PD4WEB_ROOT + "/Externals")
-                extractFolderName = zip_ref.namelist()[0]
-                os.rename(
-                    self.Pd4Web.PD4WEB_ROOT + "/Externals/" + extractFolderName,
-                    self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName,
-                )
+
+                print()
+                with zipfile.ZipFile(self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName + ".zip", "r") as zip_ref:
+                    zip_ref.extractall(self.Pd4Web.PD4WEB_ROOT + "/Externals")
+                    extractFolderName = zip_ref.namelist()[0]
+                    os.rename(
+                        self.Pd4Web.PD4WEB_ROOT + "/Externals/" + extractFolderName,
+                        self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName,
+                    )
+                os.remove(self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName + ".zip")
+
             LibraryFolder = self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName
-            os.remove(self.Pd4Web.PD4WEB_ROOT + "/Externals/" + LibraryName + ".zip")
             PatchLine.GetLibraryExternals(LibraryFolder, LibraryName)
             return True
 
@@ -193,15 +198,48 @@ class GetCode():
                     )
                 else:
                     raise Exception("Could not find " + PatchLine.name)
+        return True
 
     def CheckIfNeedExtraFunctions(self):
+        UsedObjectsFromLibraries = {}
         for UsedObjects in self.Pd4Web.UsedObjects:
-            LibUsedObjects = [item["Obj"] for item in self.Pd4Web.UsedObjects if item['Lib'] == UsedObjects['Lib']]
-            # Execute extra function
+            Library = UsedObjects["Lib"]
+            if Library not in UsedObjectsFromLibraries:
+                UsedObjectsFromLibraries[Library] = [UsedObjects["Obj"]]
+            else:
+                UsedObjectsFromLibraries[Library].append(UsedObjects["Obj"])
+
+        for Library, Objects in UsedObjectsFromLibraries.items():
+            if Library == "puredata":
+                # TODO: Need to check for extra objects
+                continue
+            LibraryPath = self.Pd4Web.PD4WEB_ROOT + "/Externals/" + Library
+            ExternalsTargets = []
+            for Object in Objects:
+                self.Pd4Web.ExternalsExtraFlags.append(Object)
+                target = Object.replace("~", "_tilde")
+                ExternalsTargets.append(target)
+
+            # Configure Build
+            CommandLine = [self.Pd4Web.Compiler.EMCMAKE, "cmake", 
+                                    LibraryPath, 
+                                    "-B", LibraryPath + "/.build/"]
+            os.system(" ".join(CommandLine))
+
+            # Build
+            CommandLine = ["cmake", "--build", 
+                                    LibraryPath + "/.build/", "--target", " ".join(ExternalsTargets), f"-j{self.Pd4Web.Cores}"]
+            os.system(" ".join(CommandLine))
 
 
-            # set that the extra function was executed
 
+
+
+
+
+
+
+            
     def __repr__(self) -> str:
         return f"< GetCode Object >"
 
