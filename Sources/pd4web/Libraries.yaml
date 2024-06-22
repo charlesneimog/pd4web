@@ -1,66 +1,57 @@
-DownloadSources:
+Sources:
   GITHUB_RELEASES: "https://api.github.com/repos/{}/{}/releases"
   GITHUB_TAGS: "https://api.github.com/repos/{}/{}/tags"
+  GITHUB: "https://github.com/{}/{}"
 
-SupportedLibraries:
-  - name: cyclone # name of the pd library
-    downloadSrc: GITHUB_RELEASES # source
-    repoUser: porres # in this case, Github user name
-    repoName: pd-cyclone # in this case, Github Repo
-    version: cyclone_0.7-0 # version
-    extraFunction: cyclone_extra # This library needs some extras steps, so we used a function called cyclone_extra, defined in externals.cyclone.
-    unsupportedObj: ["coll"]
+Libraries:
+  - Name: cyclone # Name of the pd library
+    Source: GITHUB_RELEASES # source
+    Developer: porres # user name of the dev
+    Repository: pd-cyclone # Repository Name
+    Version: cyclone_0.7-0 # Release or Tag
+    Unsupported: ["coll"] # Unsupported Objecs
 
-  - name: else
-    downloadSrc: GITHUB_RELEASES
-    repoUser: porres
-    repoName: pd-else
-    version: v1.0-rc9
-    extraFunction: else_extra
-    unsupportedObj: ["sfz~", "sfont~"]
+  - Name: else
+    Source: GITHUB # source
+    Developer: charlesneimog
+    Repository: pd-else
+    Version: pd.cmake
+    Unsupported: ["sfz~", "sfont~"]
 
-  - name: earplug~ # must be the name of object when singleObject is true
-    downloadSrc: GITHUB_TAGS
-    repoUser: pd-externals
-    repoName: earplug
-    extraFunction: earplug_extra
-    version: 0.3.0
-    singleObject: true
+  - Name: earplug~ # must be the Name of object when singleObject is true
+    Source: GITHUB_TAGS
+    Developer: pd-externals
+    Repository: earplug
+    Version: 0.3.0
 
-  - name: convolve~
-    directLink: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
-    repoUser: wbrent
-    repoName: convolve_tilde
-    dynamicLibraries: ["fftw3"]
-    singleObject: true
+  - Name: convolve~
+    DirectLink: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
+    Developer: wbrent
+    Repository: convolve_tilde
+    Dependencies: ["fftw3"]
 
-  - name: timbreIDLib
-    directLink: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
-    repoUser: wbrent
-    repoName: timbreIDLib
-    extraFunction: timbreID_extra
-    dynamicLibraries: ["fftw3"]
+  - Name: timbreIDLib
+    DirectLink: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
+    Developer: wbrent
+    Repository: timbreIDLib
+    Dependencies: ["fftw3"]
 
-  - name: pmpd
-    downloadSrc: GITHUB_RELEASES
-    repoUser: avilleret
-    repoName: pd-pmpd
-    extraFunction: pmpd_extra
+  - Name: pmpd
+    Source: GITHUB_RELEASES
+    Developer: avilleret
+    Repository: pd-pmpd
 
-  - name: grainer~
-    downloadSrc: GITHUB_TAGS
-    repoUser: charlesneimog
-    repoName: grainer_tilde
-    singleObject: true
+  - Name: grainer~
+    Source: GITHUB_TAGS
+    Developer: charlesneimog
+    Repository: grainer_tilde
 
-  - name: fftease
-    directLink: https://github.com/ericlyon/pd-fftease/archive/refs/heads/master.zip # wait for new release
-    repoUser: ericlyon
-    repoName: pd-fftease
-    extraFunction: fftease_extra
+  - Name: fftease
+    DirectLink: https://github.com/ericlyon/pd-fftease/archive/refs/heads/master.zip # wait for new release
+    Developer: ericlyon
+    Repository: pd-fftease
 
-  - name: percolate
-    directLink: https://github.com/charlesneimog/pd-percolate/archive/refs/heads/master.zip
-    repoUser: charlesneimog
-    repoName: pd-percolate
-    extraFunction: percolate_extra
+  - Name: percolate
+    DirectLink: https://github.com/charlesneimog/pd-percolate/archive/refs/heads/master.zip
+    Developer: charlesneimog
+    Repository: pd-percolate
