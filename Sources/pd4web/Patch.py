@@ -1,4 +1,3 @@
-# import something
 import json
 import os
 import re
@@ -24,6 +23,7 @@ class PatchLine:
         self.Library = "puredata"
         self.index = 0
         self.objGenSym = ""
+        self.setupFunction = ""
         self.singleObject = False
         self.genSymIndex = 0
         self.functionName = ""
@@ -132,6 +132,7 @@ class PatchLine:
 class Patch():
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
+
         if os.path.exists(Pd4Web.Patch):
             self.patchFile = Pd4Web.Patch
         else:
@@ -184,7 +185,7 @@ class Patch():
     # ╭──────────────────────────────────────╮
     # │        Find Externals Objects        │
     # ╰──────────────────────────────────────╯
-    def checkIfIsSlash(self, line: PatchLine):
+    def CheckIfIsSlash(self, line: PatchLine):
         """
         The function search for objects like else/count and others, what split
         the library and the object name. For objects like /, //, /~ and //~ this
@@ -196,7 +197,7 @@ class Patch():
             return False
         return True
 
-    def checkIfObjIsLibrary(self, patchLine):
+    def CheckIfObjIsLibrary(self, patchLine):
         """
         This function check if the object has the same name as the library.
         For example, earplug~ for earplug~ Library.
@@ -210,17 +211,28 @@ class Patch():
                 if LibraryClass is None:
                     pd4web_print("Library not found: " + nameOfTheObject, color="red")
                     return False
-                if LibraryClass and LibraryClass.singleObject:
-                    return True
+
+                # if LibraryClass and LibraryClass.SingleObject: # TODO: Revisar esse código
+                #     return True
         return False
 
-    def SearchForSpecialObject(self, patchLine):
+    def SearchForSpecialObject(self, PatchLine: PatchLine):
         """
         There is some special objects that we need extra configs.
         This function will search for these objects and add the configs.
         """
         # There is no special object for now
-        pass
+        ObjName = PatchLine.name
+        if "dac~" == ObjName:
+            N_CH_OUT = len(PatchLine.Tokens) - 5
+            if N_CH_OUT == 0 and self.Pd4Web.OUTCHS_COUNT == 0:
+                self.Pd4Web.OUTCHS_COUNT = 2
+            if N_CH_OUT > self.Pd4Web.OUTCHS_COUNT:
+                self.Pd4Web.OUTCHS_COUNT = N_CH_OUT
+        if "adc~" == ObjName:
+            N_CH_IN = len(PatchLine.Tokens) - 5
+            if N_CH_IN == 0:
+                N_CH_IN = 1
 
     def TokenIsFloat(self, token):
         token = token.replace("\n", "").replace(";", "").replace(",", "")
@@ -229,6 +241,13 @@ class Patch():
         except:
             return float('inf')
 
+    def TokenIsDollarSign(self, token):
+        if token[0] == "$":
+            return True
+        elif token[0] == "\\" and token[1] == "$":
+            return True
+        else: 
+            return False
 
     def ProcessPatch(self):
         """
@@ -237,32 +256,32 @@ class Patch():
         for line in enumerate(self.PatchLines):
             patchLine = PatchLine()
             patchLine.index, patchLine.completLine = line
-            patchLine.isExternal = False
-            patchLine.Tokens = patchLine.completLine.split(" ")
+            Tokens = patchLine.completLine.replace("\n", "")
+            Tokens = Tokens.replace(";", "")
+            Tokens = Tokens.replace(",", "") # when width is specificied
+            patchLine.Tokens = Tokens.split(" ")
 
             if len(patchLine.Tokens) < 5 or patchLine.Tokens[1] != "obj":
                 if len(patchLine.Tokens) == 4 and patchLine.Tokens[1] == "declare":
-                    # TODO: Add option to declare libs
-                    # print(patchLine.Tokens)
+                    if patchLine.Tokens[2] == "-lib":
+                        raise Exception("[declare -lib <LIB> is not implemented yet!")
+                    elif patchLine.Tokens[2] == "-path":
+                        raise Exception("[declare -path <PATH> is not implemented yet!")
+                else:
                     pass
-                continue # don't need to process
+                    # print(patchLine.Tokens)
             else:
                 self.PatchObject(patchLine)
 
 
-    def PatchObject(self, patchLine):
-        patchLine.completName = (
-            patchLine.Tokens[4].replace("\n", "").replace(";", "").replace(",", "")
-        )
+    def PatchObject(self, patchLine: PatchLine):
 
-        # TODO:
-        # self.addGuiReceivers(patchLine)
-
+        patchLine.completName = patchLine.Tokens[4]
         if (
             patchLine.Tokens[0] == "#X"
             and patchLine.Tokens[1] == "obj"
             and "/" in patchLine.Tokens[4]
-        ) and self.checkIfIsSlash(patchLine):
+        ) and self.CheckIfIsSlash(patchLine):
             patchLine.isExternal = True
             patchLine.Library = patchLine.Tokens[4].split("/")[0]
             patchLine.name = patchLine.completName.split("/")[-1]
@@ -270,8 +289,8 @@ class Patch():
                 'class_new(gensym("' + patchLine.name + '")'
             )
 
-        elif self.checkIfObjIsLibrary(patchLine):
-            # NOTE: earplug~ for example, will be called as earplug~ not earplug~/earplug~
+        elif self.CheckIfObjIsLibrary(patchLine):
+            # TODO: I don't thing this is necessary anymore
             patchLine.isExternal = True
             patchLine.Library = patchLine.completName
             patchLine.name = patchLine.Library
@@ -281,24 +300,21 @@ class Patch():
             patchLine.singleObject = True
 
         elif "s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]:
-            receiverSymbol = (
-                patchLine.Tokens[5]
-                .replace("\n", "")
-                .replace(";", "")
-                .replace(",", "")
-            )
+            receiverSymbol = patchLine.Tokens[5]
             if "ui_" in receiverSymbol:
                 patchLine.uiReceiver = True
                 patchLine.uiSymbol = receiverSymbol
-
                 self.Pd4Web.UiReceiversSymbol.append(receiverSymbol) 
                 pd4web_print(
                     "UI Sender object detected: " + receiverSymbol, color="blue"
                 )
             patchLine.name = patchLine.completName
 
-        # TODO: Floats and Intergers are accepted as objects
         elif self.TokenIsFloat(patchLine.Tokens[4]) != float('inf'):
+            patchLine.name = patchLine.completName
+            patchLine.isExternal = False
+
+        elif self.TokenIsDollarSign(patchLine.Tokens[4]): 
             patchLine.name = patchLine.completName
             patchLine.isExternal = False
 
@@ -319,7 +335,7 @@ class Patch():
 
     def AddUsedObject(self, PatchLine: PatchLine):
         if not any(obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name for obj in self.Pd4Web.UsedObjects):
-            self.Pd4Web.UsedObjects.append({"Lib": PatchLine.Library, "Obj": PatchLine.name})
+            self.Pd4Web.UsedObjects.append({"Lib": PatchLine.Library, "Obj": PatchLine.name, "SetupFunction": PatchLine.setupFunction})
 
 
     def SearchForExtraObjects(self):

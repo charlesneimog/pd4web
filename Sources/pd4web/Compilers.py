@@ -8,7 +8,7 @@ from .Helpers import pd4web_print
 from .Pd4Web import Pd4Web
 
 
-class Compiler:
+class ExternalsCompiler:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
         self.InitVariables()
@@ -52,7 +52,7 @@ class Compiler:
         #     os.system(f"{self.emcc.emsdk} activate")
         #     sys.exit(0)
     def __str__(self):
-        return "< EMCC >"
+        return "< Compiler >"
 
     def __repr__(self):
-        return "< EMCC >"
+        return "< Compiler >"

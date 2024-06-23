@@ -1413,19 +1413,18 @@ function openPatch(content) {
       case "#X obj":
         if (args.length > 4) {
           switch (args[4]) {
-            case "adc~":
-              if (!maxNumInChannels) {
-                maxNumInChannels = 1;
-              }
-              for (let i = 5; i < args.length; i++) {
-                if (!isNaN(args[i])) {
-                  const numInChannels = parseInt(args[i]);
-                  if (numInChannels > maxNumInChannels) {
-                    maxNumInChannels = numInChannels > 2 ? 2 : numInChannels;
-                  }
-                }
-              }
-              break;
+            // case "adc~": if (!maxNumInChannels) {
+            //     maxNumInChannels = 1;
+            //   }
+            //   for (let i = 5; i < args.length; i++) {
+            //     if (!isNaN(args[i])) {
+            //       const numInChannels = parseInt(args[i]);
+            //       if (numInChannels > maxNumInChannels) {
+            //         maxNumInChannels = numInChannels > 2 ? 2 : numInChannels;
+            //       }
+            //     }
+            //   }
+            //   break;
             case "bng":
               if (
                 canvasLevel === 1 &&
@@ -1800,6 +1799,7 @@ function openPatch(content) {
             }
           }
           data.id = `${data.type}_${id++}`;
+          // TODO: Need to remove f {WIDTH} for when width of the text is especified
 
           // create svg
           data.texts = [];

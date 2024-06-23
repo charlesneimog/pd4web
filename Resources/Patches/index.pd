@@ -9,6 +9,7 @@
 #X obj 217 32 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
 #X obj 242 114 expr random(40 \, 90);
 #X obj 242 137 s float_test;
+#X obj 58 246 dac~ 1 2 3 4 5;
 #X connect 0 0 1 0;
 #X connect 0 0 1 1;
 #X connect 2 0 0 0;
