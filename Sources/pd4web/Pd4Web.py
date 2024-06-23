@@ -4,28 +4,45 @@ import sys
 
 import requests
 
-from .Helpers import pd4web_print
-
 
 class Pd4Web():
-    def __init__(self, patch, Recursive=False):
-        from .Compiler import Compiler
-        from .GetCode import GetCode
+    OUTCHS_COUNT: int = 0
+    INCHS_COUNT: int = 0
+
+    def __init__(self, patch):
+        from .Builder import GetAndBuildExternals
+        from .Compilers import ExternalsCompiler
+        from .Helpers import pd4web_print
         from .Libraries import ExternalLibraries
         from .Patch import Patch
 
-        self.CheckDependencies()
+        self.CheckDependencies() # git and cmake
 
+        #╭──────────────────────────────────────╮
+        #│    NOTE: Sobre a recursivade para    │
+        #│      patch, talvez não chamar o      │
+        #│        construtor de Pd4Web,         │
+        #│mas some a mesma ordem para __init__. │
+        #╰──────────────────────────────────────╯
 
-        # Sobre a recursivade para patch, talvez não chamar o construtor de Pd4Web, 
-        # mas some a mesma ordem para __init__.
         self.Patch = patch
+
+        # ───────────── Init Classes ─────────────
         self.InitVariables()
 
-        self.Compiler = Compiler(self)
+        self.Compiler = ExternalsCompiler(self)
         self.Libraries = ExternalLibraries(self)
-        self.ProcessedPatch = Patch(self)
-        self.CodeRetrieved = GetCode(self)
+
+        # ──────────── Process Patch ──────────
+        self.ProcessedPatch = Patch(self) # Recursively in case of Abstraction 
+
+        # ──────────── Build Externals ──────────
+        self.ExternalsBuilder = GetAndBuildExternals(self) 
+
+        # TODO: Build main app
+        # TODO: Build webpatch folder
+
+
 
     def InitVariables(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
@@ -42,19 +59,21 @@ class Pd4Web():
         self.UiReceiversSymbol = []
         self.ExternalsSourceCode = []
         self.ExternalsExtraFlags = []
+
+        # Externals Objects
         self.ExternalsLinkLibraries = []
+        self.ExternalsLinkLibrariesFolders = []
+        self.ExternalsSetupFunctions = []
+
 
     def CheckDependencies(self):
-        # check if Git is installed
         try:
-            # Use subprocess to run 'git --version' command
             subprocess.check_output(['git', '--version'])
-            return True
         except subprocess.CalledProcessError:
-            # Git is not installed or not found in PATH
-            return False
-        
-
+            raise Exception("Git is not installed. Please install it.")
+        OK = os.system("cmake --version > /dev/null")
+        if OK != 0:
+            raise Exception("\n\nCmake is not installed. Please install it.")
 
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green")

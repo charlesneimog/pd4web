@@ -1,5 +1,4 @@
 #N canvas 6 28 951 1014 10;
-#X declare -lib else;
 #X obj 6 36 *~ 0.1;
 #X obj 6 81 dac~;
 #X obj 6 14 osc~ 500;
@@ -11,10 +10,15 @@
 #X obj 242 114 expr random(40 \, 90);
 #X obj 242 137 s float_test;
 #X obj 178 226 else/plaits~;
-#X obj 304 23 declare -lib else;
 #X obj 117 203 4;
 #X obj 284 209 else/plaits~;
 #X obj 30 256 else/rotate.mc~;
+#X obj 287 302 dac~ 1 2 3 4 5;
+#X obj 154 181 adc~ 1 2 3 4;
+#X obj 362 175 s test1;
+#X obj 377 224 s test2, f 13;
+#X obj 140 322 s ui_sender;
+#X obj 234 382 \$1;
 #X connect 0 0 1 0;
 #X connect 0 0 1 1;
 #X connect 2 0 0 0;

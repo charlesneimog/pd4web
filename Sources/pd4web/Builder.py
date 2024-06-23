@@ -12,7 +12,7 @@ from .Patch import PatchLine
 from .Pd4Web import Pd4Web
 
 
-class GetCode():
+class GetAndBuildExternals():
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
 
@@ -24,12 +24,12 @@ class GetCode():
         OK = self.GetExternalsSourceCode()
         if not OK:
             raise Exception("Error: Could not get the externals source code")
+
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │
         # │  need to compile it using CMakeList  │
         # ╰──────────────────────────────────────╯
-
-        self.CheckIfNeedExtraFunctions()
+        self.BuildExternalsObjects()
 
     def InitVariables(self):
         self.ExternalsSourceCode = {}
@@ -120,36 +120,29 @@ class GetCode():
                 matches = re.finditer(pattern, file_contents, re.DOTALL)
                 listMatches = list(matches)
                 if len(listMatches) > 0:
-                    ExternalsPath = os.path.join(self.PROJECT_ROOT, "webpatch/externals")
-                    if not os.path.exists(ExternalsPath):
-                        os.makedirs(ExternalsPath)
-                    shutil.copy(C_file.name, ExternalsPath)
                     PatchLine.objFound = True
                     PatchLine.functionName = functionName
-                    if PatchLine.Library not in self.ExternalsSourceCode:
-                        self.ExternalsSourceCode[PatchLine.Library] = [C_file.name]
-                    else:
-                        self.ExternalsSourceCode[PatchLine.Library].append(C_file.name)
+                    PatchLine.setupFunction = functionName
 
-    def SearchCFunction(self, lineInfo, root, file):
+    def SearchCFunction(self, PatchLine : PatchLine, root, file):
         """
         This function search for the setup function in the C file using different
         ways. Here you can add more ways to search for the setup function.
         """
-        functionName = lineInfo.name
+        functionName = PatchLine.name
         functionName = functionName.replace("~", "_tilde")
         functionName += "_setup"
         # NOTE: Maybe there is another cases like this
         if "." in functionName:
             functionName = functionName.replace(".", "0x2e")  # else use . as 0x2e
-        self.RegexSearch(lineInfo, functionName, os.path.join(root, file))
-        if not lineInfo.objFound:
-            functionName = lineInfo.name
+        self.RegexSearch(PatchLine, functionName, os.path.join(root, file))
+        if not PatchLine.objFound:
+            functionName = PatchLine.name
             functionName = functionName.replace("~", "_tilde")
             functionName = "setup_" + functionName
             if "." in functionName:
                 functionName = functionName.replace(".", "0x2e")
-            self.RegexSearch(lineInfo, functionName, os.path.join(root, file))
+            self.RegexSearch(PatchLine, functionName, os.path.join(root, file))
 
     def CopyLibAbstraction(self, abstractionfile):
         """
@@ -200,7 +193,8 @@ class GetCode():
                     raise Exception("Could not find " + PatchLine.name)
         return True
 
-    def CheckIfNeedExtraFunctions(self):
+    def BuildExternalsObjects(self):
+        print()
         UsedObjectsFromLibraries = {}
         for UsedObjects in self.Pd4Web.UsedObjects:
             Library = UsedObjects["Lib"]
@@ -215,8 +209,12 @@ class GetCode():
                 continue
             LibraryPath = self.Pd4Web.PD4WEB_ROOT + "/Externals/" + Library
             ExternalsTargets = []
+            pd4web_print(f"Starting compilation process for {Library}\n", color="green")
             for Object in Objects:
-                self.Pd4Web.ExternalsExtraFlags.append(Object)
+                if Object not in self.Pd4Web.ExternalsLinkLibraries:
+                    self.Pd4Web.ExternalsLinkLibraries.append(Object)
+                if LibraryPath + "/.build" not in self.Pd4Web.ExternalsLinkLibrariesFolders:
+                    self.Pd4Web.ExternalsLinkLibrariesFolders.append(LibraryPath + "/.build")
                 target = Object.replace("~", "_tilde")
                 ExternalsTargets.append(target)
 
@@ -224,18 +222,18 @@ class GetCode():
             CommandLine = [self.Pd4Web.Compiler.EMCMAKE, "cmake", 
                                     LibraryPath, 
                                     "-B", LibraryPath + "/.build/"]
-            os.system(" ".join(CommandLine))
-
-            # Build
-            CommandLine = ["cmake", "--build", 
-                                    LibraryPath + "/.build/", "--target", " ".join(ExternalsTargets), f"-j{self.Pd4Web.Cores}"]
-            os.system(" ".join(CommandLine))
-
-
-
-
-
-
+            OK = os.system(" ".join(CommandLine)) 
+            if OK != 0:
+                raise Exception(f"Error: Could not configure {Library}")
+            CommandLine = ["cmake", 
+                                    "--build", LibraryPath + "/.build/", 
+                                    "--target", " ".join(ExternalsTargets), 
+                                    f"-j{self.Pd4Web.Cores}"]
+            OK = os.system(" ".join(CommandLine))
+            if OK != 0:
+                raise Exception(f"Error: Could not build {Library}")
+            print()
+            pd4web_print(f"Built externals objects from {Library}", color="green")
 
 
 
