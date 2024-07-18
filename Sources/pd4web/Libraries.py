@@ -18,7 +18,6 @@ class ExternalLibraries:
         self.Pd4Web = Pd4Web
         self.PROJECT_ROOT = Pd4Web.PROJECT_ROOT
         self.GetSupportedLibraries()
-
         return
 
     def InitVariables(self):

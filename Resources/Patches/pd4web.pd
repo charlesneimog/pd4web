@@ -1,4 +1,4 @@
-#N canvas 6 28 951 1014 10;
+#N canvas 6 28 951 1012 10;
 #X obj 6 36 *~ 0.1;
 #X obj 6 81 dac~;
 #X obj 6 14 osc~ 500;
@@ -19,6 +19,9 @@
 #X obj 377 224 s test2, f 13;
 #X obj 140 322 s ui_sender;
 #X obj 234 382 \$1;
+#X obj 295 399 readsf~;
+#X obj 295 421 dac~;
+#X msg 282 344 open wab.wav \, 1;
 #X connect 0 0 1 0;
 #X connect 0 0 1 1;
 #X connect 2 0 0 0;
@@ -28,3 +31,5 @@
 #X connect 5 0 4 0;
 #X connect 7 0 4 0;
 #X connect 8 0 9 0;
+#X connect 20 0 21 0;
+#X connect 22 0 20 0;

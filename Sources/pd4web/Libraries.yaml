@@ -13,9 +13,9 @@ Libraries:
 
   - Name: else
     Source: GITHUB # source
-    Developer: charlesneimog
+    Developer: porres
     Repository: pd-else
-    Version: pd.cmake
+    Version: master
     Unsupported: ["sfz~", "sfont~"]
 
   - Name: earplug~ # must be the Name of object when singleObject is true
