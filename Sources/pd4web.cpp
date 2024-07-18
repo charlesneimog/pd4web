@@ -47,11 +47,11 @@ EM_JS(void, _Pd4WebInitGui, (void), {
         return;
     }
     var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = './pd4web.gui.js';
-    script.id = 'pd4web.gui';
+    script.type = "text/javascript";
+    script.src = "./pd4web.gui.js";
+    script.id = "pd4web.gui";
     script.onload = function() {
-        Pd4WebInitGui();
+        Pd4WebInitGui(); // defined in pd4web.gui.js
     };
     document.head.appendChild(script); 
 });
@@ -103,34 +103,42 @@ EM_JS(void, JsSuspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 });
 
 // clang-format on
-
 // ╭─────────────────────────────────────╮
 // │              PureData               │
 // ╰─────────────────────────────────────╯
-int Pd4Web::GetNInputChannels() { return N_CH_IN; }
-int Pd4Web::GetNOutputChannels() { return N_CH_OUT; }
-uint32_t Pd4Web::GetSampleRate() { return SAMPLE_RATE; }
+int Pd4Web::GetNInputChannels() { return 1; }
+int Pd4Web::GetNOutputChannels() { return 2; }
+uint32_t Pd4Web::GetSampleRate() { return 48000; }
 
 // ╭─────────────────────────────────────╮
 // │            WebAudioPatch            │
 // ╰─────────────────────────────────────╯
-// This functions will be used to create the WebAudio Worklet Processor.
-
+/**
+ * Process the audio block.
+ *
+ * This function processes the audio block using libpd_process_float.
+ *
+ * @param numInputs Number of input buffers.
+ * @param inputs Array of input audio frames.
+ * @param numOutputs Number of output buffers.
+ * @param outputs Array of output audio frames.
+ * @param numParams Number of audio parameters.
+ * @param params Array of audio parameters.
+ * @param userData Pointer to user data (not used in this function).
+ * @return true if processing succeeded, false otherwise.
+ */
 static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int numOutputs,
                               AudioSampleFrame *outputs, int numParams,
                               const AudioParamFrame *params, void *userData) {
 
-    int inCh = inputs[0].numberOfChannels;
     int outCh = outputs[0].numberOfChannels;
-    float outChsArrays[128 * outCh];
-
-    libpd_process_float(2, inputs[0].data, outChsArrays);
-
+    float tmpOutputs[128 * 2];
+    libpd_process_float(2, inputs[0].data,
+                        tmpOutputs); // TODO: ADD INPUTS AND OUTPUTS FOR pd2wasm.
     int outputIndex = 0;
-
     for (int i = 0; i < outCh; i++) {
         for (int j = i; j < (128 * outCh); j += 2) {
-            outputs[0].data[outputIndex] = outChsArrays[j];
+            outputs[0].data[outputIndex] = tmpOutputs[j];
             outputIndex++;
         }
     }
@@ -139,6 +147,15 @@ static EM_BOOL ProcessPdPatch(int numInputs, const AudioSampleFrame *inputs, int
 }
 
 // ─────────────────────────────────────
+/**
+ * Callback function called when AudioWorkletProcessor is created.
+ *
+ * This function handles the creation of AudioWorkletProcessor and handles errors if creation fails.
+ *
+ * @param audioContext The Emscripten Web Audio context.
+ * @param success Boolean indicating whether creation of AudioWorkletProcessor was successful.
+ * @param userData Pointer to user data (not used in this function).
+ */
 void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                           void *userData) {
     if (!success) {
@@ -164,6 +181,16 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
 }
 
 // ─────────────────────────────────────
+/**
+ * Callback function called when WebAudio worklet thread is initialized.
+ *
+ * This function handles the initialization of WebAudio worklet thread and
+ * asynchronously creates an AudioWorkletProcessor.
+ *
+ * @param audioContext The Emscripten Web Audio context.
+ * @param success Boolean indicating whether initialization was successful.
+ * @param userData Pointer to user data (not used in this function).
+ */
 static void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                              void *userData) {
 
@@ -180,8 +207,15 @@ static void WebAudioWorkletThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext,
 }
 
 // ─────────────────────────────────────
-void Pd4Web::ResumeAudio() { emscripten_resume_audio_context_sync(Context); }
-void Pd4Web::SuspendAudio() { JsSuspendAudioWorkLet(Context); }
+/**
+ * Resumes the audio context synchronously.
+ */
+void Pd4Web::ResumeAudio() { emscripten_resume_audio_context_sync(m_Context); }
+
+/**
+ * Suspends the audio worklet using JavaScript.
+ */
+void Pd4Web::SuspendAudio() { JsSuspendAudioWorkLet(m_Context); }
 
 // ╭─────────────────────────────────────╮
 // │           Receivers Hooks           │
@@ -270,7 +304,7 @@ void Pd4Web::BindReceiver(std::string s) {
 
 // ─────────────────────────────────────
 void Pd4Web::UnbindReceiver() {
-    // TODO: Implement this function
+    // TODO:
 
     return;
 }
@@ -283,7 +317,7 @@ void Pd4Web::Init() {
     float NInCh = GetNInputChannels();
     float NOutCh = GetNOutputChannels();
 
-    if (pdInit) {
+    if (m_PdInit) {
         ResumeAudio();
         return;
     }
@@ -305,10 +339,7 @@ void Pd4Web::Init() {
                                                      sizeof(wasmAudioWorkletStack),
                                                      WebAudioWorkletThreadInitialized, 0);
 
-    // t_libpd_printhook libpd_printhook = (t_libpd_printhook)libpd_print_concatenator;
-    // t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)ReceivePrint;
-
-    Context = AudioContext;
+    m_Context = AudioContext;
 
     libpd_set_printhook(ReceivePrint);
     libpd_set_banghook(ReceiveBang);
@@ -327,15 +358,16 @@ void Pd4Web::Init() {
     // libpd_set_midibytehook(receiveMidiByte);
 
     libpd_init();
-    Pd4WebInitExternals();
 
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
     libpd_init_audio(NInCh, NOutCh, SR);
 
+    Pd4WebInitExternals();
+
     if (!libpd_openfile("index.pd", "./")) {
-        printf("Failed to open patch\n");
+        Alert("Failed to open patch | Please Report!\n");
         return;
     }
 
@@ -343,18 +375,15 @@ void Pd4Web::Init() {
     _HooksTests();
 #endif
 
-    pdInit = true;
+    m_PdInit = true;
     ResumeAudio();
     _Pd4WebJSFunctions();
     return;
 }
-
 // ╭─────────────────────────────────────╮
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
-
     _Pd4WebInitGui();
-
     return 0;
 }
