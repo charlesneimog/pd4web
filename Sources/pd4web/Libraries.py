@@ -45,7 +45,12 @@ class ExternalLibraries:
 
     class LibraryClass:
         def __init__(self, LibraryData, DownloadSources) -> None:
-            self.Name = LibraryData["Name"]
+            try:
+                self.Name = LibraryData["Name"]
+            except:
+                self.valid = False
+                return
+
             self.Developer = LibraryData["Developer"]
             self.Repository = LibraryData["Repository"]
             self.Folder = ""
@@ -83,6 +88,7 @@ class ExternalLibraries:
             self.extraFuncExecuted = False
             self.unsupportedObjects = {}
             self.extraFlags = []
+            self.valid = True
 
         def __str__(self):
             return f"< Library: {self.Name} >"

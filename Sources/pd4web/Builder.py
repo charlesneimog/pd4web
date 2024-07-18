@@ -61,27 +61,29 @@ class GetAndBuildExternals():
         self.cmakeFile.append("cmake_minimum_required(VERSION 3.25)")
         self.cmakeFile.append(f"project({self.ProjectName})\n")
 
-        self.cmakeFile.append("# LibPd and PureData")
-        self.cmakeFile.append("cmake_policy(SET CMP0077 NEW)")
-        self.cmakeFile.append("set(PD_EXTRA off)")
-        self.cmakeFile.append("add_subdirectory(Pd4Web/libpd)")
-        self.cmakeFile.append("target_compile_options(libpd_static PUBLIC -w)\n")
+        # self.cmakeFile.append("# LibPd and PureData")
+        # self.cmakeFile.append("cmake_policy(SET CMP0077 NEW)")
+        # self.cmakeFile.append("set(PD_EXTRA off)")
+        # self.cmakeFile.append("add_subdirectory(Pd4Web/libpd)")
+        # self.cmakeFile.append("target_compile_options(libpd_static PUBLIC -w)\n")
+
+        # Pd Sources
+        self.cmakeFile.append("# Pd sources")
+        self.cmakeFile.append("include(Pd4Web/libpd.cmake)")
+        self.cmakeFile.append("")
 
         # Pd4web executable
         self.cmakeFile.append("# Pd4Web executable")
         self.cmakeFile.append("add_executable(pd4web Pd4Web/pd4web.cpp Pd4Web/externals.cpp)")
 
         includeDirectories = [
-            "target_include_directories(pd4web PRIVATE",
-            "    Pd4Web/libpd/libpd_wrapper",
-            "    Pd4Web/libpd/pure-data/src",
-            ")"
+            "target_include_directories(pd4web PRIVATE Pd4Web/pure-data/src)"
         ]
 
         targetLibraries = [
             "target_link_libraries(pd4web PRIVATE",
             "    embind",
-            "    libpd_static",
+            "    libpd",
             ")"
         ]
 
@@ -92,13 +94,16 @@ class GetAndBuildExternals():
         ]
         linkOptions = [
             "target_link_options(pd4web PRIVATE",
-            "    -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency",
             "    -sMODULARIZE=1",
             "    -sEXPORT_NAME='Pd4WebModule'",
-            "    -sAUDIO_WORKLET=1",
+
+            "    -sINITIAL_MEMORY=128MB",
             "    -sUSE_PTHREADS=1",
-            "    -sWASM_WORKERS=1",
+            "    -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency",
+
             "    -sWASM=1",
+            "    -sWASM_WORKERS=1",
+            "    -sAUDIO_WORKLET=1",
             ")"
         ]
 
@@ -106,10 +111,7 @@ class GetAndBuildExternals():
         self.cmakeFile.extend(includeDirectories)
         self.cmakeFile.extend(targetLibraries)
         self.cmakeFile.extend(targetProperties)
-        self.cmakeFile.append("target_compile_options(pd4web PRIVATE -sUSE_PTHREADS=1 -sWASM_WORKERS=1)")
         self.cmakeFile.extend(linkOptions)
-
-
 
     def CopyCppFilesToProject(self):
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web"):
@@ -122,13 +124,15 @@ class GetAndBuildExternals():
         shutil.copy(self.Pd4Web.PD4WEB_ROOT + "/../pd4web.cpp", self.Pd4Web.PROJECT_ROOT + "/Pd4Web/")
         shutil.copy(self.Pd4Web.PD4WEB_ROOT + "/../pd4web.hpp", self.Pd4Web.PROJECT_ROOT + "/Pd4Web/")
         shutil.copy(self.Pd4Web.PD4WEB_ROOT + "/../cmake/pd.cmake/pd.cmake", self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/pd.cmake")
+        shutil.copy(self.Pd4Web.PD4WEB_ROOT + "/../cmake/libpd.cmake", self.Pd4Web.PROJECT_ROOT + "/Pd4Web/libpd.cmake")
 
     def AddPd4WebRequirements(self):
         current_dir = os.getcwd()
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         # TODO: Check if there is a tag specified
-        os.system("git submodule add https://github.com/charlesneimog/libpd.git Pd4Web/libpd")
-        os.system("git submodule update --init --recursive --depth 1")
+        os.system("git submodule add https://github.com/pure-data/pure-data.git Pd4Web/pure-data")
+        os.system("cd Pd4Web/pure-data && git fetch --tags && git checkout 0.55-0")
+
         os.chdir(current_dir)
 
     def UpdateSetupFunction(self):
@@ -341,7 +345,7 @@ class GetAndBuildExternals():
     def AddFilesToWebPatch(self):
         self.cmakeFile.append('\n# FileSystem for the Patch')
         patchName = self.Pd4Web.PROJECT_PATCH
-        string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/'
+        string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/'
         string += patchName + '@/index.pd")'
         self.cmakeFile.append(string)
 
@@ -351,7 +355,7 @@ class GetAndBuildExternals():
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Libs"):
             self.cmakeFile.append('get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)')
             self.cmakeFile.append('set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Libs@/Libs/")')
-        if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Libs"):
+        if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Extras"):
             self.cmakeFile.append('get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)')
             self.cmakeFile.append('set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Extras@/Extras/")')
 
