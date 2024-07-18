@@ -74,7 +74,7 @@ class PatchLine:
     def addToUsedObject(self, PdObjects: PdObjects):
         if self.Library != "puredata":
             self.LibraryData = PdObjects.get(self.Library)
-            if self.LibraryData is None:
+            if self.LibraryData is None or not self.LibraryData.valid:
                 raise ValueError(getPrintValue("red") + "Library not supported: " + self.Library + getPrintValue("reset"))
         else:
             self.TotalObjects = PdObjects.getSupportedObjects()
@@ -149,6 +149,9 @@ class Patch():
         # Main Functions
         self.Execute()
 
+        # Rewrite the patches
+        self.ReConfigurePatch()
+
     def InitVariables(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.abspath(self.patchFile))
         self.LibraryClass = None
@@ -175,11 +178,11 @@ class Patch():
         """
         LocalAbstractions = []
         files = os.listdir(os.path.dirname(self.PROJECT_ROOT))
-
         for file in files:
             if file.endswith(".pd"):
                 LocalAbstractions.append(file.split(".pd")[0])
 
+        print("Local Abstractions: ", LocalAbstractions)
         self.LocalAbstractions = LocalAbstractions
 
     # ╭──────────────────────────────────────╮
@@ -227,6 +230,13 @@ class Patch():
             N_CH_OUT = len(PatchLine.Tokens) - 5
             if N_CH_OUT == 0 and self.Pd4Web.OUTCHS_COUNT == 0:
                 self.Pd4Web.OUTCHS_COUNT = 2
+
+            # get higher value
+            for i in range(5, len(PatchLine.Tokens)):
+                outChCount = int(PatchLine.Tokens[i])
+                if outChCount > self.Pd4Web.OUTCHS_COUNT:
+                    self.Pd4Web.OUTCHS_COUNT = outChCount
+
             if N_CH_OUT > self.Pd4Web.OUTCHS_COUNT:
                 self.Pd4Web.OUTCHS_COUNT = N_CH_OUT
         if "adc~" == ObjName:
@@ -268,36 +278,48 @@ class Patch():
                     elif patchLine.Tokens[2] == "-path":
                         raise Exception("[declare -path <PATH> is not implemented yet!")
                 else:
-                    pass
-                    # print(patchLine.Tokens)
+                    self.PatchLinesProcessed.append(patchLine)
             else:
                 self.PatchObject(patchLine)
 
 
-    def PatchObject(self, patchLine: PatchLine):
+    def ReConfigurePatch(self):
+        '''
+        Reconfigures the patch file for the project.
+        Pd4Web compile as objects as native objects, so we need to remove
+        the preffix of the Libraries.
+        '''
+        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/"):
+            os.mkdir(self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
 
+        with open(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + self.Pd4Web.PROJECT_PATCH, "w") as f:
+            for line in self.PatchLinesProcessed:
+                if line.isExternal and not line.objwithSlash:
+                    obj = line.Tokens[4].split("/")
+                    if len(obj) > 1:
+                        line.Tokens[4] = obj[-1]
+                    f.write(" ".join(line.Tokens) + ";\n")
+                else:
+                    f.write(line.completLine)
+
+
+    def PatchObject(self, patchLine: PatchLine):
         patchLine.completName = patchLine.Tokens[4]
         if (
             patchLine.Tokens[0] == "#X"
             and patchLine.Tokens[1] == "obj"
             and "/" in patchLine.Tokens[4]
         ) and self.CheckIfIsSlash(patchLine):
-            patchLine.isExternal = True
-            patchLine.Library = patchLine.Tokens[4].split("/")[0]
-            patchLine.name = patchLine.completName.split("/")[-1]
-            patchLine.objGenSym = (
-                'class_new(gensym("' + patchLine.name + '")'
-            )
+            if os.path.exists(self.PROJECT_ROOT + "/" + patchLine.Tokens[4] + ".pd"):
+                pd4web_print(f"Found Abstraction: {patchLine.Tokens[4]}", color="green")
+            else:
+                patchLine.isExternal = True
+                patchLine.Library = patchLine.Tokens[4].split("/")[0]
+                patchLine.name = patchLine.completName.split("/")[-1]
+                patchLine.objGenSym = (
+                    'class_new(gensym("' + patchLine.name + '")'
+                )
 
-        elif self.CheckIfObjIsLibrary(patchLine):
-            # TODO: I don't thing this is necessary anymore
-            patchLine.isExternal = True
-            patchLine.Library = patchLine.completName
-            patchLine.name = patchLine.Library
-            if os.path.exists(patchLine.Library + ".pd"):
-                pd4web_print("It is an abstraction", color="red")
-            patchLine.objGenSym = 'gensym("' + patchLine.name + '")'
-            patchLine.singleObject = True
 
         elif "s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]:
             receiverSymbol = patchLine.Tokens[5]
@@ -322,6 +344,7 @@ class Patch():
             if patchLine.completName in self.PdObjects.getSupportedObjects()["puredata"]["objs"]:
                 patchLine.name = patchLine.completName
                 patchLine.isExternal = False
+
             elif patchLine.completName in self.LocalAbstractions:
                 patchLine.name = patchLine.completName
                 pd4web_print("Local Abstraction: " + patchLine.name, color="green")
@@ -332,6 +355,7 @@ class Patch():
         patchLine.addToUsedObject(self.PdObjects)
         self.PatchLinesProcessed.append(patchLine)
         self.AddUsedObject(patchLine)
+
 
     def AddUsedObject(self, PatchLine: PatchLine):
         if not any(obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name for obj in self.Pd4Web.UsedObjects):
