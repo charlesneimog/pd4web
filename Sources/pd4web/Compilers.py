@@ -1,5 +1,6 @@
 import os
 import platform
+import subprocess
 import zipfile
 
 import requests
@@ -35,6 +36,27 @@ class ExternalsCompiler:
     def InitVariables(self):
         self.EMSDK = self.Pd4Web.PD4WEB_ROOT + "/emsdk/emsdk"
         self.EMCMAKE = self.Pd4Web.PD4WEB_ROOT + "/emsdk/upstream/emscripten/emcmake"
+        self.CMAKE = self.GetCmake()
+
+
+
+    def GetCmake(self):
+        if platform.system() == "Windows":
+            try:
+                result = subprocess.run(['where', 'cmake'], capture_output=True, text=True, check=True)
+                cmake_path = result.stdout.strip()
+                return cmake_path
+            except subprocess.CalledProcessError:
+                raise Exception("CMake not found, please report.")
+        else:
+            try:
+                result = subprocess.run(['which', 'cmake'], capture_output=True, text=True, check=True)
+                cmake_path = result.stdout.strip()
+                return cmake_path
+            except subprocess.CalledProcessError:
+                raise Exception("CMake not found, please report.")
+            
+
 
     def InstallEMCC(self):
         if platform.system() == "Windows":
@@ -46,11 +68,6 @@ class ExternalsCompiler:
             os.system(f"{self.EMSDK} install latest")
             os.system(f"{self.EMSDK} activate latest")
 
-            # os.system(f"chmod +x {self.emcc.emsdk_env}")
-
-        # if self.args.active_emcc:
-        #     os.system(f"{self.emcc.emsdk} activate")
-        #     sys.exit(0)
     def __str__(self):
         return "< Compiler >"
 

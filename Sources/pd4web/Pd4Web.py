@@ -4,6 +4,8 @@ import sys
 
 import requests
 
+from .Helpers import pd4web_print
+
 
 class Pd4Web():
     OUTCHS_COUNT: int = 0
@@ -12,7 +14,6 @@ class Pd4Web():
     def __init__(self, patch):
         from .Builder import GetAndBuildExternals
         from .Compilers import ExternalsCompiler
-        from .Helpers import pd4web_print
         from .Libraries import ExternalLibraries
         from .Patch import Patch
 
@@ -46,6 +47,10 @@ class Pd4Web():
 
     def InitVariables(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
+        self.PROJECT_PATCH = os.path.basename(self.Patch)
+        IsRepo = os.path.isdir(os.path.join(self.PROJECT_ROOT, '.git'))
+        if not IsRepo:
+            os.system(f"cd {self.PROJECT_ROOT} && git init --initial-branch=main")
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
         self.CWD = os.getcwd()
 
@@ -64,7 +69,7 @@ class Pd4Web():
         self.ExternalsLinkLibraries = []
         self.ExternalsLinkLibrariesFolders = []
         self.ExternalsSetupFunctions = []
-
+        self.Verbose = False
 
     def CheckDependencies(self):
         try:

@@ -18,27 +18,26 @@ static void _HooksTests() {
 // ─────────────────────────────────────
 EM_JS(void, _Pd4WebJSFunctions, (void), {
 
-        // sendList
-        Pd4Web.sendList = function (r, vec) {
-            const vecLength = vec.length;
-            var ok = Pd4Web._startMessage(vecLength);
-            if (!ok) {
-                console.error('Failed to start message');
-                return;
+    Pd4Web.sendList = function (r, vec) {
+        const vecLength = vec.length;
+        var ok = Pd4Web._startMessage(vecLength);
+        if (!ok) {
+            console.error('Failed to start message');
+            return;
+        }
+        for (let i = 0; i < vecLength; i++) {
+            if (typeof vec[i] === 'string') {
+                Pd4Web._addSymbol(vec[i]);
+            } else if (typeof vec[i] === 'number') {
+                Pd4Web._addFloat(vec[i]);
+            } else{
+                console.error('Invalid type');
             }
-            for (let i = 0; i < vecLength; i++) {
-                if (typeof vec[i] === 'string') {
-                    Pd4Web._addSymbol(vec[i]);
-                } else if (typeof vec[i] === 'number') {
-                    Pd4Web._addFloat(vec[i]);
-                } else{
-                    console.error('Invalid type');
-                }
-            }
-            Pd4Web._finishMessage(r);
-        };
+        }
+        Pd4Web._finishMessage(r);
+    };
 
-        // Functions
+    // Functions
 
 });
 
@@ -47,11 +46,10 @@ EM_JS(void, _Pd4WebInitGui, (void), {
     if (document.getElementById('pd4web-gui') != null){
         return;
     }
-
     var script = document.createElement('script');
     script.type = 'text/javascript';
-    script.src = './gui.js';
-    script.id = 'pd4web-gui';
+    script.src = './pd4web.gui.js';
+    script.id = 'pd4web.gui';
     script.onload = function() {
         Pd4WebInitGui();
     };
@@ -307,8 +305,8 @@ void Pd4Web::Init() {
                                                      sizeof(wasmAudioWorkletStack),
                                                      WebAudioWorkletThreadInitialized, 0);
 
-    t_libpd_printhook libpd_printhook = (t_libpd_printhook)libpd_print_concatenator;
-    t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)ReceivePrint;
+    // t_libpd_printhook libpd_printhook = (t_libpd_printhook)libpd_print_concatenator;
+    // t_libpd_printhook libpd_concatenated_printhook = (t_libpd_printhook)ReceivePrint;
 
     Context = AudioContext;
 
@@ -347,6 +345,7 @@ void Pd4Web::Init() {
 
     pdInit = true;
     ResumeAudio();
+    _Pd4WebJSFunctions();
     return;
 }
 
@@ -356,7 +355,6 @@ void Pd4Web::Init() {
 int main() {
 
     _Pd4WebInitGui();
-    _Pd4WebJSFunctions();
 
     return 0;
 }
