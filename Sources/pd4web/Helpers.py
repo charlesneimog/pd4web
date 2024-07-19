@@ -3,6 +3,8 @@ import platform
 import sys
 import traceback
 
+import requests
+
 
 def RedExceptions(exc_type, exc_value, exc_traceback):
     ''' Just to print exceptions in red '''
@@ -86,10 +88,6 @@ def getPrintValue(color, bright=False):
 
     return color_code
 
-
-
-
-
 def fixPaths(path):
     if platform.system() == "Windows":
         path = path.replace("/", "\\")
@@ -98,6 +96,35 @@ def fixPaths(path):
         path = path.replace("\\", "/")
         return path
 
+
+def PrintProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+    if total == 0:
+        sys.stdout.write(f'\r{prefix} Downloading... {suffix}')
+        sys.stdout.flush()
+    else:
+        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        filled_length = int(length * iteration // total)
+        bar = fill * filled_length + '-' * (length - filled_length)
+        sys.stdout.write(f'\r{prefix} |{bar}| {percent}% {suffix}')
+        sys.stdout.flush()
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+
+def DownloadZipFile(url, path2save):
+    response = requests.get(url, stream=True)
+    if response.status_code == 200:
+        total_size = int(response.headers.get('content-length', 0))
+        block_size = 1024  
+        with open(path2save, 'wb') as file:
+            for data in response.iter_content(block_size):
+                file.write(data)
+                PrintProgressBar(file.tell(), total_size, prefix='Progress:', suffix='Complete', length=50)
+        if total_size != 0 and os.path.getsize(path2save) != total_size:
+            raise Exception("Error downloading the file")
+    else:
+        raise Exception(f"Error {response.status_code} while downloading the file")
 
 class emccPaths:
     def __init__(self):

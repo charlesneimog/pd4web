@@ -241,7 +241,7 @@ pd_add_external(toggleff~ "${LIB_DIR}/Code_source/Compiled/audio/toggleff~.c")
 pd_add_external(trighold~ "${LIB_DIR}/Code_source/Compiled/audio/trighold~.c")
 pd_add_external(unmerge~ "${LIB_DIR}/Code_source/Compiled/audio/unmerge~.c")
 pd_add_external(vu~ "${LIB_DIR}/Code_source/Compiled/audio/vu~.c")
-pd_add_external(vcf2~ "${LIB_DIR}/Code_source/Compiled/audio/vcf2~.c")
+#pd_add_external(vcf2~ "${LIB_DIR}/Code_source/Compiled/audio/vcf2~.c")
 pd_add_external(xmod~ "${LIB_DIR}/Code_source/Compiled/audio/xmod~.c")
 pd_add_external(xmod2~ "${LIB_DIR}/Code_source/Compiled/audio/xmod2~.c")
 pd_add_external(wrap2 "${LIB_DIR}/Code_source/Compiled/control/wrap2.c")
@@ -392,7 +392,7 @@ pd_add_external(rec "${LIB_DIR}/Code_source/Compiled/control/rec.c;${LIB_DIR}/Co
 # │                SMAGIC                │
 # ╰──────────────────────────────────────╯
 set(magic "${LIB_DIR}/Code_source/shared/magic.c")
-pd_add_external(scope~ "${LIB_DIR}/Code_source/Compiled/audio/scope~.c;${magic}")
+pd_add_external(oscope~ "${LIB_DIR}/Code_source/Compiled/audio/oscope~.c;${magic}")
 
 # ╭──────────────────────────────────────╮
 # │                 UTF                  │

@@ -7,7 +7,7 @@ from .Libraries import ExternalLibraries
 from .Pd4Web import Pd4Web
 
 
-class PdObjects():
+class PdObjects:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
         self.PROJECT_ROOT = Pd4Web.PROJECT_ROOT
@@ -40,10 +40,25 @@ class PdObjects():
 
     def get(self, name):
         LibraryData = self.Libraries.GetLibrary(name)
-        return LibraryData 
+        return LibraryData
 
     def isExtraObject(self, name):
-        ExtraObjects = ["bob~", "bonk~", "choice", "fiddle~", "loop~", "lrshift~", "pd~", "pique", "sigmund~", "stdout", "hilbert~", "complex-mod~", "rev1~", "output~"]
+        ExtraObjects = [
+            "bob~",
+            "bonk~",
+            "choice",
+            "fiddle~",
+            "loop~",
+            "lrshift~",
+            "pd~",
+            "pique",
+            "sigmund~",
+            "stdout",
+            "hilbert~",
+            "complex-mod~",
+            "rev1~",
+            "output~",
+        ]
         if name in ExtraObjects:
             return True
         else:
@@ -55,7 +70,7 @@ class PdObjects():
                 return i
         return False
 
-    def getDownloadURL(self, libraryName, supportedDownloads):
+    def GetDownloadURL(self, libraryName, supportedDownloads):
         if libraryName.repoAPI == False:
             return False
 
@@ -67,46 +82,11 @@ class PdObjects():
             except:
                 return None
 
-    def executeExtraFunction(self, UsedLibrary):
-        if UsedLibrary.extraFunc != None and UsedLibrary in self.UsedLibraries:
-            pd4web_print(f"Executing extra configs for {UsedLibrary.name}", color="magenta")
-            libraryClass = self.isUsed(UsedLibrary.name)
-            extraFunctionStr = UsedLibrary.extraFunc
-            function = None
-            for module in UsedLibrary.externalsExtraFunctions:
-                for definedThing in dir(module):
-                    if definedThing == extraFunctionStr:
-                        function = getattr(module, extraFunctionStr)
-                        break
-            if function is None and extraFunctionStr != None:
-                pd4web_print(
-                    f"Error: {extraFunctionStr} is not defined in {UsedLibrary.name}",
-                    color="red",
-                )
-
-            if function is not None:
-                function(libraryClass)
-            else:
-                return []
-            if libraryClass:
-                return libraryClass.extraFlags
-            else:
-                return []
-
     def SearchSupportedObjects(self):
         """
         It get all the PureData objects.
         """
-        # get path for this file
-        file = os.path.realpath(__file__)
-        dirname = os.path.dirname(file)
-        libpd = os.path.join(dirname, "../libpd")
-        if not os.path.exists(libpd):
-            raise ValueError("libpd not found")
-        else:
-            pass
-
-        externalsJson = os.path.join(dirname, "Objects.json")
+        externalsJson = os.path.join(self.Pd4Web.PD4WEB_ROOT, "Objects.json")
         if not os.path.exists(externalsJson):
             with open(externalsJson, "w") as file:
                 json.dump({}, file, indent=4)
@@ -114,7 +94,8 @@ class PdObjects():
             externalsDict = json.load(file)
         externalsDict["puredata"] = {}
         puredataObjs = []
-        puredataFolder = os.path.join(dirname, "../libpd/pure-data/")
+        puredataFolder = os.path.join(
+            self.Pd4Web.PROJECT_ROOT, "Pd4Web/pure-data/")
         for root, _, files in os.walk(puredataFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
@@ -128,7 +109,8 @@ class PdObjects():
                         creatorPattern = (
                             r'class_addcreator\([^,]+,\s*gensym\("([^"]+)"\)'
                         )
-                        creatorMatches = re.finditer(creatorPattern, file_contents)
+                        creatorMatches = re.finditer(
+                            creatorPattern, file_contents)
                         for match in creatorMatches:
                             objectName = match.group(1)
                             puredataObjs.append(objectName)
@@ -144,6 +126,3 @@ class PdObjects():
 
     def getSupportedObjects(self):
         return self.supportedObjects
-
-
-

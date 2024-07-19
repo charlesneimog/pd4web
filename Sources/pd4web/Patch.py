@@ -33,12 +33,6 @@ class PatchLine:
         self.Tokens = []
         self.SpecialObjects = ["adc~", "dac~"]
 
-    def GetChOutCount(self):
-        pass
-
-    def GetChInCount(self):
-        pass
-
     def GetLibraryExternals(self, LibraryFolder: str, LibraryName: str):
         """
         Recursively enumerate all external and abstractions and save the JSON file.
@@ -56,7 +50,9 @@ class PatchLine:
         for root, _, files in os.walk(LibraryFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
-                    with open(os.path.join(root, file), "r", encoding='utf-8') as c_file:
+                    with open(
+                        os.path.join(root, file), "r", encoding="utf-8"
+                    ) as c_file:
                         file_contents = c_file.read()
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)
@@ -75,14 +71,19 @@ class PatchLine:
         if self.Library != "puredata":
             self.LibraryData = PdObjects.get(self.Library)
             if self.LibraryData is None or not self.LibraryData.valid:
-                raise ValueError(getPrintValue("red") + "Library not supported: " + self.Library + getPrintValue("reset"))
+                raise ValueError(
+                    getPrintValue("red")
+                    + "Library not supported: "
+                    + self.Library
+                    + getPrintValue("reset")
+                )
         else:
             self.TotalObjects = PdObjects.getSupportedObjects()
 
     # ──────────────────────────────────────
     def GetLibraryData(self) -> ExternalLibraries.LibraryClass:
         # TODO: Need to revise this code
-        return self.LibraryData 
+        return self.LibraryData
 
     # ──────────────────────────────────────
     def __str__(self) -> str:
@@ -95,9 +96,7 @@ class PatchLine:
                     if objName in self.SpecialObjects:
                         return "< Pd Special Object: " + objName + " >"
                     else:
-                        return (
-                            "< Pd Object: " + self.Tokens[1] + " | " + objName + " >"
-                        )
+                        return "< Pd Object: " + self.Tokens[1] + " | " + objName + " >"
                 elif self.Tokens[1] == "connect":
                     return "< Pd Connection >"
                 elif self.Tokens[1] == "text":
@@ -117,34 +116,35 @@ class PatchLine:
             else:
                 return "< Special Pd Object: " + self.Tokens[0] + " >"
 
-    # ──────────────────────────────────────
     def __repr__(self):
         return self.__str__()
 
-    # ──────────────────────────────────────
 
-
-#╭──────────────────────────────────────╮
-#│    This function will process the    │
-#│    patch and get all informations    │
-#│           about externals            │
-#╰──────────────────────────────────────╯
-class Patch():
-    def __init__(self, Pd4Web: Pd4Web):
+# ╭──────────────────────────────────────╮
+# │    This function will process the    │
+# │    patch and get all informations    │
+# │           about externals            │
+# ╰──────────────────────────────────────╯
+class Patch:
+    def __init__(self, Pd4Web: Pd4Web, abs=False, patch=None):
         self.Pd4Web = Pd4Web
+        self.isAbstraction = abs
 
-        if os.path.exists(Pd4Web.Patch):
-            self.patchFile = Pd4Web.Patch
+        if patch is not None:
+            self.patchFile = patch
         else:
-            raise ValueError("Patch not found")
+            if os.path.exists(Pd4Web.Patch):
+                self.patchFile = Pd4Web.Patch
+            else:
+                raise ValueError("Patch not found")
 
         # Read Line by Line
         with open(self.patchFile, "r") as file:
-            self.PatchLines = file.readlines()
+            self.patchLines = file.readlines()
 
         # Init Supported Libraries
         self.InitVariables()
-        self.PdObjects = PdObjects(Pd4Web)
+        self.pdObjects = PdObjects(Pd4Web)
 
         # Main Functions
         self.Execute()
@@ -152,20 +152,25 @@ class Patch():
         # Rewrite the patches
         self.ReConfigurePatch()
 
+        if not abs:
+            for self.absProcessed in self.absProcessed:
+                self.patchLinesProcessed += self.absProcessed.patchLinesProcessed
+
     def InitVariables(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.abspath(self.patchFile))
-        self.LibraryClass = None
-        self.LocalAbstractions = []
-        self.PatchLinesExternals = []
-        self.PatchLinesProcessed = []
-        self.UiReceiversSymbol = []
-        self.NeedExtra = False
+        self.libraryClass = None
+        self.localAbstractions = []
+        self.patchLinesExternals = []
+        self.absProcessed = []
+        self.patchLinesProcessed = []
+        self.uiReceiversSymbol = []
+        self.needExtra = False
 
     def Execute(self):
         # Abstractions
         self.GetAbstractions()
 
-        # Find Externals in Patch 
+        # Find Externals in Patch
         self.ProcessPatch()
         self.SearchForExtraObjects()
 
@@ -181,9 +186,7 @@ class Patch():
         for file in files:
             if file.endswith(".pd"):
                 LocalAbstractions.append(file.split(".pd")[0])
-
-        print("Local Abstractions: ", LocalAbstractions)
-        self.LocalAbstractions = LocalAbstractions
+        self.localAbstractions = LocalAbstractions
 
     # ╭──────────────────────────────────────╮
     # │        Find Externals Objects        │
@@ -209,10 +212,11 @@ class Patch():
         if patchLine[1] == "obj":
             nameOfTheObject = patchLine[4].replace(";", "").replace("\n", "")
             nameOfTheObject = nameOfTheObject.replace(",", "")
-            if nameOfTheObject in self.PdObjects.LibraryNames:
-                LibraryClass = self.PdObjects.get(nameOfTheObject)
+            if nameOfTheObject in self.pdObjects.LibraryNames:
+                LibraryClass = self.pdObjects.get(nameOfTheObject)
                 if LibraryClass is None:
-                    pd4web_print("Library not found: " + nameOfTheObject, color="red")
+                    pd4web_print("Library not found: " +
+                                 nameOfTheObject, color="red")
                     return False
 
                 # if LibraryClass and LibraryClass.SingleObject: # TODO: Revisar esse código
@@ -249,59 +253,73 @@ class Patch():
         try:
             return float(token)
         except:
-            return float('inf')
+            return float("inf")
 
     def TokenIsDollarSign(self, token):
         if token[0] == "$":
             return True
         elif token[0] == "\\" and token[1] == "$":
             return True
-        else: 
+        else:
             return False
 
     def ProcessPatch(self):
         """
         This function will find all externals objects in the patch.
         """
-        for line in enumerate(self.PatchLines):
+        for line in enumerate(self.patchLines):
             patchLine = PatchLine()
             patchLine.index, patchLine.completLine = line
             Tokens = patchLine.completLine.replace("\n", "")
             Tokens = Tokens.replace(";", "")
-            Tokens = Tokens.replace(",", "") # when width is specificied
+            Tokens = Tokens.replace(",", "")  # when width is specificied
             patchLine.Tokens = Tokens.split(" ")
 
             if len(patchLine.Tokens) < 5 or patchLine.Tokens[1] != "obj":
                 if len(patchLine.Tokens) == 4 and patchLine.Tokens[1] == "declare":
                     if patchLine.Tokens[2] == "-lib":
-                        raise Exception("[declare -lib <LIB> is not implemented yet!")
+                        raise Exception(
+                            "[declare -lib <LIB> is not implemented yet!")
                     elif patchLine.Tokens[2] == "-path":
-                        raise Exception("[declare -path <PATH> is not implemented yet!")
+                        raise Exception(
+                            "[declare -path <PATH> is not implemented yet!")
                 else:
-                    self.PatchLinesProcessed.append(patchLine)
+                    self.patchLinesProcessed.append(patchLine)
             else:
                 self.PatchObject(patchLine)
 
-
     def ReConfigurePatch(self):
-        '''
+        """
         Reconfigures the patch file for the project.
         Pd4Web compile as objects as native objects, so we need to remove
         the preffix of the Libraries.
-        '''
-        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/"):
-            os.mkdir(self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
+        """
+        if not self.isAbstraction:
+            if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/"):
+                os.mkdir(self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
+            patchFile = self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.pd"
+        else:
+            if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.tmp/"):
+                os.mkdir(self.Pd4Web.PROJECT_ROOT + "/.tmp/")
+            patchFile = (
+                self.Pd4Web.PROJECT_ROOT + "/.tmp/" +
+                os.path.basename(self.patchFile)
+            )
 
-        with open(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + self.Pd4Web.PROJECT_PATCH, "w") as f:
-            for line in self.PatchLinesProcessed:
+        with open(patchFile, "w") as f:
+            for line in self.patchLinesProcessed:
                 if line.isExternal and not line.objwithSlash:
                     obj = line.Tokens[4].split("/")
                     if len(obj) > 1:
                         line.Tokens[4] = obj[-1]
+
+                    # check if last two tokens are f and one int
+                    if line.Tokens[-2] == "f" and line.Tokens[-1].isdigit():
+                        line.Tokens[-3] = line.Tokens[-3] + ","
+
                     f.write(" ".join(line.Tokens) + ";\n")
                 else:
                     f.write(line.completLine)
-
 
     def PatchObject(self, patchLine: PatchLine):
         patchLine.completName = patchLine.Tokens[4]
@@ -311,65 +329,90 @@ class Patch():
             and "/" in patchLine.Tokens[4]
         ) and self.CheckIfIsSlash(patchLine):
             if os.path.exists(self.PROJECT_ROOT + "/" + patchLine.Tokens[4] + ".pd"):
-                pd4web_print(f"Found Abstraction: {patchLine.Tokens[4]}", color="green")
+                # Process abstraction
+                pd4web_print(
+                    f"Found Abstraction: {patchLine.Tokens[4]}", color="green")
+                patchLine.isAbstraction = True
+                abs = Patch(
+                    self.Pd4Web,
+                    abs=True,
+                    patch=self.PROJECT_ROOT + "/" +
+                    patchLine.Tokens[4] + ".pd",
+                )
+                self.absProcessed.append(abs)
+
             else:
                 patchLine.isExternal = True
                 patchLine.Library = patchLine.Tokens[4].split("/")[0]
                 patchLine.name = patchLine.completName.split("/")[-1]
-                patchLine.objGenSym = (
-                    'class_new(gensym("' + patchLine.name + '")'
-                )
-
+                patchLine.objGenSym = 'class_new(gensym("' + \
+                    patchLine.name + '")'
 
         elif "s" == patchLine.Tokens[4] or "send" == patchLine.Tokens[4]:
             receiverSymbol = patchLine.Tokens[5]
             if "ui_" in receiverSymbol:
                 patchLine.uiReceiver = True
                 patchLine.uiSymbol = receiverSymbol
-                self.Pd4Web.UiReceiversSymbol.append(receiverSymbol) 
+                self.Pd4Web.uiReceiversSymbol.append(receiverSymbol)
                 pd4web_print(
                     "UI Sender object detected: " + receiverSymbol, color="blue"
                 )
             patchLine.name = patchLine.completName
 
-        elif self.TokenIsFloat(patchLine.Tokens[4]) != float('inf'):
+        elif self.TokenIsFloat(patchLine.Tokens[4]) != float("inf"):
             patchLine.name = patchLine.completName
             patchLine.isExternal = False
 
-        elif self.TokenIsDollarSign(patchLine.Tokens[4]): 
+        elif self.TokenIsDollarSign(patchLine.Tokens[4]):
             patchLine.name = patchLine.completName
             patchLine.isExternal = False
 
         else:
-            if patchLine.completName in self.PdObjects.getSupportedObjects()["puredata"]["objs"]:
+            if (
+                patchLine.completName
+                in self.pdObjects.getSupportedObjects()["puredata"]["objs"]
+            ):
                 patchLine.name = patchLine.completName
                 patchLine.isExternal = False
 
-            elif patchLine.completName in self.LocalAbstractions:
+            elif patchLine.completName in self.localAbstractions:
                 patchLine.name = patchLine.completName
-                pd4web_print("Local Abstraction: " + patchLine.name, color="green")
+                pd4web_print("Local Abstraction: " +
+                             patchLine.name, color="green")
             else:
-                raise ValueError("\n\n" + getPrintValue("red") + "Object not found: " + patchLine.completName + getPrintValue("reset"))
+                raise ValueError(
+                    "\n\n"
+                    + getPrintValue("red")
+                    + "Object not found: "
+                    + patchLine.completName
+                    + getPrintValue("reset")
+                )
 
         self.SearchForSpecialObject(patchLine)
-        patchLine.addToUsedObject(self.PdObjects)
-        self.PatchLinesProcessed.append(patchLine)
+        patchLine.addToUsedObject(self.pdObjects)
+        self.patchLinesProcessed.append(patchLine)
         self.AddUsedObject(patchLine)
 
-
     def AddUsedObject(self, PatchLine: PatchLine):
-        if not any(obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name for obj in self.Pd4Web.UsedObjects):
-            self.Pd4Web.UsedObjects.append({"Lib": PatchLine.Library, "Obj": PatchLine.name, "SetupFunction": PatchLine.setupFunction})
-
+        if not any(
+            obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name
+            for obj in self.Pd4Web.usedObjects
+        ):
+            self.Pd4Web.usedObjects.append(
+                {
+                    "Lib": PatchLine.Library,
+                    "Obj": PatchLine.name,
+                    "SetupFunction": PatchLine.setupFunction,
+                }
+            )
 
     def SearchForExtraObjects(self):
-        for obj in self.PatchLinesProcessed:
-            if self.NeedExtra == False:
-                self.NeedExtra = self.PdObjects.isExtraObject(obj)
+        for obj in self.patchLinesProcessed:
+            if self.needExtra == False:
+                self.needExtra = self.pdObjects.isExtraObject(obj)
 
     def __str__(self):
-        return f"< Patch: {os.path.basename(self.patchFile)} | {len(self.PatchLinesProcessed)} objects >"
+        return f"< Patch: {os.path.basename(self.patchFile)} | {len(self.patchLinesProcessed)} objects >"
 
     def __repr__(self):
         return self.__str__()
-

@@ -1,6 +1,5 @@
 #include "pd4web.hpp"
 #include <cstdio>
-#include <sstream>
 
 // ╭─────────────────────────────────────╮
 // │      Internal Testes For Debug      │
@@ -42,6 +41,17 @@ EM_JS(void, _Pd4WebJSFunctions, (void), {
 });
 
 // ─────────────────────────────────────
+EM_JS(void, _Pd4WebEnableThreads, (void), {
+    if (document.getElementById('pd4web.threads') != null){
+        return;
+    }
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    script.src = "./pd4web.threads.js";
+    script.id = "pd4web.threads";
+    document.head.appendChild(script); 
+});
+// ─────────────────────────────────────
 EM_JS(void, _Pd4WebInitGui, (void), {
     if (document.getElementById('pd4web-gui') != null){
         return;
@@ -73,27 +83,30 @@ EM_JS(void, GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_
 
     async function getMicAccess(stream) {
       try {
-        if (nInCh > 0) {
-            const sourceNode = Pd4WebAudioContext.createMediaStreamSource(stream);
-            sourceNode.connect(Pd4WebAudioWorkletNode);
-        }
+        const sourceNode = Pd4WebAudioContext.createMediaStreamSource(stream);
+        sourceNode.connect(Pd4WebAudioWorkletNode);
         Pd4WebAudioWorkletNode.connect(Pd4WebAudioContext.destination);
       } catch (err) {
         alert(err);
       }
     }
 
-    navigator.mediaDevices
-        .getUserMedia({
-            video: false,
-            audio: {
-                echoCancellation: false,
-                noiseSuppression: false,
-                autoGainControl: false,
+    if (nInCh > 0) {
+        navigator.mediaDevices
+            .getUserMedia({
+                video: false,
+                audio: {
+                    echoCancellation: false,
+                    noiseSuppression: false,
+                    autoGainControl: false,
 
-            },
-        })
-        .then((stream) => getMicAccess(stream));
+                },
+            })
+            .then((stream) => getMicAccess(stream));
+    } else {
+        Pd4WebAudioWorkletNode.connect(Pd4WebAudioContext.destination);
+    }
+
 });
 
 // ─────────────────────────────────────
@@ -106,8 +119,8 @@ EM_JS(void, JsSuspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 // ╭─────────────────────────────────────╮
 // │              PureData               │
 // ╰─────────────────────────────────────╯
-int Pd4Web::GetNInputChannels() { return 1; }
-int Pd4Web::GetNOutputChannels() { return 2; }
+int Pd4Web::GetNInputChannels() { return PD4WEB_CHS_IN; }
+int Pd4Web::GetNOutputChannels() { return PD4WEB_CHS_OUT; }
 uint32_t Pd4Web::GetSampleRate() { return 48000; }
 
 // ╭─────────────────────────────────────╮
@@ -358,13 +371,12 @@ void Pd4Web::Init() {
     // libpd_set_midibytehook(receiveMidiByte);
 
     libpd_init();
+    Pd4WebInitExternals();
 
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
     libpd_init_audio(NInCh, NOutCh, SR);
-
-    Pd4WebInitExternals();
 
     if (!libpd_openfile("index.pd", "./")) {
         Alert("Failed to open patch | Please Report!\n");
@@ -384,6 +396,9 @@ void Pd4Web::Init() {
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
-    _Pd4WebInitGui();
+    _Pd4WebEnableThreads();
+    if (PD4WEB_GUI) {
+        _Pd4WebInitGui();
+    }
     return 0;
 }
