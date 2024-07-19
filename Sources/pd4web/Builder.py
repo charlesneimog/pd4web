@@ -62,7 +62,9 @@ class GetAndBuildExternals:
         self.cmakeFile.append("# Pd sources")
         self.cmakeFile.append(
             "include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
+        self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
         self.cmakeFile.append("")
+
 
         # Pd4web executable
         self.cmakeFile.append("# Pd4Web executable")
