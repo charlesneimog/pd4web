@@ -31,7 +31,10 @@ class ExternalsCompiler:
                     self.Pd4Web.APPDATA + "/" + extractFolderName,
                     self.Pd4Web.APPDATA + "/emsdk",
                 )
-                os.remove(EmccZip)
+                try:
+                    os.remove(EmccZip)
+                except:
+                    pd4web_print("Failed to remove emcc.zip", color="yellow")
             self.InstallEMCC()
 
     def InitVariables(self):
