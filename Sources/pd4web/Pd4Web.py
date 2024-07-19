@@ -140,7 +140,7 @@ class Pd4Web:
             subprocess.check_output(["git", "--version"])
         except subprocess.CalledProcessError:
             raise Exception("Git is not installed. Please install it.")
-        OK = os.system("cmake --version > /dev/null")
+        OK = subprocess.call(["cmake", "--version"])
         if OK != 0:
             raise Exception("\n\nCmake is not installed. Please install it.")
 
