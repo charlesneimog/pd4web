@@ -103,7 +103,7 @@ class Pd4Web:
             self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
         elif sys.platform == "darwin":
             self.APPDATA = os.path.join(os.path.expanduser(
-                "~/Library/Application Support"), "pd4web")
+                "~/Library/"), "pd4web")
         elif sys.platform == "linux":
             self.APPDATA = os.path.join(
                 os.path.expanduser("~/.local/share"), "pd4web")
