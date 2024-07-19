@@ -6,6 +6,7 @@ import sys
 import zipfile
 
 import requests
+import platform
 
 from .Helpers import DownloadZipFile, pd4web_print
 from .Patch import PatchLine
@@ -401,9 +402,13 @@ class GetAndBuildExternals:
         cwd = os.getcwd()
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         emcmake = self.Pd4Web.Compiler.EMCMAKE
+        if platform.system() == "Windows":
+            cmake = self.Pd4Web.Compiler.CMAKE
+        else:
+            cmake = "cmake"
         command = [
             emcmake,
-            "cmake",
+            f'"{cmake}"',
             ".",
             "-B",
             "build",

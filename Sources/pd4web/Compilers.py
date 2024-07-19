@@ -3,6 +3,7 @@ import platform
 import subprocess
 import sys
 import zipfile
+import shutil
 
 import requests
 
@@ -31,21 +32,24 @@ class ExternalsCompiler:
                     self.Pd4Web.APPDATA + "/" + extractFolderName,
                     self.Pd4Web.APPDATA + "/emsdk",
                 )
-                os.remove(EmccZip)
+                try:
+                    os.remove(EmccZip)
+                except:
+                    pd4web_print("Failed to remove emcc.zip", color="yellow")
             self.InstallEMCC()
 
     def InitVariables(self):
         self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
-        self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
+        if platform.system() == "Windows":
+            self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake.bat"
+        else:
+            self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
         self.CMAKE = self.GetCmake()
 
     def GetCmake(self):
         if platform.system() == "Windows":
             try:
-                result = subprocess.run(
-                    ["where", "cmake"], capture_output=True, text=True, check=True
-                )
-                cmake_path = result.stdout.strip()
+                cmake_path = shutil.which("cmake")
                 return cmake_path
             except subprocess.CalledProcessError:
                 raise Exception("CMake not found, please report.")
