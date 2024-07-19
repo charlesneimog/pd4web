@@ -7,11 +7,12 @@ import yaml
 
 from .Pd4Web import Pd4Web
 
-#╭──────────────────────────────────────╮
-#│    In this file we have all code     │
-#│ related to get the Libraries Source  │
-#│          Code, Download it.          │
-#╰──────────────────────────────────────╯
+# ╭──────────────────────────────────────╮
+# │    In this file we have all code     │
+# │ related to get the Libraries Source  │
+# │          Code, Download it.          │
+# ╰──────────────────────────────────────╯
+
 
 class ExternalLibraries:
     def __init__(self, Pd4Web: Pd4Web) -> None:
@@ -40,79 +41,82 @@ class ExternalLibraries:
             supportedLibraries = yaml.load(file, Loader=yaml.FullLoader)
             self.DownloadSources = supportedLibraries["Sources"]
             self.SupportedLibraries = supportedLibraries["Libraries"]
-            self.LibraryNames = [lib["Name"] for lib in self.SupportedLibraries]
+            self.LibraryNames = [lib["Name"]
+                                 for lib in self.SupportedLibraries]
             self.totalOfLibraries = len(supportedLibraries)
 
     class LibraryClass:
         def __init__(self, LibraryData, DownloadSources) -> None:
             try:
-                self.Name = LibraryData["Name"]
+                self.name = LibraryData["Name"]
             except:
                 self.valid = False
                 return
 
-            self.Developer = LibraryData["Developer"]
-            self.Repository = LibraryData["Repository"]
-            self.Folder = ""
-            self.DownloadSources = DownloadSources
-            self.DownloadLink = ""
+            self.dev = LibraryData["Developer"]
+            self.repo = LibraryData["Repository"]
+            self.folder = ""
+            self.downloadSources = DownloadSources
+            self.downloadLink = ""
 
             if "Source" in LibraryData:
-                self.Source = LibraryData["Source"]
+                self.source = LibraryData["Source"]
             else:
-                self.Source = False
+                self.source = False
                 if "DirectLink" in LibraryData:
-                    self.DirectLink = LibraryData["DirectLink"]
+                    self.directLink = LibraryData["DirectLink"]
                 else:
-                    raise Exception("Error: {self.name} doesn't have a download source")
+                    raise Exception(
+                        "Error: {self.name} doesn't have a download source")
 
             self.GetLinkForDownload()
 
             if "Dependencies" in LibraryData:
-                self.DynamicLibraries = LibraryData["Dependencies"]
+                self.dynamicLibraries = LibraryData["Dependencies"]
             else:
-                self.DynamicLibraries = []
+                self.dynamicLibraries = []
 
             if "Unsupported" in LibraryData:
-                self.Unsupported = LibraryData["Unsupported"]
+                self.unsupported = LibraryData["Unsupported"]
             else:
-                self.Unsupported = []
+                self.unsupported = []
 
             if "Version" in LibraryData:
-                self.Version = LibraryData["Version"]
+                self.version = LibraryData["Version"]
             else:
-                self.Version = None
+                self.version = None
 
             self.usedObjs = []
-            self.UsedSourceFiles = []
+            self.usedSourceFiles = []
             self.extraFuncExecuted = False
             self.unsupportedObjects = {}
             self.extraFlags = []
             self.valid = True
 
         def __str__(self):
-            return f"< Library: {self.Name} >"
+            return f"< Library: {self.name} >"
 
         def __repr__(self):
             return self.__str__()
 
         def GetLinkForDownload(self):
-            if self.Source:
-                if self.Source in self.DownloadSources:
-                    self.downloadLink = self.DownloadSources[self.Source]
-                    return self.downloadLink.format(self.Developer, self.Repository)
+            if self.source:
+                if self.source in self.downloadSources:
+                    self.downloadLink = self.downloadSources[self.source]
+                    return self.downloadLink.format(self.dev, self.repo)
                 else:
-                    raise Exception(f"Error: {self.Name} doesn't have a download source")
+                    raise Exception(
+                        f"Error: {self.name} doesn't have a download source"
+                    )
             else:
-                return self.DirectLink
-
+                return self.directLink
 
     def GetLibrary(self, LibraryName):
-        Library = next((lib for lib in self.SupportedLibraries if lib['Name'] == LibraryName), None)
+        Library = next(
+            (lib for lib in self.SupportedLibraries if lib["Name"] == LibraryName), None
+        )
         Library = self.LibraryClass(Library, self.DownloadSources)
-        return Library 
-
-
+        return Library
 
     def isSupportedLibrary(self, name):
         if name in self.LibraryNames:
@@ -122,11 +126,6 @@ class ExternalLibraries:
 
     def AddUsedLibraries(self, LibraryName):
         self.UsedLibraries.append(LibraryName)
-
-    # def add(self, PureDataExternals):
-    #     self.PureDataExternals.append(PureDataExternals)
-    #     self.LibraryNames.append(PureDataExternals.name)
-    #     self.totalOfLibraries += 1
 
     def addToUsed(self, objName):
         self.UsedObjects.append(objName)
@@ -139,5 +138,3 @@ class ExternalLibraries:
 
     def __str__(self) -> str:
         return self.__repr__()
-
-

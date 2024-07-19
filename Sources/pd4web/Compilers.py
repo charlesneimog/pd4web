@@ -1,6 +1,7 @@
 import os
 import platform
 import subprocess
+import sys
 import zipfile
 
 import requests
@@ -13,50 +14,50 @@ class ExternalsCompiler:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
         self.InitVariables()
-        if not os.path.exists(Pd4Web.PD4WEB_ROOT + "/emsdk"):
+        if not os.path.exists(Pd4Web.APPDATA + "/emsdk"):
             emccGithub = "https://api.github.com/repos/emscripten-core/emsdk/tags"
             response = requests.get(emccGithub)
             responseJson = response.json()
             sourceCodeLink = responseJson[0]["zipball_url"]
             response = requests.get(sourceCodeLink)
-            EmccZip = self.Pd4Web.PD4WEB_ROOT + "/emcc.zip"
+            EmccZip = self.Pd4Web.APPDATA + "/emcc.zip"
             OK = Pd4Web.DownloadZip(sourceCodeLink, EmccZip, "emcc")
             if not OK:
                 raise Exception("Failed to download emcc")
-            with zipfile.ZipFile(EmccZip, 'r') as zip_ref:
-                zip_ref.extractall(Pd4Web.PD4WEB_ROOT)
+            with zipfile.ZipFile(EmccZip, "r") as zip_ref:
+                zip_ref.extractall(Pd4Web.APPDATA)
                 extractFolderName = zip_ref.namelist()[0]
                 os.rename(
-                    self.Pd4Web.PD4WEB_ROOT + "/" + extractFolderName,
-                    self.Pd4Web.PD4WEB_ROOT + "/emsdk",
+                    self.Pd4Web.APPDATA + "/" + extractFolderName,
+                    self.Pd4Web.APPDATA + "/emsdk",
                 )
                 os.remove(EmccZip)
             self.InstallEMCC()
 
     def InitVariables(self):
-        self.EMSDK = self.Pd4Web.PD4WEB_ROOT + "/emsdk/emsdk"
-        self.EMCMAKE = self.Pd4Web.PD4WEB_ROOT + "/emsdk/upstream/emscripten/emcmake"
+        self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
+        self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
         self.CMAKE = self.GetCmake()
-
-
 
     def GetCmake(self):
         if platform.system() == "Windows":
             try:
-                result = subprocess.run(['where', 'cmake'], capture_output=True, text=True, check=True)
+                result = subprocess.run(
+                    ["where", "cmake"], capture_output=True, text=True, check=True
+                )
                 cmake_path = result.stdout.strip()
                 return cmake_path
             except subprocess.CalledProcessError:
                 raise Exception("CMake not found, please report.")
         else:
             try:
-                result = subprocess.run(['which', 'cmake'], capture_output=True, text=True, check=True)
+                result = subprocess.run(
+                    ["which", "cmake"], capture_output=True, text=True, check=True
+                )
                 cmake_path = result.stdout.strip()
                 return cmake_path
             except subprocess.CalledProcessError:
                 raise Exception("CMake not found, please report.")
-            
-
 
     def InstallEMCC(self):
         if platform.system() == "Windows":

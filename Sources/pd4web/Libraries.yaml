@@ -4,54 +4,10 @@ Sources:
   GITHUB: "https://github.com/{}/{}"
 
 Libraries:
-  - Name: cyclone # Name of the pd library
-    Source: GITHUB_RELEASES # source
+  - Name: else # Name of the pd library
+    Source: GITHUB_TAGS # source
     Developer: porres # user name of the dev
-    Repository: pd-cyclone # Repository Name
-    Version: cyclone_0.7-0 # Release or Tag
-    Unsupported: ["coll"] # Unsupported Objecs
+    Repository: pd-else # Repository Name
+    Version: v.1.0-rc11 # Release or Tag
+    Unsupported: ["sfz~", "sfont~"] # Unsupported Objecs
 
-  - Name: else
-    Source: GITHUB # source
-    Developer: porres
-    Repository: pd-else
-    Version: master
-    Unsupported: ["sfz~", "sfont~"]
-
-  - Name: earplug~ # must be the Name of object when singleObject is true
-    Source: GITHUB_TAGS
-    Developer: pd-externals
-    Repository: earplug
-    Version: 0.3.0
-
-  - Name: convolve~
-    DirectLink: https://github.com/wbrent/convolve_tilde/archive/refs/heads/main.zip
-    Developer: wbrent
-    Repository: convolve_tilde
-    Dependencies: ["fftw3"]
-
-  - Name: timbreIDLib
-    DirectLink: https://github.com/wbrent/timbreIDLib/archive/refs/heads/main.zip
-    Developer: wbrent
-    Repository: timbreIDLib
-    Dependencies: ["fftw3"]
-
-  - Name: pmpd
-    Source: GITHUB_RELEASES
-    Developer: avilleret
-    Repository: pd-pmpd
-
-  - Name: grainer~
-    Source: GITHUB_TAGS
-    Developer: charlesneimog
-    Repository: grainer_tilde
-
-  - Name: fftease
-    DirectLink: https://github.com/ericlyon/pd-fftease/archive/refs/heads/master.zip # wait for new release
-    Developer: ericlyon
-    Repository: pd-fftease
-
-  - Name: percolate
-    DirectLink: https://github.com/charlesneimog/pd-percolate/archive/refs/heads/master.zip
-    Developer: charlesneimog
-    Repository: pd-percolate
