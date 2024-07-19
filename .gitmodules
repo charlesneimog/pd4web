@@ -1,12 +1,4 @@
-[submodule "Sources/libpd"]
-	path = Sources/libpd
-	url = https://github.com/libpd/libpd
 [submodule "Sources/cmake/pd.cmake"]
 	path = Sources/cmake/pd.cmake
 	url = git@github.com:pure-data/pd.cmake.git
-[submodule "Pd4Web/pure-data"]
-	path = Pd4Web/pure-data
-	url = https://github.com/pure-data/pure-data.git
-[submodule "Tests/Pd4Web/Pd4Web/pure-data"]
-	path = Tests/Pd4Web/Pd4Web/pure-data
-	url = https://github.com/pure-data/pure-data.git
+
