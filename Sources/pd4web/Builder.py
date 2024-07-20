@@ -362,6 +362,8 @@ class GetAndBuildExternals:
     def CreateCppCallsExternalFile(self):
         audioConfig = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/config.h"
         with open(audioConfig, "w") as f:
+            if self.Pd4Web.OUTCHS_COUNT == 0:
+                self.Pd4Web.OUTCHS_COUNT = 2
             f.write(
                 "// This is automatically generated code from pd4web.py script\n\n")
             # print the PD4WEB_CHS_IN
