@@ -79,12 +79,7 @@ For more details and documentation, please visit the [Docs](https://charlesneimo
 
 <h3 align="center">Contribute</h3>
 
-Contribute to enabling running PureData in WebBrowsers! These are the main areas for your  contributions:
-
-* The `pd4web/lib/` folder, which contains files with special steps for compiling certain `externals/libraries`.
-* The `pd4web/src/template.c`, used to pd4web to build the `main.c` file.
-* The `pd4web/pd4web.py`, which configures the `main.c` file.
-
+Contribute to enabling running your external library in PureData for WebBrowsers! Add you CMakeFile.
 
 
 
