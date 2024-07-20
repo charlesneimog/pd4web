@@ -2,7 +2,7 @@
   <h1 align="center">pd4web</h1>
   <p align="center">
     <a href="https://charlesneimog.github.io/pd4web">
-      <img src="https://raw.githubusercontent.com/charlesneimog/pd4web/main/docs/assets/icon.svg" width="10%" alt="Logo">
+      <img src="https://github.com/charlesneimog/pd4web/raw/main/Documentation/assets/icon.svg" width="10%" alt="Logo">
     </a>
   </p>
   <h4 align="center">pd4web: Running PureData Patches with Externals on Web</h4>
