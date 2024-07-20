@@ -402,24 +402,21 @@ class GetAndBuildExternals:
         cwd = os.getcwd()
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         emcmake = self.Pd4Web.Compiler.EMCMAKE
-        if platform.system() == "Windows":
-            cmake = self.Pd4Web.Compiler.CMAKE
-        else:
-            cmake = "cmake"
         command = [
             emcmake,
-            f'"{cmake}"',
+            "cmake",
             ".",
             "-B",
             "build",
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
             "-DPD4WEB=ON",
         ]
+        
         if not self.Pd4Web.verbose:
             command.append("--no-warn-unused-cli")
             command.append("-Wno-dev")
         result = subprocess.run(
-            command, capture_output=False, text=True).returncode
+                command, capture_output=True, text=True).returncode        
         if result != 0:
             raise Exception("Error: Could not configure the project")
         os.chdir(cwd)
