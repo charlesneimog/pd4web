@@ -354,6 +354,27 @@ void Pd4Web::Init() {
 
     m_Context = AudioContext;
 
+    libpd_start_message(1);
+    libpd_add_float(1.0f);
+    libpd_finish_message("pd", "dsp");
+    libpd_init_audio(NInCh, NOutCh, SR);
+
+    if (!libpd_openfile("index.pd", "./")) {
+        Alert("Failed to open patch | Please Report!\n");
+        return;
+    }
+
+    m_PdInit = true;
+    ResumeAudio();
+    _Pd4WebJSFunctions();
+    return;
+}
+// ╭─────────────────────────────────────╮
+// │            Main Function            │
+// ╰─────────────────────────────────────╯
+int main() {
+    _Pd4WebEnableThreads();
+
     libpd_set_printhook(ReceivePrint);
     libpd_set_banghook(ReceiveBang);
     libpd_set_floathook(ReceiveFloat);
@@ -372,29 +393,8 @@ void Pd4Web::Init() {
 
     libpd_init();
     Pd4WebInitExternals();
-
-    libpd_start_message(1);
-    libpd_add_float(1.0f);
-    libpd_finish_message("pd", "dsp");
-    libpd_init_audio(NInCh, NOutCh, SR);
-
-    if (!libpd_openfile("index.pd", "./")) {
-        Alert("Failed to open patch | Please Report!\n");
-        return;
-    }
-
-    m_PdInit = true;
-    ResumeAudio();
-    _Pd4WebJSFunctions();
     if (PD4WEB_GUI) {
         _Pd4WebInitGui();
     }
-    return;
-}
-// ╭─────────────────────────────────────╮
-// │            Main Function            │
-// ╰─────────────────────────────────────╯
-int main() {
-    _Pd4WebEnableThreads();
     return 0;
 }

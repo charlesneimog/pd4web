@@ -1,0 +1,8 @@
+#N canvas 6 28 951 1012 8;
+#X obj 58 100 print OK;
+#X obj 59 22 loadbang;
+#X obj 58 79 metro 500;
+#X obj 122 27 bng 15 250 50 0 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000;
+#X connect 1 0 2 0;
+#X connect 2 0 0 0;
+#X connect 3 0 2 0;

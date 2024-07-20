@@ -1,128 +1,12 @@
-name: pd4web Tests
+name: Python Wheels
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+  push:
+    branches: ["main", "v2.0.0"]
+  pull_request:
+    branches: ["main", "v2.0.0"]
 jobs:
-  # ==============================================================================
-  # =                               WINDOWS                                      =
-  # ==============================================================================
-  windows-build:
-    runs-on: windows-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install pd4web
-        run: |
-          pip install poetry selenium
-          poetry build && poetry install
-          $wheels = Get-ChildItem -Path dist\*.whl
-          pip install $wheels
-      - name: Tests
-        run: |
-          cd pd4web/tests/
-          python ./runTests.py
-      - name: Upload Compiled website
-        uses: actions/upload-artifact@v3
-        with:
-          name: compiledWebsite-Win
-          path: pd4web/tests/
-  # =======================
-  # =    BROWSER TEST     =
-  # =======================
-  browser-tests-for-Windows:
-    needs: [windows-build]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Download Win Compiled
-        uses: actions/download-artifact@v3
-        with:
-          name: compiledWebsite-Win
-          path: pd4web/tests/
-      - name: Test Compiled Code
-        run: |
-          cd pd4web/tests/
-          pip install selenium
-          python3 ./runBrowserTest.py
-  # ==============================================================================
-  # =                               MAC INTEL                                    =
-  # ==============================================================================
-  macos-intel-build:
-    runs-on: macos-latest
-    strategy:
-      matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v3
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Install pd4web
-        run: |
-          pip install poetry certifi selenium
-          CERT_PATH=$(python -m certifi)
-          export SSL_CERT_FILE=${CERT_PATH}
-          export REQUESTS_CA_BUNDLE=${CERT_PATH}
-          poetry build
-          pip install dist/*.whl
-      - name: Tests
-        run: |
-          cd pd4web/tests/
-          python3 ./runTests.py
-      - name: Upload Compiled website
-        uses: actions/upload-artifact@v3
-        with:
-          name: compiledWebsite-Mac
-          path: pd4web/tests/
-  # =======================
-  # =    BROWSER TEST     =
-  # =======================
-  browser-tests-for-MAC:
-    needs: [macos-intel-build] # List all previous jobs here
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - name: Download Mac Compiled
-        uses: actions/download-artifact@v3
-        with:
-          name: compiledWebsite-Mac
-          path: pd4web/tests/
-      - name: list files
-        run: |
-          cd pd4web/tests/1_SimplePatch && ls -a -l
-      - name: Test Compiled Code
-        run: |
-          cd pd4web/tests/
-          pip install selenium
-          python3 ./runBrowserTest.py
-        # ==============================================================================
-        # =                               LINUX                                        =
-        # ==============================================================================
-  linux-test:
+  linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -138,36 +22,24 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install pd4web
-        run: "pip install poetry selenium\npoetry build \npip install dist/*.whl\n"
-      - name: Test pd4web
+      - name: Install google
         run: |
-          pd4web --help
+          sudo apt update
+          sudo apt install -y wget
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo apt install -y ./google-chrome-stable_current_amd64.deb
+          sudo apt-get install chromium-chromedriver
+      - name: Install pd4web
+        run: |
+          pip install poetry selenium flask
+          poetry build
+          pip install dist/*.whl
       - name: Tests
         run: |
-          cd pd4web/tests/
-          python3 ./runTests.py
-        # ==============================================================================
-        # =                               UPLOAD TO PACKAGE                            =
-        # ==============================================================================
-  upload-to-pip:
-    if: github.event_name == 'release'
-    needs: [browser-tests-for-MAC, browser-tests-for-Windows, linux-test]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v3
+          python3 ./Tests/Tests.py
+      - name: Upload Wheels
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
         with:
-          python-version: '3.x'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install poetry
-      - name: Build package
-        run: poetry build
-      - name: Publish package
-        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
+          name: pd4web-2.0.0-py3-none-any.whl
+          path: dist/pd4web-2.0.0-py3-none-any.whl
