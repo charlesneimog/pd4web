@@ -383,13 +383,12 @@ void Pd4Web::Init() {
         return;
     }
 
-#if PD4WEB_DEBUG
-    _HooksTests();
-#endif
-
     m_PdInit = true;
     ResumeAudio();
     _Pd4WebJSFunctions();
+    if (PD4WEB_GUI) {
+        _Pd4WebInitGui();
+    }
     return;
 }
 // ╭─────────────────────────────────────╮
@@ -397,8 +396,5 @@ void Pd4Web::Init() {
 // ╰─────────────────────────────────────╯
 int main() {
     _Pd4WebEnableThreads();
-    if (PD4WEB_GUI) {
-        _Pd4WebInitGui();
-    }
     return 0;
 }

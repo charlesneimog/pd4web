@@ -14,3 +14,9 @@ Sources/pd4web/Externals/else
 Sources/pd4web/emsdk
 .ipynb_checkpoints
 .DS_Store
+Tests/*/Pd4Web
+Tests/*/WebPatch
+Tests/*/CMakeLists.txt
+Tests/*/favicon.ico
+Tests/*/index.html
+
