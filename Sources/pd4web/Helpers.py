@@ -7,12 +7,14 @@ import requests
 
 
 def RedExceptions(exc_type, exc_value, exc_traceback):
-    ''' Just to print exceptions in red '''
-    formatted_exception = ''.join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+    """Just to print exceptions in red"""
+    formatted_exception = "".join(
+        traceback.format_exception(exc_type, exc_value, exc_traceback))
     print(f"\033[91m{formatted_exception}\033[0m")
 
 
 sys.excepthook = RedExceptions
+
 
 def pd4web_print(text, color=None, bright=False):
     try:
@@ -59,7 +61,6 @@ def pd4web_print(text, color=None, bright=False):
         print(text)
 
 
-
 def getPrintValue(color, bright=False):
     if color is None:
         color_code = ""
@@ -88,6 +89,7 @@ def getPrintValue(color, bright=False):
 
     return color_code
 
+
 def fixPaths(path):
     if platform.system() == "Windows":
         path = path.replace("/", "\\")
@@ -97,15 +99,16 @@ def fixPaths(path):
         return path
 
 
-def PrintProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
+def PrintProgressBar(iteration, total, prefix="", suffix="", decimals=1, length=100, fill="█", printEnd="\r"):
     if total == 0:
-        sys.stdout.write(f'\r{prefix} Downloading... {suffix}')
+        sys.stdout.write(f"\r{prefix} Downloading... {suffix}")
         sys.stdout.flush()
     else:
-        percent = ("{0:." + str(decimals) + "f}").format(100 * (iteration / float(total)))
+        percent = ("{0:." + str(decimals) + "f}").format(100 *
+                                                         (iteration / float(total)))
         filled_length = int(length * iteration // total)
-        bar = fill * filled_length + '-' * (length - filled_length)
-        sys.stdout.write(f'\r{prefix} |{bar}| {percent}% {suffix}')
+        bar = fill * filled_length + "-" * (length - filled_length)
+        sys.stdout.write(f"\r{prefix} |{bar}| {percent}% {suffix}")
         sys.stdout.flush()
     # Print New Line on Complete
     if iteration == total:
@@ -115,40 +118,38 @@ def PrintProgressBar(iteration, total, prefix = '', suffix = '', decimals = 1, l
 def DownloadZipFile(url, path2save):
     response = requests.get(url, stream=True)
     if response.status_code == 200:
-        total_size = int(response.headers.get('content-length', 0))
-        block_size = 1024  
-        with open(path2save, 'wb') as file:
+        total_size = int(response.headers.get("content-length", 0))
+        block_size = 1024
+        with open(path2save, "wb") as file:
             for data in response.iter_content(block_size):
                 file.write(data)
-                PrintProgressBar(file.tell(), total_size, prefix='Progress:', suffix='Complete', length=50)
+                PrintProgressBar(file.tell(), total_size,
+                                 prefix="Progress:", suffix="Complete", length=50)
         if total_size != 0 and os.path.getsize(path2save) != total_size:
             raise Exception("Error downloading the file")
     else:
-        raise Exception(f"Error {response.status_code} while downloading the file")
+        raise Exception(
+            f"Error {response.status_code} while downloading the file")
+
 
 class emccPaths:
     def __init__(self):
-        PdWebCompilerPath = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        PdWebCompilerPath = os.path.dirname(
+            os.path.dirname(os.path.realpath(__file__)))
         if platform.system() == "Windows":
             PdWebCompilerPath = PdWebCompilerPath.replace("/", "\\")
             # if first char of PdWebCompilerPath is a space remove it
             if PdWebCompilerPath[0] == " ":
                 PdWebCompilerPath = PdWebCompilerPath[1:]
             self.cmake = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcmake.bat" cmake '
-            self.configure = (
-                f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emconfigure.bat" '
-            )
-            self.make = (
-                f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emmake.bat" make '
-            )
+            self.configure = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emconfigure.bat" '
+            self.make = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emmake.bat" make '
             self.emcc = f'"{PdWebCompilerPath}\\emsdk\\upstream\\emscripten\\emcc.bat" '
             self.emsdk = f'"{PdWebCompilerPath}\\emsdk\\emsdk.bat" '
             self.emsdk_env = f'"{PdWebCompilerPath}\\emsdk\\emsdk_env.bat" '
         else:
             self.cmake = PdWebCompilerPath + "/emsdk/upstream/emscripten/emcmake cmake "
-            self.configure = (
-                PdWebCompilerPath + "/emsdk/upstream/emscripten/emconfigure "
-            )
+            self.configure = PdWebCompilerPath + "/emsdk/upstream/emscripten/emconfigure "
             self.make = PdWebCompilerPath + "/emsdk/upstream/emscripten/emmake make "
             self.emcc = PdWebCompilerPath + "/emsdk/upstream/emscripten/emcc "
             self.emsdk = PdWebCompilerPath + "/emsdk/emsdk "

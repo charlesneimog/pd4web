@@ -63,9 +63,9 @@ class GetAndBuildExternals:
         self.cmakeFile.append("# Pd sources")
         self.cmakeFile.append(
             "include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
-        self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
+        self.cmakeFile.append(
+            "include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
         self.cmakeFile.append("")
-
 
         # Pd4web executable
         self.cmakeFile.append("# Pd4Web executable")
@@ -411,12 +411,12 @@ class GetAndBuildExternals:
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
             "-DPD4WEB=ON",
         ]
-        
+
         if not self.Pd4Web.verbose:
             command.append("--no-warn-unused-cli")
             command.append("-Wno-dev")
         result = subprocess.run(
-                command, capture_output=True, text=True).returncode        
+            command, capture_output=True, text=True).returncode
         if result != 0:
             raise Exception("Error: Could not configure the project")
         os.chdir(cwd)
@@ -447,6 +447,12 @@ class GetAndBuildExternals:
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         shutil.copy(self.Pd4Web.Patch, self.Pd4Web.PROJECT_ROOT +
                     "/WebPatch/index.pd")
+
+        shutil.copy(
+            self.Pd4Web.PD4WEB_ROOT + "/../favicon.ico",
+            self.Pd4Web.PROJECT_ROOT + "/",
+        )
+
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.threads.js",
             self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
@@ -479,3 +485,4 @@ class GetAndBuildExternals:
 
     def __str__(self) -> str:
         return self.__repr__()
+

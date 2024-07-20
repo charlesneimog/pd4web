@@ -47,21 +47,10 @@ class ExternalsCompiler:
         self.CMAKE = self.GetCmake()
 
     def GetCmake(self):
-        if platform.system() == "Windows":
-            try:
-                cmake_path = shutil.which("cmake")
-                return cmake_path
-            except subprocess.CalledProcessError:
-                raise Exception("CMake not found, please report.")
-        else:
-            try:
-                result = subprocess.run(
-                    ["which", "cmake"], capture_output=True, text=True, check=True
-                )
-                cmake_path = result.stdout.strip()
-                return cmake_path
-            except subprocess.CalledProcessError:
-                raise Exception("CMake not found, please report.")
+        cmake_path = shutil.which("cmake")
+        if cmake_path is None:
+            raise Exception("CMake not found, please install it")
+        return cmake_path
 
     def InstallEMCC(self):
         if platform.system() == "Windows":

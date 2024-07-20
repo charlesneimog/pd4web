@@ -1,8 +1,8 @@
 import argparse
 import os
-import subprocess
 import sys
 import zipfile
+import shutil
 
 import requests
 
@@ -102,8 +102,8 @@ class Pd4Web:
         if sys.platform == "win32":
             self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
         elif sys.platform == "darwin":
-            self.APPDATA = os.path.join(os.path.expanduser(
-                "~/Library/"), "pd4web")
+            self.APPDATA = os.path.join(
+                os.path.expanduser("~/Library/"), "pd4web")
         elif sys.platform == "linux":
             self.APPDATA = os.path.join(
                 os.path.expanduser("~/.local/share"), "pd4web")
@@ -136,13 +136,12 @@ class Pd4Web:
         self.verbose = False
 
     def CheckDependencies(self):
-        try:
-            subprocess.check_output(["git", "--version"])
-        except subprocess.CalledProcessError:
+        OK = shutil.which("git")
+        if OK is None:
             raise Exception("Git is not installed. Please install it.")
-        OK = subprocess.call(["cmake", "--version"])
-        if OK != 0:
-            raise Exception("\n\nCmake is not installed. Please install it.")
+        OK = shutil.which("cmake")
+        if OK is None:
+            raise Exception("Cmake is not installed. Please install it.")
 
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green")
