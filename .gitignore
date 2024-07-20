@@ -6,9 +6,11 @@ pyrightconfig.json
 .cache/clangd/index
 .ipynb_checkpoints
 .DS_Store
+Tests/*/build
 Tests/*/Pd4Web
 Tests/*/WebPatch
 Tests/*/CMakeLists.txt
 Tests/*/favicon.ico
 Tests/*/index.html
+Tests/*/.git
 

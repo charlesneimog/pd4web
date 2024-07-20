@@ -1,0 +1,8 @@
+#N canvas 6 28 951 1012 8;
+#X obj 85 34 adc~ 1;
+#X obj 85 134 *~;
+#X obj 171 23 vsl 15 128 0 1 0 0 gain-sender gain-receiver empty 0 -9 0 8 #fcfcfc #000000 #000000 0 1;
+#X obj 85 155 dac~;
+#X connect 0 0 1 0;
+#X connect 1 0 3 0;
+#X connect 2 0 1 1;

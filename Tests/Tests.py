@@ -97,3 +97,9 @@ if __name__ == "__main__":
                         execute_chrome(project_folder)
                     except:
                         raise Exception("Test failed")
+    # after remove the folder .git
+    for item in os.listdir(test_folder):
+        item_path = os.path.join(test_folder, item)
+        if os.path.isdir(item_path):
+            if item == ".git":
+                shutil.rmtree(item_path)
