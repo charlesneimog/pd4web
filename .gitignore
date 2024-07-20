@@ -1,17 +1,9 @@
 __pycache__/
 .backup/
 dist/
-.externals/
-webpatch/
 compile_commands.json
 pyrightconfig.json
-pd4web/src/build
-build
 .cache/clangd/index
-Sources/pd4web-old
-Sources/pd4web2
-Sources/pd4web/Externals/else
-Sources/pd4web/emsdk
 .ipynb_checkpoints
 .DS_Store
 Tests/*/Pd4Web
