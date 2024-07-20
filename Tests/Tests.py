@@ -50,6 +50,7 @@ def execute_chrome(path):
         element = driver.find_element(By.XPATH, '//*[@id="turnAudioOn"]')
         element.click()
         logs = driver.get_log("browser")
+        time.sleep(5)
 
         for log_entry in logs:
             message = "".join(log_entry["message"])
@@ -122,6 +123,9 @@ class TestMyModule(unittest.TestCase):
             self.RunTest(5)
         self.assertEqual(str(context.exception),
                          "Library not supported: notfound")
+
+    def test_6(self):
+        self.RunTest(6)
 
 
 if __name__ == "__main__":
