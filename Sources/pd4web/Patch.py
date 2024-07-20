@@ -50,9 +50,7 @@ class PatchLine:
         for root, _, files in os.walk(LibraryFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
-                    with open(
-                        os.path.join(root, file), "r", encoding="utf-8"
-                    ) as c_file:
+                    with open(os.path.join(root, file), "r", encoding="utf-8") as c_file:
                         file_contents = c_file.read()
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)
@@ -72,10 +70,8 @@ class PatchLine:
             self.LibraryData = PdObjects.get(self.Library)
             if self.LibraryData is None or not self.LibraryData.valid:
                 raise ValueError(
-                    getPrintValue("red")
-                    + "Library not supported: "
-                    + self.Library
-                    + getPrintValue("reset")
+                    getPrintValue("red") + "Library not supported: " +
+                    self.Library + getPrintValue("reset")
                 )
         else:
             self.TotalObjects = PdObjects.getSupportedObjects()
@@ -237,9 +233,12 @@ class Patch:
 
             # get higher value
             for i in range(5, len(PatchLine.Tokens)):
-                outChCount = int(PatchLine.Tokens[i])
-                if outChCount > self.Pd4Web.OUTCHS_COUNT:
-                    self.Pd4Web.OUTCHS_COUNT = outChCount
+                try:
+                    outChCount = int(PatchLine.Tokens[i])
+                    if outChCount > self.Pd4Web.OUTCHS_COUNT:
+                        self.Pd4Web.OUTCHS_COUNT = outChCount
+                except:
+                    pass
 
             if N_CH_OUT > self.Pd4Web.OUTCHS_COUNT:
                 self.Pd4Web.OUTCHS_COUNT = N_CH_OUT
@@ -301,10 +300,8 @@ class Patch:
         else:
             if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.tmp/"):
                 os.mkdir(self.Pd4Web.PROJECT_ROOT + "/.tmp/")
-            patchFile = (
-                self.Pd4Web.PROJECT_ROOT + "/.tmp/" +
-                os.path.basename(self.patchFile)
-            )
+            patchFile = self.Pd4Web.PROJECT_ROOT + \
+                "/.tmp/" + os.path.basename(self.patchFile)
 
         with open(patchFile, "w") as f:
             for line in self.patchLinesProcessed:
@@ -324,9 +321,7 @@ class Patch:
     def PatchObject(self, patchLine: PatchLine):
         patchLine.completName = patchLine.Tokens[4]
         if (
-            patchLine.Tokens[0] == "#X"
-            and patchLine.Tokens[1] == "obj"
-            and "/" in patchLine.Tokens[4]
+            patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj" and "/" in patchLine.Tokens[4]
         ) and self.CheckIfIsSlash(patchLine):
             if os.path.exists(self.PROJECT_ROOT + "/" + patchLine.Tokens[4] + ".pd"):
                 # Process abstraction
@@ -354,9 +349,8 @@ class Patch:
                 patchLine.uiReceiver = True
                 patchLine.uiSymbol = receiverSymbol
                 self.Pd4Web.uiReceiversSymbol.append(receiverSymbol)
-                pd4web_print(
-                    "UI Sender object detected: " + receiverSymbol, color="blue"
-                )
+                pd4web_print("UI Sender object detected: " +
+                             receiverSymbol, color="blue")
             patchLine.name = patchLine.completName
 
         elif self.TokenIsFloat(patchLine.Tokens[4]) != float("inf"):
@@ -368,10 +362,7 @@ class Patch:
             patchLine.isExternal = False
 
         else:
-            if (
-                patchLine.completName
-                in self.pdObjects.getSupportedObjects()["puredata"]["objs"]
-            ):
+            if patchLine.completName in self.pdObjects.getSupportedObjects()["puredata"]["objs"]:
                 patchLine.name = patchLine.completName
                 patchLine.isExternal = False
 
@@ -394,10 +385,7 @@ class Patch:
         self.AddUsedObject(patchLine)
 
     def AddUsedObject(self, PatchLine: PatchLine):
-        if not any(
-            obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name
-            for obj in self.Pd4Web.usedObjects
-        ):
+        if not any(obj["Lib"] == PatchLine.Library and obj["Obj"] == PatchLine.name for obj in self.Pd4Web.usedObjects):
             self.Pd4Web.usedObjects.append(
                 {
                     "Lib": PatchLine.Library,
