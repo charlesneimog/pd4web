@@ -7,6 +7,8 @@ from selenium.webdriver.chrome.service import Service
 from flask import Flask, send_from_directory, after_this_request
 from selenium.webdriver.common.by import By
 
+import unittest
+import re
 
 import shutil
 from pprint import pprint
@@ -24,8 +26,10 @@ def execute_chrome(path):
     # Caminho para o ChromeDriver
     chrome_service = Service(executable_path=ChromeDriver)
 
-    log = logging.getLogger("werkzeug")
-    log.setLevel(logging.ERROR)
+    # Suppress Flask's default logging
+    # log = logging.getLogger("werkzeug")
+    # log.setLevel(logging.ERROR)
+    # app.logger.setLevel(logging.ERROR)
 
     @app.after_request
     def add_coop_coep_headers(response):
@@ -74,32 +78,51 @@ def execute_chrome(path):
     server_process.join()
 
 
+class TestMyModule(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        # search for .git folders and remove them
+        for root, dirs, files in os.walk(os.path.dirname(os.path.abspath(__file__))):
+            for dir in dirs:
+                if dir == ".git":
+                    shutil.rmtree(os.path.join(root, dir))
+
+    def RunTest(self, number):
+        print()
+        print("# ╭──────────────────────────────────────╮")
+        print(f"# │               Test {number:03}               │")
+        print("# ╰──────────────────────────────────────╯")
+        print("")
+
+        root = os.path.dirname(os.path.abspath(__file__))
+        pd_file = os.path.join(root, f"Test{number}", f"Test{number}.pd")
+        Pd4WebInstance = Pd4Web.Pd4Web()
+        Pd4WebInstance.Patch = pd_file
+        # Pd4WebInstance.Silence()
+        Pd4WebInstance.Execute()
+        execute_chrome(f"Test{number}")
+        print("\n\n")
+
+    def test_1(self):
+        self.RunTest(1)
+
+    def test_2(self):
+        self.RunTest(2)
+
+    def test_3(self):
+        self.RunTest(3)
+
+    def test_4(self):
+        with self.assertRaises(ValueError) as context:
+            self.RunTest(4)  # Use a number that you know doesn't exist
+        self.assertEqual(str(context.exception), "Patch not found")
+
+    def test_5(self):
+        with self.assertRaises(ValueError) as context:
+            self.RunTest(5)
+        self.assertEqual(str(context.exception),
+                         "Library not supported: notfound")
+
+
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
-    test_folder = os.path.dirname(os.path.realpath(__file__))
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--enable-logging")
-    this_file = os.path.basename(__file__)
-    os.chdir(test_folder)
-    for item in os.listdir(test_folder):
-        item_path = os.path.join(test_folder, item)
-        if os.path.isdir(item_path):
-            for file in os.listdir(item_path):
-                if file.endswith(".pd"):
-                    pd_file = os.path.join(item_path, file)
-                    project_folder = os.path.dirname(pd_file)
-                    print(f"Testing Project {item} with file {file}...")
-                    Pd4WebInstance = Pd4Web.Pd4Web()
-                    Pd4WebInstance.Patch = pd_file
-                    Pd4WebInstance.Execute()
-                    try:
-                        execute_chrome(project_folder)
-                    except:
-                        raise Exception("Test failed")
-    # after remove the folder .git
-    for item in os.listdir(test_folder):
-        item_path = os.path.join(test_folder, item)
-        if os.path.isdir(item_path):
-            if item == ".git":
-                shutil.rmtree(item_path)
+    unittest.main()

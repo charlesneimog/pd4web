@@ -69,10 +69,7 @@ class PatchLine:
         if self.Library != "puredata":
             self.LibraryData = PdObjects.get(self.Library)
             if self.LibraryData is None or not self.LibraryData.valid:
-                raise ValueError(
-                    getPrintValue("red") + "Library not supported: " +
-                    self.Library + getPrintValue("reset")
-                )
+                raise ValueError("Library not supported: " + self.Library)
         else:
             self.TotalObjects = PdObjects.getSupportedObjects()
 
@@ -199,26 +196,6 @@ class Patch:
             return False
         return True
 
-    def CheckIfObjIsLibrary(self, patchLine):
-        """
-        This function check if the object has the same name as the library.
-        For example, earplug~ for earplug~ Library.
-        """
-        patchLine = patchLine.Tokens
-        if patchLine[1] == "obj":
-            nameOfTheObject = patchLine[4].replace(";", "").replace("\n", "")
-            nameOfTheObject = nameOfTheObject.replace(",", "")
-            if nameOfTheObject in self.pdObjects.LibraryNames:
-                LibraryClass = self.pdObjects.get(nameOfTheObject)
-                if LibraryClass is None:
-                    pd4web_print("Library not found: " +
-                                 nameOfTheObject, color="red")
-                    return False
-
-                # if LibraryClass and LibraryClass.SingleObject: # TODO: Revisar esse código
-                #     return True
-        return False
-
     def SearchForSpecialObject(self, PatchLine: PatchLine):
         """
         There is some special objects that we need extra configs.
@@ -326,7 +303,7 @@ class Patch:
             if os.path.exists(self.PROJECT_ROOT + "/" + patchLine.Tokens[4] + ".pd"):
                 # Process abstraction
                 pd4web_print(
-                    f"Found Abstraction: {patchLine.Tokens[4]}", color="green")
+                    f"Found Abstraction: {patchLine.Tokens[4]}", color="green", silence=self.Pd4Web.SILENCE)
                 patchLine.isAbstraction = True
                 abs = Patch(
                     self.Pd4Web,
@@ -349,8 +326,8 @@ class Patch:
                 patchLine.uiReceiver = True
                 patchLine.uiSymbol = receiverSymbol
                 self.Pd4Web.uiReceiversSymbol.append(receiverSymbol)
-                pd4web_print("UI Sender object detected: " +
-                             receiverSymbol, color="blue")
+                pd4web_print("UI Sender object detected: " + receiverSymbol,
+                             color="blue", silence=self.Pd4Web.SILENCE)
             patchLine.name = patchLine.completName
 
         elif self.TokenIsFloat(patchLine.Tokens[4]) != float("inf"):
@@ -368,8 +345,8 @@ class Patch:
 
             elif patchLine.completName in self.localAbstractions:
                 patchLine.name = patchLine.completName
-                pd4web_print("Local Abstraction: " +
-                             patchLine.name, color="green")
+                pd4web_print("Local Abstraction: " + patchLine.name,
+                             color="green", silence=self.Pd4Web.SILENCE)
             else:
                 raise ValueError(
                     "\n\n"

@@ -16,7 +16,9 @@ def RedExceptions(exc_type, exc_value, exc_traceback):
 sys.excepthook = RedExceptions
 
 
-def pd4web_print(text, color=None, bright=False):
+def pd4web_print(text, color=None, bright=False, silence=False):
+    if silence:
+        return
     try:
         if color is None:
             color_code = ""
