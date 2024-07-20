@@ -15,6 +15,7 @@ class Pd4Web:
     MEMORY_SIZE: int = 128
     GUI: bool = True
     PD_VERSION: str = "0.55-0"
+    SILENCE: bool = False
 
     def __init__(self):
         self.Patch = ""
@@ -144,7 +145,8 @@ class Pd4Web:
             raise Exception("Cmake is not installed. Please install it.")
 
     def DownloadZip(self, url, filename, what=""):
-        pd4web_print(f"Downloading {what}...", color="green")
+        pd4web_print(f"Downloading {what}...",
+                     color="green", silence=self.SILENCE)
         response = requests.get(url, stream=True)
         if response.status_code != 200:
             raise Exception(f"Error: {response.status_code}")
@@ -180,7 +182,7 @@ class Pd4Web:
 
         if not os.path.exists(self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"):
             pd4web_print(
-                f"Downloading Pure Data {self.PD_VERSION}...", color="green")
+                f"Downloading Pure Data {self.PD_VERSION}...", color="green", silence=self.SILENCE)
             pdVersionSource = f"https://github.com/pure-data/pure-data/archive/refs/tags/{self.PD_VERSION}.zip"
             pdVersionZip = self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"
             DownloadZipFile(pdVersionSource, pdVersionZip)
@@ -200,4 +202,5 @@ class Pd4Web:
                     self.PROJECT_ROOT + "/Pd4Web/pure-data",
                 )
 
-        # os.chdir(current_dir)
+    def Silence(self):
+        self.SILENCE = True

@@ -35,7 +35,8 @@ class ExternalsCompiler:
                 try:
                     os.remove(EmccZip)
                 except:
-                    pd4web_print("Failed to remove emcc.zip", color="yellow")
+                    pd4web_print("Failed to remove emcc.zip",
+                                 color="yellow", silence=self.Pd4Web.SILENCE)
             self.InstallEMCC()
 
     def InitVariables(self):

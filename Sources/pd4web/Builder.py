@@ -165,8 +165,7 @@ class GetAndBuildExternals:
 
                 if not os.path.exists(self.Pd4Web.APPDATA + f"/Externals/{libData.name}/{libData.version}"):
                     pd4web_print(
-                        f"Downloading {libData.name} {libData.version}...",
-                        color="green",
+                        f"Downloading {libData.name} {libData.version}...", color="green", silence=self.Pd4Web.SILENCE
                     )
                     libSource = (
                         f"https://github.com/{libData.dev}/{libData.repo}/archive/refs/tags/{libData.version}.zip"
@@ -277,6 +276,7 @@ class GetAndBuildExternals:
                     pd4web_print(
                         f"Found Abstraction: {absName}  | Lib: {patchLine.Library}",
                         color="green",
+                        silence=self.Pd4Web.SILENCE,
                     )
 
                 elif patchLine.objFound and not patchLine.isAbstraction:
@@ -285,6 +285,7 @@ class GetAndBuildExternals:
                     pd4web_print(
                         f"Found External: {objName}  | Lib: {patchLine.Library}",
                         color="green",
+                        silence=self.Pd4Web.SILENCE,
                     )
                 else:
                     raise Exception("Could not find " + patchLine.name)
@@ -311,7 +312,7 @@ class GetAndBuildExternals:
                 continue
             libraryPath = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + library
             pd4web_print(
-                f"Create compilation process for {library}\n", color="green")
+                f"Create compilation process for {library}\n", color="green", silence=self.Pd4Web.SILENCE)
             for pdobject in objects:
                 if pdobject not in self.Pd4Web.externalsLinkLibraries:
                     self.Pd4Web.externalsLinkLibraries.append(pdobject)
@@ -411,7 +412,6 @@ class GetAndBuildExternals:
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
             "-DPD4WEB=ON",
         ]
-
         if not self.Pd4Web.verbose:
             command.append("--no-warn-unused-cli")
             command.append("-Wno-dev")
@@ -429,11 +429,11 @@ class GetAndBuildExternals:
         command.append(f"-j{cpu_count}")
         command.append("--target")
         command.append("pd4web")
-        pd4web_print(
-            f"Compiling project... This may take a while\n", color="green")
-        if self.Pd4Web.verbose:
+        pd4web_print(f"Compiling project... This may take a while\n",
+                     color="green", silence=self.Pd4Web.SILENCE)
+        if self.Pd4Web.SILENCE:
             result = subprocess.run(
-                command, capture_output=False, text=True).returncode
+                command, capture_output=True, text=True).returncode
         else:
             result = subprocess.run(
                 command, capture_output=False, text=True).returncode
@@ -485,4 +485,3 @@ class GetAndBuildExternals:
 
     def __str__(self) -> str:
         return self.__repr__()
-
