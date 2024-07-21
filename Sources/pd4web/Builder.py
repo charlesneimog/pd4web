@@ -418,11 +418,10 @@ class GetAndBuildExternals:
             "-G",
             "Ninja",
         ]
-        if not self.Pd4Web.verbose:
-            command.append("--no-warn-unused-cli")
-            command.append("-Wno-dev")
+
+        print(self.Pd4Web.verbose)
         result = subprocess.run(
-            command, capture_output=True, text=True).returncode
+            command, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
             raise Exception("Error: Could not configure the project")
         os.chdir(cwd)
