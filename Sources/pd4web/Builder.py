@@ -415,6 +415,8 @@ class GetAndBuildExternals:
             "build",
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
             "-DPD4WEB=ON",
+            "-G",
+            "Ninja",
         ]
         if not self.Pd4Web.verbose:
             command.append("--no-warn-unused-cli")
