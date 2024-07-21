@@ -363,6 +363,7 @@ void Pd4Web::Init() {
         Alert("Failed to open patch | Please Report!\n");
         return;
     }
+    libpd_add_to_search_path("Libs/");
 
     m_PdInit = true;
     ResumeAudio();
