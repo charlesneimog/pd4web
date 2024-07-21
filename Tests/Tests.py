@@ -4,15 +4,13 @@ import pd4web as Pd4Web
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
-from flask import Flask, send_from_directory, after_this_request
+from flask import Flask, send_from_directory
 from selenium.webdriver.common.by import By
 
 import unittest
-import re
 
 import shutil
-from pprint import pprint
-import logging
+import time
 
 
 def execute_chrome(path):
@@ -25,11 +23,6 @@ def execute_chrome(path):
 
     # Caminho para o ChromeDriver
     chrome_service = Service(executable_path=ChromeDriver)
-
-    # Suppress Flask's default logging
-    # log = logging.getLogger("werkzeug")
-    # log.setLevel(logging.ERROR)
-    # app.logger.setLevel(logging.ERROR)
 
     @app.after_request
     def add_coop_coep_headers(response):
@@ -46,21 +39,23 @@ def execute_chrome(path):
         driver = webdriver.Chrome(
             service=chrome_service, options=chrome_options)
         driver.get("http://localhost:5000")
+        time.sleep(1)  # Wait
 
-        element = driver.find_element(By.XPATH, '//*[@id="turnAudioOn"]')
-        element.click()
-        logs = driver.get_log("browser")
-        time.sleep(5)
+        try:
+            element = driver.find_element(By.XPATH, '//*[@id="turnAudioOn"]')
 
-        for log_entry in logs:
-            message = "".join(log_entry["message"])
-            if log_entry["level"] == "SEVERE" and log_entry["source"] == "console-api":
-                driver.quit()
-                server_process.terminate()
-                server_process.join()
-                raise Exception(message)
+            element.click()
+            time.sleep(5)  # run for 5 seconds
+            logs = driver.get_log("browser")
 
-        driver.quit()
+            for log_entry in logs:
+                message = "".join(log_entry["message"])
+                if log_entry["level"] == "SEVERE" and log_entry["source"] == "console-api":
+                    raise Exception(message)
+
+        finally:
+            driver.quit()
+
         return "Teste concluído!"
 
     # Inicie o servidor Flask em um processo separado
@@ -68,15 +63,12 @@ def execute_chrome(path):
         target=app.run, kwargs={"debug": False, "use_reloader": False})
     server_process.start()
 
-    # Aguarde um pouco para garantir que o servidor Flask está rodando
-    import time
-
-    time.sleep(1)
-    testar()
-
-    # Finalize o servidor Flask
-    server_process.terminate()
-    server_process.join()
+    try:
+        testar()
+    finally:
+        server_process.terminate()
+        server_process.join()
+        time.sleep(1)  # Ensure the port is released before the next test
 
 
 class TestMyModule(unittest.TestCase):
@@ -97,8 +89,7 @@ class TestMyModule(unittest.TestCase):
 
         root = os.path.dirname(os.path.abspath(__file__))
         pd_file = os.path.join(root, f"Test{number}", f"Test{number}.pd")
-        Pd4WebInstance = Pd4Web.Pd4Web()
-        Pd4WebInstance.Patch = pd_file
+        Pd4WebInstance = Pd4Web.Pd4Web(Patch=pd_file)
         # Pd4WebInstance.Silence()
         Pd4WebInstance.Execute()
         execute_chrome(f"Test{number}")

@@ -17,8 +17,9 @@ class Pd4Web:
     PD_VERSION: str = "0.55-0"
     SILENCE: bool = False
 
-    def __init__(self):
-        self.Patch = ""
+    def __init__(self, Patch=""):
+        self.Patch = Patch
+        self.InitVariables()
 
     def argParse(self):
         parser = argparse.ArgumentParser(
@@ -53,7 +54,13 @@ class Pd4Web:
             help="Pure Data version to use",
         )
         self.Parser = parser.parse_args()
-        self.Patch = self.Parser.patch_file
+        # where is the patch file
+
+        # get complete path of the patch file
+        completePath = os.path.abspath(self.Parser.patch_file)
+        self.Patch = completePath
+        self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
+        self.PROJECT_PATCH = os.path.basename(self.Patch)
 
         # check if file exists
         if not os.path.isfile(self.Patch):
@@ -71,6 +78,10 @@ class Pd4Web:
         from .Libraries import ExternalLibraries
         from .Patch import Patch
 
+        if self.Patch == "":
+            raise Exception("You must set a patch file")
+
+        self.InitVariables()
         self.CheckDependencies()  # git and cmake
 
         # ╭──────────────────────────────────────╮
@@ -81,7 +92,6 @@ class Pd4Web:
         # ╰──────────────────────────────────────╯
 
         # ───────────── Init Classes ─────────────
-        self.InitVariables()
         self.GetPdSourceCode()
 
         self.Compiler = ExternalsCompiler(self)
@@ -134,6 +144,7 @@ class Pd4Web:
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
+        self.verbose = False
 
     def CheckDependencies(self):
         OK = shutil.which("git")
