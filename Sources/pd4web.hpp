@@ -38,6 +38,7 @@ class Pd4Web {
     // send Messages
     bool SendFloat(std::string r, float f);
     bool SendSymbol(std::string r, std::string s);
+    bool SendBang(std::string r);
 
     bool _startMessage(int argc);
     void _addFloat(float f);
@@ -72,6 +73,7 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         // senders
         .function("sendFloat", &Pd4Web::SendFloat)
         .function("sendSymbol", &Pd4Web::SendSymbol)
+        .function("sendBang", &Pd4Web::SendBang)
 
         // sendList is added by _Pd4WebJSFunctions();
         .function("_startMessage", &Pd4Web::_startMessage)
