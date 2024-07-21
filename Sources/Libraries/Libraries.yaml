@@ -2,7 +2,6 @@ Sources:
   GITHUB_RELEASES: "https://api.github.com/repos/{}/{}/releases"
   GITHUB_TAGS: "https://api.github.com/repos/{}/{}/tags"
   GITHUB: "https://github.com/{}/{}"
-
 Libraries:
   - Name: else # Name of the pd library
     Source: GITHUB_TAGS # source
@@ -10,4 +9,8 @@ Libraries:
     Repository: pd-else # Repository Name
     Version: v.1.0-rc11 # Release or Tag
     Unsupported: ["sfz~", "sfont~"] # Unsupported Objecs
-
+  - Name: earplug
+    Source: GITHUB_TAGS
+    Developer: pd-externals
+    Repository: earplug
+    Version: 0.3.0

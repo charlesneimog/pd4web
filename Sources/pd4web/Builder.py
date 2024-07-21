@@ -123,11 +123,11 @@ class GetAndBuildExternals:
             self.Pd4Web.PROJECT_ROOT + "/Pd4Web/",
         )
         shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../cmake/pd.cmake/pd.cmake",
+            self.Pd4Web.PD4WEB_ROOT + "/../Libraries/pd.cmake/pd.cmake",
             self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/pd.cmake",
         )
         shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../cmake/libpd.cmake",
+            self.Pd4Web.PD4WEB_ROOT + "/../Libraries/libpd.cmake",
             self.Pd4Web.PROJECT_ROOT + "/Pd4Web/libpd.cmake",
         )
 
@@ -322,8 +322,10 @@ class GetAndBuildExternals:
                 target = pdobject.replace("~", "_tilde")
                 externalsTargets.append(target)
 
-            CMAKE_LIB_FILE = os.path.normpath(os.path.join(
-                self.Pd4Web.PD4WEB_ROOT, "..", "cmake", f"{library}.cmake"))
+            CMAKE_LIB_FILE = os.path.normpath(
+                os.path.join(self.Pd4Web.PD4WEB_ROOT, "..",
+                             "Libraries", f"{library}.cmake")
+            )
             shutil.copy(CMAKE_LIB_FILE, self.Pd4Web.PROJECT_ROOT +
                         "/Pd4Web/Externals/")
             self.cmakeFile.append(f"include(Pd4Web/Externals/{library}.cmake)")
