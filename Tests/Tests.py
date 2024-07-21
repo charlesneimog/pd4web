@@ -76,8 +76,21 @@ class TestMyModule(unittest.TestCase):
     def tearDownClass(cls):
         # search for .git folders and remove them
         for root, dirs, files in os.walk(os.path.dirname(os.path.abspath(__file__))):
+            for file in files:
+                if file == "CMakeLists.txt":
+                    os.remove(os.path.join(root, file))
+                if file == "favicon.ico":
+                    os.remove(os.path.join(root, file))
+                if file == "index.html":
+                    os.remove(os.path.join(root, file))
             for dir in dirs:
                 if dir == ".git":
+                    shutil.rmtree(os.path.join(root, dir))
+                if dir == "WebPatch":
+                    shutil.rmtree(os.path.join(root, dir))
+                if dir == "Pd4Web":
+                    shutil.rmtree(os.path.join(root, dir))
+                if dir == "build":
                     shutil.rmtree(os.path.join(root, dir))
 
     def RunTest(self, number):

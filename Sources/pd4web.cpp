@@ -56,6 +56,15 @@ EM_JS(void, _Pd4WebInitGui, (void), {
     if (document.getElementById('pd4web-gui') != null){
         return;
     }
+    // Load the CSS file
+    var link = document.createElement('link');
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    link.href = "./pd4web.style.css";
+    link.id = "pd4web-style";
+    document.head.appendChild(link);
+
+
     var script = document.createElement('script');
     script.type = "text/javascript";
     script.src = "./pd4web.gui.js";
@@ -274,6 +283,15 @@ static void ReceiveMessage(const char *r, const char *s, int argc, t_atom *argv)
 // ╭─────────────────────────────────────╮
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
+bool Pd4Web::SendBang(std::string r) {
+    int ok = libpd_bang(r.c_str());
+    if (!ok) {
+        return false;
+    }
+    return true;
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::SendFloat(std::string r, float f) {
     int ok = libpd_float(r.c_str(), f);
     if (!ok) {

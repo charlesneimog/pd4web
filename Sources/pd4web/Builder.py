@@ -457,6 +457,12 @@ class GetAndBuildExternals:
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.threads.js",
             self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
         )
+
+        shutil.copy(
+            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.style.css",
+            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
+        )
+
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gui.js",
             self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
