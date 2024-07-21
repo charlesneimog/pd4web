@@ -134,7 +134,6 @@ class Pd4Web:
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
-        self.verbose = False
 
     def CheckDependencies(self):
         OK = shutil.which("git")
