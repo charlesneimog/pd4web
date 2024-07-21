@@ -419,7 +419,6 @@ class GetAndBuildExternals:
             "Ninja",
         ]
 
-        print(self.Pd4Web.verbose)
         result = subprocess.run(
             command, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
@@ -436,12 +435,8 @@ class GetAndBuildExternals:
         command.append("pd4web")
         pd4web_print(f"Compiling project... This may take a while\n",
                      color="green", silence=self.Pd4Web.SILENCE)
-        if self.Pd4Web.SILENCE:
-            result = subprocess.run(
-                command, capture_output=True, text=True).returncode
-        else:
-            result = subprocess.run(
-                command, capture_output=False, text=True).returncode
+        result = subprocess.run(
+            command, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
             raise Exception(
                 "Error: Could not compile the project, run on verbose mode to see the error")
