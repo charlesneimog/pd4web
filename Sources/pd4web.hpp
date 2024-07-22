@@ -33,6 +33,7 @@ class Pd4Web {
 
     // bind symbols
     void BindReceiver(std::string s);
+    void BindGuiReceiver(std::string s, std::string obj);
     void UnbindReceiver();
 
     // send Messages
@@ -83,5 +84,6 @@ EMSCRIPTEN_BINDINGS(WebPd) {
 
         // bind list
         .function("bindReceiver", &Pd4Web::BindReceiver)
+        .function("bindGuiReceiver", &Pd4Web::BindGuiReceiver)
         .function("unbindReceiver", &Pd4Web::UnbindReceiver);
 }
