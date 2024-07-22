@@ -4,8 +4,8 @@
 #include <emscripten/bind.h>
 #include <emscripten/webaudio.h>
 
-// #include <util/z_print_util.h>
 #include <z_libpd.h>
+#include <z_print_util.h>
 
 #include "config.h"
 
