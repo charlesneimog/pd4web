@@ -15,7 +15,7 @@ static void _HooksTests() {
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
 // ─────────────────────────────────────
-EM_JS(void, _Pd4WebJSFunctions, (void), {
+EM_JS(void, Pd4WebJSHelpers, (void), {
 
     Pd4Web.sendList = function (r, vec) {
         const vecLength = vec.length;
@@ -38,11 +38,13 @@ EM_JS(void, _Pd4WebJSFunctions, (void), {
 
     // Functions
 
+
 });
 
 // ─────────────────────────────────────
-EM_JS(void, _Pd4WebEnableThreads, (void), {
-    if (document.getElementById('pd4web.threads') != null){
+EM_JS(void, Pd4WebEnableThreads, (void), {
+    if (document.getElementById("pd4web.threads") != null){
+        console.log("Threads already loaded");
         return;
     }
     var script = document.createElement('script');
@@ -51,11 +53,14 @@ EM_JS(void, _Pd4WebEnableThreads, (void), {
     script.id = "pd4web.threads";
     document.head.appendChild(script); 
 });
+
 // ─────────────────────────────────────
-EM_JS(void, _Pd4WebInitGui, (void), {
-    if (document.getElementById('pd4web-gui') != null){
+EM_JS(void, Pd4WebLoadGui, (void), {
+    if (document.getElementById("pd4web-gui") != null){
+        console.log("GUI already loaded");
         return;
     }
+
     // Load the CSS file
     var link = document.createElement('link');
     link.rel = "stylesheet";
@@ -64,14 +69,14 @@ EM_JS(void, _Pd4WebInitGui, (void), {
     link.id = "pd4web-style";
     document.head.appendChild(link);
 
-
     var script = document.createElement('script');
     script.type = "text/javascript";
     script.src = "./pd4web.gui.js";
-    script.id = "pd4web.gui";
+    script.id = "pd4web-gui";
     script.onload = function() {
         Pd4WebInitGui(); // defined in pd4web.gui.js
     };
+
     document.head.appendChild(script); 
 });
 
@@ -324,10 +329,23 @@ void Pd4Web::_finishMessage(std::string s) { libpd_finish_list(s.c_str()); }
 
 // ─────────────────────────────────────
 void Pd4Web::BindReceiver(std::string s) {
+    printf("Bind Receiver: %s", s.c_str());
     void *Receiver = libpd_bind(s.c_str());
 
     // TODO:
-    // The Receiver must save the void *Receiver in a array with his name to
+    // The Receiver must save the void *Receiver in a array if we want unbind
+    // Unbind using the name.
+
+    return;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::BindGuiReceiver(std::string s, std::string obj) {
+    printf("Bind Receiver: %s", s.c_str());
+    void *Receiver = libpd_bind(s.c_str());
+
+    // TODO:
+    // The Receiver must save the void *Receiver in a array if we want unbind
     // Unbind using the name.
 
     return;
@@ -344,6 +362,7 @@ void Pd4Web::UnbindReceiver() {
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
 void Pd4Web::Init() {
+
     uint32_t SR = GetSampleRate();
     float NInCh = GetNInputChannels();
     float NOutCh = GetNOutputChannels();
@@ -355,9 +374,6 @@ void Pd4Web::Init() {
 
     srand(time(NULL));
     assert(!emscripten_current_thread_is_audio_worklet());
-
-    printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
-           PD4WEB_MICRO_VERSION);
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
@@ -385,14 +401,16 @@ void Pd4Web::Init() {
 
     m_PdInit = true;
     ResumeAudio();
-    _Pd4WebJSFunctions();
     return;
 }
 // ╭─────────────────────────────────────╮
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
-    _Pd4WebEnableThreads();
+    printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
+           PD4WEB_MICRO_VERSION);
+
+    Pd4WebEnableThreads(); // <== For Github Pages
 
     libpd_set_printhook(ReceivePrint);
     libpd_set_banghook(ReceiveBang);
@@ -413,7 +431,8 @@ int main() {
     libpd_init();
     Pd4WebInitExternals();
     if (PD4WEB_GUI) {
-        _Pd4WebInitGui();
+        Pd4WebLoadGui();
     }
+
     return 0;
 }
