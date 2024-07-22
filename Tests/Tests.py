@@ -74,6 +74,7 @@ def execute_chrome(path):
 class TestMyModule(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
+        return
         # search for .git folders and remove them
         for root, dirs, files in os.walk(os.path.dirname(os.path.abspath(__file__))):
             for file in files:
@@ -130,6 +131,9 @@ class TestMyModule(unittest.TestCase):
 
     def test_6(self):
         self.RunTest(6)
+
+    def test_7(self):
+        self.RunTest(7)
 
 
 if __name__ == "__main__":

@@ -14,3 +14,4 @@ Tests/*/favicon.ico
 Tests/*/index.html
 Tests/*/.git
 
+build
