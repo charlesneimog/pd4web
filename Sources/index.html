@@ -59,10 +59,10 @@
     <span
       style="display: block; margin: 0 auto; text-align: center"
       class="pd4web-sound-off"
-      id="turnAudioOn"
+      id="Pd4WebAudioSwitch"
     ></span>
     <div
-      id="patchDiv"
+      id="Pd4WebPatchDiv"
       style="
         display: flex;
         justify-content: center;
@@ -77,7 +77,7 @@
       "
     >
       <svg
-        id="canvas"
+        id="Pd4WebCanvas"
         height="100%"
         width="100%"
         preserveAspectRatio="xMidYMin meet"
@@ -100,15 +100,15 @@
       // │        Gui Bottoms Interface        │
       // ╰─────────────────────────────────────╯
       document
-        .getElementById("turnAudioOn")
+        .getElementById("Pd4WebAudioSwitch")
         .addEventListener("click", async () => {
           // pd4web incorporates web audio functionality through the use of AudioWorklets.
           // To initialize AudioWorklets, pd4web must be initiated from a click event.
-          // In this instance, an icon is utilized with <span class="pd4web-sound-off" id="turnAudioOn"></span>,
+          // In this instance, an icon is utilized with <span class="pd4web-sound-off" id="Pd4WebAudioSwitch"></span>,
           // though you have the flexibility to add a click event anywhere within the Web Window.
 
           // To add one click for any where in the window use window.addEventListener('click', function(event)...
-          var clickableSpan = document.getElementById("turnAudioOn");
+          var clickableSpan = document.getElementById("Pd4WebAudioSwitch");
           if (clickableSpan.classList.contains("pd4web-sound-on")) {
             clickableSpan.classList.remove("pd4web-sound-on");
             Pd4Web.suspendAudio();
