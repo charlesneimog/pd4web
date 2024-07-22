@@ -3,16 +3,6 @@
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
 
-const isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
-var Canvas;
-const loading = document.getElementById("loading");
-const filter = document.getElementById("filter");
-window.subscribedData = {};
-let currentFile = "";
-let canvasWidth = 450;
-let canvasHeight = 300;
-let fontSize = 12;
-
 //--------------------- pdgui.js ----------------------------
 
 // function gui_post(string, type) {
@@ -186,17 +176,20 @@ let fontSize = 12;
 //     console.log("set_midiapi", val);
 // }
 
-//--------------------- gui handling ----------------------------
-function create_item(type, args) {
+//╭─────────────────────────────────────╮
+//│            Gui Handling             │
+//╰─────────────────────────────────────╯
+function CreateItem(type, args) {
     var item = document.createElementNS("http://www.w3.org/2000/svg", type);
     if (args !== null) {
-        configure_item(item, args);
+        ConfigureItem(item, args);
     }
-    Canvas.appendChild(item);
+    Pd4Web.Canvas.appendChild(item);
     return item;
 }
 
-function configure_item(item, attributes) {
+// ─────────────────────────────────────
+function ConfigureItem(item, attributes) {
     // draw_vis from g_template sends attributes
     // as a ["attr1",val1, "attr2", val2, etc.] array,
     // so we check for that here
@@ -218,7 +211,8 @@ function configure_item(item, attributes) {
     }
 }
 
-function iemgui_fontfamily(font) {
+// ─────────────────────────────────────
+function IEMFontFamily(font) {
     let family = "";
     if (font === 1) {
         family = "'Helvetica', 'DejaVu Sans', 'sans-serif'";
@@ -230,7 +224,8 @@ function iemgui_fontfamily(font) {
     return family;
 }
 
-function colfromload(col) {
+// ─────────────────────────────────────
+function ColFromLoad(col) {
     // decimal to hex color
     if (typeof col === "string") {
         return col;
@@ -240,11 +235,12 @@ function colfromload(col) {
     return "#" + ("000000" + col.toString(16)).slice(-6);
 }
 
-function gui_subscribe(data) {
-    if (data.receive in window.subscribedData) {
-        window.subscribedData[data.receive].push(data);
+// ─────────────────────────────────────
+function BindGuiReceiver(data) {
+    if (data.receive in Pd4Web.GuiReceivers) {
+        Pd4Web.GuiReceivers[data.receive].push(data);
     } else {
-        window.subscribedData[data.receive] = [data];
+        Pd4Web.GuiReceivers[data.receive] = [data];
     }
     if (Pd4Web) {
         Pd4Web.bindReceiver(data.receive);
@@ -253,15 +249,16 @@ function gui_subscribe(data) {
     }
 }
 
-function gui_unsubscribe(data) {
-    if (data.receive in window.subscribedData) {
-        const len = window.subscribedData[data.receive].length;
+// ─────────────────────────────────────
+function UnbindGuiReceiver(data) {
+    if (data.receive in Pd4Web.GuiReceivers) {
+        const len = Pd4Web.GuiReceivers[data.receive].length;
         for (let i = 0; i < len; i++) {
-            if (window.subscribedData[data.receive][i].id === data.id) {
-                Module.pd.unsubscribe(data.receive); // TODO: UPDATE THIS
-                window.subscribedData[data.receive].splice(i, 1);
-                if (!window.subscribedData[data.receive].length) {
-                    delete window.subscribedData[data.receive];
+            if (Pd4Web.GuiReceivers[data.receive][i].id === data.id) {
+                Pd4Web.unbindReceiver(data.receive);
+                Pd4Web.GuiReceivers[data.receive].splice(i, 1);
+                if (!Pd4Web.GuiReceivers[data.receive].length) {
+                    delete Pd4Web.GuiReceivers[data.receive];
                 }
                 break;
             }
@@ -269,48 +266,51 @@ function gui_unsubscribe(data) {
     }
 }
 
-// common
-function gui_rect(data) {
+// ─────────────────────────────────────
+function GuiRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
         width: data.size,
         height: data.size,
-        fill: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
         class: "border clickable",
     };
 }
 
-function gui_text(data) {
+// ─────────────────────────────────────
+function GuiText(data) {
     return {
         x: data.x_pos + data.x_off,
         y: data.y_pos + data.y_off,
-        "font-family": iemgui_fontfamily(data.font),
+        "font-family": IEMFontFamily(data.font),
         "font-weight": "normal",
         "font-size": `${data.fontsize}px`,
-        fill: colfromload(data.label_color),
+        fill: ColFromLoad(data.label_color),
         transform: `translate(0, ${(data.fontsize / 2) * 0.6})`, // note: modified
         id: `${data.id}_text`,
         class: "unclickable",
     };
 }
 
-function gui_mousepoint(e) {
+// ─────────────────────────────────────
+function GuiMousePoint(e) {
     // transforms the mouse position
-    let point = Canvas.createSVGPoint();
+    let point = Pd4Web.Canvas.createSVGPoint();
     point.x = e.clientX;
     point.y = e.clientY;
-    point = point.matrixTransform(Canvas.getScreenCTM().inverse());
+    point = point.matrixTransform(Pd4Web.Canvas.getScreenCTM().inverse());
     return point;
 }
 
-// bng
-function gui_bng_rect(data) {
-    return gui_rect(data);
+// ─────────────────────────────────────
+function GuiBngRect(data) {
+    return GuiRect(data);
 }
 
-function gui_bng_circle(data) {
+// ─────────────────────────────────────
+function GuiBngCircle(data) {
     const r = (data.size - 2) / 2;
     const cx = data.x_pos + r + 1;
     const cy = data.y_pos + r + 1;
@@ -324,30 +324,31 @@ function gui_bng_circle(data) {
     };
 }
 
-function gui_bng_text(data) {
-    return gui_text(data);
+// ─────────────────────────────────────
+function GuiBngText(data) {
+    return GuiText(data);
 }
 
-function gui_bng_update_circle(data) {
+function GuiBngUpdateCircle(data) {
     if (data.flashed) {
         data.flashed = false;
-        configure_item(data.circle, {
-            fill: colfromload(data.fg_color),
+        ConfigureItem(data.circle, {
+            fill: ColFromLoad(data.fg_color),
         });
         if (data.interrupt_timer) {
             clearTimeout(data.interrupt_timer);
         }
         data.interrupt_timer = setTimeout(function () {
             data.interrupt_timer = null;
-            configure_item(data.circle, {
+            ConfigureItem(data.circle, {
                 fill: "none",
             });
         }, data.interrupt);
         data.flashed = true;
     } else {
         data.flashed = true;
-        configure_item(data.circle, {
-            fill: colfromload(data.fg_color),
+        ConfigureItem(data.circle, {
+            fill: ColFromLoad(data.fg_color),
         });
     }
     if (data.hold_timer) {
@@ -356,23 +357,25 @@ function gui_bng_update_circle(data) {
     data.hold_timer = setTimeout(function () {
         data.flashed = false;
         data.hold_timer = null;
-        configure_item(data.circle, {
+        ConfigureItem(data.circle, {
             fill: "none",
         });
     }, data.hold);
 }
 
-function gui_bng_onmousedown(data) {
-    gui_bng_update_circle(data);
+// ─────────────────────────────────────
+function GuiBngOnMouseDown(data) {
+    GuiBngUpdateCircle(data);
     Pd4Web.sendBang(data.send);
 }
 
-// tgl
-function gui_tgl_rect(data) {
-    return gui_rect(data);
+// ─────────────────────────────────────
+function GuiTglRect(data) {
+    return GuiRect(data);
 }
 
-function gui_tgl_cross1(data) {
+// ─────────────────────────────────────
+function GuiTglCross1(data) {
     const w = ((data.size + 29) / 30) * 0.75; // note: modified
     const x1 = data.x_pos;
     const y1 = data.y_pos;
@@ -385,7 +388,7 @@ function gui_tgl_cross1(data) {
     const points = [p1, p2, p3, p4].join(" ");
     return {
         points: points,
-        stroke: colfromload(data.fg_color),
+        stroke: ColFromLoad(data.fg_color),
         "stroke-width": w,
         fill: "none",
         display: data.value ? "inline" : "none",
@@ -394,7 +397,8 @@ function gui_tgl_cross1(data) {
     };
 }
 
-function gui_tgl_cross2(data) {
+// ─────────────────────────────────────
+function GuiTglCross2(data) {
     const w = ((data.size + 29) / 30) * 0.75; // note: modified
     const x1 = data.x_pos;
     const y1 = data.y_pos;
@@ -407,7 +411,7 @@ function gui_tgl_cross2(data) {
     const points = [p1, p2, p3, p4].join(" ");
     return {
         points: points,
-        stroke: colfromload(data.fg_color),
+        stroke: ColFromLoad(data.fg_color),
         "stroke-width": w,
         fill: "none",
         display: data.value ? "inline" : "none",
@@ -416,28 +420,31 @@ function gui_tgl_cross2(data) {
     };
 }
 
-function gui_tgl_text(data) {
-    return gui_text(data);
+// ─────────────────────────────────────
+function GuiTglText(data) {
+    return GuiText(data);
 }
 
-function gui_tgl_update_cross(data) {
-    configure_item(data.cross1, {
+// ─────────────────────────────────────
+function GuiTglUpdateCross(data) {
+    ConfigureItem(data.cross1, {
         display: data.value ? "inline" : "none",
     });
-    configure_item(data.cross2, {
+    ConfigureItem(data.cross2, {
         display: data.value ? "inline" : "none",
     });
 }
 
-function gui_tgl_onmousedown(data) {
+// ─────────────────────────────────────
+function GuiTglOnMouseDown(data) {
     data.value = data.value ? 0 : data.default_value;
-    gui_tgl_update_cross(data);
+    GuiTglUpdateCross(data);
     // (data.send, data.value);
     Pd4Web.sendFloat(data.receive, data.value);
 }
 
-// numbers
-function gui_nbx_invisible_rect(data) {
+// ─────────────────────────────────────
+function GuiNbxInvisibleRect(data) {
     let x = data.x_pos;
     let y = data.y_pos;
     let width = data.width * 9;
@@ -448,13 +455,14 @@ function gui_nbx_invisible_rect(data) {
         width: width,
         height: height,
         opacity: 0, // Set opacity to 0 to make it transparent
-        fill: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
         class: "border clickable",
     };
 }
 
-function gui_nbx_polygon(data) {
+// ─────────────────────────────────────
+function GuiNbxPolygon(data) {
     // Points
     const x1 = data.x_pos; // Replace with your actual x1 coordinate
     const y1 = data.y_pos; // Replace with your actual y1 coordinate
@@ -479,7 +487,8 @@ function gui_nbx_polygon(data) {
     };
 }
 
-function gui_nbx_triangle(data) {
+// ─────────────────────────────────────
+function GuiNbxTriangle(data) {
     var x1 = data.x_pos;
     var y1 = data.y_pos + 1;
     var x2 = data.x_pos;
@@ -496,38 +505,41 @@ function gui_nbx_triangle(data) {
     };
 }
 
-function gui_nbx_numbers(data) {
+// ─────────────────────────────────────
+function GuiNbxNumbers(data) {
     return {
         x: data.x_pos + 7,
         y: data.y_pos + data.fontsize * 0.85,
-        "font-family": iemgui_fontfamily(data.font),
+        "font-family": IEMFontFamily(data.font),
         "font-weight": "bold",
         "font-size": `${data.fontsize}px`,
-        fill: colfromload(data.label_color),
+        fill: ColFromLoad(data.label_color),
         transform: `translate(0, ${(data.fontsize / 2) * 0.6})`, // note: modified
         id: `${data.id}_numbers`,
         class: "unclickable",
     };
 }
 
-function gui_nbx_onmousedown(data, e, id) {
-    const p = gui_mousepoint(e);
-    console.log(p);
+// ─────────────────────────────────────
+function GuiNbxOnMouseDown(data, e, id) {
+    const p = GuiMousePoint(e);
+    // console.log(p);
     if (!data.steady_on_click) {
     }
     // gui_slider_bang(data);
-    touches[id] = {
+    Pd4Web.Touches[id] = {
         data: data,
         point: p,
         value: data.value,
     };
 }
 
-function gui_nbx_click(data, e, id) {
+// ─────────────────────────────────────
+function GuiNbxClick(data, e, id) {
     // TODO: Make this better
-    const p = gui_mousepoint(e);
+    const p = GuiMousePoint(e);
     const numberText = data.numbers;
-    let numberInput = prompt("Enter a number", numberText.textContent); // BUG: FIX THIS
+    let numberInput = prompt("Enter a number", numberText.textContent);
     numberText.textContent = parseFloat(numberInput);
     if (isNaN(parseFloat(numberInput))) {
         alert("Please enter a valid number");
@@ -536,8 +548,8 @@ function gui_nbx_click(data, e, id) {
     sendFloat(data.receive, parseFloat(numberInput));
 }
 
-// silder: vsl, hsl
-function gui_slider_rect(data) {
+// ─────────────────────────────────────
+function GuiSliderRect(data) {
     let x = data.x_pos;
     let y = data.y_pos;
     let width = data.width;
@@ -554,13 +566,14 @@ function gui_slider_rect(data) {
         y: y,
         width: width,
         height: height,
-        fill: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
         class: "border clickable",
     };
 }
 
-function gui_slider_indicator_points(data) {
+// ─────────────────────────────────────
+function GuiSliderIndicatorPoints(data) {
     let x1 = data.x_pos;
     let y1 = data.y_pos;
     let x2 = x1 + data.width;
@@ -594,14 +607,15 @@ function gui_slider_indicator_points(data) {
     };
 }
 
-function gui_slider_indicator(data) {
-    const p = gui_slider_indicator_points(data);
+// ─────────────────────────────────────
+function GuiSliderIndicator(data) {
+    const p = GuiSliderIndicatorPoints(data);
     return {
         x1: p.x1,
         y1: p.y1,
         x2: p.x2,
         y2: p.y2,
-        stroke: colfromload(data.fg_color),
+        stroke: ColFromLoad(data.fg_color),
         "stroke-width": 3,
         fill: "none",
         id: `${data.id}_indicator`,
@@ -609,13 +623,15 @@ function gui_slider_indicator(data) {
     };
 }
 
-function gui_slider_text(data) {
-    return gui_text(data);
+// ─────────────────────────────────────
+function GuiSliderText(data) {
+    return GuiText(data);
 }
 
-function gui_slider_update_indicator(data) {
-    const p = gui_slider_indicator_points(data);
-    configure_item(data.indicator, {
+// ─────────────────────────────────────
+function GuiSliderUpdateIndicator(data) {
+    const p = GuiSliderIndicatorPoints(data);
+    ConfigureItem(data.indicator, {
         x1: p.x1,
         y1: p.y1,
         x2: p.x2,
@@ -624,9 +640,9 @@ function gui_slider_update_indicator(data) {
 }
 
 // slider events
-const touches = {};
 
-function gui_slider_check_minmax(data) {
+// ─────────────────────────────────────
+function GuiSliderCheckMinMax(data) {
     if (data.log) {
         if (!data.bottom && !data.top) {
             data.top = 1;
@@ -650,7 +666,8 @@ function gui_slider_check_minmax(data) {
     }
 }
 
-function gui_slider_set(data, f) {
+// ─────────────────────────────────────
+function GuiSliderSet(data, f) {
     let g = 0;
     if (data.reverse) {
         f = Math.max(Math.min(f, data.bottom), data.top);
@@ -663,10 +680,11 @@ function gui_slider_set(data, f) {
         g = (f - data.bottom) / data.k;
     }
     data.value = 100 * g + 0.49999;
-    gui_slider_update_indicator(data);
+    GuiSliderUpdateIndicator(data);
 }
 
-function gui_slider_bang(data) {
+// ─────────────────────────────────────
+function GuiSliderBang(data) {
     let out = 0;
     if (data.log) {
         out = data.bottom * Math.exp(data.k * data.value * 0.01);
@@ -686,46 +704,49 @@ function gui_slider_bang(data) {
     }
 }
 
-function gui_slider_onmousedown(data, e, id) {
-    const p = gui_mousepoint(e);
+// ─────────────────────────────────────
+function GuiSliderOnMouseDown(data, e, id) {
+    const p = GuiMousePoint(e);
     if (!data.steady_on_click) {
         if (data.type === "vsl") {
             data.value = Math.max(Math.min(100 * (data.height + data.y_pos - p.y), (data.height - 1) * 100), 0);
         } else {
             data.value = Math.max(Math.min(100 * (p.x - data.x_pos), (data.width - 1) * 100), 0);
         }
-        gui_slider_update_indicator(data);
+        GuiSliderUpdateIndicator(data);
     }
-    gui_slider_bang(data);
-    touches[id] = {
+    GuiSliderBang(data);
+    Pd4Web.Touches[id] = {
         data: data,
         point: p,
         value: data.value,
     };
 }
 
-function gui_slider_onmousemove(e, id) {
-    if (id in touches) {
-        const { data, point, value } = touches[id];
-        const p = gui_mousepoint(e);
+// ─────────────────────────────────────
+function GuiSliderOnMouseMove(e, id) {
+    if (id in Pd4Web.Touches) {
+        const { data, point, value } = Pd4Web.Touches[id];
+        const p = GuiMousePoint(e);
         if (data.type === "vsl") {
             data.value = Math.max(Math.min(value + (point.y - p.y) * 100, (data.height - 1) * 100), 0);
         } else {
             data.value = Math.max(Math.min(value + (p.x - point.x) * 100, (data.width - 1) * 100), 0);
         }
-        gui_slider_update_indicator(data);
-        gui_slider_bang(data);
+        GuiSliderUpdateIndicator(data);
+        GuiSliderBang(data);
     }
 }
 
-function gui_slider_onmouseup(id) {
-    if (id in touches) {
-        delete touches[id];
+// ─────────────────────────────────────
+function GuiSliderOnMouseUp(id) {
+    if (id in Pd4Web.Touches) {
+        delete Pd4Web.Touches[id];
     }
 }
 
-// radio: vradio, hradio
-function gui_radio_rect(data) {
+// ─────────────────────────────────────
+function GuiRadioRect(data) {
     let width = data.size;
     let height = data.size;
     if (data.type === "vradio") {
@@ -739,13 +760,14 @@ function gui_radio_rect(data) {
         stroke: "black",
         width: width,
         height: height,
-        fill: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
         class: "border clickable",
     };
 }
 
-function gui_radio_line(data, p1, p2, p3, p4, button_index) {
+// ─────────────────────────────────────
+function GuiRadioLine(data, p1, p2, p3, p4, button_index) {
     return {
         x1: p1,
         y1: p2,
@@ -756,21 +778,23 @@ function gui_radio_line(data, p1, p2, p3, p4, button_index) {
     };
 }
 
-function gui_radio_button(data, p1, p2, p3, p4, button_index, state) {
+// ─────────────────────────────────────
+function GuiRadioButton(data, p1, p2, p3, p4, button_index, state) {
     return {
         x: p1,
         y: p2,
         width: p3 - p1,
         height: p4 - p2,
-        fill: colfromload(data.fg_color),
-        stroke: colfromload(data.fg_color),
+        fill: ColFromLoad(data.fg_color),
+        stroke: ColFromLoad(data.fg_color),
         display: state ? "inline" : "none",
         id: `${data.id}_button_${button_index}`,
         class: "unclickable",
     };
 }
 
-function gui_radio_remove_lines_buttons(data) {
+// ─────────────────────────────────────
+function GuiRadioRemoveLinesButtons(data) {
     for (const line of data.lines) {
         line.parentNode.removeChild(line);
     }
@@ -779,7 +803,8 @@ function gui_radio_remove_lines_buttons(data) {
     }
 }
 
-function gui_radio_lines_buttons(data, is_creating) {
+// ─────────────────────────────────────
+function GuiRadioLinesButtons(data, is_creating) {
     const n = data.number;
     const d = data.size;
     const s = d / 4;
@@ -793,42 +818,42 @@ function gui_radio_lines_buttons(data, is_creating) {
         if (data.type === "vradio") {
             if (is_creating) {
                 if (i) {
-                    const line = create_item("line", gui_radio_line(data, x1, yi, x1 + d, yi, i));
+                    const line = CreateItem("line", GuiRadioLine(data, x1, yi, x1 + d, yi, i));
                     data.lines.push(line);
                 }
-                const button = create_item(
+                const button = CreateItem(
                     "rect",
-                    gui_radio_button(data, x1 + s, yi + s, x1 + d - s, yi + d - s, i, on === i),
+                    GuiRadioButton(data, x1 + s, yi + s, x1 + d - s, yi + d - s, i, on === i),
                 );
                 data.buttons.push(button);
             } else {
                 if (i) {
-                    configure_item(data.lines[i - 1], gui_radio_line(data, x1, yi, x1 + d, yi, i));
+                    ConfigureItem(data.lines[i - 1], GuiRadioLine(data, x1, yi, x1 + d, yi, i));
                 }
-                configure_item(
+                ConfigureItem(
                     data.buttons[i],
-                    gui_radio_button(data, x1 + s, yi + s, x1 + d - s, yi + d - s, i, on === i),
+                    GuiRadioButton(data, x1 + s, yi + s, x1 + d - s, yi + d - s, i, on === i),
                 );
             }
             yi += d;
         } else {
             if (is_creating) {
                 if (i) {
-                    const line = create_item("line", gui_radio_line(data, xi, y1, xi, y1 + d, i));
+                    const line = CreateItem("line", GuiRadioLine(data, xi, y1, xi, y1 + d, i));
                     data.lines.push(line);
                 }
-                const button = create_item(
+                const button = CreateItem(
                     "rect",
-                    gui_radio_button(data, xi + s, y1 + s, xi + d - s, yi + d - s, i, on === i),
+                    GuiRadioButton(data, xi + s, y1 + s, xi + d - s, yi + d - s, i, on === i),
                 );
                 data.buttons.push(button);
             } else {
                 if (i) {
-                    configure_item(data.lines[i - 1], gui_radio_line(data, xi, y1, xi, y1 + d, i));
+                    ConfigureItem(data.lines[i - 1], GuiRadioLine(data, xi, y1, xi, y1 + d, i));
                 }
-                configure_item(
+                ConfigureItem(
                     data.buttons[i],
-                    gui_radio_button(data, xi + s, y1 + s, xi + d - s, yi + d - s, i, on === i),
+                    GuiRadioButton(data, xi + s, y1 + s, xi + d - s, yi + d - s, i, on === i),
                 );
             }
             xi += d;
@@ -836,45 +861,50 @@ function gui_radio_lines_buttons(data, is_creating) {
     }
 }
 
-function gui_radio_create_lines_buttons(data) {
+// ─────────────────────────────────────
+function GuiRadioCreateLinesButtons(data) {
     data.lines = [];
     data.buttons = [];
-    gui_radio_lines_buttons(data, true);
+    GuiRadioLinesButtons(data, true);
 }
 
-function gui_radio_update_lines_buttons(data) {
-    gui_radio_lines_buttons(data, false);
+// ─────────────────────────────────────
+function GuiRadioUpdateLinesButtons(data) {
+    GuiRadioLinesButtons(data, false);
 }
 
-function gui_radio_text(data) {
-    return gui_text(data);
+// ─────────────────────────────────────
+function GuiRadioText(data) {
+    return GuiText(data);
 }
 
-function gui_radio_update_button(data) {
-    configure_item(data.buttons[data.drawn], {
+// ─────────────────────────────────────
+function GuiRadioUpdateButton(data) {
+    ConfigureItem(data.buttons[data.drawn], {
         display: "none",
     });
-    configure_item(data.buttons[data.value], {
-        fill: colfromload(data.fg_color),
-        stroke: colfromload(data.fg_color),
+    ConfigureItem(data.buttons[data.value], {
+        fill: ColFromLoad(data.fg_color),
+        stroke: ColFromLoad(data.fg_color),
         display: "inline",
     });
     data.drawn = data.value;
 }
 
-function gui_radio_onmousedown(data, e) {
-    const p = gui_mousepoint(e);
+// ─────────────────────────────────────
+function GuiRadioOnMouseDown(data, e) {
+    const p = GuiMousePoint(e);
     if (data.type === "vradio") {
         data.value = Math.floor((p.y - data.y_pos) / data.size);
     } else {
         data.value = Math.floor((p.x - data.x_pos) / data.size);
     }
-    gui_radio_update_button(data);
+    GuiRadioUpdateButton(data);
     sendFloat(data.receive, data.value);
 }
 
-// ======= vu =======================
-function gui_vu_rect(data) {
+// ─────────────────────────────────────
+function GuiVuRect(data) {
     let width = data.width;
     let height = data.height;
     return {
@@ -882,13 +912,14 @@ function gui_vu_rect(data) {
         y: data.y_pos,
         width: width,
         height: height,
-        fill: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
         class: "unclickable",
     };
 }
 
-function gui_vu_dB_rects(data) {
+// ─────────────────────────────────────
+function GuiVudBRects(data) {
     // inside this vu_rect I need to write 40 retangles
     var all_rects = [];
     var mini_rects_width = data.width - 6;
@@ -920,14 +951,15 @@ function gui_vu_dB_rects(data) {
             height: mini_rects_height - 1,
             id: `${data.id}_mini_rect_${i}`,
         };
-        var newrect = create_item("rect", mini_rect);
+        var newrect = CreateItem("rect", mini_rect);
         all_rects.push(newrect);
         minirect_y += mini_rects_height;
     }
     data.mini_rects = all_rects;
 }
 
-function gui_vu_update_gain(data) {
+// ─────────────────────────────────────
+function GuiVuUpdateGain(data) {
     var amount_rect_to_draw = 0;
     if (data.value < -99) {
         amount_rect_to_draw = 0;
@@ -1054,72 +1086,41 @@ function gui_vu_update_gain(data) {
     }
 }
 
-// drag events
-if (isMobile) {
-    window.addEventListener("touchmove", function (e) {
-        e = e || window.event;
-        for (const touch of e.changedTouches) {
-            gui_slider_onmousemove(touch, touch.identifier);
-        }
-    });
-    window.addEventListener("touchend", function (e) {
-        e = e || window.event;
-        for (const touch of e.changedTouches) {
-            gui_slider_onmouseup(touch.identifier);
-        }
-    });
-    window.addEventListener("touchcancel", function (e) {
-        e = e || window.event;
-        for (const touch of e.changedTouches) {
-            gui_slider_onmouseup(touch.identifier);
-        }
-    });
-} else {
-    window.addEventListener("mousemove", function (e) {
-        e = e || window.event;
-        gui_slider_onmousemove(e, 0);
-    });
-    window.addEventListener("mouseup", function (e) {
-        gui_slider_onmouseup(0);
-    });
-    window.addEventListener("mouseleave", function (e) {
-        gui_slider_onmouseup(0);
-    });
-}
-
-// cnv
-function gui_cnv_visible_rect(data) {
+// ─────────────────────────────────────
+function GuiCnvVisibleRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
         width: data.width,
         height: data.height,
-        fill: colfromload(data.bg_color),
-        stroke: colfromload(data.bg_color),
+        fill: ColFromLoad(data.bg_color),
+        stroke: ColFromLoad(data.bg_color),
         id: `${data.id}_visible_rect`,
         class: "unclickable",
     };
 }
 
-function gui_cnv_selectable_rect(data) {
+// ─────────────────────────────────────
+function GuiCnvSelectableRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
         width: data.size,
         height: data.size,
         fill: "none",
-        stroke: colfromload(data.bg_color),
+        stroke: ColFromLoad(data.bg_color),
         id: `${data.id}_selectable_rect`,
         class: "unclickable",
     };
 }
 
-function gui_cnv_text(data) {
-    return gui_text(data);
+// ─────────────────────────────────────
+function GuiCnvText(data) {
+    return GuiText(data);
 }
 
-// text
-function gobj_font_y_kludge(fontsize) {
+// ─────────────────────────────────────
+function GObjFontyKludge(fontsize) {
     switch (fontsize) {
         case 8:
             return -0.5;
@@ -1138,9 +1139,8 @@ function gobj_font_y_kludge(fontsize) {
     }
 }
 
-let font_engine_sanity = false;
-
-function set_font_engine_sanity() {
+// ─────────────────────────────────────
+function SetFontEngineSanity() {
     const canvas = document.createElement("canvas"),
         ctx = canvas.getContext("2d"),
         test_text = "struct theremin float x float y";
@@ -1151,24 +1151,23 @@ function set_font_engine_sanity() {
     }
     ctx.font = "11.65px DejaVu Sans Mono";
     if (Math.floor(ctx.measureText(test_text).width) <= 217) {
-        font_engine_sanity = true;
+        Pd4Web.FontEngineSanity = true;
     } else {
-        font_engine_sanity = false;
+        Pd4Web.FontEngineSanity = false;
     }
     if (canvas.parentNode) {
         canvas.parentNode.removeChild(canvas);
     }
 }
 
-set_font_engine_sanity();
-
-function font_stack_is_maintained_by_troglodytes() {
-    return !font_engine_sanity;
+// ─────────────────────────────────────
+function FontStackIsMaintainedByTroglodytes() {
+    return !Pd4Web.FontEngineSanity;
 }
 
-function font_map() {
+// ─────────────────────────────────────
+function FontMap() {
     return {
-        // pd_size: gui_size
         8: 8.33,
         12: 11.65,
         16: 16.65,
@@ -1177,9 +1176,9 @@ function font_map() {
     };
 }
 
-function suboptimal_font_map() {
+// ─────────────────────────────────────
+function SubOptimalFontMap() {
     return {
-        // pd_size: gui_size
         8: 8.45,
         12: 11.4,
         16: 16.45,
@@ -1188,9 +1187,9 @@ function suboptimal_font_map() {
     };
 }
 
-function font_height_map() {
+// ─────────────────────────────────────
+function FontHeightMap() {
     return {
-        // fontsize: fontheight
         8: 11,
         10: 13,
         12: 16,
@@ -1200,12 +1199,11 @@ function font_height_map() {
     };
 }
 
-function gobj_fontsize_kludge(fontsize, return_type) {
-    // These were tested on an X60 running Trisquel (based
-    // on Ubuntu 14.04)
+// ─────────────────────────────────────
+function GObjFontSizeKludge(fontsize, return_type) {
     var ret,
         prop,
-        fmap = font_stack_is_maintained_by_troglodytes() ? suboptimal_font_map() : font_map();
+        fmap = FontStackIsMaintainedByTroglodytes() ? SubOptimalFontMap() : FontMap();
     if (return_type === "gui") {
         ret = fmap[fontsize];
         return ret ? ret : fontsize;
@@ -1221,29 +1219,33 @@ function gobj_fontsize_kludge(fontsize, return_type) {
     }
 }
 
-function pd_fontsize_to_gui_fontsize(fontsize) {
-    return gobj_fontsize_kludge(fontsize, "gui");
+// ─────────────────────────────────────
+function PdFontSizeToGuiFontSize(fontsize) {
+    return GObjFontSizeKludge(fontsize, "gui");
 }
 
-function gui_text_text(data, line_index) {
+// ─────────────────────────────────────
+function GuiTextText(data, line_index) {
     const left_margin = 2;
-    const fmap = font_height_map();
-    const font_height = fmap[fontSize] * (line_index + 1);
+    const fmap = FontHeightMap();
+    const font_height = fmap[Pd4Web.FontSize] * (line_index + 1);
     return {
         transform: `translate(${left_margin - 0.5})`,
         x: data.x_pos,
-        y: data.y_pos + font_height + gobj_font_y_kludge(fontSize),
+        y: data.y_pos + font_height + GObjFontyKludge(Pd4Web.FontSize),
         "shape-rendering": "crispEdges",
-        "font-size": pd_fontsize_to_gui_fontsize(fontSize) + "px",
+        "font-size": PdFontSizeToGuiFontSize(Pd4Web.FontSize) + "px",
         "font-weight": "normal",
         id: `${data.id}_text_${line_index}`,
         class: "comment unclickable",
     };
 }
 
-//--------------------- patch handling ----------------------------
-function updatePatchDivSize(content) {
-    const patchDiv = document.getElementById("patchDiv");
+//╭─────────────────────────────────────╮
+//│           Patch Handling            │
+//╰─────────────────────────────────────╯
+function UpdatePatchDivSize(content) {
+    const patchDiv = document.getElementById("Pd4WebPatchDiv");
     if (patchDiv == null) {
         return;
     }
@@ -1265,13 +1267,13 @@ function updatePatchDivSize(content) {
     patchDiv.style.marginBottom = "auto";
 }
 
-// ================== patch handling ==================
-function openPatch(content) {
+// ─────────────────────────────────────
+function OpenPatch(content) {
     let canvasLevel = 0;
     let id = 0;
 
-    while (Canvas.lastChild) {
-        Canvas.removeChild(Canvas.lastChild);
+    while (Pd4Web.Canvas.lastChild) {
+        Pd4Web.Canvas.removeChild(Pd4Web.Canvas.lastChild);
     }
 
     const lines = content.split(";\n");
@@ -1284,10 +1286,10 @@ function openPatch(content) {
                 canvasLevel++;
                 if (canvasLevel === 1 && args.length === 7) {
                     // should be called only once
-                    canvasWidth = parseInt(args[4]);
-                    canvasHeight = parseInt(args[5]);
-                    fontSize = parseInt(args[6]);
-                    Canvas.setAttributeNS(null, "viewBox", `0 0 ${canvasWidth} ${canvasHeight}`);
+                    Pd4Web.CanvasWidth = parseInt(args[4]);
+                    Pd4Web.CanvasHeight = parseInt(args[5]);
+                    Pd4Web.FontSize = parseInt(args[6]);
+                    Pd4Web.Canvas.setAttributeNS(null, "viewBox", `0 0 ${Pd4Web.CanvasWidth} ${Pd4Web.CanvasHeight}`);
                 }
                 break;
             case "#X restore":
@@ -1324,26 +1326,26 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_bng_rect(data));
-                                data.circle = create_item("circle", gui_bng_circle(data));
-                                data.text = create_item("text", gui_bng_text(data));
+                                data.rect = CreateItem("rect", GuiBngRect(data));
+                                data.circle = CreateItem("circle", GuiBngCircle(data));
+                                data.text = CreateItem("text", GuiBngText(data));
                                 data.text.textContent = data.label;
 
                                 // handle event
                                 data.flashed = false;
                                 data.interrupt_timer = null;
                                 data.hold_timer = null;
-                                if (isMobile) {
+                                if (Pd4Web.isMobile) {
                                     data.rect.addEventListener("touchstart", function () {
-                                        gui_bng_onmousedown(data);
+                                        GuiBngOnMouseDown(data);
                                     });
                                 } else {
                                     data.rect.addEventListener("mousedown", function () {
-                                        gui_bng_onmousedown(data);
+                                        GuiBngOnMouseDown(data);
                                     });
                                 }
                                 // subscribe receiver
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
                         case "tgl":
@@ -1370,23 +1372,23 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_tgl_rect(data));
-                                data.cross1 = create_item("polyline", gui_tgl_cross1(data));
-                                data.cross2 = create_item("polyline", gui_tgl_cross2(data));
-                                data.text = create_item("text", gui_tgl_text(data));
+                                data.rect = CreateItem("rect", GuiTglRect(data));
+                                data.cross1 = CreateItem("polyline", GuiTglCross1(data));
+                                data.cross2 = CreateItem("polyline", GuiTglCross2(data));
+                                data.text = CreateItem("text", GuiTglText(data));
                                 data.text.textContent = data.label;
 
                                 // handle event
-                                if (isMobile) {
+                                if (Pd4Web.isMobile) {
                                     data.rect.addEventListener("touchstart", function () {
-                                        gui_tgl_onmousedown(data);
+                                        GuiTglOnMouseDown(data);
                                     });
                                 } else {
                                     data.rect.addEventListener("mousedown", function () {
-                                        gui_tgl_onmousedown(data);
+                                        GuiTglOnMouseDown(data);
                                     });
                                 }
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
 
@@ -1418,21 +1420,23 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_nbx_invisible_rect(data));
-                                data.polygon = create_item("polygon", gui_nbx_polygon(data));
-                                data.triangle = create_item("polygon", gui_nbx_triangle(data));
-                                data.numbers = create_item("text", gui_nbx_numbers(data));
+                                data.rect = CreateItem("rect", GuiNbxInvisibleRect(data));
+                                data.polygon = CreateItem("polygon", GuiNbxPolygon(data));
+                                data.triangle = CreateItem("polygon", GuiNbxTriangle(data));
+                                data.numbers = CreateItem("text", GuiNbxNumbers(data));
                                 data.numbers.textContent = data.init;
 
-                                if (isMobile) {
+                                if (Pd4Web.isMobile) {
                                     data.rect.addEventListener("touchstart", function (e) {
-                                        for (const touch of e.changedTouches) {
+                                        for (const _ of e.changedTouches) {
+                                            // for (const touch of e.changedTouches) {
+                                            // TODO: Check this
                                             // gui_slider_onmousedown(data, touch, touch.identifier);
                                         }
                                     });
                                 } else {
                                     data.rect.addEventListener("click", function (e) {
-                                        gui_nbx_click(data, e, 0);
+                                        GuiNbxClick(data, e, 0);
                                     });
                                 }
                                 break;
@@ -1472,28 +1476,26 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_slider_rect(data));
-                                data.indicator = create_item("line", gui_slider_indicator(data));
-                                data.text = create_item("text", gui_slider_text(data));
+                                data.rect = CreateItem("rect", GuiSliderRect(data));
+                                data.indicator = CreateItem("line", GuiSliderIndicator(data));
+                                data.text = CreateItem("text", GuiSliderText(data));
                                 data.text.textContent = data.label;
 
                                 // handle event
-                                gui_slider_check_minmax(data);
-                                if (isMobile) {
+                                GuiSliderCheckMinMax(data);
+                                if (Pd4Web.isMobile) {
                                     data.rect.addEventListener("touchstart", function (e) {
-                                        e = e || window.event;
                                         for (const touch of e.changedTouches) {
-                                            gui_slider_onmousedown(data, touch, touch.identifier);
+                                            GuiSliderOnMouseDown(data, touch, touch.identifier);
                                         }
                                     });
                                 } else {
                                     data.rect.addEventListener("mousedown", function (e) {
-                                        e = e || window.event;
-                                        gui_slider_onmousedown(data, e, 0);
+                                        GuiSliderOnMouseDown(data, e, 0);
                                     });
                                 }
                                 // subscribe receiver
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
                         case "vradio":
@@ -1527,24 +1529,24 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_radio_rect(data));
-                                gui_radio_create_lines_buttons(data);
-                                data.text = create_item("text", gui_radio_text(data));
+                                data.rect = CreateItem("rect", GuiRadioRect(data));
+                                GuiRadioCreateLinesButtons(data);
+                                data.text = CreateItem("text", GuiRadioText(data));
                                 data.text.textContent = data.label;
 
                                 // handle event
-                                if (isMobile) {
+                                if (Pd4Web.isMobile) {
                                     data.rect.addEventListener("touchstart", function (e) {
                                         for (const touch of e.changedTouches) {
-                                            gui_radio_onmousedown(data, touch);
+                                            GuiRadioOnMouseDown(data, touch);
                                         }
                                     });
                                 } else {
                                     data.rect.addEventListener("mousedown", function (e) {
-                                        gui_radio_onmousedown(data, e);
+                                        GuiRadioOnMouseDown(data, e);
                                     });
                                 }
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
 
@@ -1562,11 +1564,11 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.rect = create_item("rect", gui_vu_rect(data));
-                                gui_vu_dB_rects(data);
+                                data.rect = CreateItem("rect", GuiVuRect(data));
+                                GuiVudBRects(data);
 
                                 // subscribe receiver
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
 
@@ -1592,13 +1594,13 @@ function openPatch(content) {
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
-                                data.visible_rect = create_item("rect", gui_cnv_visible_rect(data));
-                                data.selectable_rect = create_item("rect", gui_cnv_selectable_rect(data));
-                                data.text = create_item("text", gui_cnv_text(data));
+                                data.visible_rect = CreateItem("rect", GuiCnvVisibleRect(data));
+                                data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
+                                data.text = CreateItem("text", GuiCnvText(data));
                                 data.text.textContent = data.label;
 
                                 // subscribe receiver
-                                gui_subscribe(data);
+                                BindGuiReceiver(data);
                             }
                             break;
                     }
@@ -1631,7 +1633,7 @@ function openPatch(content) {
                     // create svg
                     data.texts = [];
                     for (let i = 0; i < data.comment.length; i++) {
-                        const text = create_item("text", gui_text_text(data, i));
+                        const text = CreateItem("text", GuiTextText(data, i));
                         text.textContent = data.comment[i];
                         data.texts.push(text);
                     }
@@ -1647,9 +1649,53 @@ function openPatch(content) {
 
 // ─────────────────────────────────────
 async function Pd4WebInitGui() {
-    Canvas = document.getElementById("canvas");
-    var file = "./index.pd";
-    fetch(file)
+    console.log("Initialzing Pd4Web GUI");
+    if (Pd4Web === undefined) {
+        setTimeout(Pd4WebInitGui, 150);
+        console.log("Pd4Web is not defined yet");
+        return;
+    }
+
+    Pd4Web.isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
+    Pd4Web.CanvasWidth = 450;
+    Pd4Web.CanvasHeight = 300;
+    Pd4Web.FontSize = 12;
+    Pd4Web.GuiReceivers = {};
+    Pd4Web.Canvas = document.getElementById("Pd4WebCanvas");
+    Pd4Web.Touches = {};
+    Pd4Web.FontEngineSanity = false;
+
+    if (Pd4Web.isMobile) {
+        window.addEventListener("touchmove", function (e) {
+            for (const touch of e.changedTouches) {
+                GuiSliderOnMouseMove(touch, touch.identifier);
+            }
+        });
+        window.addEventListener("touchend", function (e) {
+            for (const touch of e.changedTouches) {
+                GuiSliderOnMouseUp(touch.identifier);
+            }
+        });
+        window.addEventListener("touchcancel", function (e) {
+            for (const touch of e.changedTouches) {
+                GuiSliderOnMouseUp(touch.identifier);
+            }
+        });
+    } else {
+        window.addEventListener("mousemove", function (e) {
+            GuiSliderOnMouseMove(e, 0);
+        });
+        window.addEventListener("mouseup", function (_) {
+            GuiSliderOnMouseUp(0);
+        });
+        window.addEventListener("mouseleave", function (_) {
+            GuiSliderOnMouseUp(0);
+        });
+    }
+
+    SetFontEngineSanity();
+    var File = "./index.pd";
+    fetch(File)
         .then((response) => {
             if (!response.ok) {
                 throw new Error("Network response was not ok");
@@ -1657,10 +1703,10 @@ async function Pd4WebInitGui() {
             return response.text();
         })
         .then((textContent) => {
-            updatePatchDivSize(textContent);
-            openPatch(textContent);
+            UpdatePatchDivSize(textContent);
+            OpenPatch(textContent);
         })
         .catch((error) => {
-            console.error("Error fetching index.pd:", error);
+            console.error("There has been a problem with your fetch operation:", error);
         });
 }
