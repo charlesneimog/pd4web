@@ -7,6 +7,8 @@ set(PD_SOURCE_DIR
 
 message(STATUS "PD_SOURCES: ${PD_SOURCE_DIR}")
 
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
+
 # ╭──────────────────────────────────────╮
 # │           PureData Sources           │
 # ╰──────────────────────────────────────╯
@@ -115,8 +117,11 @@ set(LIBPD_SOURCES ${PD_SOURCES} ${LIBPD_MAIN_SOURCES} ${LIBPD_UTILS_SOURCES})
 
 add_library(libpd STATIC ${LIBPD_SOURCES})
 set_target_properties(libpd PROPERTIES OUTPUT_NAME pd)
-target_compile_definitions(libpd PRIVATE -DPD=1 -DUSEAPI_DUMMY=1 -DHAVE_UNISTD_H=1 -DHAVE_LIBDL
-                                         -DPD_INTERNAL)
+target_compile_definitions(
+    libpd PRIVATE -DPD=1 -DUSEAPI_DUMMY=1 -DHAVE_UNISTD_H=1 -DHAVE_LIBDL -DPD_INTERNAL
+                  # -DPDINSTANCE -DPDTHREADS)
+)
+
 target_compile_options(libpd PRIVATE -w)
 target_compile_options(
     libpd PRIVATE $<$<CONFIG:Release>:-ffast-math> $<$<CONFIG:Release>:-funroll-loops>
