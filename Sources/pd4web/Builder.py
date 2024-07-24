@@ -62,6 +62,8 @@ class GetAndBuildExternals:
         # Pd Sources
         self.cmakeFile.append("# Pd sources")
         self.cmakeFile.append(
+            'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")')
+        self.cmakeFile.append(
             "include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
         self.cmakeFile.append(
             "include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
@@ -69,6 +71,7 @@ class GetAndBuildExternals:
 
         # Pd4web executable
         self.cmakeFile.append("# Pd4Web executable")
+
         self.cmakeFile.append(
             "add_executable(pd4web Pd4Web/pd4web.cpp Pd4Web/externals.cpp)")
 
@@ -93,10 +96,11 @@ class GetAndBuildExternals:
             "    -sEXPORT_NAME='Pd4WebModule'",
             f"    -sINITIAL_MEMORY={self.Pd4Web.MEMORY_SIZE}MB",
             "    -sUSE_PTHREADS=1",
-            "    -sPTHREAD_POOL_SIZE=navigator.hardwareConcurrency",
+            "    -sPTHREAD_POOL_SIZE=4",
             "    -sWASM=1",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
+            # "    -sASYNCIFY",
             ")",
         ]
 
@@ -376,6 +380,7 @@ class GetAndBuildExternals:
                 f.write(f"#define PD4WEB_GUI true\n")
             else:
                 f.write(f"#define PD4WEB_GUI false\n")
+            f.write(f"#define PD4WEB_FPS {self.Pd4Web.FPS}\n")
 
         externals = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/externals.cpp"
         with open(externals, "w") as f:
@@ -418,7 +423,9 @@ class GetAndBuildExternals:
             "-G",
             "Ninja",
         ]
-
+        if self.Pd4Web.verbose:
+            pd4web_print(" ".join(command), color="green",
+                         silence=self.Pd4Web.SILENCE)
         result = subprocess.run(
             command, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
@@ -435,6 +442,11 @@ class GetAndBuildExternals:
         command.append("pd4web")
         pd4web_print(f"Compiling project... This may take a while\n",
                      color="green", silence=self.Pd4Web.SILENCE)
+
+        if self.Pd4Web.verbose:
+            pd4web_print(" ".join(command), color="green",
+                         silence=self.Pd4Web.SILENCE)
+
         result = subprocess.run(
             command, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:

@@ -13,12 +13,14 @@ class Pd4Web:
     OUTCHS_COUNT: int = 0
     INCHS_COUNT: int = 0
     MEMORY_SIZE: int = 128
+    FPS: int = 30
     GUI: bool = True
     PD_VERSION: str = "0.55-0"
     SILENCE: bool = False
 
     def __init__(self, Patch=""):
         self.Patch = Patch
+        self.verbose = False
         self.InitVariables()
 
     def argParse(self):
@@ -54,7 +56,6 @@ class Pd4Web:
             help="Pure Data version to use",
         )
         self.Parser = parser.parse_args()
-        # where is the patch file
 
         # get complete path of the patch file
         completePath = os.path.abspath(self.Parser.patch_file)
@@ -144,7 +145,6 @@ class Pd4Web:
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
-        self.verbose = False
 
     def CheckDependencies(self):
         OK = shutil.which("git")
