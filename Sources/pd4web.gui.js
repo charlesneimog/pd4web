@@ -3,179 +3,6 @@
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
 
-//--------------------- pdgui.js ----------------------------
-
-// function gui_post(string, type) {
-//     console.log("gui_post", string, type);
-// }
-//
-// function gui_post_error(objectid, loglevel, error_msg) {
-//     console.log("gui_post_error", objectid, loglevel, error_msg);
-// }
-//
-// // ─────────────────────────────────────
-// function gui_print(object_id, selector, array_of_strings) {
-//     console.log("gui_print", object_id, selector, array_of_strings);
-// }
-//
-// // ─────────────────────────────────────
-// function gui_legacy_tcl_command(file, line_number, text) {
-//     console.log("gui_legacy_tcl_command", file, line_number, text);
-// }
-//
-// // ─────────────────────────────────────
-// function gui_load_default_image(dummy_cid, key) {
-//     console.log("gui_load_default_image", dummy_cid, key);
-// }
-//
-// // ─────────────────────────────────────
-// function gui_undo_menu(cid, undo_text, redo_text) {
-//     console.log("gui_undo_menu", cid, undo_text, redo_text);
-// }
-//
-// // ─────────────────────────────────────
-// function gui_startup(version, fontname_from_pd, fontweight_from_pd, apilist, midiapilist) {
-//     console.log("gui_startup", version, fontname_from_pd, fontweight_from_pd, apilist, midiapilist);
-// }
-//
-// function gui_set_cwd(dummy, cwd) {
-//     console.log("gui_set_cwd", dummy, cwd);
-// }
-//
-// function set_audioapi(val) {
-//     console.log("set_audioapi", val);
-// }
-//
-// function gui_pd_dsp(state) {
-//     console.log("gui_pd_dsp", state);
-// }
-//
-// function gui_canvas_new(
-//     cid,
-//     width,
-//     height,
-//     geometry,
-//     zoom,
-//     editmode,
-//     name,
-//     dir,
-//     dirty_flag,
-//     hide_scroll,
-//     hide_menu,
-//     cargs,
-// ) {
-//     console.log(
-//         "gui_canvas_new",
-//         cid,
-//         width,
-//         height,
-//         geometry,
-//         zoom,
-//         editmode,
-//         name,
-//         dir,
-//         dirty_flag,
-//         hide_scroll,
-//         hide_menu,
-//         cargs,
-//     );
-// }
-//
-// function gui_set_toplevel_window_list(dummy, attr_array) {
-//     console.log("gui_pd_dsp", dummy, attr_array);
-// }
-//
-// function gui_window_close(cid) {
-//     console.log("gui_window_close", cid);
-// }
-//
-// function gui_canvas_get_scroll(cid) {
-//     console.log("gui_canvas_get_scroll", cid);
-// }
-//
-// function pd_receive_command_buffer(data) {
-//     var command_buffer = {
-//         next_command: "",
-//     };
-//     perfect_parser(data, command_buffer);
-// }
-//
-// function perfect_parser(data, cbuf, sel_array) {
-//     var i, len, selector, args;
-//     len = data.length;
-//     for (i = 0; i < len; i++) {
-//         // check for end of command:
-//         if (data[i] === 31) {
-//             // unit separator
-//             // decode next_command
-//             try {
-//                 // This should work for all utf-8 content
-//                 cbuf.next_command = decodeURIComponent(cbuf.next_command);
-//             } catch (err) {
-//                 // This should work for ISO-8859-1
-//                 cbuf.next_command = unescape(cbuf.next_command);
-//             }
-//             // Turn newlines into backslash + "n" so
-//             // eval will do the right thing with them
-//             cbuf.next_command = cbuf.next_command.replace(/\n/g, "\\n");
-//             cbuf.next_command = cbuf.next_command.replace(/\r/g, "\\r");
-//             selector = cbuf.next_command.slice(0, cbuf.next_command.indexOf(" "));
-//             args = cbuf.next_command.slice(selector.length + 1);
-//             cbuf.next_command = "";
-//             // Now evaluate it
-//             //post("Evaling: " + selector + "(" + args + ");");
-//             // For communicating with a secondary instance, we filter
-//             // incoming messages. A better approach would be to make
-//             // sure that the Pd engine only sends the gui_set_cwd message
-//             // before "gui_startup".  Then we could just check the
-//             // Pd engine id in "gui_startup" and branch there, instead of
-//             // fudging with the parser here.
-//             if (!sel_array || sel_array.indexOf(selector) !== -1) {
-//                 eval(selector + "(" + args + ");");
-//             }
-//         } else {
-//             cbuf.next_command +=
-//                 "%" +
-//                 (
-//                     "0" + // leading zero (for rare case of single digit)
-//                     data[i].toString(16)
-//                 ) // to hex
-//                     .slice(-2); // remove extra leading zero
-//         }
-//     }
-// }
-//
-// function gui_audio_properties(
-//     gfxstub,
-//     sys_indevs,
-//     sys_outdevs,
-//     pd_indevs,
-//     pd_inchans,
-//     pd_outdevs,
-//     pd_outchans,
-//     audio_attrs,
-// ) {
-//     console.log(
-//         "gui_audio_properties",
-//         gfxstub,
-//         sys_indevs,
-//         sys_outdevs,
-//         pd_indevs,
-//         pd_inchans,
-//         pd_outdevs,
-//         pd_outchans,
-//         audio_attrs,
-//     );
-// }
-//
-// function gui_midi_properties(gfxstub, sys_indevs, sys_outdevs, pd_indevs, pd_outdevs, midi_attrs) {
-//     console.log("gui_midi_properties", gfxstub, sys_indevs, sys_outdevs, pd_indevs, pd_outdevs, midi_attrs);
-// }
-//
-// function set_midiapi(val) {
-//     console.log("set_midiapi", val);
-// }
-
 //╭─────────────────────────────────────╮
 //│            Gui Handling             │
 //╰─────────────────────────────────────╯
@@ -190,12 +17,8 @@ function CreateItem(type, args) {
 
 // ─────────────────────────────────────
 function ConfigureItem(item, attributes) {
-    // draw_vis from g_template sends attributes
-    // as a ["attr1",val1, "attr2", val2, etc.] array,
-    // so we check for that here
     var value, i, attr;
     if (Array.isArray(attributes)) {
-        // we should check to make sure length is even here...
         for (i = 0; i < attributes.length; i += 2) {
             value = attributes[i + 1];
             item.setAttributeNS(null, attributes[i], Array.isArray(value) ? value.join(" ") : value);
@@ -235,17 +58,20 @@ function ColFromLoad(col) {
     return "#" + ("000000" + col.toString(16)).slice(-6);
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│          Binder Receivers           │
+//╰─────────────────────────────────────╯
 function BindGuiReceiver(data) {
     if (data.receive in Pd4Web.GuiReceivers) {
         Pd4Web.GuiReceivers[data.receive].push(data);
     } else {
         Pd4Web.GuiReceivers[data.receive] = [data];
     }
+
     if (Pd4Web) {
-        Pd4Web.bindReceiver(data.receive);
+        Pd4Web.bindGuiReceiver(data.receive, data.type);
     } else {
-        console.error("Pd4Web not found");
+        alert("Pd4Web not found, please report");
     }
 }
 
@@ -304,7 +130,9 @@ function GuiMousePoint(e) {
     return point;
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│              Bang: Bng              │
+//╰─────────────────────────────────────╯
 function GuiBngRect(data) {
     return GuiRect(data);
 }
@@ -366,10 +194,12 @@ function GuiBngUpdateCircle(data) {
 // ─────────────────────────────────────
 function GuiBngOnMouseDown(data) {
     GuiBngUpdateCircle(data);
-    Pd4Web.sendBang(data.send);
+    Pd4Web.sendBang(data.receive);
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│             Toggle: Tgl             │
+//╰─────────────────────────────────────╯
 function GuiTglRect(data) {
     return GuiRect(data);
 }
@@ -439,11 +269,12 @@ function GuiTglUpdateCross(data) {
 function GuiTglOnMouseDown(data) {
     data.value = data.value ? 0 : data.default_value;
     GuiTglUpdateCross(data);
-    // (data.send, data.value);
     Pd4Web.sendFloat(data.receive, data.value);
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│             Number: Nbx             │
+//╰─────────────────────────────────────╯
 function GuiNbxInvisibleRect(data) {
     let x = data.x_pos;
     let y = data.y_pos;
@@ -535,7 +366,7 @@ function GuiNbxOnMouseDown(data, e, id) {
 }
 
 // ─────────────────────────────────────
-function GuiNbxClick(data, e, id) {
+function GuiNbxClick(data, e, _) {
     // TODO: Make this better
     const p = GuiMousePoint(e);
     const numberText = data.numbers;
@@ -548,7 +379,9 @@ function GuiNbxClick(data, e, id) {
     sendFloat(data.receive, parseFloat(numberInput));
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│           Slider: vsl/hsl           │
+//╰─────────────────────────────────────╯
 function GuiSliderRect(data) {
     let x = data.x_pos;
     let y = data.y_pos;
@@ -745,7 +578,9 @@ function GuiSliderOnMouseUp(id) {
     }
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│        Radio: vradio/hradio         │
+//╰─────────────────────────────────────╯
 function GuiRadioRect(data) {
     let width = data.size;
     let height = data.size;
@@ -903,7 +738,9 @@ function GuiRadioOnMouseDown(data, e) {
     sendFloat(data.receive, data.value);
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│             Vu: VuRect              │
+//╰─────────────────────────────────────╯
 function GuiVuRect(data) {
     let width = data.width;
     let height = data.height;
@@ -1086,7 +923,9 @@ function GuiVuUpdateGain(data) {
     }
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│             Canvas: Cnv             │
+//╰─────────────────────────────────────╯
 function GuiCnvVisibleRect(data) {
     return {
         x: data.x_pos,
@@ -1119,7 +958,9 @@ function GuiCnvText(data) {
     return GuiText(data);
 }
 
-// ─────────────────────────────────────
+//╭─────────────────────────────────────╮
+//│                Font                 │
+//╰─────────────────────────────────────╯
 function GObjFontyKludge(fontsize) {
     switch (fontsize) {
         case 8:
