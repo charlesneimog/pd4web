@@ -269,7 +269,7 @@ function GuiTglUpdateCross(data) {
 function GuiTglOnMouseDown(data) {
     data.value = data.value ? 0 : data.default_value;
     GuiTglUpdateCross(data);
-    Pd4Web.sendFloat(data.receive, data.value);
+    Pd4Web.sendFloat(data.send, data.value);
 }
 
 //╭─────────────────────────────────────╮
@@ -1490,7 +1490,6 @@ function OpenPatch(content) {
 
 // ─────────────────────────────────────
 async function Pd4WebInitGui() {
-    console.log("Initialzing Pd4Web GUI");
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
         console.log("Pd4Web is not defined yet");
