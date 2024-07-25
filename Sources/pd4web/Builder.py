@@ -368,14 +368,16 @@ class GetAndBuildExternals:
     def CreateCppCallsExternalFile(self):
         audioConfig = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/config.h"
         with open(audioConfig, "w") as f:
+            # Audio Config
             if self.Pd4Web.OUTCHS_COUNT == 0:
                 self.Pd4Web.OUTCHS_COUNT = 2
             f.write(
                 "// This is automatically generated code from pd4web.py script\n\n")
-            # print the PD4WEB_CHS_IN
 
+            f.write(f"// Audio Config\n")
             f.write(f"#define PD4WEB_CHS_IN {self.Pd4Web.INCHS_COUNT}\n")
-            f.write(f"#define PD4WEB_CHS_OUT {self.Pd4Web.OUTCHS_COUNT}\n")
+            f.write(f"#define PD4WEB_CHS_OUT {self.Pd4Web.OUTCHS_COUNT}\n\n")
+
             # Gui Interface
             f.write(f"// GUI Interface\n")
             if self.Pd4Web.GUI:
@@ -388,6 +390,7 @@ class GetAndBuildExternals:
                 f.write(f"#define PD4WEB_AUTO_THEME true\n")
             else:
                 f.write(f"#define PD4WEB_AUTO_THEME false\n")
+
         externals = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/externals.cpp"
         with open(externals, "w") as f:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()
@@ -473,6 +476,11 @@ class GetAndBuildExternals:
 
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.threads.js",
+            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
+        )
+
+        shutil.copy(
+            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.midi.js",
             self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
         )
 
