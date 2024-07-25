@@ -376,12 +376,18 @@ class GetAndBuildExternals:
 
             f.write(f"#define PD4WEB_CHS_IN {self.Pd4Web.INCHS_COUNT}\n")
             f.write(f"#define PD4WEB_CHS_OUT {self.Pd4Web.OUTCHS_COUNT}\n")
+            # Gui Interface
+            f.write(f"// GUI Interface\n")
             if self.Pd4Web.GUI:
                 f.write(f"#define PD4WEB_GUI true\n")
             else:
                 f.write(f"#define PD4WEB_GUI false\n")
             f.write(f"#define PD4WEB_FPS {self.Pd4Web.FPS}\n")
 
+            if self.Pd4Web.AUTO_THEME:
+                f.write(f"#define PD4WEB_AUTO_THEME true\n")
+            else:
+                f.write(f"#define PD4WEB_AUTO_THEME false\n")
         externals = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/externals.cpp"
         with open(externals, "w") as f:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()

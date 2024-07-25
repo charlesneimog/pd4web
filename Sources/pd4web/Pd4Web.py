@@ -13,10 +13,13 @@ class Pd4Web:
     OUTCHS_COUNT: int = 0
     INCHS_COUNT: int = 0
     MEMORY_SIZE: int = 128
-    FPS: int = 30
-    GUI: bool = True
     PD_VERSION: str = "0.55-0"
     SILENCE: bool = False
+
+    # Gui
+    FPS: int = 60
+    GUI: bool = True
+    AUTO_THEME: bool = True
 
     def __init__(self, Patch=""):
         self.Patch = Patch

@@ -1601,19 +1601,19 @@ function OpenPatch(content) {
 }
 
 // ─────────────────────────────────────
-async function Pd4WebInitGui() {
+async function Pd4WebInitGui(autoTheme) {
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
         console.log("Pd4Web is not defined yet");
         return;
     }
 
-    Pd4Web.AutoTheme = true;
+    Pd4Web.AutoTheme = autoTheme;
     Pd4Web.isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
     Pd4Web.FontSize = 12;
-    Pd4Web.GuiReceivers = {};
+    // Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
     Pd4Web.Canvas = document.getElementById("Pd4WebCanvas");
     Pd4Web.Touches = {};
     Pd4Web.FontEngineSanity = false;
