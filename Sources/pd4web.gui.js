@@ -2,6 +2,49 @@
 // GNU General Public License v3.0
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
+//╭─────────────────────────────────────╮
+//│            Auto Theming             │
+//╰─────────────────────────────────────╯
+function GetStyleRuleValue(className, styleProp) {
+    var el = document.createElement("div");
+    el.className = className;
+    document.body.appendChild(el);
+
+    var computedStyle = window.getComputedStyle(el);
+    var value = computedStyle.getPropertyValue(styleProp);
+
+    document.body.removeChild(el);
+    return value;
+}
+
+// ─────────────────────────────────────
+function GetNeededStyles() {
+    Pd4Web.Style = {};
+    Pd4Web.Style.BngCircleColor = GetStyleRuleValue("bng-blick", "fill");
+    Pd4Web.Style.MiniVURect = GetStyleRuleValue("mini-vu-rect", "fill");
+}
+
+// ─────────────────────────────────────
+function ThemeListener(_) {
+    GetNeededStyles();
+}
+
+// ─────────────────────────────────────
+function GetRBG(hex) {
+    hex = hex.replace(/^#/, "");
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+    return { r, g, b };
+}
+
+// ─────────────────────────────────────
+function AlmostWhiteOrBlack(hex) {
+    let rgb = GetRBG(hex);
+    let almostBlack = rgb.r < 20 && rgb.g < 20 && rgb.b < 20;
+    let almostWhite = rgb.r > 235 && rgb.g > 235 && rgb.b > 235;
+    return almostBlack || almostWhite;
+}
 
 //╭─────────────────────────────────────╮
 //│            Gui Handling             │
@@ -148,7 +191,7 @@ function GuiBngCircle(data) {
         r: r,
         fill: "none",
         id: `${data.id}_circle`,
-        class: "border unclickable",
+        class: "bng-circle unclickable",
     };
 }
 
@@ -157,11 +200,19 @@ function GuiBngText(data) {
     return GuiText(data);
 }
 
+// ─────────────────────────────────────
 function GuiBngUpdateCircle(data) {
+    let color;
+    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.fg_color)) {
+        color = Pd4Web.Style.BngCircleColor;
+    } else {
+        color = data.fg_color;
+    }
+
     if (data.flashed) {
         data.flashed = false;
         ConfigureItem(data.circle, {
-            fill: ColFromLoad(data.fg_color),
+            fill: ColFromLoad(color),
         });
         if (data.interrupt_timer) {
             clearTimeout(data.interrupt_timer);
@@ -169,16 +220,19 @@ function GuiBngUpdateCircle(data) {
         data.interrupt_timer = setTimeout(function () {
             data.interrupt_timer = null;
             ConfigureItem(data.circle, {
-                fill: "none",
+                fill: ColFromLoad(color),
             });
         }, data.interrupt);
         data.flashed = true;
     } else {
         data.flashed = true;
         ConfigureItem(data.circle, {
-            fill: ColFromLoad(data.fg_color),
+            fill: ColFromLoad(color),
         });
     }
+
+    //
+
     if (data.hold_timer) {
         clearTimeout(data.hold_timer);
     }
@@ -216,15 +270,26 @@ function GuiTglCross1(data) {
     const p3 = x2 - w - 1;
     const p4 = y2 - w - 1;
     const points = [p1, p2, p3, p4].join(" ");
-    return {
-        points: points,
-        stroke: ColFromLoad(data.fg_color),
-        "stroke-width": w,
-        fill: "none",
-        display: data.value ? "inline" : "none",
-        id: `${data.id}_cross1`,
-        class: "unclickable",
-    };
+    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.bg_color)) {
+        return {
+            points: points,
+            "stroke-width": w,
+            fill: "none",
+            display: data.value ? "inline" : "none",
+            id: `${data.id}_cross1`,
+            class: "unclickable tgl-cross",
+        };
+    } else {
+        return {
+            points: points,
+            stroke: ColFromLoad(data.fg_color),
+            "stroke-width": w,
+            fill: "none",
+            display: data.value ? "inline" : "none",
+            id: `${data.id}_cross1`,
+            class: "unclickable",
+        };
+    }
 }
 
 // ─────────────────────────────────────
@@ -239,15 +304,26 @@ function GuiTglCross2(data) {
     const p3 = x2 - w - 1;
     const p4 = y1 + w + 1;
     const points = [p1, p2, p3, p4].join(" ");
-    return {
-        points: points,
-        stroke: ColFromLoad(data.fg_color),
-        "stroke-width": w,
-        fill: "none",
-        display: data.value ? "inline" : "none",
-        id: `${data.id}_cross2`,
-        class: "unclickable",
-    };
+    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.bg_color)) {
+        return {
+            points: points,
+            "stroke-width": w,
+            fill: "none",
+            display: data.value ? "inline" : "none",
+            id: `${data.id}_cross1`,
+            class: "unclickable tgl-cross",
+        };
+    } else {
+        return {
+            points: points,
+            stroke: ColFromLoad(data.fg_color),
+            "stroke-width": w,
+            fill: "none",
+            display: data.value ? "inline" : "none",
+            id: `${data.id}_cross1`,
+            class: "unclickable",
+        };
+    }
 }
 
 // ─────────────────────────────────────
@@ -387,22 +463,26 @@ function GuiSliderRect(data) {
     let y = data.y_pos;
     let width = data.width;
     let height = data.height;
-    // if (data.type === "vsl") {
-    //   y -= 2; // note: modified
-    //   height += 5;
-    // } else {
-    //   x -= 3; // note: modified
-    //   width += 5;
-    // }
-    return {
-        x: x,
-        y: y,
-        width: width,
-        height: height,
-        fill: ColFromLoad(data.bg_color),
-        id: `${data.id}_rect`,
-        class: "border clickable",
-    };
+    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.bg_color)) {
+        return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            id: `${data.id}_rect`,
+            class: "border clickable",
+        };
+    } else {
+        return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            fill: color,
+            id: `${data.id}_rect`,
+            class: "border clickable",
+        };
+    }
 }
 
 // ─────────────────────────────────────
@@ -419,17 +499,17 @@ function GuiSliderIndicatorPoints(data) {
     if (data.type === "vsl") {
         r = y2 - 3 - (data.value + 50) / 100;
         r = Math.max(y1 + 3, Math.min(r, y2 - 3));
-        p1 = x1 + 2; //* 0.75; // note: modified | Largura
+        p1 = x1 + 2;
         p2 = r;
-        p3 = x2 - 2; //* 0.75; // note: modified | Largura
+        p3 = x2 - 2;
         p4 = r;
     } else {
         r = x1 + 3 + (data.value + 50) / 100;
-        r = Math.max(x1 + 3, Math.min(r, x2 - 3)); // Ensure r stays within the horizontal boundaries
+        r = Math.max(x1 + 3, Math.min(r, x2 - 3));
         p1 = r;
-        p2 = y1 + 2; //* 0.75; // note: modified | Largura
+        p2 = y1 + 2;
         p3 = r;
-        p4 = y2 - 2; //* 0.75; // note: modified | Largura
+        p4 = y2 - 2;
     }
     return {
         x1: p1,
@@ -442,17 +522,47 @@ function GuiSliderIndicatorPoints(data) {
 // ─────────────────────────────────────
 function GuiSliderIndicator(data) {
     const p = GuiSliderIndicatorPoints(data);
-    return {
-        x1: p.x1,
-        y1: p.y1,
-        x2: p.x2,
-        y2: p.y2,
-        stroke: ColFromLoad(data.fg_color),
-        "stroke-width": 3,
-        fill: "none",
-        id: `${data.id}_indicator`,
-        class: "unclickable",
-    };
+    let rgb = GetRBG(data.fg_color);
+
+    if (!Pd4Web.AutoTheme) {
+        return {
+            x1: p.x1,
+            y1: p.y1,
+            x2: p.x2,
+            y2: p.y2,
+            stroke: ColFromLoad(data.fg_color),
+            "stroke-width": 3,
+            fill: "none",
+            id: `${data.id}_indicator`,
+            class: "unclickable",
+        };
+    } else {
+        let almostBlack = rgb.r < 20 && rgb.g < 20 && rgb.b < 20;
+        let almostWhite = rgb.r > 235 && rgb.g > 235 && rgb.b > 235;
+        if (almostBlack || almostWhite) {
+            return {
+                x1: p.x1,
+                y1: p.y1,
+                x2: p.x2,
+                y2: p.y2,
+                stroke: ColFromLoad(data.fg_color),
+                fill: "none",
+                id: `${data.id}_indicator`,
+                class: "unclickable slider-indicator",
+            };
+        }
+        return {
+            x1: p.x1,
+            y1: p.y1,
+            x2: p.x2,
+            y2: p.y2,
+            stroke: ColFromLoad(data.fg_color),
+            "stroke-width": 3,
+            fill: "none",
+            id: `${data.id}_indicator`,
+            class: "unclickable",
+        };
+    }
 }
 
 // ─────────────────────────────────────
@@ -626,7 +736,7 @@ function GuiRadioButton(data, p1, p2, p3, p4, button_index, state) {
         stroke: ColFromLoad(data.fg_color),
         display: state ? "inline" : "none",
         id: `${data.id}_button_${button_index}`,
-        class: "unclickable",
+        class: "radio-buttom unclickable",
     };
 }
 
@@ -737,7 +847,7 @@ function GuiRadioOnMouseDown(data, e) {
         data.value = Math.floor((p.x - data.x_pos) / data.size);
     }
     GuiRadioUpdateButton(data);
-    sendFloat(data.receive, data.value);
+    Pd4Web.sendFloat(data.receive, data.value);
 }
 
 //╭─────────────────────────────────────╮
@@ -753,7 +863,7 @@ function GuiVuRect(data) {
         height: height,
         fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
-        class: "unclickable",
+        class: "vu-rect unclickable",
     };
 }
 
@@ -766,7 +876,6 @@ function GuiVudBRects(data) {
     var minirect_x = data.x_pos + 3;
     var minirect_y = data.y_pos + 1;
     for (var i = 0; i < 40; i++) {
-        var color = "#000000";
         if (i == 39) {
             color = "#28f4f4";
         } else if (i >= 23 && i <= 38) {
@@ -789,6 +898,7 @@ function GuiVudBRects(data) {
             index: i,
             height: mini_rects_height - 1,
             id: `${data.id}_mini_rect_${i}`,
+            class: "mini-vu-rect",
         };
         var newrect = CreateItem("rect", mini_rect);
         all_rects.push(newrect);
@@ -1498,6 +1608,7 @@ async function Pd4WebInitGui() {
         return;
     }
 
+    Pd4Web.AutoTheme = true;
     Pd4Web.isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
@@ -1534,8 +1645,14 @@ async function Pd4WebInitGui() {
             GuiSliderOnMouseUp(0);
         });
     }
-
     SetFontEngineSanity();
+
+    // Auto Theming
+    GetNeededStyles();
+    const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    darkModeMediaQuery.addEventListener("change", ThemeListener);
+
+    // Open Patch
     var File = "./index.pd";
     fetch(File)
         .then((response) => {
