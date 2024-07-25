@@ -42,23 +42,39 @@ class Pd4Web {
     static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                              void *userData);
 
-    void Init();
-    void SuspendAudio();
-    void ResumeAudio();
+    // Main
+    void init();
+    void suspendAudio();
+    void resumeAudio();
+    static void post(const char *message);
+
+    // Audio Worklets
+    static EM_BOOL process(int numInputs, const AudioSampleFrame *In, int numOutputs,
+                           AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
+                           void *userData);
+    static void audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
+                                 void *userData);
+
+    // Gui
+    static void mainLoop();
+
+    // Receivers
+    static void AW_ReceivedBang(const char *r);
+    static void AW_ReceivedFloat(const char *r, float f);
+    static void AW_ReceivedSymbol(const char *r, const char *s);
 
     // bind symbols
-    void BindReceiver(std::string s);
-    void BindGuiReceiver(std::string s, std::string obj);
-    void UnbindReceiver();
+    void bindReceiver(std::string s);
+    void bindGuiReceiver(std::string s, std::string obj);
+    void unbindReceiver();
 
-    // receive Messages
     // midi
     void noteOn(int channel, int pitch, int velocity);
 
     // send Messages
-    bool SendFloat(std::string r, float f);
-    bool SendSymbol(std::string r, std::string s);
-    bool SendBang(std::string r);
+    bool sendFloat(std::string r, float f);
+    bool sendSymbol(std::string r, std::string s);
+    bool sendBang(std::string r);
 
     bool _startMessage(int argc);
     void _addFloat(float f);
@@ -87,14 +103,14 @@ class Pd4Web {
 EMSCRIPTEN_BINDINGS(WebPd) {
     emscripten::class_<Pd4Web>("Pd4Web")
         .constructor<>() // Default constructor
-        .function("init", &Pd4Web::Init)
-        .function("suspendAudio", &Pd4Web::SuspendAudio)
-        .function("resumeAudio", &Pd4Web::ResumeAudio)
+        .function("init", &Pd4Web::init)
+        .function("suspendAudio", &Pd4Web::suspendAudio)
+        .function("resumeAudio", &Pd4Web::resumeAudio)
 
         // senders
-        .function("sendFloat", &Pd4Web::SendFloat)
-        .function("sendSymbol", &Pd4Web::SendSymbol)
-        .function("sendBang", &Pd4Web::SendBang)
+        .function("sendFloat", &Pd4Web::sendFloat)
+        .function("sendSymbol", &Pd4Web::sendSymbol)
+        .function("sendBang", &Pd4Web::sendBang)
 
         // sendList is added by _Pd4WebJSFunctions();
         .function("_startMessage", &Pd4Web::_startMessage)
@@ -104,8 +120,9 @@ EMSCRIPTEN_BINDINGS(WebPd) {
 
         // Midi
         .function("noteOn", &Pd4Web::noteOn)
+
         // bind list
-        .function("bindReceiver", &Pd4Web::BindReceiver)
-        .function("bindGuiReceiver", &Pd4Web::BindGuiReceiver)
-        .function("unbindReceiver", &Pd4Web::UnbindReceiver);
+        .function("bindReceiver", &Pd4Web::bindReceiver)
+        .function("bindGuiReceiver", &Pd4Web::bindGuiReceiver)
+        .function("unbindReceiver", &Pd4Web::unbindReceiver);
 }
