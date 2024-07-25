@@ -50,7 +50,10 @@ def execute_chrome(path):
 
             for log_entry in logs:
                 message = "".join(log_entry["message"])
-                if log_entry["level"] == "SEVERE" and log_entry["source"] == "console-api":
+                if (
+                    log_entry["level"] == "SEVERE"
+                    and log_entry["source"] == "console-api"
+                ):
                     raise Exception(message)
 
         finally:
@@ -60,7 +63,8 @@ def execute_chrome(path):
 
     # Inicie o servidor Flask em um processo separado
     server_process = multiprocessing.Process(
-        target=app.run, kwargs={"debug": False, "use_reloader": False})
+        target=app.run, kwargs={"debug": False, "use_reloader": False}
+    )
     server_process.start()
 
     try:
@@ -105,7 +109,9 @@ class TestMyModule(unittest.TestCase):
         pd_file = os.path.join(root, f"Test{number}", f"Test{number}.pd")
         Pd4WebInstance = Pd4Web.Pd4Web(Patch=pd_file)
         # Pd4WebInstance.Silence()
+        Pd4WebInstance.verbose = True
         Pd4WebInstance.Execute()
+
         execute_chrome(f"Test{number}")
         print("\n\n")
 
