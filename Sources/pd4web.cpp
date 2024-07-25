@@ -31,6 +31,34 @@ EM_JS(void, Pd4WebJSHelpers, (void), {
         }
         Pd4Web._finishMessage(r);
     };
+
+    // User functions for receiving messages
+    Pd4Web.onFloatReceived = function(receiver, myFunc) {
+        if (typeof Pd4Web._userFloatFunc === 'undefined') {
+            Pd4Web._userFloatFunc = {};
+        }
+        const paramCount = myFunc.length;
+        if (paramCount !== 1) {
+            console.error('Invalid number of arguments for function, expected 1, just the float received');
+            return;
+        }
+        Pd4Web.bindReceiver(receiver);
+        Pd4Web._userFloatFunc[receiver] = myFunc;
+    };
+
+    // Symbol Received
+    Pd4Web.onSymbolReceived = function(receiver, myFunc) {
+        if (typeof Pd4Web._userSymbolFunc === 'undefined') {
+            Pd4Web._userSymbolFunc = {};
+        }
+        const paramCount = myFunc.length;
+        if (paramCount !== 1) {
+            console.error('Invalid number of arguments for function. Required 1, just the symbol (aka string) received');
+            return;
+        }
+        Pd4Web.bindReceiver(receiver);
+        Pd4Web._userSymbolFunc[receiver] = myFunc;
+    };
 });
 
 // ─────────────────────────────────────
