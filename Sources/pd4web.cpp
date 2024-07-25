@@ -180,7 +180,7 @@ EM_JS(void, JsReceiveFloat, (const char *r, float f),{
                     break;
                 case "vradio":
                 case "hradio":
-                    data.value = Math.min(Math.max(Math.floor(value), 0), data.number - 1);
+                    data.value = Math.min(Math.max(Math.floor(f), 0), data.number - 1);
                     GuiRadioUpdateButton(data);
                     Pd4Web.sendFloat(data.send, data.value);
                     break;
