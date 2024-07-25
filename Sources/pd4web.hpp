@@ -8,8 +8,6 @@
 #include <z_print_util.h>
 #include <z_queued.h>
 
-#include <atomic>
-
 #include "config.h"
 
 #define PD4WEB_MAJOR_VERSION 2
@@ -54,6 +52,8 @@ class Pd4Web {
     void UnbindReceiver();
 
     // receive Messages
+    // midi
+    void noteOn(int channel, int pitch, int velocity);
 
     // send Messages
     bool SendFloat(std::string r, float f);
@@ -102,6 +102,8 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         .function("_addSymbol", &Pd4Web::_addSymbol)
         .function("_finishMessage", &Pd4Web::_finishMessage)
 
+        // Midi
+        .function("noteOn", &Pd4Web::noteOn)
         // bind list
         .function("bindReceiver", &Pd4Web::BindReceiver)
         .function("bindGuiReceiver", &Pd4Web::BindGuiReceiver)

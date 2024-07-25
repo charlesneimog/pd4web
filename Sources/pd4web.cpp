@@ -130,6 +130,56 @@ EM_JS(void, JsSuspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 });
 
 //╭─────────────────────────────────────╮
+//│          JS Midi Functions          │
+//╰─────────────────────────────────────╯
+EM_JS(void, _JS_loadMidi, (void), {
+    if (document.getElementById("pd4web-midi") != null){
+        return;
+    }
+    
+    var script = document.createElement('script');
+    script.type = "text/javascript";
+    script.src = "./pd4web.midi.js";
+    script.id = "pd4web-midi";
+    script.onload = function() {
+        if (typeof WebMidi != "object") {
+            console.error("Midi: failed to find the 'WebMidi' object");
+            return;
+        }
+        WebMidi.enable(function (err) {
+            if (err) {
+                console.error("Midi: failed to enable midi", err);
+                return;
+            }
+
+            WebMidi.inputs.forEach(input => {
+                console.log(input.channels);
+                input.channels[1].addListener("noteon", function(e) {
+                    if (typeof e.channel === 'undefined') {
+                        Pd4Web.noteOn(1, e.note.number, e.rawVelocity);
+                    } else{
+                        Pd4Web.noteOn(e.channel, e.note.number, e.rawVelocity);
+                    }
+                });
+                input.channels[1].addListener("noteoff", function(e) {
+                    if (typeof e.channel === 'undefined') {
+                        Pd4Web.noteOn(1, e.note.number, 0);
+                    } else{
+                        Pd4Web.noteOn(e.channel, e.note.number, 0);
+                    }
+                });
+            });
+        }, false); 
+
+    };
+
+    document.head.appendChild(script);
+
+});
+
+
+
+//╭─────────────────────────────────────╮
 //│         JS Receivers Hooks          │
 //╰─────────────────────────────────────╯
 EM_JS(void, JsReceiveBang, (const char *r),{
@@ -512,7 +562,8 @@ void Pd4Web::Init() {
                                                      WebAudioWorkletThreadInitialized, 0);
 
     m_Context = AudioContext;
-    Pd4WebJSHelpers();
+    _JS_sendList();
+    _JS_loadMidi();
     return;
 }
 // ╭─────────────────────────────────────╮
@@ -549,12 +600,13 @@ static void Pd4WebMainLoop() {
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
+
+    _JS_enableThreads(); // <== For Github Pages
+    _JS_loadStyle();
+
     printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
            PD4WEB_MICRO_VERSION);
-
-    Pd4WebEnableThreads(); // <== For Github Pages
-    Pd4WebLoadStyle();
-    emscripten_set_main_loop(Pd4WebMainLoop, PD4WEB_FPS, 1);
+    emscripten_set_main_loop(Pd4Web::mainLoop, PD4WEB_FPS, 1);
 
     return 0;
 }
