@@ -119,6 +119,10 @@
                 Pd4Web.onFloatReceived("onFloat", (floatValue) => {
                     console.log("Float received: ", floatValue);
                 });
+
+                Pd4Web.onSymbolReceived("onSymbol", (symbolValue) => {
+                    console.log("Symbol received: ", symbolValue);
+                });
             });
         </script>
     </body>
