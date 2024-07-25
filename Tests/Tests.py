@@ -42,7 +42,7 @@ def execute_chrome(path):
         time.sleep(1)  # Wait
 
         try:
-            element = driver.find_element(By.XPATH, '//*[@id="turnAudioOn"]')
+            element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
 
             element.click()
             time.sleep(5)  # run for 5 seconds
