@@ -387,13 +387,13 @@ function GuiSliderRect(data) {
     let y = data.y_pos;
     let width = data.width;
     let height = data.height;
-    if (data.type === "vsl") {
-        y -= 2; // note: modified
-        height += 5;
-    } else {
-        x -= 3; // note: modified
-        width += 5;
-    }
+    // if (data.type === "vsl") {
+    //   y -= 2; // note: modified
+    //   height += 5;
+    // } else {
+    //   x -= 3; // note: modified
+    //   width += 5;
+    // }
     return {
         x: x,
         y: y,
@@ -417,20 +417,19 @@ function GuiSliderIndicatorPoints(data) {
     let p3 = 0;
     let p4 = 0;
     if (data.type === "vsl") {
-        y1 -= 2; // note: modified
-        y2 += 3;
         r = y2 - 3 - (data.value + 50) / 100;
-        p1 = x1 + 2 * 0.75; // note: modified
+        r = Math.max(y1 + 3, Math.min(r, y2 - 3));
+        p1 = x1 + 2; //* 0.75; // note: modified | Largura
         p2 = r;
-        p3 = x2 - 2 * 0.75; // note: modified
+        p3 = x2 - 2; //* 0.75; // note: modified | Largura
         p4 = r;
     } else {
-        x1 -= 3; // note: modified
         r = x1 + 3 + (data.value + 50) / 100;
+        r = Math.max(x1 + 3, Math.min(r, x2 - 3)); // Ensure r stays within the horizontal boundaries
         p1 = r;
-        p2 = y1 + 2 * 0.75; // note: modified
+        p2 = y1 + 2; //* 0.75; // note: modified | Largura
         p3 = r;
-        p4 = y2 - 2 * 0.75; // note: modified
+        p4 = y2 - 2; //* 0.75; // note: modified | Largura
     }
     return {
         x1: p1,
@@ -502,16 +501,19 @@ function GuiSliderCheckMinMax(data) {
 // ─────────────────────────────────────
 function GuiSliderSet(data, f) {
     let g = 0;
+
     if (data.reverse) {
         f = Math.max(Math.min(f, data.bottom), data.top);
     } else {
         f = Math.max(Math.min(f, data.top), data.bottom);
     }
+
     if (data.log) {
         g = Math.log(f / data.bottom) / data.k;
     } else {
         g = (f - data.bottom) / data.k;
     }
+
     data.value = 100 * g + 0.49999;
     GuiSliderUpdateIndicator(data);
 }
@@ -542,7 +544,7 @@ function GuiSliderOnMouseDown(data, e, id) {
     const p = GuiMousePoint(e);
     if (!data.steady_on_click) {
         if (data.type === "vsl") {
-            data.value = Math.max(Math.min(100 * (data.height + data.y_pos - p.y), (data.height - 1) * 100), 0);
+            data.value = Math.max(Math.min(100 * (data.height + data.y_pos - p.y), (data.height - 50) * 100), 0);
         } else {
             data.value = Math.max(Math.min(100 * (p.x - data.x_pos), (data.width - 1) * 100), 0);
         }
