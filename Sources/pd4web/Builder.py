@@ -371,6 +371,7 @@ class GetAndBuildExternals:
             # Audio Config
             if self.Pd4Web.OUTCHS_COUNT == 0:
                 self.Pd4Web.OUTCHS_COUNT = 2
+
             f.write(
                 "// This is automatically generated code from pd4web.py script\n\n")
 

@@ -3,7 +3,6 @@ on:
   release:
     types: [published]
   workflow_dispatch:
-
 jobs:  
   linux-test:
     runs-on: ubuntu-latest
@@ -17,17 +16,14 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install pd4web
         run: |
-          poetry build 
+          poetry build
           pip install dist/*.whl
-	  
       - if: github.event_name == 'release'
         name: Publish package
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29

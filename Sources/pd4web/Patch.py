@@ -215,14 +215,23 @@ class Patch:
                     if outChCount > self.Pd4Web.OUTCHS_COUNT:
                         self.Pd4Web.OUTCHS_COUNT = outChCount
                 except:
-                    pass
-
+                    break
             if N_CH_OUT > self.Pd4Web.OUTCHS_COUNT:
                 self.Pd4Web.OUTCHS_COUNT = N_CH_OUT
+
         if "adc~" == ObjName:
             N_CH_IN = len(PatchLine.Tokens) - 5
-            if N_CH_IN == 0:
+            if N_CH_IN == 0 and self.Pd4Web.OUTCHS_COUNT == 0:
                 N_CH_IN = 1
+            for i in range(5, len(PatchLine.Tokens)):
+                try:
+                    outChCount = int(PatchLine.Tokens[i])
+                    if outChCount > self.Pd4Web.INCHS_COUNT:
+                        self.Pd4Web.INCHS_COUNT = outChCount
+                except:
+                    break
+            if N_CH_IN > self.Pd4Web.OUTCHS_COUNT:
+                self.Pd4Web.INCHS_COUNT = N_CH_IN
 
     def TokenIsFloat(self, token):
         token = token.replace("\n", "").replace(";", "").replace(",", "")

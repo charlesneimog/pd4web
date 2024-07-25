@@ -461,6 +461,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
     float TmpOuts[128 * ChCount];
 
     libpd_process_float(2, In[0].data, TmpOuts);
+    // TODO: Fix multiple channels
 
     int OutI = 0;
     for (int i = 0; i < ChCount; i++) {
