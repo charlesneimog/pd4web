@@ -3,6 +3,7 @@ import os
 import sys
 import zipfile
 import shutil
+import pygit2
 
 import requests
 
@@ -24,17 +25,19 @@ class Pd4Web:
     def __init__(self, Patch=""):
         self.Patch = Patch
         self.verbose = False
-        self.InitVariables()
+        # self.InitVariables()
 
     def argParse(self):
         parser = argparse.ArgumentParser(
             description="Compile Pure Data externals for the web.",
             usage="pd4web.py <PureData Patch>",
         )
-        parser.add_argument("patch_file", type=str,
-                            help="The patch file to be compiled")
-        parser.add_argument("-v", "--verbose",
-                            action="store_true", help="Enable verbose mode")
+        parser.add_argument(
+            "patch_file", type=str, help="The patch file to be compiled"
+        )
+        parser.add_argument(
+            "-v", "--verbose", action="store_true", help="Enable verbose mode"
+        )
         parser.add_argument(
             "-m",
             "--initial-memory",
@@ -128,10 +131,11 @@ class Pd4Web:
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
-        isRepo = os.path.isdir(os.path.join(self.PROJECT_ROOT, ".git"))
-        if not isRepo:
-            os.system(
-                f"cd {self.PROJECT_ROOT} && git init --initial-branch=main")
+        try:
+            self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
+        except pygit2.GitError:
+            self.PROJECT_GIT = pygit2.init_repository(
+                self.PROJECT_ROOT, bare=True)
 
         # Core Numbers
         self.cpuCores = os.cpu_count()
@@ -150,9 +154,6 @@ class Pd4Web:
         self.externalsSetupFunctions = []
 
     def CheckDependencies(self):
-        OK = shutil.which("git")
-        if OK is None:
-            raise Exception("Git is not installed. Please install it.")
         OK = shutil.which("cmake")
         if OK is None:
             raise Exception("Cmake is not installed. Please install it.")
@@ -184,7 +185,8 @@ class Pd4Web:
                     progress_bar = "#" * num_hashes + \
                         "-" * (num_bars - num_hashes)
                     sys.stdout.write(
-                        f"\r    🟢 |{progress_bar}| {downloaded_size} bytes")
+                        f"\r    🟢 |{progress_bar}| {downloaded_size} bytes"
+                    )
                 sys.stdout.flush()
         print()
         return True
@@ -195,7 +197,10 @@ class Pd4Web:
 
         if not os.path.exists(self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"):
             pd4web_print(
-                f"Downloading Pure Data {self.PD_VERSION}...", color="green", silence=self.SILENCE)
+                f"Downloading Pure Data {self.PD_VERSION}...",
+                color="green",
+                silence=self.SILENCE,
+            )
             pdVersionSource = f"https://github.com/pure-data/pure-data/archive/refs/tags/{self.PD_VERSION}.zip"
             pdVersionZip = self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"
             DownloadZipFile(pdVersionSource, pdVersionZip)
