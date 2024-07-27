@@ -18,6 +18,7 @@ pyyaml = "^6.0.0"
 requests = "^2.31.0"
 cmake = "^3.21.4"
 ninja = "^1.10.2"
+pygit2 = "^1.15.1"
 
 [tool.poetry.scripts]
 pd4web = "pd4web:main"

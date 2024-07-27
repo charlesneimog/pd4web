@@ -8,9 +8,10 @@ Libraries:
     Developer: porres # user name of the dev
     Repository: pd-else # Repository Name
     Version: v.1.0-rc11 # Release or Tag
-    Unsupported: ["sfz~", "sfont~"] # Unsupported Objecs
-  - Name: earplug
+    Unsupported: ["sfz~", "sfont~", "knob", "bl.imp2~", "oscope~", "midi", "numbox~", "slew2~", "keyboard", "pic", "bicoeff", "function", "canvas.active", "else", "bl.imp~", "colors", "osc.format", "rec", "mouse", "messbox", "pad", "note", "openfile", "keycode"] # Unsupported Objecs
+  - Name: pmpd
     Source: GITHUB_TAGS
-    Developer: pd-externals
-    Repository: earplug
-    Version: 0.3.0
+    Developer: ch-nry
+    Repository: pd-pmpd
+    Version: v0.14.1
+    Unsupported: ["pmpd3d~", "pmpd2d~", "pmpd~"]

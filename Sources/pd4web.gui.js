@@ -112,7 +112,7 @@ function BindGuiReceiver(data) {
     }
 
     if (Pd4Web) {
-        Pd4Web.bindGuiReceiver(data.receive, data.type);
+        Pd4Web.addGuiReceiver(data.receive);
     } else {
         alert("Pd4Web not found, please report");
     }
@@ -1613,7 +1613,9 @@ async function Pd4WebInitGui(autoTheme) {
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
     Pd4Web.FontSize = 12;
-    // Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
+    if (typeof Pd4Web.GuiReceivers === "undefined") {
+        Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
+    }
     Pd4Web.Canvas = document.getElementById("Pd4WebCanvas");
     Pd4Web.Touches = {};
     Pd4Web.FontEngineSanity = false;

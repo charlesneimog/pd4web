@@ -11,16 +11,25 @@ from .Helpers import DownloadZipFile, pd4web_print
 
 
 class Pd4Web:
+    # Dev
+    BYPASS_UNSUPPORTED: bool = False
+    SILENCE: bool = False
+    PD_VERSION: str = "0.55-0"
+
+    # Compiler
+    MEMORY_SIZE: int = 128
+
+    # Audio
     OUTCHS_COUNT: int = 0
     INCHS_COUNT: int = 0
-    MEMORY_SIZE: int = 128
-    PD_VERSION: str = "0.55-0"
-    SILENCE: bool = False
 
     # Gui
     FPS: int = 60
     GUI: bool = True
     AUTO_THEME: bool = True
+
+    # Midi
+    MIDI: bool = False
 
     def __init__(self, Patch=""):
         self.Patch = Patch
@@ -61,6 +70,14 @@ class Pd4Web:
             type=str,
             help="Pure Data version to use",
         )
+
+        parser.add_argument(
+            "--bypass-unsupported",
+            required=False,
+            default=False,
+            action="store_true",
+            help="Bypass unsupported objects in libraries",
+        )
         self.Parser = parser.parse_args()
 
         # get complete path of the patch file
@@ -77,6 +94,7 @@ class Pd4Web:
         self.MEMORY_SIZE = self.Parser.initial_memory
         self.GUI = not self.Parser.nogui
         self.PD_VERSION = self.Parser.pd_version
+        self.BYPASS_UNSUPPORTED = self.Parser.bypass_unsupported
         self.Execute()
 
     def Execute(self):
@@ -135,7 +153,7 @@ class Pd4Web:
             self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
         except pygit2.GitError:
             self.PROJECT_GIT = pygit2.init_repository(
-                self.PROJECT_ROOT, bare=True)
+                self.PROJECT_ROOT, bare=False)
 
         # Core Numbers
         self.cpuCores = os.cpu_count()
