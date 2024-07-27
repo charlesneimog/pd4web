@@ -1,0 +1,26 @@
+
+build/
+
+# PureData Folder
+Pd4Web/pure-data/asio
+Pd4Web/pure-data/doc
+Pd4Web/pure-data/font
+Pd4Web/pure-data/libpd
+Pd4Web/pure-data/linux
+Pd4Web/pure-data/m4
+Pd4Web/pure-data/mac
+Pd4Web/pure-data/man
+Pd4Web/pure-data/md
+Pd4Web/pure-data/msw
+Pd4Web/pure-data/po
+Pd4Web/pure-data/portaudio
+Pd4Web/pure-data/portmidi
+Pd4Web/pure-data/tcl
+
+# PureData Files
+Pd4Web/pure-data/autogen.sh
+Pd4Web/pure-data/configure.ac
+Pd4Web/pure-data/INSTALL.htm
+Pd4Web/pure-data/INSTALL.txt
+Pd4Web/pure-data/Makefile.am
+Pd4Web/pure-data/pd.pc.in

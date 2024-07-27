@@ -36,7 +36,8 @@ class ExternalLibraries:
         """
         self.LibraryScriptDir = os.path.dirname(os.path.realpath(__file__))
         externalFile = os.path.join(
-            self.LibraryScriptDir, "../Libraries/Libraries.yaml")
+            self.LibraryScriptDir, "../Libraries/Libraries.yaml"
+        )
         self.DynamicLibraries = []
         with open(externalFile) as file:
             supportedLibraries = yaml.load(file, Loader=yaml.FullLoader)
@@ -107,15 +108,17 @@ class ExternalLibraries:
                     return self.downloadLink.format(self.dev, self.repo)
                 else:
                     raise Exception(
-                        f"Error: {self.name} doesn't have a download source")
+                        f"Error: {self.name} doesn't have a download source"
+                    )
             else:
                 return self.directLink
 
-    def GetLibrary(self, LibraryName):
-        Library = next(
-            (lib for lib in self.SupportedLibraries if lib["Name"] == LibraryName), None)
-        Library = self.LibraryClass(Library, self.DownloadSources)
-        return Library
+    def GetLibrary(self, libName) -> LibraryClass:
+        lib = next(
+            (lib for lib in self.SupportedLibraries if lib["Name"] == libName), None
+        )
+        lib = self.LibraryClass(lib, self.DownloadSources)
+        return lib
 
     def isSupportedLibrary(self, name):
         if name in self.LibraryNames:

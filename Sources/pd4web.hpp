@@ -65,7 +65,7 @@ class Pd4Web {
 
     // bind symbols
     void bindReceiver(std::string s);
-    void bindGuiReceiver(std::string s, std::string obj);
+    void addGuiReceiver(std::string s);
     void unbindReceiver();
 
     // midi
@@ -88,6 +88,7 @@ class Pd4Web {
     static int GetNInputChannels();
     static int GetNOutputChannels();
     static uint32_t GetSampleRate();
+    void bindGuiReceivers();
 
     bool m_Pd4WebInit = false;
     EMSCRIPTEN_WEBAUDIO_T m_Context;
@@ -95,6 +96,7 @@ class Pd4Web {
 
     // Lib Pd
     void *m_AudioWorkletInstance;
+    std::vector<std::string> m_Receivers;
 };
 
 // ╭─────────────────────────────────────╮
@@ -123,6 +125,6 @@ EMSCRIPTEN_BINDINGS(WebPd) {
 
         // bind list
         .function("bindReceiver", &Pd4Web::bindReceiver)
-        .function("bindGuiReceiver", &Pd4Web::bindGuiReceiver)
+        .function("addGuiReceiver", &Pd4Web::addGuiReceiver)
         .function("unbindReceiver", &Pd4Web::unbindReceiver);
 }

@@ -13,9 +13,9 @@ Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 // clang-format off
 // ─────────────────────────────────────
 EM_JS(void, _JS_sendList, (void), {
-    // Gui
-    Pd4Web.GuiReceivers = {};
-
+    if (typeof Pd4Web.GuiReceivers === "undefined") {
+        Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
+    }
 
     Pd4Web.sendList = function (r, vec) {
         const vecLength = vec.length;
@@ -66,18 +66,6 @@ EM_JS(void, _JS_sendList, (void), {
 });
 
 // ─────────────────────────────────────
-EM_JS(void, _JS_enableThreads, (void), {
-    if (document.getElementById("pd4web.threads") != null){
-        return;
-    }
-    var script = document.createElement('script');
-    script.type = "text/javascript";
-    script.src = "./pd4web.threads.js";
-    script.id = "pd4web.threads";
-    document.head.appendChild(script); 
-});
-
-// ─────────────────────────────────────
 EM_JS(void, _JS_loadGui, (bool AutoTheming), {
     if (document.getElementById("pd4web-gui") != null){
         return;
@@ -108,6 +96,12 @@ EM_JS(void, _JS_loadStyle, (void), {
     link.href = "./pd4web.style.css";
     link.id = "pd4web-style";
     document.head.appendChild(link);
+});
+
+// ─────────────────────────────────────
+EM_JS(void, _JS_setTitle, (const char *projectName), {
+    let title = UTF8ToString(projectName);
+    document.title = title;
 });
 
 // ─────────────────────────────────────
@@ -298,8 +292,19 @@ EM_JS(void, _JS_receiveSymbol, (const char *r, const char *s),{
 });
 
 //╭─────────────────────────────────────╮
-//│       Audio Worklet Receivers       │
+//│     Extra PureData Definitions      │
 //╰─────────────────────────────────────╯
+// clang-format on
+
+extern "C" void sys_putmidibyte(int portno, int byte) {
+    //
+    printf("Midi: %d\n", byte);
+    return;
+}
+
+// ╭─────────────────────────────────────╮
+// │       Audio Worklet Receivers       │
+// ╰─────────────────────────────────────╯
 void Pd4Web::AW_ReceivedBang(const char *r) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
@@ -415,16 +420,17 @@ void Pd4Web::bindReceiver(std::string s) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::bindGuiReceiver(std::string s, std::string obj) {
-    void *Receiver = libpd_bind(s.c_str());
-    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
-        if (GuiReceiver.Receiver == s) {
-            return;
-        }
+void Pd4Web::addGuiReceiver(std::string s) {
+    m_Receivers.push_back(s);
+    return;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::bindGuiReceivers() {
+    for (auto &s : m_Receivers) {
+        bindReceiver(s);
     }
-    Pd4WebGuiReceiver GuiReceiver;
-    GuiReceiver.Receiver = s;
-    Pd4WebGuiReceivers.push_back(GuiReceiver);
+    m_Receivers.clear();
     return;
 }
 
@@ -454,8 +460,8 @@ void Pd4Web::unbindReceiver() {
  */
 
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
-                              AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
-                              void *userData) {
+                        AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
+                        void *userData) {
 
     int ChCount = Out[0].numberOfChannels;
     float TmpOuts[128 * ChCount];
@@ -507,12 +513,8 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
 
     // Init Instance
 
-    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
-        audioContext, "pd4web", &options, &process, 0);
-
-    if (PD4WEB_GUI) {
-        _JS_loadGui(PD4WEB_AUTO_THEME);
-    }
+    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode =
+        emscripten_create_wasm_audio_worklet_node(audioContext, "pd4web", &options, &process, 0);
 
     Pd4WebInitExternals();
 
@@ -540,8 +542,7 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
  * @param success Boolean indicating whether initialization was successful.
  * @param userData Pointer to user data (not used in this function).
  */
-void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
-                                             void *userData) {
+void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
     if (!success) {
         _JS_alert("WebAudio worklet thread initialization failed!\n");
         return;
@@ -600,7 +601,12 @@ void Pd4Web::init() {
 
     m_Context = AudioContext;
     _JS_sendList();
-    _JS_loadMidi();
+
+    if (PD4WEB_MIDI) {
+        _JS_loadMidi();
+    }
+
+    bindGuiReceivers();
 
     return;
 }
@@ -611,22 +617,21 @@ void Pd4Web::mainLoop() {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
-                case Pd4WebGuiReceiver::BANG:
-                    _JS_receiveBang(GuiReceiver.Receiver.c_str());
-                    GuiReceiver.Updated = false;
-                    break;
-                case Pd4WebGuiReceiver::FLOAT:
-                    _JS_receiveFloat(GuiReceiver.Receiver.c_str(), GuiReceiver.Float);
-                    GuiReceiver.Updated = false;
-                    break;
-                case Pd4WebGuiReceiver::SYMBOL:
-                    _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Receiver.c_str());
-                    printf("Symbol received: %s\n", GuiReceiver.Symbol.c_str());
-                    GuiReceiver.Updated = false;
-                    break;
-                case Pd4WebGuiReceiver::MESSAGE:
-                    break;
-                default:
+            case Pd4WebGuiReceiver::BANG:
+                _JS_receiveBang(GuiReceiver.Receiver.c_str());
+                GuiReceiver.Updated = false;
+                break;
+            case Pd4WebGuiReceiver::FLOAT:
+                _JS_receiveFloat(GuiReceiver.Receiver.c_str(), GuiReceiver.Float);
+                GuiReceiver.Updated = false;
+                break;
+            case Pd4WebGuiReceiver::SYMBOL:
+                _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Receiver.c_str());
+                GuiReceiver.Updated = false;
+                break;
+            case Pd4WebGuiReceiver::MESSAGE:
+                break;
+            default:
                 break;
             }
             GuiReceiver.Updated = false;
@@ -638,9 +643,12 @@ void Pd4Web::mainLoop() {
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
-
-    _JS_enableThreads(); // <== For Github Pages
     _JS_loadStyle();
+    _JS_setTitle(PD4WEB_PROJECT_NAME);
+
+    if (PD4WEB_GUI) {
+        _JS_loadGui(PD4WEB_AUTO_THEME);
+    }
 
     printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
            PD4WEB_MICRO_VERSION);
@@ -648,4 +656,3 @@ int main() {
 
     return 0;
 }
-

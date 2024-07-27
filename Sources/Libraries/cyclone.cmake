@@ -61,7 +61,6 @@ pd_add_external(dir "${LIB_DIR}/Code_source/Compiled/control/dir.c")
 pd_add_external(datetime "${LIB_DIR}/Code_source/Compiled/control/datetime.c")
 pd_add_external(default "${LIB_DIR}/Code_source/Compiled/control/default.c")
 pd_add_external(dollsym "${LIB_DIR}/Code_source/Compiled/control/dollsym.c")
-pd_add_external(findfile "${LIB_DIR}/Code_source/Compiled/control/findfile.c")
 pd_add_external(floor "${LIB_DIR}/Code_source/Compiled/control/floor.c")
 pd_add_external(fold "${LIB_DIR}/Code_source/Compiled/control/fold.c")
 pd_add_external(hot "${LIB_DIR}/Code_source/Compiled/control/hot.c")
@@ -75,7 +74,7 @@ pd_add_external(merge "${LIB_DIR}/Code_source/Compiled/control/merge.c")
 pd_add_external(fontsize "${LIB_DIR}/Code_source/Compiled/control/fontsize.c")
 pd_add_external(format "${LIB_DIR}/Code_source/Compiled/control/format.c")
 pd_add_external(message "${LIB_DIR}/Code_source/Compiled/control/message.c")
-pd_add_external(messbox "${LIB_DIR}/Code_source/Compiled/control/messbox.c")
+pd_add_external(msgbox "${LIB_DIR}/Code_source/Compiled/control/messbox.c")
 pd_add_external(metronome "${LIB_DIR}/Code_source/Compiled/control/metronome.c")
 pd_add_external(mouse "${LIB_DIR}/Code_source/Compiled/control/mouse.c")
 pd_add_external(mpe.in "${LIB_DIR}/Code_source/Compiled/control/mpe.in.c")
@@ -150,7 +149,6 @@ pd_add_external(cents2ratio~ "${LIB_DIR}/Code_source/Compiled/audio/cents2ratio~
 pd_add_external(changed~ "${LIB_DIR}/Code_source/Compiled/audio/changed~.c")
 pd_add_external(changed2~ "${LIB_DIR}/Code_source/Compiled/audio/changed2~.c")
 pd_add_external(conv~ "${LIB_DIR}/Code_source/Compiled/audio/conv~.c")
-pd_add_external(cmul~ "${LIB_DIR}/Code_source/Compiled/audio/cmul~.c")
 pd_add_external(crackle~ "${LIB_DIR}/Code_source/Compiled/audio/crackle~.c")
 pd_add_external(crossover~ "${LIB_DIR}/Code_source/Compiled/audio/crossover~.c")
 pd_add_external(cusp~ "${LIB_DIR}/Code_source/Compiled/audio/cusp~.c")
@@ -399,8 +397,8 @@ pd_add_external(oscope~ "${LIB_DIR}/Code_source/Compiled/audio/oscope~.c;${magic
 # ╭──────────────────────────────────────╮
 # │                 UTF                  │
 # ╰──────────────────────────────────────╯
-#set(utf "${LIB_DIR}/Code_source/shared/s_elseutf8.c")
-pd_add_external(note "${LIB_DIR}/Code_source/Compiled/control/note.c;")
+set(utf "${LIB_DIR}/Code_source/shared/s_elseutf8.c")
+pd_add_external(note "${LIB_DIR}/Code_source/Compiled/control/note.c;${utf}")
 
 # ╭──────────────────────────────────────╮
 # │                PLAITS                │
