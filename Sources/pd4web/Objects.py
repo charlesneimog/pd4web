@@ -1,28 +1,20 @@
-import json
+from .Pd4Web import Pd4Web
+from .Helpers import pd4web_print
+
 import os
 import re
-
-from .Helpers import pd4web_print
-from .Libraries import ExternalLibraries
-from .Pd4Web import Pd4Web
+import json
 
 
-class PdObjects:
+class Objects:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
         self.PROJECT_ROOT = Pd4Web.PROJECT_ROOT
-
         self.InitVariables()
-
-        # Get Supported Libraries
-        # self.getSupportedLibraries()
-
-        # Get Used Libraries
 
     def InitVariables(self):
         self.Libraries = []
         self.SupportedLibraries = []
-        self.SearchSupportedObjects()
         self.LibraryNames = []
         self.UsedLibraries = []
         self.UsedLibrariesNames = []
@@ -37,10 +29,6 @@ class PdObjects:
 
     def __str__(self) -> str:
         return self.__repr__()
-
-    def get(self, name):
-        LibraryData = self.Libraries.GetLibrary(name)
-        return LibraryData
 
     def isExtraObject(self, name):
         ExtraObjects = [
@@ -73,7 +61,6 @@ class PdObjects:
     def GetDownloadURL(self, libraryName, supportedDownloads):
         if libraryName.repoAPI == False:
             return False
-
         else:
             try:
                 return supportedDownloads[libraryName.repoAPI].format(
@@ -82,47 +69,74 @@ class PdObjects:
             except:
                 return None
 
-    def SearchSupportedObjects(self):
+    def GetLibraryObjects(self, libFolder: str, libName: str):
         """
-        It get all the PureData objects.
+        Recursively enumerate all external and abstractions and save the JSON file.
         """
-        externalsJson = os.path.join(self.Pd4Web.PD4WEB_ROOT, "Objects.json")
-        if not os.path.exists(externalsJson):
-            with open(externalsJson, "w") as file:
-                json.dump({}, file, indent=4)
-        with open(externalsJson, "r") as file:
-            externalsDict = json.load(file)
-        externalsDict["puredata"] = {}
-        puredataObjs = []
-        puredataFolder = os.path.join(
-            self.Pd4Web.PROJECT_ROOT, "Pd4Web/pure-data/")
-        for root, _, files in os.walk(puredataFolder):
+        pd4web_print(
+            f"Listing all external supported by {libName}, this may take a while...",
+            color="blue",
+        )
+
+        externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
+        directory = os.path.dirname(externalsJson)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        if os.path.exists(externalsJson):
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+        else:
+            externalsDict = {}
+        extObjs = []
+        absObjs = []
+        externalsDict[libName] = {}
+        for root, _, files in os.walk(libFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
-                    with open(os.path.join(root, file), "r") as c_file:
+                    with open(
+                        os.path.join(root, file), "r", encoding="utf-8"
+                    ) as c_file:
                         file_contents = c_file.read()
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)
                         for match in matches:
                             objectName = match.group(1)
-                            puredataObjs.append(objectName)
-                        creatorPattern = (
-                            r'class_addcreator\([^,]+,\s*gensym\("([^"]+)"\)'
-                        )
-                        creatorMatches = re.finditer(
-                            creatorPattern, file_contents)
-                        for match in creatorMatches:
+                            extObjs.append(objectName)
+
+                        pattern = r'class_addcreator\s*\(\s*\([^,]*,\s*gensym\s*\(\s*"([^"]*)"\s*\)'
+                        matches = re.finditer(pattern, file_contents)
+                        for match in matches:
                             objectName = match.group(1)
-                            puredataObjs.append(objectName)
+                            extObjs.append(objectName)
 
-        # NOTE: objects that not use class_new gensym...
+                if file.endswith(".pd"):
+                    if "-help.pd" not in file:
+                        absObjs.append(file.split(".pd")[0])
 
-        puredataObjs.append("list")
-        extObjs = list(set(puredataObjs))
-        externalsDict["puredata"]["objs"] = extObjs
+        if libName == "pure-data":
+            extObjs.append("pointer")
+            extObjs.append("float")
+            extObjs.append("symbol")
+            extObjs.append("bang")
+            extObjs.append("list")
+        externalsDict[libName]["objs"] = extObjs
+        externalsDict[libName]["abs"] = absObjs
         with open(externalsJson, "w") as file:
             json.dump(externalsDict, file, indent=4)
-        self.supportedObjects = externalsDict
 
-    def getSupportedObjects(self):
-        return self.supportedObjects
+    def GetSupportedObjects(self, libName: str):
+        if libName == "pure-data":
+            libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)
+        else:
+            libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Libraries", libName)
+        externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
+        if not os.path.exists(externalsJson):
+            self.GetLibraryObjects(libFolder, libName)
+        with open(externalsJson, "r") as file:
+            externalsDict = json.load(file)
+        if libName not in externalsDict:
+            self.GetLibraryObjects(libFolder, libName)
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+        return externalsDict[libName]["objs"]

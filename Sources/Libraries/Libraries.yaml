@@ -1,17 +1,61 @@
+---
+#╭──────────────────────────────────────╮
+#│           Download Sources           │
+#╰──────────────────────────────────────╯
 Sources:
-  GITHUB_RELEASES: "https://api.github.com/repos/{}/{}/releases"
-  GITHUB_TAGS: "https://api.github.com/repos/{}/{}/tags"
-  GITHUB: "https://github.com/{}/{}"
+  GITHUB_RELEASES: https://api.github.com/repos/{}/{}/releases
+  GITHUB_TAGS: https://api.github.com/repos/{}/{}/tags
+  GITHUB: https://github.com/{}/{}
+#╭──────────────────────────────────────╮
+#│              Libraries               │
+#╰──────────────────────────────────────╯
 Libraries:
-  - Name: else # Name of the pd library
-    Source: GITHUB_TAGS # source
-    Developer: porres # user name of the dev
-    Repository: pd-else # Repository Name
-    Version: v.1.0-rc11 # Release or Tag
-    Unsupported: ["sfz~", "sfont~", "knob", "bl.imp2~", "oscope~", "midi", "numbox~", "slew2~", "keyboard", "pic", "bicoeff", "function", "canvas.active", "else", "bl.imp~", "colors", "osc.format", "rec", "mouse", "messbox", "pad", "note", "openfile", "keycode"] # Unsupported Objecs
-  - Name: pmpd
-    Source: GITHUB_TAGS
-    Developer: ch-nry
-    Repository: pd-pmpd
-    Version: v0.14.1
-    Unsupported: ["pmpd3d~", "pmpd2d~", "pmpd~"]
+# ───────────────── pmpd ─────────────────
+  - Name: pmpd  # Name of the pd library
+    Source: GITHUB_TAGS  # How pd4web will download it
+    Developer: ch-nry  # Github Dev nickname
+    Repository: pd-pmpd  # Github Repository name
+    Version: v0.14.1  # Tag|Release 
+    Unsupported: [pmpd3d~, pmpd2d~, pmpd~]  # Objects that not support emscripten yet 
+
+# ───────────────── pmpd ─────────────────
+  - Name: timbreIDLib  # Name of the pd library
+    Source: GITHUB_TAGS  # How pd4web will download it
+    Developer: wbrent  # Github Dev nickname
+    Repository: timbreIDLib  # Github Repository name
+    Version: ef2e24a  # Tag|Release|Commit 
+
+# ───────────────── else ─────────────────
+  - Name: else
+    Source: GITHUB_TAGS  # source
+    Developer: porres  # user name of the dev
+    Repository: pd-else  # Repository Name
+    Version: v.1.0-rc11  # Release or Tag
+    Unsupported:
+      # Need implementation
+      - sfz~
+      - sfont~
+      # Pd GUI Related
+      - oscope~
+      - midi
+      - numbox~
+      - keyboard
+      - pic
+      - bicoeff
+      - function
+      - canvas.active
+      - else
+      - colors
+      - rec
+      - mouse
+      - messbox
+      - pad
+      - note
+      - openfile
+      - keycode
+      # Need fixes
+      - bl.imp2~
+      - slew2~
+      - bl.imp~
+      # Incompatible with Web enviroment
+      - osc.format

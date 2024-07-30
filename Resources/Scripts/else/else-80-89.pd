@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/pgm.out;
+#X obj 20 80 else/rand.i;
+#X obj 20 120 else/symbol2any;
+#X obj 20 160 else/voices;
+#X obj 20 200 else/metronome;
+#X obj 20 240 else/knob;
+#X obj 20 280 else/cents2ratio;
+#X obj 20 320 else/hot;
+#X obj 20 360 else/spread;
+#X obj 20 400 else/tabreader;

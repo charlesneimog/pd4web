@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/biquads~;
+#X obj 20 80 else/car2pol~;
+#X obj 20 120 else/susloop~;
+#X obj 20 160 else/pan2~;
+#X obj 20 200 else/bl.tri~;
+#X obj 20 240 else/adsr~;
+#X obj 20 280 else/gray~;
+#X obj 20 320 else/wrap2~;
+#X obj 20 360 else/detect~;
+#X obj 20 400 else/range~;

@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 timbreIDLib/freq2mel;
+#X obj 20 80 timbreIDLib/specRolloff;
+#X obj 20 120 timbreIDLib/specSkewness~;
+#X obj 20 160 timbreIDLib/specSkewness;
+#X obj 20 200 timbreIDLib/peakSample~;
+#X obj 20 240 timbreIDLib/maxSampleDelta;
+#X obj 20 280 timbreIDLib/waveNoise~;
+#X obj 20 320 timbreIDLib/peakSample;
+#X obj 20 360 timbreIDLib/waveSlope;
+#X obj 20 400 timbreIDLib/specSlope;

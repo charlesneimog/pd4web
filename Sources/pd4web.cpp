@@ -518,11 +518,15 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
 
     Pd4WebInitExternals();
 
+    libpd_add_to_search_path("./Libs/");
+    libpd_add_to_search_path("./Extras/");
+    libpd_add_to_search_path("./Audios/");
+
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
+
     libpd_init_audio(NInCh, NOutCh, SR);
-    libpd_add_to_search_path("Libs/");
 
     if (!libpd_openfile("index.pd", "./")) {
         _JS_alert("Failed to open patch | Please Report!\n");
@@ -584,7 +588,7 @@ void Pd4Web::init() {
 
     int ret = libpd_init();
     if (ret == -2) {
-        _JS_alert("libpd_queued_init() failed, please report!");
+        _JS_alert("libpd_init() failed, please report!");
         return;
     }
 
