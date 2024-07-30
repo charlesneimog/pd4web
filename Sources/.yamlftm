@@ -1,0 +1,5 @@
+---
+# Configuration for yamlfmt
+
+maxLineLength: 80
+

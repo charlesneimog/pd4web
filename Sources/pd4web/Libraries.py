@@ -1,11 +1,13 @@
 import os
-import sys
 import zipfile
 
 import requests
 import yaml
+import json
+import re
 
 from .Pd4Web import Pd4Web
+from .Helpers import DownloadZipFile, pd4web_print
 
 # ╭──────────────────────────────────────╮
 # │    In this file we have all code     │
@@ -34,17 +36,14 @@ class ExternalLibraries:
         """
         It reads yaml file and get all supported libraries.
         """
-        self.LibraryScriptDir = os.path.dirname(os.path.realpath(__file__))
-        externalFile = os.path.join(
-            self.LibraryScriptDir, "../Libraries/Libraries.yaml"
-        )
+        root = self.Pd4Web.PD4WEB_ROOT
+        externalFile = os.path.join(root, "../Libraries/Libraries.yaml")
         self.DynamicLibraries = []
         with open(externalFile) as file:
             supportedLibraries = yaml.load(file, Loader=yaml.FullLoader)
             self.DownloadSources = supportedLibraries["Sources"]
             self.SupportedLibraries = supportedLibraries["Libraries"]
-            self.LibraryNames = [lib["Name"]
-                                 for lib in self.SupportedLibraries]
+            self.LibraryNames = [lib["Name"] for lib in self.SupportedLibraries]
             self.totalOfLibraries = len(supportedLibraries)
 
     class LibraryClass:
@@ -68,8 +67,7 @@ class ExternalLibraries:
                 if "DirectLink" in LibraryData:
                     self.directLink = LibraryData["DirectLink"]
                 else:
-                    raise Exception(
-                        "Error: {self.name} doesn't have a download source")
+                    raise Exception("Error: {self.name} doesn't have a download source")
 
             self.GetLinkForDownload()
 
@@ -125,6 +123,69 @@ class ExternalLibraries:
             return True
         else:
             return False
+
+    def CheckLibraryLink(self, url: str):
+        try:
+            response = requests.head(url, allow_redirects=True)
+            if response.status_code == 200:
+                return True
+            else:
+                return False
+        except:
+            return False
+
+    def GetLibrarySourceCode(
+        self,
+        libName: str,
+    ):
+        if self.isSupportedLibrary(libName):
+            if os.path.exists(
+                os.path.join(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName)
+            ):
+                return True
+            if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
+                os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
+
+            # Library Download
+            libData = self.GetLibrary(libName)
+            if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
+                os.mkdir(self.Pd4Web.APPDATA + "/Externals")
+            libPath = self.Pd4Web.APPDATA + f"/Externals/{libData.name}/"
+            if not os.path.exists(libPath):
+                os.mkdir(libPath)
+
+            libZip = (
+                f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
+            )
+            if not os.path.exists(libZip):
+                pd4web_print(
+                    f"Downloading {libData.name} {libData.version}...\n",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                )
+                libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/refs/tags/{libData.version}.zip"
+                if not self.CheckLibraryLink(libSource):
+                    libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/{libData.version}.zip"
+                    if not self.CheckLibraryLink(libSource):
+                        raise Exception(
+                            f"Error: Could not find good download link for {libData.name} version {libData.version}."
+                        )
+                DownloadZipFile(libSource, libZip)  # <== Download Library
+
+            if not os.path.exists(
+                self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"
+            ):
+                with zipfile.ZipFile(libZip, "r") as zip_ref:
+                    zip_ref.extractall(self.PROJECT_ROOT + "/Pd4Web/Externals/")
+                    extractFolderName = zip_ref.namelist()[0]
+                    os.rename(
+                        self.PROJECT_ROOT + "/Pd4Web/Externals/" + extractFolderName,
+                        self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
+                    )
+
+            libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName
+            self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
+            return True
 
     def AddUsedLibraries(self, LibraryName):
         self.UsedLibraries.append(LibraryName)

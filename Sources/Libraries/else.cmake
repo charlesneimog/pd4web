@@ -243,7 +243,7 @@ pd_add_external(toggleff~ "${LIB_DIR}/Code_source/Compiled/audio/toggleff~.c")
 pd_add_external(trighold~ "${LIB_DIR}/Code_source/Compiled/audio/trighold~.c")
 pd_add_external(unmerge~ "${LIB_DIR}/Code_source/Compiled/audio/unmerge~.c")
 pd_add_external(vu~ "${LIB_DIR}/Code_source/Compiled/audio/vu~.c")
-#pd_add_external(vcf2~ "${LIB_DIR}/Code_source/Compiled/audio/vcf2~.c")
+# pd_add_external(vcf2~ "${LIB_DIR}/Code_source/Compiled/audio/vcf2~.c")
 pd_add_external(xmod~ "${LIB_DIR}/Code_source/Compiled/audio/xmod~.c")
 pd_add_external(xmod2~ "${LIB_DIR}/Code_source/Compiled/audio/xmod2~.c")
 pd_add_external(wrap2 "${LIB_DIR}/Code_source/Compiled/control/wrap2.c")
@@ -287,7 +287,8 @@ pd_add_external(fader~ "${LIB_DIR}/Code_source/Compiled/audio/fader~.c;${ELSE_BU
 pd_add_external(autofade~ "${LIB_DIR}/Code_source/Compiled/audio/autofade~.c;${ELSE_BUFFER}")
 pd_add_external(autofade.mc~ "${LIB_DIR}/Code_source/Compiled/audio/autofade.mc~.c;${ELSE_BUFFER}")
 pd_add_external(autofade2~ "${LIB_DIR}/Code_source/Compiled/audio/autofade2~.c;${ELSE_BUFFER}")
-pd_add_external(autofade2.mc~ "${LIB_DIR}/Code_source/Compiled/audio/autofade2.mc~.c;${ELSE_BUFFER}")
+pd_add_external(autofade2.mc~
+                "${LIB_DIR}/Code_source/Compiled/audio/autofade2.mc~.c;${ELSE_BUFFER}")
 pd_add_external(balance~ "${LIB_DIR}/Code_source/Compiled/audio/balance~.c;${ELSE_BUFFER}")
 pd_add_external(pan~ "${LIB_DIR}/Code_source/Compiled/audio/pan~.c;${ELSE_BUFFER}")
 pd_add_external(pan.mc~ "${LIB_DIR}/Code_source/Compiled/audio/pan.mc~.c;${ELSE_BUFFER}")
@@ -382,13 +383,15 @@ pd_add_external(tempo~ "${LIB_DIR}/Code_source/Compiled/audio/tempo~.c;${rand}")
 # ╭──────────────────────────────────────╮
 # │                 MIDI                 │
 # ╰──────────────────────────────────────╯
-list(APPEND midi_src "${LIB_DIR}/Code_source/shared/mifi.c" "${LIB_DIR}/Code_source/shared/elsefile.c")
+list(APPEND midi_src "${LIB_DIR}/Code_source/shared/mifi.c"
+     "${LIB_DIR}/Code_source/shared/elsefile.c")
 pd_add_external(midi "${LIB_DIR}/Code_source/Compiled/control/midi.c;${midi_src}")
 
 # ╭──────────────────────────────────────╮
 # │                 FILE                 │
 # ╰──────────────────────────────────────╯
-pd_add_external(rec "${LIB_DIR}/Code_source/Compiled/control/rec.c;${LIB_DIR}/Code_source/shared/elsefile.c")
+pd_add_external(
+    rec "${LIB_DIR}/Code_source/Compiled/control/rec.c;${LIB_DIR}/Code_source/shared/elsefile.c")
 
 # ╭──────────────────────────────────────╮
 # │                SMAGIC                │
@@ -399,7 +402,7 @@ pd_add_external(oscope~ "${LIB_DIR}/Code_source/Compiled/audio/oscope~.c;${magic
 # ╭──────────────────────────────────────╮
 # │                 UTF                  │
 # ╰──────────────────────────────────────╯
-#set(utf "${LIB_DIR}/Code_source/shared/s_elseutf8.c")
+# set(utf "${LIB_DIR}/Code_source/shared/s_elseutf8.c")
 pd_add_external(note "${LIB_DIR}/Code_source/Compiled/control/note.c;")
 
 # ╭──────────────────────────────────────╮
@@ -473,7 +476,8 @@ set(CIRCUIT_SRC "${CIRCUIT_ROOT}/Source/circuit~.c")
 pd_add_external(
     circuit~
     "${CIRCUIT_SRC};${AMD_SRC};${BTF_SRC};${COLAMD_SRC};${KLU_SRC};${SAMPLERATE_SRC};${SUITE_SRC};${SIMULATOR_SRC}"
-    TARGET circuit_tilde)
+    TARGET
+    circuit_tilde)
 
 target_include_directories(
     circuit_tilde
@@ -507,8 +511,8 @@ pd_add_datafile(
     "${Control_Abs};${Audio_Abs};${Extra_Abs};${Tcl_Extra};${Scope3D};${Help_Files};${Extra_Files};${README};${Lua_Files};${SF_Fonts}"
 )
 
-# get_property(all_static_targets GLOBAL PROPERTY "${PROJECT_NAME}_STATIC_LIBRARIES") message("STATIC LIBRARIES:
-# ${all_static_targets}")
+# get_property(all_static_targets GLOBAL PROPERTY "${PROJECT_NAME}_STATIC_LIBRARIES")
+# message("STATIC LIBRARIES: ${all_static_targets}")
 
 # ╭──────────────────────────────────────╮
 # │          Dynamic Libraries           │

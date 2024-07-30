@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/slice;
+#X obj 20 80 else/openfile;
+#X obj 20 120 else/openfile;
+#X obj 20 160 else/routetype;
+#X obj 20 200 else/rescale;
+#X obj 20 240 else/pad;
+#X obj 20 280 else/keycode;
+#X obj 20 320 else/messbox;
+#X obj 20 360 else/note;
+#X obj 20 400 else/canvas.name;

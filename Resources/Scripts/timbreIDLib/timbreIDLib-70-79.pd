@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 timbreIDLib/energyEntropy;
+#X obj 20 80 timbreIDLib/featureDelta;
+#X obj 20 120 timbreIDLib/barkSpecSlope~;
+#X obj 20 160 timbreIDLib/cepstrum~;
+#X obj 20 200 timbreIDLib/bark;
+#X obj 20 240 timbreIDLib/specRolloff~;
+#X obj 20 280 timbreIDLib/barkSpecRolloff;
+#X obj 20 320 timbreIDLib/energyEntropy~;
+#X obj 20 360 timbreIDLib/featureAccum;
+#X obj 20 400 timbreIDLib/mfcc;

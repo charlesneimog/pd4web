@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/rotate~;
+#X obj 20 80 else/stepnoise~;
+#X obj 20 120 else/trighold~;
+#X obj 20 160 else/rescale~;
+#X obj 20 200 else/dust~;
+#X obj 20 240 else/select~;
+#X obj 20 280 else/allpass.2nd~;
+#X obj 20 320 else/lincong~;
+#X obj 20 360 else/power~;
+#X obj 20 400 else/gate2imp~;

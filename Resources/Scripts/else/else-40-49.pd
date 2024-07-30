@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/pgm.in;
+#X obj 20 80 else/rand.f;
+#X obj 20 120 else/osc.route;
+#X obj 20 160 else/dir;
+#X obj 20 200 else/canvas.gop;
+#X obj 20 240 else/receiver;
+#X obj 20 280 else/receiver proxy;
+#X obj 20 320 else/dollsym;
+#X obj 20 360 else/args;
+#X obj 20 400 else/chance;

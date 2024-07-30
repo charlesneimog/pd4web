@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/loop;
+#X obj 20 80 else/rint;
+#X obj 20 120 else/var;
+#X obj 20 160 else/datetime;
+#X obj 20 200 else/canvas.mouse;
+#X obj 20 240 else/canvas.edit;
+#X obj 20 280 else/trunc;
+#X obj 20 320 else/pipe2;
+#X obj 20 360 else/canvas.vis;
+#X obj 20 400 else/canvas.setname;

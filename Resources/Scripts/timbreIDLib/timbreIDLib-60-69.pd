@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 timbreIDLib/attackTime~;
+#X obj 20 80 timbreIDLib/specSlope~;
+#X obj 20 120 timbreIDLib/bark~;
+#X obj 20 160 timbreIDLib/barkSpecSlope;
+#X obj 20 200 timbreIDLib/tID_std;
+#X obj 20 240 timbreIDLib/specCentroid~;
+#X obj 20 280 timbreIDLib/melSpec~;
+#X obj 20 320 timbreIDLib/timbreIDLib;
+#X obj 20 360 timbreIDLib/chroma;
+#X obj 20 400 timbreIDLib/autoCorrPitch~;

@@ -100,7 +100,6 @@ class Pd4Web:
     def Execute(self):
         from .Builder import GetAndBuildExternals
         from .Compilers import ExternalsCompiler
-        from .Libraries import ExternalLibraries
         from .Patch import Patch
 
         if self.Patch == "":
@@ -120,10 +119,9 @@ class Pd4Web:
         self.GetPdSourceCode()
 
         self.Compiler = ExternalsCompiler(self)
-        self.Libraries = ExternalLibraries(self)
 
         # ──────────── Process Patch ──────────
-        self.ProcessedPatch = Patch(self)  # Recursively in case of Abstraction
+        self.ProcessedPatch: Patch = Patch(self)  # Recursively in case of Abstraction
 
         # ──────────── Build Externals ──────────
         self.ExternalsBuilder = GetAndBuildExternals(self)
@@ -131,6 +129,9 @@ class Pd4Web:
         # Extra Configs
 
     def InitVariables(self):
+        from .Objects import Objects
+        from .Libraries import ExternalLibraries
+
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -138,11 +139,9 @@ class Pd4Web:
         if sys.platform == "win32":
             self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
         elif sys.platform == "darwin":
-            self.APPDATA = os.path.join(
-                os.path.expanduser("~/Library/"), "pd4web")
+            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
         elif sys.platform == "linux":
-            self.APPDATA = os.path.join(
-                os.path.expanduser("~/.local/share"), "pd4web")
+            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
         else:
             raise RuntimeError("Unsupported platform")
 
@@ -152,8 +151,7 @@ class Pd4Web:
         try:
             self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
         except pygit2.GitError:
-            self.PROJECT_GIT = pygit2.init_repository(
-                self.PROJECT_ROOT, bare=False)
+            self.PROJECT_GIT = pygit2.init_repository(self.PROJECT_ROOT, bare=False)
 
         # Core Numbers
         self.cpuCores = os.cpu_count()
@@ -171,14 +169,17 @@ class Pd4Web:
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
 
+        # Classes
+        self.Libraries = ExternalLibraries(self)
+        self.Objects: Objects = Objects(self)
+
     def CheckDependencies(self):
         OK = shutil.which("cmake")
         if OK is None:
             raise Exception("Cmake is not installed. Please install it.")
 
     def DownloadZip(self, url, filename, what=""):
-        pd4web_print(f"Downloading {what}...",
-                     color="green", silence=self.SILENCE)
+        pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)
         response = requests.get(url, stream=True)
         if response.status_code != 200:
             raise Exception(f"Error: {response.status_code}")
@@ -194,14 +195,11 @@ class Pd4Web:
                 if total_size:
                     progress = downloaded_size / total_size
                     num_hashes = int(progress * num_bars)
-                    progress_bar = "#" * num_hashes + \
-                        "-" * (num_bars - num_hashes)
-                    sys.stdout.write(
-                        f"\r    🟢 |{progress_bar}| {progress:.2%}")
+                    progress_bar = "#" * num_hashes + "-" * (num_bars - num_hashes)
+                    sys.stdout.write(f"\r    🟢 |{progress_bar}| {progress:.2%}")
                 else:
                     num_hashes = int(downloaded_size / chunk_size) % num_bars
-                    progress_bar = "#" * num_hashes + \
-                        "-" * (num_bars - num_hashes)
+                    progress_bar = "#" * num_hashes + "-" * (num_bars - num_hashes)
                     sys.stdout.write(
                         f"\r    🟢 |{progress_bar}| {downloaded_size} bytes"
                     )

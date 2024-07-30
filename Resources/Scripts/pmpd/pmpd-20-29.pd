@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 pmpd/pmpd3d;
+#X obj 20 80 pmpd/tCylinder3D;
+#X obj 20 120 pmpd/tLink3D;
+#X obj 20 160 pmpd/tSphere3D;
+#X obj 20 200 pmpd/iCircle3D;
+#X obj 20 240 pmpd/mass2D;
+#X obj 20 280 pmpd/iCircle2D;
+#X obj 20 320 pmpd/pmpd;
+#X obj 20 360 pmpd/link;
+#X obj 20 400 pmpd/tPlane3D;

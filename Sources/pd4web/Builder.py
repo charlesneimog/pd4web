@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import zipfile
+import requests
 
 from .Helpers import DownloadZipFile, pd4web_print
 from .Patch import PatchLine
@@ -60,8 +61,7 @@ class GetAndBuildExternals:
         self.cmakeFile.append(
             'set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")'
         )
-        self.cmakeFile.append(
-            "include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
+        self.cmakeFile.append("include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
         self.cmakeFile.append(
             "include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)"
         )
@@ -137,73 +137,12 @@ class GetAndBuildExternals:
 
     def UpdateSetupFunction(self):
         for usedObjects in self.Pd4Web.usedObjects:
-            if usedObjects["Lib"] != "puredata":
+            if usedObjects["Lib"] != "pure-data":
                 for patchLine in self.Patch.patchLinesProcessed:
                     sameLibrary = patchLine.library == usedObjects["Lib"]
                     sameObject = patchLine.name == usedObjects["Obj"]
                     if sameLibrary and sameObject:
                         usedObjects["SetupFunction"] = patchLine.functionName
-
-    def GetLibraryData(self, PatchLine: PatchLine):
-        libraryClass = PatchLine.GetLibraryData()
-        return libraryClass
-
-    def GetLibrarySourceCode(self, PatchLine: PatchLine):
-        libraryName = PatchLine.library
-        if self.Libraries.isSupportedLibrary(libraryName):
-
-            if os.path.exists(
-                os.path.join(
-                    self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libraryName
-                )
-            ):
-                return True
-            if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
-                os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
-            libData = self.GetLibraryData(PatchLine)
-
-            # Download Library
-            if libData.version != "main" or libData.version != "master":
-                if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
-                    os.mkdir(self.Pd4Web.APPDATA + "/Externals")
-
-                libPath = self.Pd4Web.APPDATA + f"/Externals/{libData.name}/"
-                if not os.path.exists(libPath):
-                    os.mkdir(libPath)
-
-                libZip = f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
-
-                if not os.path.exists(libZip):
-                    pd4web_print(
-                        f"Downloading {libData.name} {libData.version}...\n",
-                        color="green",
-                        silence=self.Pd4Web.SILENCE,
-                    )
-                    libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/refs/tags/{libData.version}.zip"
-                    DownloadZipFile(libSource, libZip)
-
-                if not os.path.exists(
-                    self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"
-                ):
-                    with zipfile.ZipFile(libZip, "r") as zip_ref:
-                        zip_ref.extractall(
-                            self.PROJECT_ROOT + "/Pd4Web/Externals/")
-                        extractFolderName = zip_ref.namelist()[0]
-                        os.rename(
-                            self.PROJECT_ROOT
-                            + "/Pd4Web/Externals/"
-                            + extractFolderName,
-                            self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
-                        )
-
-            else:
-                raise Exception(
-                    "Error: the use of main or master are not implemented yet"
-                )
-
-            libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libraryName
-            PatchLine.GetLibraryExternals(libFolder, libraryName)
-            return True
 
     def RegexSearch(self, PatchLine: PatchLine, functionName, file):
         """
@@ -239,8 +178,7 @@ class GetAndBuildExternals:
         functionName = functionName.replace("~", "_tilde")
         functionName += "_setup"
         if "." in functionName:
-            functionName = functionName.replace(
-                ".", "0x2e")  # else use . as 0x2e
+            functionName = functionName.replace(".", "0x2e")  # else use . as 0x2e
         self.RegexSearch(patchLine, functionName, os.path.join(root, file))
         if not patchLine.objFound:
             functionName = patchLine.name
@@ -250,26 +188,10 @@ class GetAndBuildExternals:
                 functionName = functionName.replace(".", "0x2e")
             self.RegexSearch(patchLine, functionName, os.path.join(root, file))
 
-    def CopyLibAbstraction(self, abstractionfile):
-        """
-        This function copies the abstractions to webpatch/data folder.
-        """
-        if not os.path.exists(self.PROJECT_ROOT + "webpatch/data"):
-            os.mkdir(self.PROJECT_ROOT + "webpatch/data")
-
-        if os.path.exists(
-            self.PROJECT_ROOT + "webpatch/data/" +
-                os.path.basename(abstractionfile)
-        ):
-            return
-
-        shutil.copy(abstractionfile, self.PROJECT_ROOT + "webpatch/data")
-
     def GetObjectsSourceCode(self):
-        """ """
         for patchLine in self.Patch.patchLinesProcessed:
             if patchLine.isExternal:
-                foundLibrary = self.GetLibrarySourceCode(patchLine)
+                foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
                 if foundLibrary:
                     for root, _, files in os.walk(
                         self.Pd4Web.PROJECT_ROOT
@@ -279,12 +201,6 @@ class GetAndBuildExternals:
                         for file in files:
                             if file.endswith(".c") or file.endswith(".cpp"):
                                 self.SearchCFunction(patchLine, root, file)
-                            elif file.endswith(".pd"):
-                                if patchLine.name == file.split(".pd")[0]:
-                                    patchLine.isAbstraction = True
-                                    patchLine.objFound = True
-                                    self.CopyLibAbstraction(
-                                        os.path.join(root, file))
                 else:
                     raise Exception(
                         f"Error: Could not find {patchLine.library} in the supported libraries"
@@ -300,7 +216,7 @@ class GetAndBuildExternals:
                     )
 
                 elif patchLine.objFound and not patchLine.isAbstraction:
-                    externalSpace = 10 - len(patchLine.name)
+                    externalSpace = 20 - len(patchLine.name)
                     objName = patchLine.name + (" " * externalSpace)
                     pd4web_print(
                         f"Found External: {objName}  | Lib: {patchLine.library}",
@@ -315,7 +231,6 @@ class GetAndBuildExternals:
         """
         Configure the project to build the externals objects.
         """
-        print()
         usedObjectsName = {}
 
         for usedObjects in self.Pd4Web.usedObjects:
@@ -326,13 +241,14 @@ class GetAndBuildExternals:
                 usedObjectsName[library].append(usedObjects["Obj"])
 
         externalsTargets = []
+        print()
         for library, objects in usedObjectsName.items():
-            if library == "puredata":
+            if library == "pure-data":
                 # TODO: Need to check for extra objects
                 continue
             libraryPath = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + library
             pd4web_print(
-                f"Create compilation process for {library}\n",
+                f"Creating compilation process for {library}\n",
                 color="green",
                 silence=self.Pd4Web.SILENCE,
             )
@@ -347,6 +263,7 @@ class GetAndBuildExternals:
                         libraryPath + "/.build"
                     )
                 target = pdobject.replace("~", "_tilde")
+
                 externalsTargets.append(target)
 
             CMAKE_LIB_FILE = os.path.normpath(
@@ -354,16 +271,14 @@ class GetAndBuildExternals:
                     self.Pd4Web.PD4WEB_ROOT, "..", "Libraries", f"{library}.cmake"
                 )
             )
-            shutil.copy(CMAKE_LIB_FILE, self.Pd4Web.PROJECT_ROOT +
-                        "/Pd4Web/Externals/")
+            shutil.copy(CMAKE_LIB_FILE, self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/")
             self.cmakeFile.append(f"include(Pd4Web/Externals/{library}.cmake)")
 
         if len(externalsTargets) == 0:
             return
         self.cmakeFile.append(f"\n# Project Externals Libraries")
         targetsString = " ".join(externalsTargets)
-        self.cmakeFile.append(
-            f"target_link_libraries(pd4web PRIVATE {targetsString})")
+        self.cmakeFile.append(f"target_link_libraries(pd4web PRIVATE {targetsString})")
 
     def AddFilesToWebPatch(self):
         self.cmakeFile.append("\n# FileSystem for the Patch")
@@ -375,21 +290,21 @@ class GetAndBuildExternals:
                 "get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)"
             )
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Audios@/Audios/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Audios@/Audios/")'
             )
-        if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Libs"):
+        if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.tmp"):
             self.cmakeFile.append(
                 "get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)"
             )
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/.tmp/@/Libs/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/.tmp@/Libs/")'
             )
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Extras"):
             self.cmakeFile.append(
                 "get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)"
             )
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --embed-file ${CMAKE_CURRENT_SOURCE_DIR}/Extras@/Extras/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Extras@/Extras/")'
             )
 
     def CreateCppCallsExternalFile(self):
@@ -403,8 +318,7 @@ class GetAndBuildExternals:
             if self.Pd4Web.OUTCHS_COUNT == 0:
                 self.Pd4Web.OUTCHS_COUNT = 2
 
-            f.write(
-                "// This is automatically generated code from pd4web.py script\n\n")
+            f.write("// This is automatically generated code from pd4web.py script\n\n")
 
             f.write(f"// Project Name\n")
             projectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
@@ -439,13 +353,11 @@ class GetAndBuildExternals:
         externals = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/externals.cpp"
         with open(externals, "w") as f:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()
-            f.write(
-                "// This is automatically generated code from pd4web.py script\n\n")
+            f.write("// This is automatically generated code from pd4web.py script\n\n")
 
             for usedObjects in self.Pd4Web.usedObjects:
                 if usedObjects["SetupFunction"]:
-                    f.write(
-                        f"extern \"C\" void {usedObjects['SetupFunction']}();\n")
+                    f.write(f"extern \"C\" void {usedObjects['SetupFunction']}();\n")
 
             f.write("\n")
             f.write("void Pd4WebInitExternals() {\n")
@@ -478,8 +390,7 @@ class GetAndBuildExternals:
             "Ninja",
         ]
         if self.Pd4Web.verbose:
-            pd4web_print(" ".join(command), color="green",
-                         silence=self.Pd4Web.SILENCE)
+            pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE)
         result = subprocess.run(
             command, capture_output=not self.Pd4Web.verbose, text=True
         ).returncode
@@ -502,8 +413,7 @@ class GetAndBuildExternals:
         )
 
         if self.Pd4Web.verbose:
-            pd4web_print(" ".join(command), color="green",
-                         silence=self.Pd4Web.SILENCE)
+            pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE)
 
         result = subprocess.run(
             command, capture_output=not self.Pd4Web.verbose, text=True
@@ -523,8 +433,7 @@ class GetAndBuildExternals:
         )
 
         os.chdir(self.Pd4Web.PROJECT_ROOT)
-        shutil.copy(self.Pd4Web.Patch, self.Pd4Web.PROJECT_ROOT +
-                    "/WebPatch/index.pd")
+        # shutil.copy(self.Pd4Web.Patch, self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.pd")
 
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../favicon.ico",
