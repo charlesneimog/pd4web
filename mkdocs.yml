@@ -1,0 +1,87 @@
+site_name: pd4web
+docs_dir: Documentation
+copyright: Copyright &copy 2023 | Charles K. Neimog | University of São Paulo. 
+
+theme:
+  logo: assets/icon-light.svg
+  custom_dir: Documentation/overrides
+  logo_dark_mode: assets/icon-dark.svg
+  logo_light_mode: assets/icon-light.svg
+  favicon: assets/icon.png
+  name: material
+  features:
+    - navigation.top
+    - navigation.sections
+    - content.code.annotate 
+    - content.code.copy
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - search.highlight
+    - search.suggest
+    - toc.integrate
+    - toc.follow
+    - navigation.instant
+    - header.autohide
+
+    
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: light blue
+      toggle:
+        icon: material/lightbulb
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      accent: light blue
+      primary: black
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to light mode
+  
+markdown_extensions:
+    - pymdownx.tabbed:
+        alternate_style: true
+    - pymdownx.emoji:
+        emoji_index: !!python/name:materialx.emoji.twemoji
+        emoji_generator: !!python/name:materialx.emoji.to_svg
+    - pymdownx.extra
+    - pymdownx.details
+    - pymdownx.inlinehilite
+    - pymdownx.tasklist
+    - pymdownx.magiclink
+    - pymdownx.highlight
+    - abbr
+    - admonition
+    - pymdownx.details
+    - attr_list
+    - md_in_html
+    - pymdownx.superfences
+    - footnotes
+    - pymdownx.keys
+
+repo_url: https://github.com/charlesneimog/pd4web
+
+extra_css:
+  - extra/extra.css
+  
+extra_javascript:
+  - js/index_slider.js
+  
+nav:
+    - index.md
+    - patch.md
+    - libraries.md
+    - devs.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/instagram
+      link: https://www.instagram.com/charlesneimog/
+    - icon: fontawesome/brands/github
+      link: https://www.github.com/charlesneimog/
+    - icon: fontawesome/solid/paper-plane
+      link: mailto:charlesneimog@outlook.com
+
+
