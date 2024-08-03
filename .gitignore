@@ -15,3 +15,4 @@ Tests/*/index.html
 Tests/*/.git
 
 build
+Resources/Pd/pd4web.spec
