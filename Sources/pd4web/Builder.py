@@ -352,9 +352,10 @@ class GetAndBuildExternals:
         cwd = os.getcwd()
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         emcmake = self.Pd4Web.Compiler.EMCMAKE
+        cmake = self.Pd4Web.Compiler.CMAKE
         command = [
             emcmake,
-            "cmake",
+            cmake,
             ".",
             "-B",
             "build",

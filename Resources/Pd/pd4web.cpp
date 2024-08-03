@@ -3,7 +3,6 @@
 
 #include <array>
 #include <cstdio>
-#include <iostream>
 #include <memory>
 #include <regex>
 #include <string>
@@ -21,6 +20,7 @@ class Pd4Web {
     bool pipInstalled;
     bool pd4webInstalled;
     std::string Pd4WebPath;
+    std::string Pd4WebExe;
 
     // config
     bool verbose;
@@ -30,6 +30,31 @@ class Pd4Web {
 
     t_outlet *Out;
 };
+
+// ─────────────────────────────────────
+static void GetPd4WebExe(Pd4Web *x) {
+    std::string arch = "/pd4web-";
+
+    // OS
+#if defined(_WIN32) || defined(_WIN64)
+    arch += "w-";
+#elif defined(__APPLE__)
+    arch += "m-";
+#elif defined(__linux__)
+    arch += "l-";
+#endif
+
+    // Arch
+#if defined(__x86_64__) || defined(_M_X64)
+    arch += "x86";
+#elif defined(__aarch64__) || defined(_M_ARM64)
+    arch += "arm";
+#elif defined(__arm__) || defined(_M_ARM)
+    arch += "arm";
+#endif
+
+    x->Pd4WebExe = arch;
+}
 
 // ─────────────────────────────────────
 static bool CheckPd4Web(Pd4Web *x) {
@@ -44,6 +69,7 @@ static bool CheckPd4Web(Pd4Web *x) {
     }
 #endif
     std::string cmd = x->Pd4WebPath + " --help";
+    post("cmd: %s", cmd.c_str());
     result = std::system(cmd.c_str());
     return (result == 0);
 }
@@ -148,7 +174,8 @@ static void Compile(Pd4Web *x) {
 static void *Pd4WebNew(t_symbol *s, int argc, t_atom *argv) {
     Pd4Web *x = (Pd4Web *)pd_new(pd4web_class);
     x->Out = outlet_new(&x->Obj, &s_anything);
-    x->Pd4WebPath = pd4web_class->c_externdir->s_name + std::string("/pd-pd4web");
+    GetPd4WebExe(x);
+    x->Pd4WebPath = pd4web_class->c_externdir->s_name + x->Pd4WebExe;
 
     int result = CheckPd4Web(x);
     if (!result) {

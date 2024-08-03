@@ -16,3 +16,5 @@ Tests/*/.git
 
 build
 Resources/Pd/pd4web.spec
+Resources/Pd/.cache/clangd/index
+Resources/Pd/cmake-format.yaml
