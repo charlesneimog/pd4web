@@ -11,6 +11,9 @@ from .Helpers import DownloadZipFile, pd4web_print
 
 
 class Pd4Web:
+    # Paths
+    PD4WEB_LIBRARIES: str = ""
+    PD_EXTERNAL: bool = False
     # Dev
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
@@ -41,12 +44,8 @@ class Pd4Web:
             description="Compile Pure Data externals for the web.",
             usage="pd4web.py <PureData Patch>",
         )
-        parser.add_argument(
-            "patch_file", type=str, help="The patch file to be compiled"
-        )
-        parser.add_argument(
-            "-v", "--verbose", action="store_true", help="Enable verbose mode"
-        )
+        parser.add_argument("patch_file", type=str, help="The patch file to be compiled")
+        parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode")
         parser.add_argument(
             "-m",
             "--initial-memory",
@@ -135,6 +134,9 @@ class Pd4Web:
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
+        if self.PD4WEB_LIBRARIES == "":
+            self.PD4WEB_LIBRARIES = os.path.join(self.PD4WEB_ROOT, "../Libraries")
+
         self.CWD = os.getcwd()
         if sys.platform == "win32":
             self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
@@ -200,9 +202,7 @@ class Pd4Web:
                 else:
                     num_hashes = int(downloaded_size / chunk_size) % num_bars
                     progress_bar = "#" * num_hashes + "-" * (num_bars - num_hashes)
-                    sys.stdout.write(
-                        f"\r    🟢 |{progress_bar}| {downloaded_size} bytes"
-                    )
+                    sys.stdout.write(f"\r    🟢 |{progress_bar}| {downloaded_size} bytes")
                 sys.stdout.flush()
         print()
         return True
