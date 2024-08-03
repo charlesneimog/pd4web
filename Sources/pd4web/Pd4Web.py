@@ -4,6 +4,7 @@ import sys
 import zipfile
 import shutil
 import pygit2
+import cmake
 
 import requests
 
@@ -176,9 +177,15 @@ class Pd4Web:
         self.Objects: Objects = Objects(self)
 
     def CheckDependencies(self):
-        OK = shutil.which("cmake")
-        if OK is None:
-            raise Exception("Cmake is not installed. Please install it.")
+        cmake_dir = cmake.__file__
+        cmake_dir = os.path.dirname(cmake_dir)
+        cmake_dir = os.path.join(cmake_dir, "data", "bin")
+        cmake_bin = os.path.join(cmake_dir, "cmake")
+        cmake_bin = os.path.abspath(cmake_bin)
+        if not os.path.exists(cmake_bin):
+            raise Exception("Cmake (module) is not installed. Please install it.")
+        else:
+            print("Cmake (module) is installed. " + cmake_bin)
 
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)

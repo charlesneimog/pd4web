@@ -119,6 +119,7 @@ EM_JS(void, _JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AU
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
 
+
     async function _GetMicAccess(stream) {
       try {
         const SourceNode = Pd4WebAudioContext.createMediaStreamSource(stream);
@@ -464,22 +465,25 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
                         void *userData) {
 
     int ChCount = Out[0].numberOfChannels;
-    float TmpOuts[128 * ChCount];
+    float LibPdOuts[128 * ChCount];
+    std::string in =
+        "Ch In: " + std::to_string(numInputs) + " | Ch Out: " + std::to_string(ChCount);
 
-    libpd_process_float(2, In[0].data, TmpOuts);
+    _JS_post(in.c_str());
+
+    libpd_process_float(2, In[0].data, LibPdOuts);
     // TODO: Fix multiple channels
 
     int OutI = 0;
     for (int i = 0; i < ChCount; i++) {
-        for (int j = i; j < (128 * ChCount); j += 2) {
-            Out[0].data[OutI] = TmpOuts[j];
+        for (int j = i; j < (128 * ChCount); j += ChCount) {
+            Out[0].data[OutI] = LibPdOuts[j];
             OutI++;
         }
     }
 
     return EM_TRUE;
 }
-
 // ─────────────────────────────────────
 /**
  * Callback function called when AudioWorkletProcessor is created.
@@ -526,6 +530,8 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
 
+    std::string Chs = "NInCh: " + std::to_string(NInCh) + " | NOutCh: " + std::to_string(NOutCh);
+    _JS_post(Chs.c_str());
     libpd_init_audio(NInCh, NOutCh, SR);
 
     if (!libpd_openfile("index.pd", "./")) {

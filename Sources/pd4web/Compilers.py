@@ -1,7 +1,7 @@
 import os
 import platform
 import zipfile
-import shutil
+import cmake
 
 import requests
 
@@ -50,10 +50,15 @@ class ExternalsCompiler:
         self.CMAKE = self.GetCmake()
 
     def GetCmake(self):
-        cmake_path = shutil.which("cmake")
-        if cmake_path is None:
-            raise Exception("CMake not found, please install it")
-        return cmake_path
+        cmake_dir = cmake.__file__
+        cmake_dir = os.path.dirname(cmake_dir)
+        cmake_dir = os.path.join(cmake_dir, "data", "bin")
+        cmake_bin = os.path.join(cmake_dir, "cmake")
+        cmake_bin = os.path.abspath(cmake_bin)
+        if not os.path.exists(cmake_bin):
+            raise Exception("Cmake (module) is not installed. Please install it.")      
+        else:
+            return cmake_bin     
 
     def InstallEMCC(self):
         if platform.system() == "Windows":
