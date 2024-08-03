@@ -1,7 +1,5 @@
 import os
 import platform
-import subprocess
-import sys
 import zipfile
 import shutil
 
@@ -35,8 +33,12 @@ class ExternalsCompiler:
                 try:
                     os.remove(EmccZip)
                 except:
-                    pd4web_print("Failed to remove emcc.zip",
-                                 color="yellow", silence=self.Pd4Web.SILENCE)
+                    pd4web_print(
+                        "Failed to remove emcc.zip",
+                        color="yellow",
+                        silence=self.Pd4Web.SILENCE,
+                        pd4web=self.Pd4Web.PD_EXTERNAL,
+                    )
             self.InstallEMCC()
 
     def InitVariables(self):

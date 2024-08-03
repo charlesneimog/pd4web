@@ -36,8 +36,12 @@ class ExternalLibraries:
         """
         It reads yaml file and get all supported libraries.
         """
-        root = self.Pd4Web.PD4WEB_ROOT
-        externalFile = os.path.join(root, "../Libraries/Libraries.yaml")
+        libFolder = self.Pd4Web.PD4WEB_LIBRARIES
+        externalFile = os.path.join(libFolder, "Libraries.yaml")
+        # check if file exists
+        if not os.path.exists(externalFile):
+            pass
+
         self.DynamicLibraries = []
         with open(externalFile) as file:
             supportedLibraries = yaml.load(file, Loader=yaml.FullLoader)
@@ -105,16 +109,12 @@ class ExternalLibraries:
                     self.downloadLink = self.downloadSources[self.source]
                     return self.downloadLink.format(self.dev, self.repo)
                 else:
-                    raise Exception(
-                        f"Error: {self.name} doesn't have a download source"
-                    )
+                    raise Exception(f"Error: {self.name} doesn't have a download source")
             else:
                 return self.directLink
 
     def GetLibrary(self, libName) -> LibraryClass:
-        lib = next(
-            (lib for lib in self.SupportedLibraries if lib["Name"] == libName), None
-        )
+        lib = next((lib for lib in self.SupportedLibraries if lib["Name"] == libName), None)
         lib = self.LibraryClass(lib, self.DownloadSources)
         return lib
 
@@ -139,9 +139,7 @@ class ExternalLibraries:
         libName: str,
     ):
         if self.isSupportedLibrary(libName):
-            if os.path.exists(
-                os.path.join(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName)
-            ):
+            if os.path.exists(os.path.join(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName)):
                 return True
             if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
                 os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
@@ -154,9 +152,7 @@ class ExternalLibraries:
             if not os.path.exists(libPath):
                 os.mkdir(libPath)
 
-            libZip = (
-                f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
-            )
+            libZip = f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
             if not os.path.exists(libZip):
                 pd4web_print(
                     f"Downloading {libData.name} {libData.version}...\n",
@@ -172,9 +168,7 @@ class ExternalLibraries:
                         )
                 DownloadZipFile(libSource, libZip)  # <== Download Library
 
-            if not os.path.exists(
-                self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"
-            ):
+            if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
                 with zipfile.ZipFile(libZip, "r") as zip_ref:
                     zip_ref.extractall(self.PROJECT_ROOT + "/Pd4Web/Externals/")
                     extractFolderName = zip_ref.namelist()[0]

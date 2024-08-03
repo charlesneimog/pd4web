@@ -63,9 +63,7 @@ class Objects:
             return False
         else:
             try:
-                return supportedDownloads[libraryName.repoAPI].format(
-                    libraryName.repoUser, libraryName.repoName
-                )
+                return supportedDownloads[libraryName.repoAPI].format(libraryName.repoUser, libraryName.repoName)
             except:
                 return None
 
@@ -76,6 +74,8 @@ class Objects:
         pd4web_print(
             f"Listing all external supported by {libName}, this may take a while...",
             color="blue",
+            silence=self.Pd4Web.SILENCE,
+            pd4web=self.Pd4Web.PD_EXTERNAL,
         )
 
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
@@ -94,9 +94,7 @@ class Objects:
         for root, _, files in os.walk(libFolder):
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
-                    with open(
-                        os.path.join(root, file), "r", encoding="utf-8"
-                    ) as c_file:
+                    with open(os.path.join(root, file), "r", encoding="utf-8") as c_file:
                         file_contents = c_file.read()
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)
@@ -130,6 +128,7 @@ class Objects:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)
         else:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Libraries", libName)
+
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
             self.GetLibraryObjects(libFolder, libName)
