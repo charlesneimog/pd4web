@@ -2,7 +2,6 @@ import argparse
 import os
 import sys
 import zipfile
-import shutil
 import pygit2
 import cmake
 
@@ -70,7 +69,15 @@ class Pd4Web:
             type=str,
             help="Pure Data version to use",
         )
+        parser.add_argument(
+            "--run-browser",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Use Emscripten to run the Browser",
+        )
 
+        # Dev Flags
         parser.add_argument(
             "--bypass-unsupported",
             required=False,
@@ -89,6 +96,10 @@ class Pd4Web:
         # check if file exists
         if not os.path.isfile(self.Patch):
             raise Exception("\n\nError: Patch file not found")
+
+        if self.Parser.run_browser:
+            self.RunBrowser()
+            return
 
         self.verbose = self.Parser.verbose
         self.MEMORY_SIZE = self.Parser.initial_memory
@@ -127,6 +138,27 @@ class Pd4Web:
         self.ExternalsBuilder = GetAndBuildExternals(self)
 
         # Extra Configs
+
+    def RunBrowser(self):
+        self.CWD = os.getcwd()
+        if sys.platform == "win32":
+            self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
+        elif sys.platform == "darwin":
+            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
+        elif sys.platform == "linux":
+            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
+        else:
+            raise RuntimeError("Unsupported platform")
+        emccRun = self.APPDATA + "/emsdk/upstream/emscripten/emrun"
+        # check if emrun exists
+        if not os.path.exists(emccRun):
+            raise Exception("emrun not found. Please install Emscripten")
+
+        self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch)) + "/index.html"
+        if not os.path.exists(self.PROJECT_ROOT):
+            raise Exception("index.html not found, had you compiled the patch?")
+        os.chdir(os.path.dirname(self.PROJECT_ROOT))
+        os.system(f"{emccRun} index.html")
 
     def InitVariables(self):
         from .Objects import Objects

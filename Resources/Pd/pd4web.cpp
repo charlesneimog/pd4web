@@ -1,16 +1,17 @@
 #include <m_pd.h>
-#include <string>
 
+#include <algorithm>
 #include <array>
-#include <cstdio>
-#include <memory>
-#include <regex>
+#include <atomic>
 #include <string>
 #include <thread>
 
 #include <m_imp.h>
 
 static t_class *pd4web_class;
+
+static std::atomic<bool> Pd4WebRunning(false);
+static std::atomic<bool> Pd4WebKill(false);
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -21,6 +22,7 @@ class Pd4Web {
     bool pd4webInstalled;
     std::string Pd4WebPath;
     std::string Pd4WebExe;
+    bool Pd4WebIsReady;
 
     // config
     bool verbose;
@@ -69,10 +71,64 @@ static bool CheckPd4Web(Pd4Web *x) {
     }
 #endif
     std::string cmd = x->Pd4WebPath + " --help";
-    post("cmd: %s", cmd.c_str());
     result = std::system(cmd.c_str());
     return (result == 0);
 }
+
+// ─────────────────────────────────────
+static void RunCmd(Pd4Web *x, std::string cmd, bool browser) {
+    if (browser) {
+        std::thread([x, cmd]() {
+
+        }).detach();
+    } else {
+        std::thread([x, cmd]() {
+            post("[pd4web] Running...");
+            Pd4WebRunning.store(true);
+            std::array<char, 256> Buf;
+            std::string Result;
+            FILE *Pipe = popen(cmd.c_str(), "r");
+            if (!Pipe) {
+                pd_error(nullptr, "[pd4web] popen failed");
+                Pd4WebRunning.store(false); // Ensure the flag is reset on failure
+                return;
+            }
+
+            while (!Pd4WebKill.load() && fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+                std::string Line = "[pd4web] ";
+                Line += Buf.data();
+                // remove \n
+                Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+
+                if (Line != "[pd4web] ") {
+                    post(Line.c_str());
+                }
+            }
+            post("[pd4web] Done!");
+            pclose(Pipe);
+            return;
+        }).detach();
+    }
+}
+
+// ─────────────────────────────────────
+static void RunBrowser(Pd4Web *x) {
+    if (!x->Pd4WebIsReady) {
+        pd_error(x, "[pd4web] pd4web is not ready");
+        return;
+    }
+
+    if (x->patch == "") {
+        pd_error(x, "[pd4web] No patch selected");
+        return;
+    }
+
+    std::string cmd = x->Pd4WebPath;
+    cmd += " --run-browser ";
+    cmd += x->patch.c_str();
+    RunCmd(x, cmd, true);
+}
+
 // ─────────────────────────────────────
 static void SetConfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     if (argv[0].a_type != A_SYMBOL) {
@@ -81,23 +137,32 @@ static void SetConfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     }
     std::string config = atom_getsymbol(argv)->s_name;
     if (config == "memory") {
-        x->memory = atom_getintarg(1, argc, argv);
-        post("[pd4web] Initial memory set to %dMB", x->memory);
+        int memory = atom_getintarg(1, argc, argv);
+        if (memory != x->memory) {
+            x->memory = memory;
+            post("[pd4web] Initial memory set to %dMB", x->memory);
+        }
         return;
     } else if (config == "verbose") {
-        x->verbose = atom_getintarg(1, argc, argv);
-        if (x->verbose) {
-            post("[pd4web] Verbose set to true");
-        } else {
-            post("[pd4web] Verbose set to false");
+        bool verbose = atom_getintarg(1, argc, argv);
+        if (verbose != x->verbose) {
+            x->verbose = verbose;
+            if (x->verbose) {
+                post("[pd4web] Verbose set to true");
+            } else {
+                post("[pd4web] Verbose set to false");
+            }
         }
         return;
     } else if (config == "gui") {
-        x->gui = atom_getintarg(1, argc, argv);
-        if (x->gui) {
-            post("[pd4web] Gui set to true");
-        } else {
-            post("[pd4web] Gui set to false");
+        bool gui = atom_getintarg(1, argc, argv);
+        if (gui != x->gui) {
+            x->gui = gui;
+            if (x->gui) {
+                post("[pd4web] Gui set to true");
+            } else {
+                post("[pd4web] Gui set to false");
+            }
         }
     } else if (config == "patch") {
         x->patch = atom_getsymbolarg(1, argc, argv)->s_name;
@@ -107,33 +172,14 @@ static void SetConfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 }
 
 // ─────────────────────────────────────
-static std::string Exec(const std::string &cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::shared_ptr<FILE> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-    return result;
-}
-
-// ─────────────────────────────────────
-std::string RemoveSpecialCharsCodes(const std::string &input) {
-    std::regex colorCodeRegex("\033\\[[0-9;]*m");
-    std::regex variationSelectorRegex("\uFE0F");
-    std::string withoutColorCodes = std::regex_replace(input, colorCodeRegex, "");
-    std::string withoutSpecialCodes =
-        std::regex_replace(withoutColorCodes, variationSelectorRegex, "");
-
-    return std::regex_replace(input, colorCodeRegex, "");
-}
-
-// ─────────────────────────────────────
 static void Compile(Pd4Web *x) {
+    if (!x->Pd4WebIsReady) {
+        pd_error(x, "[pd4web] pd4web is not ready");
+        return;
+    }
+
     std::string cmd = x->Pd4WebPath;
+
     if (x->verbose) {
         cmd += " --verbose ";
     }
@@ -143,29 +189,11 @@ static void Compile(Pd4Web *x) {
     if (!x->gui) {
         cmd += " --nogui ";
     }
-
     if (x->patch != "") {
         cmd += x->patch;
     }
 
-    std::thread([cmd]() {
-        try {
-            std::string output = Exec(cmd);
-            // split by new line and print line by line
-            std::size_t pos = 0;
-            std::size_t prev = 0;
-            while ((pos = output.find("\n", prev)) != std::string::npos) {
-                std::string line = "[pd4web] " + output.substr(prev, pos - prev);
-                if (line != "[pd4web] ") {
-                    post(line.c_str());
-                }
-                prev = pos + 1;
-            }
-            post("[pd4web] Done!");
-        } catch (const std::exception &e) {
-            pd_error(nullptr, "[pd4web] Error: %s", e.what());
-        }
-    }).detach();
+    RunCmd(x, cmd, false);
 
     return;
 }
@@ -177,14 +205,10 @@ static void *Pd4WebNew(t_symbol *s, int argc, t_atom *argv) {
     GetPd4WebExe(x);
     x->Pd4WebPath = pd4web_class->c_externdir->s_name + x->Pd4WebExe;
 
-    int result = CheckPd4Web(x);
-    if (!result) {
-        pd_error(x, "[pd4web] There is a problem with pd4web, check your system.");
-        return nullptr;
-    }
+    std::thread([x]() { x->Pd4WebIsReady = CheckPd4Web(x); }).detach();
 
     // default variables
-    x->verbose = false;
+    x->verbose = true;
     x->memory = 32;
 
     return x;
@@ -196,5 +220,6 @@ extern "C" void pd4web_setup(void) {
                              CLASS_DEFAULT, A_GIMME, A_NULL);
 
     class_addmethod(pd4web_class, (t_method)SetConfig, gensym("set"), A_GIMME, A_NULL);
+    class_addmethod(pd4web_class, (t_method)RunBrowser, gensym("browser"), A_NULL);
     class_addbang(pd4web_class, (t_method)Compile);
 }

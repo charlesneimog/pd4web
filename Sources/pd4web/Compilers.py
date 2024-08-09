@@ -48,6 +48,7 @@ class ExternalsCompiler:
         else:
             self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
         self.CMAKE = self.GetCmake()
+        self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
 
     def GetCmake(self):
         cmake_dir = cmake.__file__
@@ -56,9 +57,9 @@ class ExternalsCompiler:
         cmake_bin = os.path.join(cmake_dir, "cmake")
         cmake_bin = os.path.abspath(cmake_bin)
         if not os.path.exists(cmake_bin):
-            raise Exception("Cmake (module) is not installed. Please install it.")      
+            raise Exception("Cmake (module) is not installed. Please install it.")
         else:
-            return cmake_bin     
+            return cmake_bin
 
     def InstallEMCC(self):
         if platform.system() == "Windows":

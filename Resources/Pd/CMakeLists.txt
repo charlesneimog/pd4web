@@ -11,9 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ╭──────────────────────────────────────╮
 # │            Pd4Web Python             │
 # ╰──────────────────────────────────────╯
-# check if pyinstaller is installed
 find_program(PYINSTALLER_EXECUTABLE pyinstaller)
-
 if(NOT PYINSTALLER_EXECUTABLE)
     message(
         FATAL_ERROR
@@ -23,6 +21,7 @@ else()
     message(STATUS "PyInstaller found: ${PYINSTALLER_EXECUTABLE}")
 endif()
 
+# Executable name
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(PLATFORM "l-")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -40,17 +39,18 @@ elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" OR ${CMAKE_SYSTEM_PROCESSOR} MATC
 else()
     message(FATAL_ERROR "Unknown architecture")
 endif()
-
 set(ARCH "${PLATFORM}${ARCHITECTURE}")
 
+# ╭──────────────────────────────────────╮
+# │      Compile using pyinstaller       │
+# ╰──────────────────────────────────────╯
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/hooks/")
     set(PYINSTALLER_COMMAND
         ${PYINSTALLER_EXECUTABLE} --onefile ${CMAKE_SOURCE_DIR}/pd-pd4web.py --name
-        "pd4web-${ARCH}" --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --add-data
-        "${CMAKE_SOURCE_DIR}/../../Sources:pd4web" --distpath "${CMAKE_BINARY_DIR}")
-
-    # MACOS
+        "pd4web-${ARCH}" --add-binary "/usr/lib/liblzma.so.5:." --additional-hooks-dir
+        "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --add-data "${CMAKE_SOURCE_DIR}/../../Sources:pd4web"
+        --distpath "${CMAKE_BINARY_DIR}")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(PYINSTALLER_COMMAND
         ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --add-data
