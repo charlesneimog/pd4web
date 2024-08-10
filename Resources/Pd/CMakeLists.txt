@@ -48,9 +48,9 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/hooks/")
     set(PYINSTALLER_COMMAND
         ${PYINSTALLER_EXECUTABLE} --onefile ${CMAKE_SOURCE_DIR}/pd-pd4web.py --name
-        "pd4web-${ARCH}" --add-binary "/usr/lib/liblzma.so.5:." --additional-hooks-dir
-        "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --add-data "${CMAKE_SOURCE_DIR}/../../Sources:pd4web"
-        --distpath "${CMAKE_BINARY_DIR}")
+        "pd4web-${ARCH}" # --add-binary "/usr/lib/liblzma.so.5:."
+        --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --add-data
+        "${CMAKE_SOURCE_DIR}/../../Sources:pd4web" --distpath "${CMAKE_BINARY_DIR}")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(PYINSTALLER_COMMAND
         ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --add-data
