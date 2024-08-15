@@ -36,7 +36,26 @@ EM_JS(void, _JS_sendList, (void), {
         Pd4Web._finishMessage(r);
     };
 
-    // User functions for receiving messages
+});
+
+
+// ─────────────────────────────────────
+EM_JS(void, _JS_onReceived, (), {
+    // Bangs 
+    Pd4Web.onBangReceived = function(receiver, myFunc) {
+        if (typeof Pd4Web._userBangFunc === 'undefined') {
+            Pd4Web._userBangFunc = {};
+        }
+        const paramCount = myFunc.length;
+        if (paramCount !== 0) {
+            console.error('Invalid number of arguments for function, expected 0 arguments');
+            return;
+        }
+        Pd4Web.bindReceiver(receiver);
+        Pd4Web._userBangFunc[receiver] = myFunc;
+    };
+
+    // Floats
     Pd4Web.onFloatReceived = function(receiver, myFunc) {
         if (typeof Pd4Web._userFloatFunc === 'undefined') {
             Pd4Web._userFloatFunc = {};
@@ -50,7 +69,7 @@ EM_JS(void, _JS_sendList, (void), {
         Pd4Web._userFloatFunc[receiver] = myFunc;
     };
 
-    // Symbol Received
+    // Symbols 
     Pd4Web.onSymbolReceived = function(receiver, myFunc) {
         if (typeof Pd4Web._userSymbolFunc === 'undefined') {
             Pd4Web._userSymbolFunc = {};
@@ -62,6 +81,20 @@ EM_JS(void, _JS_sendList, (void), {
         }
         Pd4Web.bindReceiver(receiver);
         Pd4Web._userSymbolFunc[receiver] = myFunc;
+    };
+
+    // Lists
+    Pd4Web.onListReceived = function(receiver, myFunc) {
+        if (typeof Pd4Web._userListFunc === 'undefined') {
+            Pd4Web._userListFunc = {};
+        }
+        const paramCount = myFunc.length;
+        if (paramCount !== 1) {
+            console.error('Invalid number of arguments for function. Required 1, just the list received');
+            return;
+        }
+        Pd4Web.bindReceiver(receiver);
+        Pd4Web._userListFunc[receiver] = myFunc;
     };
 });
 
@@ -229,7 +262,11 @@ EM_JS(void, _JS_receiveBang, (const char *r),{
             }
         }
     } else{
-        // TODO: Implement some function defined by user
+        let bangFunc = Pd4Web._userBangFunc[source];
+        if (typeof bangFunc === 'function') {
+            bangFunc();
+        }
+
 
     }
 });
@@ -292,16 +329,83 @@ EM_JS(void, _JS_receiveSymbol, (const char *r, const char *s),{
     }
 });
 
-//╭─────────────────────────────────────╮
-//│     Extra PureData Definitions      │
-//╰─────────────────────────────────────╯
-// clang-format on
+// ─────────────────────────────────────
+EM_JS(void, _JS_receiveList, (const char *r),{
+    var source = UTF8ToString(r);
+    if (source in Pd4Web.GuiReceivers) {
+        return;
+    } else{
+        let listFunc = Pd4Web._userListFunc[source];
+        const listSize = Pd4Web._getReceivedListSize(source);
+        var pdList = [];
+        for (let i = 0; i < listSize; i++) {
+            let type = Pd4Web._getItemFromListType(source, i);
+            if (type === "float") {
+                pdList.push(Pd4Web._getItemFromListFloat(source, i));
+            } else if (type === "symbol") {
+                pdList.push(Pd4Web._getItemFromListSymbol(source, i));
+            } else{
+                console.error("Invalid type");
+            }
+        }
+        if (typeof listFunc === 'function') {
+            listFunc(pdList);
+        }
+    }
+});
 
-extern "C" void sys_putmidibyte(int portno, int byte) {
-    //
-    printf("Midi: %d\n", byte);
-    return;
+// clang-format on
+// ─────────────────────────────────────
+int Pd4Web::_getReceivedListSize(std::string r) {
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            return GuiReceiver.List.size();
+        }
+    }
+    return -1;
 }
+// ─────────────────────────────────────
+std::string Pd4Web::_getItemFromListType(std::string r, int i) {
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            if (std::holds_alternative<float>(GuiReceiver.List[i])) {
+                return "float";
+            } else if (std::holds_alternative<std::string>(GuiReceiver.List[i])) {
+                return "symbol";
+            }
+        }
+    }
+    return "";
+}
+// ─────────────────────────────────────
+std::string Pd4Web::_getItemFromListSymbol(std::string r, int i) {
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            if (std::holds_alternative<std::string>(GuiReceiver.List[i])) {
+                return std::get<std::string>(GuiReceiver.List[i]);
+            }
+        }
+    }
+    return "";
+}
+
+// ─────────────────────────────────────
+float Pd4Web::_getItemFromListFloat(std::string r, int i) {
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            if (std::holds_alternative<std::string>(GuiReceiver.List[i])) {
+                return std::get<float>(GuiReceiver.List[i]);
+            }
+        }
+    }
+    return 0;
+}
+
+// ╭─────────────────────────────────────╮
+// │     Extra PureData Definitions      │
+// ╰─────────────────────────────────────╯
+
+extern "C" void sys_putmidibyte(int portno, int byte) { return; }
 
 // ╭─────────────────────────────────────╮
 // │       Audio Worklet Receivers       │
@@ -339,6 +443,27 @@ void Pd4Web::AW_ReceivedSymbol(const char *r, const char *s) {
             GuiReceiver.Type = Pd4WebGuiReceiver::SYMBOL;
             GuiReceiver.Symbol = s;
             GuiReceiver.BeingUpdated = false;
+        }
+    }
+};
+
+// ─────────────────────────────────────
+void Pd4Web::AW_ReceivedList(const char *r, int argc, t_atom *argv) {
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            GuiReceiver.BeingUpdated = true;
+            GuiReceiver.Updated = true;
+            GuiReceiver.Type = Pd4WebGuiReceiver::LIST;
+            GuiReceiver.BeingUpdated = false;
+            GuiReceiver.List.clear();
+            for (int i = 0; i < argc; i++) {
+                t_atom *a = argv + i;
+                if (a->a_type == A_FLOAT) {
+                    GuiReceiver.List.push_back(libpd_get_float(a));
+                } else if (a->a_type == A_SYMBOL) {
+                    GuiReceiver.List.push_back(libpd_get_symbol(a));
+                }
+            }
         }
     }
 };
@@ -466,10 +591,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
 
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
-    std::string in =
-        "Ch In: " + std::to_string(numInputs) + " | Ch Out: " + std::to_string(ChCount);
-
-    _JS_post(in.c_str());
+    printf("Processing\n");
 
     libpd_process_float(2, In[0].data, LibPdOuts);
     // TODO: Fix multiple channels
@@ -515,10 +637,8 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
         .outputChannelCounts = nOutChannelsArray,
     };
 
-    // Init Instance
-
-    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode =
-        emscripten_create_wasm_audio_worklet_node(audioContext, "pd4web", &options, &process, 0);
+    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
+        audioContext, "pd4web", &options, &Pd4Web::process, 0);
 
     Pd4WebInitExternals();
 
@@ -526,12 +646,10 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
     libpd_add_to_search_path("./Extras/");
     libpd_add_to_search_path("./Audios/");
 
+    // turn audio on
     libpd_start_message(1);
     libpd_add_float(1.0f);
     libpd_finish_message("pd", "dsp");
-
-    std::string Chs = "NInCh: " + std::to_string(NInCh) + " | NOutCh: " + std::to_string(NOutCh);
-    _JS_post(Chs.c_str());
     libpd_init_audio(NInCh, NOutCh, SR);
 
     if (!libpd_openfile("index.pd", "./")) {
@@ -601,7 +719,7 @@ void Pd4Web::init() {
     libpd_set_banghook(&Pd4Web::AW_ReceivedBang);
     libpd_set_floathook(&Pd4Web::AW_ReceivedFloat);
     libpd_set_symbolhook(&Pd4Web::AW_ReceivedSymbol);
-    // libpd_set_queued_listhook(ReceiveList);
+    libpd_set_listhook(&Pd4Web::AW_ReceivedList);
     // libpd_set_queued_messagehook(ReceiveMessage);
 
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
@@ -611,6 +729,7 @@ void Pd4Web::init() {
 
     m_Context = AudioContext;
     _JS_sendList();
+    _JS_onReceived();
 
     if (PD4WEB_MIDI) {
         _JS_loadMidi();
@@ -627,22 +746,25 @@ void Pd4Web::mainLoop() {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
-            case Pd4WebGuiReceiver::BANG:
+            case Pd4WebGuiReceiver::BANG: {
                 _JS_receiveBang(GuiReceiver.Receiver.c_str());
-                GuiReceiver.Updated = false;
                 break;
-            case Pd4WebGuiReceiver::FLOAT:
+            }
+            case Pd4WebGuiReceiver::FLOAT: {
                 _JS_receiveFloat(GuiReceiver.Receiver.c_str(), GuiReceiver.Float);
-                GuiReceiver.Updated = false;
                 break;
-            case Pd4WebGuiReceiver::SYMBOL:
+            }
+            case Pd4WebGuiReceiver::SYMBOL: {
                 _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Receiver.c_str());
-                GuiReceiver.Updated = false;
                 break;
-            case Pd4WebGuiReceiver::MESSAGE:
+            }
+            case Pd4WebGuiReceiver::LIST: {
+                _JS_receiveList(GuiReceiver.Receiver.c_str());
                 break;
-            default:
-                break;
+            }
+            case Pd4WebGuiReceiver::MESSAGE: {
+                printf("Unhandled message\n");
+            }
             }
             GuiReceiver.Updated = false;
         }
@@ -653,12 +775,11 @@ void Pd4Web::mainLoop() {
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
-    _JS_loadStyle();
-    _JS_setTitle(PD4WEB_PROJECT_NAME);
-
     if (PD4WEB_GUI) {
+        _JS_loadStyle();
         _JS_loadGui(PD4WEB_AUTO_THEME);
     }
+    _JS_setTitle(PD4WEB_PROJECT_NAME);
 
     printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
            PD4WEB_MICRO_VERSION);

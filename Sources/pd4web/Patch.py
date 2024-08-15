@@ -195,7 +195,11 @@ class Patch:
             libAbs = []
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
-                libAbs = externalsDict[line.library]["abs"]
+                if line.library in externalsDict:
+                    libAbs = externalsDict[line.library]["abs"]
+                else:
+                    libAbs = []
+
             if line.name in libAbs:
                 pd4web_print(
                     f"Found Library Abstraction: {line.name}",
@@ -297,10 +301,9 @@ class Patch:
 
                     elif patchLine.Tokens[2] == "-path":
                         libName = patchLine.Tokens[3]
-                        if not self.Pd4Web.Libraries.isSupportedLibrary(libName):
-                            raise Exception(f"Library not supported: {libName} in {self.patchFile}")
-                        self.Pd4Web.Libraries.GetLibrarySourceCode(libName)
-                        self.declaredPaths.append(libName)
+                        if self.Pd4Web.Libraries.isSupportedLibrary(libName):
+                            self.Pd4Web.Libraries.GetLibrarySourceCode(libName)
+                            self.declaredPaths.append(libName)
 
                 # check if it is a comment
                 else:
@@ -447,18 +450,21 @@ class Patch:
                 raise ValueError("Object not found: " + line.completName)
 
         # Finally
-        if line.isExternal or line.isAbstraction:
+        if line.isExternal or line.isAbstraction and line.library != "pure-data":
             libClass = self.Pd4Web.Libraries.GetLibrary(line.library)
-            if line.name in libClass.unsupported:
-                if self.Pd4Web.BYPASS_UNSUPPORTED:
-                    pd4web_print(
-                        f"Unsupported object: {line.name}",
-                        color="yellow",
-                        silence=self.Pd4Web.SILENCE,
-                        pd4web=self.Pd4Web.PD_EXTERNAL,
-                    )
-                else:
-                    raise ValueError(f"The object {line.name} from {line.library} is not supported by Pd4Web yet.")
+            if libClass.valid:
+                if line.name in libClass.unsupported:
+                    if self.Pd4Web.BYPASS_UNSUPPORTED:
+                        pd4web_print(
+                            f"Unsupported object: {line.name}",
+                            color="yellow",
+                            silence=self.Pd4Web.SILENCE,
+                            pd4web=self.Pd4Web.PD_EXTERNAL,
+                        )
+                    else:
+                        raise ValueError(f"The object {line.name} from {line.library} is not supported by Pd4Web yet.")
+            else:
+                raise ValueError(f"Library {line.library} not found.")
 
         self.searchForSpecialObject(line)
         self.patchLinesProcessed.append(line)

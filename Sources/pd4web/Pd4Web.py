@@ -4,6 +4,7 @@ import sys
 import zipfile
 import pygit2
 import cmake
+import shutil
 
 import requests
 
@@ -76,6 +77,13 @@ class Pd4Web:
             default=False,
             help="Use Emscripten to run the Browser",
         )
+        parser.add_argument(
+            "--clear",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Clear the cache before running",
+        )
 
         # Dev Flags
         parser.add_argument(
@@ -106,6 +114,12 @@ class Pd4Web:
         self.GUI = not self.Parser.nogui
         self.PD_VERSION = self.Parser.pd_version
         self.BYPASS_UNSUPPORTED = self.Parser.bypass_unsupported
+
+        if self.Parser.clear:
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "build"), ignore_errors=True)
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "Pd4Web"), ignore_errors=True)
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "WebPatch"), ignore_errors=True)
+
         self.Execute()
 
     def Execute(self):

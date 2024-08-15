@@ -1,3 +1,4 @@
+---
 name: Docs
 on:
   release:
@@ -17,5 +18,5 @@ jobs:
         with:
           key: ${{ github.ref }}
           path: .cache
-      - run: pip install mkdocs-material
+      - run: pip install -r Documentation/requirements.txt
       - run: mkdocs gh-deploy --force

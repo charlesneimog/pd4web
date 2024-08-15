@@ -18,3 +18,8 @@ build
 Resources/Pd/pd4web.spec
 Resources/Pd/.cache/clangd/index
 Resources/Pd/cmake-format.yaml
+
+Documentation/tests/**/Pd4Web/Externals
+Documentation/tests/**/Pd4Web
+Documentation/tests/**/CMakeLists.txt
+Documentation/tests/**/.gitignore
