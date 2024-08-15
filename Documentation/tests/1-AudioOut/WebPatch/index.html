@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <meta charset="UTF-8" />
+        <script src="./pd4web.threads.js"></script> <!-- Just necessary if you are using Github Pages -->
+        <script src="./pd4web.js"></script>
+        <style>
+            /* 
+            In order to ensure pd4web's independence from any CSS framework, I've opted to include FontAwesome icons in base64 format. This provides a visually appealing yet straightforward interface without relying on external resources. If you choose not to utilize icons or initiate pd4web through an alternative method, feel free to remove the style tag containing the icon references.
+        */
+
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .pd4web-sound-off {
+                display: inline-block;
+                align-items: center;
+                animation: pulse 1s infinite;
+                height: 25px;
+                width: 25px;
+                content: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNS4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0VjQ0OGMwIDEyLjYtNy40IDI0LTE4LjkgMjkuMnMtMjUgMy4xLTM0LjQtNS4zTDEzMS44IDM1Mkg2NGMtMzUuMyAwLTY0LTI4LjctNjQtNjRWMjI0YzAtMzUuMyAyOC43LTY0IDY0LTY0aDY3LjhMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYgOS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42LTkuNCAzMy45IDB6Ii8+PC9zdmc+");
+            }
+
+            .pd4web-sound-loading {
+                display: inline-block;
+                animation: spin 2s linear infinite;
+                align-items: center;
+                height: 25px;
+                width: 25px;
+                content: url("data:image/svg+xml;base64, PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNS4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTMwNCA0OGE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwem0wIDQxNmE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwek00OCAzMDRhNDggNDggMCAxIDAgMC05NiA0OCA0OCAwIDEgMCAwIDk2em00NjQtNDhhNDggNDggMCAxIDAgLTk2IDAgNDggNDggMCAxIDAgOTYgMHpNMTQyLjkgNDM3QTQ4IDQ4IDAgMSAwIDc1IDM2OS4xIDQ4IDQ4IDAgMSAwIDE0Mi45IDQzN3ptMC0yOTQuMkE0OCA0OCAwIDEgMCA3NSA3NWE0OCA0OCAwIDEgMCA2Ny45IDY3Ljl6TTM2OS4xIDQzN0E0OCA0OCAwIDEgMCA0MzcgMzY5LjEgNDggNDggMCAxIDAgMzY5LjEgNDM3eiIvPjwvc3ZnPg==");
+            }
+            .pd4web-sound-on {
+                display: inline-block;
+                animation: none;
+                align-items: center;
+                height: 25px;
+                width: 25px;
+                content: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNS4yIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEuNSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDNDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIzLjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDggMjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0VjQ0OGMwIDEyLjYtNy40IDI0LTE4LjkgMjkuMnMtMjUgMy4xLTM0LjQtNS4zTDEzMS44IDM1Mkg2NGMtMzUuMyAwLTY0LTI4LjctNjQtNjRWMjI0YzAtMzUuMyAyOC43LTY0IDY0LTY0aDY3LjhMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4=");
+            }
+        </style>
+    </head>
+    <body>
+        <span
+            style="display: block; margin: 0 auto; text-align: center"
+            class="pd4web-sound-off"
+            id="Pd4WebAudioSwitch"
+        ></span>
+        <div
+            id="Pd4WebPatchDiv"
+            style="
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin-left: 5%;
+                margin-right: 5%;
+                border-radius: 10px;
+                box-shadow:
+                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+                height: 70%;
+            "
+        >
+            <svg id="Pd4WebCanvas" height="100%" width="100%" preserveAspectRatio="xMidYMin meet"></svg>
+        </div>
+        <script>
+            // ╭─────────────────────────────────────╮
+            // │      Load Pd4Web audio engine       │
+            // ╰─────────────────────────────────────╯
+
+            // Don't remove this
+            let Pd4Web = null;
+
+            Pd4WebModule().then((Pd4WebModulePromise) => {
+                Pd4Web = new Pd4WebModulePromise.Pd4Web();
+            });
+
+            // ╭─────────────────────────────────────╮
+            // │        Gui Bottoms Interface        │
+            // ╰─────────────────────────────────────╯
+            document.getElementById("Pd4WebAudioSwitch").addEventListener("click", async () => {
+                // pd4web incorporates web audio functionality through the use of AudioWorklets.
+                // To initialize AudioWorklets, pd4web must be initiated from a click event.
+                // In this instance, an icon is utilized with <span class="pd4web-sound-off" id="Pd4WebAudioSwitch"></span>,
+                // though you have the flexibility to add a click event anywhere within the Web Window.
+
+                // To add one click for any where in the window use window.addEventListener('click', function(event)...
+                var clickableSpan = document.getElementById("Pd4WebAudioSwitch");
+                if (clickableSpan.classList.contains("pd4web-sound-on")) {
+                    clickableSpan.classList.remove("pd4web-sound-on");
+                    Pd4Web.suspendAudio();
+                    clickableSpan.classList.add("pd4web-sound-off");
+                    return;
+                }
+
+                clickableSpan.classList.remove("pd4web-sound-off");
+                clickableSpan.classList.add("pd4web-sound-loading");
+
+                Pd4Web.init(); // <== This is the unique important thing here, running this from any click event will make the PureData turn on.
+
+                clickableSpan.classList.remove("pd4web-sound-loading");
+                clickableSpan.classList.add("pd4web-sound-on");
+            });
+        </script>
+    </body>
+</html>
