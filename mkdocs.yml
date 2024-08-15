@@ -74,8 +74,7 @@ nav:
     - patch.md
     - libraries.md
     - devs.md
-    - Examples: 
-      - tests/
+    - Examples: tests/
 
 plugins:
   - search

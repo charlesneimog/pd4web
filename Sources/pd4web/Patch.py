@@ -201,8 +201,10 @@ class Patch:
                     libAbs = []
 
             if line.name in libAbs:
+                externalSpace = 17 - len(line.name)
+                absName = line.name + (" " * externalSpace)
                 pd4web_print(
-                    f"Found Library Abstraction: {line.name}",
+                    f"Found Abstraction: {absName}  | Lib: {line.library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,

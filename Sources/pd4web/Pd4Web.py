@@ -21,7 +21,7 @@ class Pd4Web:
     PD_VERSION: str = "0.55-0"
 
     # Compiler
-    MEMORY_SIZE: int = 128
+    MEMORY_SIZE: int = 512
 
     # Audio
     OUTCHS_COUNT: int = 0
@@ -41,6 +41,7 @@ class Pd4Web:
         # self.InitVariables()
 
     def argParse(self):
+        print()
         parser = argparse.ArgumentParser(
             description="Compile Pure Data externals for the web.",
             usage="pd4web.py <PureData Patch>",
@@ -230,8 +231,6 @@ class Pd4Web:
         cmake_bin = os.path.abspath(cmake_bin)
         if not os.path.exists(cmake_bin):
             raise Exception("Cmake (module) is not installed. Please install it.")
-        else:
-            print("Cmake (module) is installed. " + cmake_bin)
 
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)

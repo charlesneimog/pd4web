@@ -191,7 +191,7 @@ class GetAndBuildExternals:
                     raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
 
                 if patchLine.objFound and patchLine.isAbstraction:
-                    externalSpace = 7 - len(patchLine.name)
+                    externalSpace = 20 - len(patchLine.name)
                     absName = patchLine.name + (" " * externalSpace)
                     pd4web_print(
                         f"Found Abstraction: {absName}  | Lib: {patchLine.library}",

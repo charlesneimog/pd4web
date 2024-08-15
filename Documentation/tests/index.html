@@ -1,51 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Website Buttons</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            
-            margin: 0;
-            text-align: center;
-        }
-        h1 {
-            margin-bottom: 20px;
-
-        }
-        .button-container {
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            max-width: 600px;
-        }
-        button {
-            background-color: #624de8;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #624de8;
-        }
-    </style>
-</head>
-<body>
-    <h1>Pd4Web Tests</h1>
-    <div class="button-container">
-        <button onclick="window.open('./1-AudioOut/', '_blank');">Simple [osc~] patch</button>
-        <button onclick="window.open('./2-AudioIN-Out/', '_blank');">Mic Latency</button>
-        
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pd4Web Examples</title>
+    <favicon
+      href="favicon.ico"
+      type="image/x-icon"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css?family=Poppins"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <h1>Pd4Web Examples</h1>
+    <hr />
+    <h3>🏗️🚧 Building this yet!!! 🚧🏗️</h3>
+    <hr />
+    <h2>Simple Examples</h2>
+    <div class="container">
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title">Simple <code>[osc~]</code> Patch</h3>
+        <img
+          src="./1-AudioOut/patch.png"
+          onclick="window.open('./1-AudioOut', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a href="./1-AudioOut" class="button" target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a href="./1-AudioOut/main.pd" class="button" target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>
+          Just a simple <code>[osc~]</code>connected on the <code>[dac~]</code>.
+        </p>
+      </div>
+      <!-- End Card -->
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title">Mic In (latency)</h3>
+        <img
+          src="./2-AudioIN-Out/patch.png"
+          onclick="window.open('./2-AudioIN-Out', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a href="./2-AudioIN-Out/" class="button" target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a href="./2-AudioIN-Out/main.pd" class="button" target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>Use your mic to check the latency of your system.</p>
+      </div>
+      <!-- End Card -->
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title"><code>plaits~</code> External</h3>
+        <img
+          src="./3-plaits/patch.png"
+          onclick="window.open('./3-plaits', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a href="./3-plaits/" class="button" target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a href="./3-plaits/main.pd" class="button" target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>Using <code>[plaits~]</code> object from else library.</p>
+      </div>
+      <!-- End Card -->
     </div>
-</body>
+
+    <hr style="margin-top: 20px" />
+
+    <h2>More Complet Examples</h2>
+    <div class="container">
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title">Using Physical Modelling for Synthesis</h3>
+        <img
+          src="assets/patch1.png"
+          onclick="window.open('https://charlesneimog.github.io/Algorithm-Music/Piece-I/', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a
+            href="https://charlesneimog.github.io/Algorithm-Music/Piece-I/"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a
+            href="https://github.com/charlesneimog/Algorithm-Music/tree/main/Piece-I"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>
+          Using pd-pmpd library to create a physical moviments and the
+          <code>plaits~</code> to synth it.
+        </p>
+      </div>
+      <!-- End Card -->
+
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title">Using PureData with VexFlow</h3>
+        <img
+          src="assets/patch2.png"
+          onclick="window.open('https://charlesneimog.github.io/Algorithm-Music/Piece-I/', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a
+            href="https://charlesneimog.github.io/Algorithm-Music/Piece-I/"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a
+            href="https://github.com/charlesneimog/Algorithm-Music/tree/main/Piece-I"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>
+          Just a simple <code>[osc~]</code>connected on the <code>[dac~]</code>.
+        </p>
+      </div>
+      <!-- End Card -->
+
+      <!-- New Card -->
+      <div class="card">
+        <h3 class="card-title">Using p5js for Live-Improvisation</h3>
+        <img
+          src="assets/patch3.png"
+          onclick="window.open('https://charlesneimog.github.io/Algorithm-Music/Piece-I/', '_blank')"
+          class="card-img"
+        />
+        <div class="button-container">
+          <a
+            href="https://charlesneimog.github.io/Algorithm-Music/Piece-I/"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-play fa-sm"></i> Open</a
+          >
+          <a
+            href="https://github.com/charlesneimog/Algorithm-Music/tree/main/Piece-I"
+            class="button"
+            target="_blank"
+            ><i class="fa-solid fa-circle-down"></i> Download</a
+          >
+        </div>
+        <p>
+          Just a simple <code>[osc~]</code>connected on the <code>[dac~]</code>.
+        </p>
+      </div>
+      <!-- End Card -->
+    </div>
+  </body>
 </html>

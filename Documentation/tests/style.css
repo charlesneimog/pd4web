@@ -1,0 +1,143 @@
+body {
+  margin-left: 10%;
+  margin-right: 10%;
+}
+
+body::-webkit-scrollbar {
+  width: 5px;
+  border-radius: 2px;
+}
+
+body::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+}
+
+body::-webkit-scrollbar-thumb {
+  background-color: darkgrey;
+  outline: 1px solid slategrey;
+}
+
+h1 {
+  font-family: Popins, serif;
+  text-align: center;
+}
+h2 {
+  font-family: Popins, serif;
+  text-align: center;
+}
+
+h3 {
+  font-family: Popins, serif;
+  text-align: center;
+  color: white;
+  /* set as bold*/
+  font-weight: bold;
+}
+
+h4 {
+  font-family: Popins, serif;
+  text-align: center;
+  color: white;
+}
+
+p {
+  color: white;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+ul {
+  color: white;
+  font-size: 20px;
+  font-family: Popins, serif;
+  line-height: 1.5; /* altere este valor conforme necessário */
+}
+
+hr {
+  height: 0px;
+  width: 50%;
+  color: rgba(230, 230, 230, 0.1);
+  border: 1px solid rgba(230, 230, 230, 0.1);
+}
+
+footer {
+  width: 100%;
+  text-align: center;
+}
+
+.container {
+  width: 100%;
+  margin: 0 auto; /* Center container horizontally */
+  padding: 0 20px; /* Optional: Add padding for better spacing */
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(300px, 1fr)
+  ); /* Flexible column width */
+  gap: 15px; /* Space between cards */
+  justify-content: start; /* Align items to the start */
+  position: relative;
+  top: 5px;
+  margin-bottom: 25px;
+}
+
+.card {
+  background-color: #17141d;
+  border-radius: 10px;
+  box-shadow: 0.2rem 0 0.5rem #242424;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden; /* Ensure no overflow from image */
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center content horizontally */
+  padding: 0px; /* Optional: Add padding inside card */
+  margin-bottom: 25px;
+}
+
+.card-img {
+  max-width: 75%;
+  max-height: 75%;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.button-container {
+  display: flex;
+  justify-content: center; /* Center the buttons horizontally */
+  gap: 10px; /* Space between buttons */
+  margin-bottom: 10px; /* Space below the button container */
+}
+
+.button {
+  display: inline-block;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: white;
+  background-color: #17141d98;
+  border-radius: 5px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.button:hover {
+  background-color: #17141d98;
+  transform: scale(1.05); /* Slightly scale up on hover */
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: rgb(48, 48, 48);
+  }
+  h1 {
+    color: white;
+  }
+  h2 {
+    color: white;
+  }
+}
