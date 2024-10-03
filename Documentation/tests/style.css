@@ -30,15 +30,12 @@ h2 {
 h3 {
   font-family: Popins, serif;
   text-align: center;
-  color: white;
-  /* set as bold*/
   font-weight: bold;
 }
 
 h4 {
   font-family: Popins, serif;
   text-align: center;
-  color: white;
 }
 
 p {
@@ -95,6 +92,10 @@ footer {
   margin-bottom: 25px;
 }
 
+.card-title {
+  color: white;
+}
+
 .card-img {
   max-width: 75%;
   max-height: 75%;
@@ -138,6 +139,9 @@ footer {
     color: white;
   }
   h2 {
+    color: white;
+  }
+  h3 {
     color: white;
   }
 }
