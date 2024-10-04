@@ -23,3 +23,9 @@ Documentation/tests/**/Pd4Web/Externals
 Documentation/tests/**/Pd4Web
 Documentation/tests/**/CMakeLists.txt
 Documentation/tests/**/.gitignore
+
+Tests/Libraries/**/Pd4Web/
+Tests/Libraries/**/WebPatch/
+Tests/Libraries/**/build/
+Tests/**/CMakeLists.txt
+
