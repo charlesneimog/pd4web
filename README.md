@@ -26,34 +26,8 @@
 `pd4web` lets you run PureData patches directly in web browsers. It stands out from alternatives like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), thanks to the work of [claudeha](https://github.com/claudeha). With `pd4web`, you can compile any PureData Vanilla patch, along with a list of more than 800 externals and abstractions.
 
 <h3 align="center">Examples</h3>
-<p align="center">Click to Expand!</p>
 
-<details>
-  <summary><b>1. Simple Patch</b></summary>
-  <p align="center">
-    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Simple-patch.png" width="80%" alt="Logo">
-  </p>
-</details>
-
-<details>
-  <summary><b>2. Interaction with p5js</b></summary>
-<p align="center">
-    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Compiled-I.png" width="70%" alt="Logo">
-</p>
-<p align="center">
-    <a href="https://charlesneimog.github.io/Projeto/">WebSite</a>
-</p>
-</details>
-
-<details>
-  <summary><b>3. Live Score (VexFlow) </b></summary>
-<p align="center">
-    <img src="https://github.com/charlesneimog/pd4web/blob/main/docs/img/Canticos.png" width="70%" alt="Logo">
-</p>
-<p align="center">
-    <a href="https://charlesneimog.github.io/Canticos-de-Silicio-I/webpatch/">WebSite</a>
-</p>
-</details>
+Check here https://charlesneimog.github.io/pd4web/tests/.
 
 -----
 <h3 align="center">Questions, doubts, help</h3>
