@@ -1,14 +1,17 @@
-name: pd4web publish
+---
+name: Publish
 on:
   release:
     types: [published]
   workflow_dispatch:
-jobs:  
+  push:
+    tags:
+jobs:
   linux-test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ['3.10', '3.11', '3.12']
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -22,6 +25,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install pd4web
         run: |
+          pip install poetry
           poetry build
           pip install dist/*.whl
       - if: github.event_name == 'release'

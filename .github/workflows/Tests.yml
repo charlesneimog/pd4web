@@ -1,16 +1,17 @@
-name: Python Wheels
+---
+name: Tests
 on:
   workflow_dispatch:
   push:
-    branches: ["main", "v2.0.0"]
+    branches: [main]
   pull_request:
-    branches: ["main", "v2.0.0"]
+    branches: [main]
 jobs:
   linux:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11"]
+        python-version: ['3.10', '3.11', '3.12']
     timeout-minutes: 30
     steps:
       - name: Checkout code
@@ -35,11 +36,5 @@ jobs:
           poetry build
           pip install dist/*.whl
       - name: Tests
-        run: |
+        run: |-
           python3 ./Tests/Tests.py
-      - name: Upload Wheels
-        if: matrix.python-version == '3.11'
-        uses: actions/upload-artifact@v4
-        with:
-          name: pd4web-2.0.0-py3-none-any.whl
-          path: dist/pd4web-2.0.0-py3-none-any.whl

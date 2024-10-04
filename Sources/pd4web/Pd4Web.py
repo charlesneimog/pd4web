@@ -99,7 +99,10 @@ class Pd4Web:
         # ──────────── Build Externals ──────────
         self.ExternalsBuilder = GetAndBuildExternals(self)
 
-        # Extra Configs
+        # try:
+        #     self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
+        # except pygit2.GitError:
+        #     self.PROJECT_GIT = pygit2.init_repository(self.PROJECT_ROOT, bare=False)
 
     def RunBrowser(self):
         self.CWD = os.getcwd()
@@ -142,11 +145,6 @@ class Pd4Web:
 
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
-
-        try:
-            self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
-        except pygit2.GitError:
-            self.PROJECT_GIT = pygit2.init_repository(self.PROJECT_ROOT, bare=False)
 
     def InitVariables(self):
         from .Objects import Objects

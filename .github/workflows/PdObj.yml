@@ -25,7 +25,6 @@ jobs:
         if: ${{ matrix.arch == 'arm64' }}
         run: |
           brew install pd
-          brew install fftw
       - name: Build Object for Arm
         if: ${{ matrix.arch == 'arm64' }}
         run: |
