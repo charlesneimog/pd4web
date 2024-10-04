@@ -38,7 +38,6 @@ class Pd4Web:
     def __init__(self, Patch=""):
         self.Patch = Patch
         self.verbose = False
-        # self.InitVariables()
 
     def argParse(self):
         print()
@@ -46,80 +45,27 @@ class Pd4Web:
             description="Compile Pure Data externals for the web.",
             usage="pd4web.py <PureData Patch>",
         )
-        parser.add_argument("patch_file", type=str, help="The patch file to be compiled")
-        parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode")
-        parser.add_argument(
-            "-m",
-            "--initial-memory",
-            required=False,
-            default=128,
-            type=int,
-            help="Initial memory size in MB",
-        )
-        parser.add_argument(
-            "-nogui",
-            "--nogui",
-            required=False,
-            action="store_true",
-            default=False,
-            help="If set to False, it will not load the GUI interface.",
-        )
-        parser.add_argument(
-            "--pd-version",
-            required=False,
-            default="0.55-0",
-            type=str,
-            help="Pure Data version to use",
-        )
-        parser.add_argument(
-            "--run-browser",
-            required=False,
-            action="store_true",
-            default=False,
-            help="Use Emscripten to run the Browser",
-        )
-        parser.add_argument(
-            "--clear",
-            required=False,
-            action="store_true",
-            default=False,
-            help="Clear the cache before running",
-        )
+        parser.add_argument("patch_file", type=str, help="The patch file to be compiled", nargs="?")
+        self.actionFlags(parser)
+        self.optionsFlags(parser)
+        self.devFlags(parser)
 
-        # Dev Flags
-        parser.add_argument(
-            "--bypass-unsupported",
-            required=False,
-            default=False,
-            action="store_true",
-            help="Bypass unsupported objects in libraries",
-        )
-        self.Parser = parser.parse_args()
+        parser = parser.parse_args()
 
-        # get complete path of the patch file
-        completePath = os.path.abspath(self.Parser.patch_file)
-        self.Patch = completePath
-        self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
-        self.PROJECT_PATCH = os.path.basename(self.Patch)
+        self.getMainPaths()
+        self.doActions(parser)
 
-        # check if file exists
+        self.Parser = parser
+        self.Patch = os.path.abspath(self.Parser.patch_file)
         if not os.path.isfile(self.Patch):
             raise Exception("\n\nError: Patch file not found")
 
-        if self.Parser.run_browser:
-            self.RunBrowser()
-            return
-
+        # default values
         self.verbose = self.Parser.verbose
         self.MEMORY_SIZE = self.Parser.initial_memory
         self.GUI = not self.Parser.nogui
         self.PD_VERSION = self.Parser.pd_version
         self.BYPASS_UNSUPPORTED = self.Parser.bypass_unsupported
-
-        if self.Parser.clear:
-            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "build"), ignore_errors=True)
-            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "Pd4Web"), ignore_errors=True)
-            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "WebPatch"), ignore_errors=True)
 
         self.Execute()
 
@@ -131,6 +77,7 @@ class Pd4Web:
         if self.Patch == "":
             raise Exception("You must set a patch file")
 
+        self.getMainPaths()
         self.InitVariables()
         self.CheckDependencies()  # git and cmake
 
@@ -175,15 +122,13 @@ class Pd4Web:
         os.chdir(os.path.dirname(self.PROJECT_ROOT))
         os.system(f"{emccRun} index.html")
 
-    def InitVariables(self):
-        from .Objects import Objects
-        from .Libraries import ExternalLibraries
-
+    def getMainPaths(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
         if self.PD4WEB_LIBRARIES == "":
-            self.PD4WEB_LIBRARIES = os.path.join(self.PD4WEB_ROOT, "../Libraries")
+            self.PD4WEB_LIBRARIES = os.path.join(self.PD4WEB_ROOT, "..", "Libraries")
+            self.PD4WEB_LIBRARIES = os.path.abspath(self.PD4WEB_LIBRARIES)
 
         self.CWD = os.getcwd()
         if sys.platform == "win32":
@@ -203,23 +148,18 @@ class Pd4Web:
         except pygit2.GitError:
             self.PROJECT_GIT = pygit2.init_repository(self.PROJECT_ROOT, bare=False)
 
-        # Core Numbers
-        self.cpuCores = os.cpu_count()
+    def InitVariables(self):
+        from .Objects import Objects
+        from .Libraries import ExternalLibraries
 
-        # Used Objects
+        self.cpuCores = os.cpu_count()
         self.usedObjects = []
         self.patchLinesProcessed = []
-
-        # Compiler and Code Variables
         self.uiReceiversSymbol = []
         self.externalsSourceCode = []
-
-        # Externals Objects
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
-
-        # Classes
         self.Libraries = ExternalLibraries(self)
         self.Objects: Objects = Objects(self)
 
@@ -290,3 +230,81 @@ class Pd4Web:
 
     def Silence(self):
         self.SILENCE = True
+
+    def doActions(self, parser):
+        if parser.run_browser:
+            self.RunBrowser()
+            exit()
+        if parser.clear:
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "build"), ignore_errors=True)
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "Pd4Web"), ignore_errors=True)
+            shutil.rmtree(os.path.join(self.PROJECT_ROOT, "WebPatch"), ignore_errors=True)
+        if parser.add_lib_cmake:
+            newLibCmake = parser.add_lib_cmake
+            if not os.path.exists(newLibCmake):
+                raise Exception("Library not found")
+            if not newLibCmake.endswith(".cmake"):
+                raise Exception("Library must end with .cmake")
+
+            libName = os.path.basename(newLibCmake)
+            pd4web_print(f"{libName} added to pd4web supported libraries", color="green")
+            shutil.copy(newLibCmake, self.PD4WEB_LIBRARIES)
+            exit()
+
+    def actionFlags(self, parser):
+        parser.add_argument(
+            "--run-browser",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Use Emscripten to run the Browser",
+        )
+        parser.add_argument(
+            "--add-lib-cmake",
+            required=False,
+            type=str,
+            help="Add new library to pd4web supported libraries",
+        )
+        parser.add_argument(
+            "--clear",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Clear the cache before running",
+        )
+
+    def optionsFlags(self, parser):
+        parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode")
+        parser.add_argument(
+            "-m",
+            "--initial-memory",
+            required=False,
+            default=128,
+            type=int,
+            help="Initial memory size in MB",
+        )
+        parser.add_argument(
+            "-nogui",
+            "--nogui",
+            required=False,
+            action="store_true",
+            default=False,
+            help="If set to False, it will not load the GUI interface.",
+        )
+        parser.add_argument(
+            "--pd-version",
+            required=False,
+            default="0.55-0",
+            type=str,
+            help="Pure Data version to use",
+        )
+
+    # Parse
+    def devFlags(self, parser):
+        parser.add_argument(
+            "--bypass-unsupported",
+            required=False,
+            default=False,
+            action="store_true",
+            help="Bypass unsupported objects in libraries",
+        )

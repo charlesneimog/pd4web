@@ -111,6 +111,7 @@ class Patch:
         self.needExtra = False
         self.declaredLibs = []
         self.declaredPaths = []
+        self.guiObject = 0
 
     def execute(self):
         # Abstractions
@@ -263,6 +264,29 @@ class Patch:
             )
             self.Pd4Web.MIDI = True
 
+    def addGuiReceiver(self, line: PatchLine, index: int):
+        self.guiObject += 1
+        line.Tokens[index] = f"pd4web_gui_{self.guiObject}"
+        line.uiReceiver = True
+
+        pass
+
+    def searchForGuiObject(self, line: PatchLine):
+        if not self.Pd4Web.GUI:
+            return
+        if line.Tokens[0] == "#X" and line.Tokens[1] == "obj":
+            if line.name == "vu":
+                r = line.Tokens[4]
+                if r == "empty":
+                    self.addGuiReceiver(line, 7)
+            if line.name == "vsl":
+                r = line.Tokens[11]
+                if r == "empty":
+                    self.addGuiReceiver(line, 11)
+                s = line.Tokens[12]
+                if s == "empty":
+                    self.addGuiReceiver(line, 12)
+
     def tokenIsFloat(self, token):
         token = token.replace("\n", "").replace(";", "").replace(",", "")
         try:
@@ -329,7 +353,7 @@ class Patch:
             patchFile = self.Pd4Web.PROJECT_ROOT + "/.tmp/" + os.path.basename(self.patchFile)
         with open(patchFile, "w") as f:
             for line in self.patchLinesProcessed:
-                if (line.isExternal or line.isAbstraction) and not line.objwithSlash:
+                if (line.isExternal or line.isAbstraction or line.uiReceiver) and not line.objwithSlash:
                     obj = line.Tokens[4].split("/")
                     if len(obj) > 1:
                         line.Tokens[4] = obj[-1]
@@ -338,6 +362,17 @@ class Patch:
                     f.write(" ".join(line.Tokens) + ";\n")
                 else:
                     f.write(line.completLine)
+
+    def objThatIsSingleLib(self, patchLine: PatchLine):
+        if patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj":
+            supportedLibs = self.Pd4Web.Libraries.SupportedLibraries
+            libs = [lib["Name"] for lib in supportedLibs]
+            if patchLine.Tokens[4] in libs:
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def objInDeclaredLib(self, patchLine: PatchLine):
         """ """
@@ -422,6 +457,11 @@ class Patch:
                 line.library = line.Tokens[4].split("/")[0]
                 line.name = line.completName.split("/")[-1]
                 line.objGenSym = 'class_new(gensym("' + line.name + '")'
+        elif self.objThatIsSingleLib(line):
+            line.isExternal = True
+            line.library = line.completName
+            line.name = line.completName
+            line.objGenSym = 'class_new(gensym("' + line.name + '")'
         elif self.objInDeclaredLib(line):
             line.isExternal = True
             line.name = line.completName
@@ -453,7 +493,7 @@ class Patch:
 
         # Finally
         if line.isExternal or line.isAbstraction and line.library != "pure-data":
-            libClass = self.Pd4Web.Libraries.GetLibrary(line.library)
+            libClass = self.Pd4Web.Libraries.GetLibraryData(line.library)
             if libClass.valid:
                 if line.name in libClass.unsupported:
                     if self.Pd4Web.BYPASS_UNSUPPORTED:
@@ -468,6 +508,7 @@ class Patch:
             else:
                 raise ValueError(f"Library {line.library} not found.")
 
+        self.searchForGuiObject(line)
         self.searchForSpecialObject(line)
         self.patchLinesProcessed.append(line)
         self.addUsedObject(line)

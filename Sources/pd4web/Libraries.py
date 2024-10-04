@@ -1,10 +1,11 @@
 import os
 import zipfile
 
+from pygit2.repository import Repository
 import requests
 import yaml
-import json
-import re
+import pygit2
+import shutil
 
 from .Pd4Web import Pd4Web
 from .Helpers import DownloadZipFile, pd4web_print
@@ -113,7 +114,7 @@ class ExternalLibraries:
             else:
                 return self.directLink
 
-    def GetLibrary(self, libName) -> LibraryClass:
+    def GetLibraryData(self, libName) -> LibraryClass:
         lib = next((lib for lib in self.SupportedLibraries if lib["Name"] == libName), None)
         lib = self.LibraryClass(lib, self.DownloadSources)
         return lib
@@ -134,7 +135,93 @@ class ExternalLibraries:
         except:
             return False
 
+    def getLibCommitVersion(self, libRepo, tag_name) -> pygit2.Commit:
+        """ """
+        try:
+            tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
+            if isinstance(tag_ref.peel(), pygit2.Tag):
+                commit = tag_ref.peel().target
+            else:
+                commit = tag_ref.peel()
+        except:
+            pd4web_print(f"Tag not found, trying to get commit by hash", color="yellow")
+            commit = libRepo.head.peel()
+        return commit
+
+    def CloneLibrary(self, libsPath, libData):
+        """
+        Initializes submodules in the specified repository path.
+
+        Args:
+            path (str): The path to the repository containing submodules.
+        """
+        libPath = self.Pd4Web.APPDATA + "/Externals/" + libData.name
+        libRepo: pygit2.Repository = pygit2.Repository(libPath)
+        if os.path.exists(libPath):
+            curr_commit: pygit2.Commit = libRepo.head.peel()
+            lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
+            if curr_commit.id == lib_commit.id:
+                return  # library up-to-date
+            libRepo.set_head(lib_commit.id)
+            libRepo.checkout_tree(lib_commit)
+            libRepo.reset(lib_commit.id, pygit2.GIT_RESET_HARD)
+            return
+
+        libLink = f"https://github.com/{libData.dev}/{libData.repo}"
+        try:
+            pd4web_print(f"Cloning library {libData.repo}... This will take some time!", color="green")
+            pygit2.clone_repository(libLink, libPath)
+        except Exception as e:
+            raise Exception(f"Failed to clone repository: {str(e)}")
+
+        tag_name = libData.version  # Assuming libData.version contains either a tag or a commit hash
+        commit = self.getLibCommitVersion(libRepo, tag_name)
+        libRepo.set_head(commit.id)
+        libRepo.checkout_tree(commit)
+        libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
+        pd4web_print(f"Library {libData.repo} cloned successfully!", color="green")
+        pd4web_print(f"Using commit {commit.id}", color="green")
+        try:
+            pd4web_print(f"Initializing submodules of {libData.repo}...", color="green")
+            submodule_collection = pygit2.submodules.SubmoduleCollection(pygit2.Repository(libPath))
+            submodule_collection.init()
+            submodule_collection.update()
+            libName = libData.name
+            libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName
+            self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
+        except:
+            raise Exception("Failed to initialize submodules.")
+
+        # TODO: Try to merge commits from submodules
+        try:
+            main_repo = pygit2.Repository(self.Pd4Web.PROJECT_ROOT)
+            submodule_repo = pygit2.Repository(libPath)
+
+        except Exception as e:
+            raise Exception(f"Failed to merge submodule commits: {str(e)}")
+
     def GetLibrarySourceCode(
+        self,
+        libName: str,
+    ):
+        if not self.isSupportedLibrary(libName):
+            return False
+
+        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
+            os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
+
+        # Library Download
+        libData = self.GetLibraryData(libName)
+        if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
+            os.mkdir(self.Pd4Web.APPDATA + "/Externals")
+
+        libFolder = self.Pd4Web.APPDATA + f"/Externals/{libData.name}"
+        self.CloneLibrary(libFolder, libData)
+        if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
+            shutil.copytree(libFolder, self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name, symlinks=False)
+        return True
+
+    def GetLibrarySourceCodeOld(
         self,
         libName: str,
     ):
@@ -145,7 +232,7 @@ class ExternalLibraries:
                 os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
 
             # Library Download
-            libData = self.GetLibrary(libName)
+            libData = self.GetLibraryData(libName)
             if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
                 os.mkdir(self.Pd4Web.APPDATA + "/Externals")
             libPath = self.Pd4Web.APPDATA + f"/Externals/{libData.name}/"

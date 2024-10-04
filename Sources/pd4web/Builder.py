@@ -2,6 +2,7 @@ import os
 import re
 import shutil
 import subprocess
+import pygit2
 
 from .Helpers import pd4web_print
 from .Patch import PatchLine
@@ -182,6 +183,7 @@ class GetAndBuildExternals:
         for patchLine in self.Patch.patchLinesProcessed:
             if patchLine.isExternal:
                 foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
+
                 if foundLibrary:
                     for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + patchLine.library):
                         for file in files:
@@ -300,7 +302,8 @@ class GetAndBuildExternals:
 
             f.write(f"// Audio Config\n")
             f.write(f"#define PD4WEB_CHS_IN {self.Pd4Web.INCHS_COUNT}\n")
-            f.write(f"#define PD4WEB_CHS_OUT {self.Pd4Web.OUTCHS_COUNT}\n\n")
+            f.write(f"#define PD4WEB_CHS_OUT {self.Pd4Web.OUTCHS_COUNT}\n")
+            f.write(f"#define PD4WEB_SR 48000\n\n")
 
             # Gui Interface
             f.write(f"// GUI Interface\n")
