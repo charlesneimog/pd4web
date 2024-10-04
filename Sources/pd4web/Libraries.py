@@ -156,8 +156,8 @@ class ExternalLibraries:
             path (str): The path to the repository containing submodules.
         """
         libPath = self.Pd4Web.APPDATA + "/Externals/" + libData.name
-        libRepo: pygit2.Repository = pygit2.Repository(libPath)
         if os.path.exists(libPath):
+            libRepo: pygit2.Repository = pygit2.Repository(libPath)
             curr_commit: pygit2.Commit = libRepo.head.peel()
             lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
             if curr_commit.id == lib_commit.id:
@@ -174,8 +174,9 @@ class ExternalLibraries:
         except Exception as e:
             raise Exception(f"Failed to clone repository: {str(e)}")
 
-        tag_name = libData.version  # Assuming libData.version contains either a tag or a commit hash
-        commit = self.getLibCommitVersion(libRepo, tag_name)
+        libRepo: pygit2.Repository = pygit2.Repository(libPath)
+        tagName = libData.version  # Assuming libData.version contains either a tag or a commit hash
+        commit = self.getLibCommitVersion(libRepo, tagName)
         libRepo.set_head(commit.id)
         libRepo.checkout_tree(commit)
         libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
@@ -190,12 +191,12 @@ class ExternalLibraries:
             raise Exception("Failed to initialize submodules.")
 
         # TODO: Try to merge commits from submodules
-        try:
-            main_repo = pygit2.Repository(self.Pd4Web.PROJECT_ROOT)
-            submodule_repo = pygit2.Repository(libPath)
-
-        except Exception as e:
-            raise Exception(f"Failed to merge submodule commits: {str(e)}")
+        # try:
+        #     main_repo = pygit2.Repository(self.Pd4Web.PROJECT_ROOT)
+        #     submodule_repo = pygit2.Repository(libPath)
+        #
+        # except Exception as e:
+        #     raise Exception(f"Failed to merge submodule commits: {str(e)}")
 
     def GetLibrarySourceCode(
         self,
