@@ -21,6 +21,13 @@ body {
     pointer-events: none;
 }
 
+.Pd4WebCanvas {
+}
+
+.Pd4WebCanvas:focus {
+    outline: none;
+}
+
 svg text {
     font-smooth: antialiased;
     -webkit-font-smoothing: antialiased;

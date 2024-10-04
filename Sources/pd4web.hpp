@@ -5,12 +5,10 @@
 #include <emscripten/val.h>
 #include <emscripten/webaudio.h>
 
-#include <vector>
 #include <z_libpd.h>
+#include <z_print_util.h>
 
 #include "config.h"
-
-#include <variant>
 
 #define PD4WEB_MAJOR_VERSION 2
 #define PD4WEB_MINOR_VERSION 0
@@ -48,7 +46,7 @@ using Pd4WebGuiReceiverList = std::vector<Pd4WebGuiReceiver>;
 // ╰─────────────────────────────────────╯
 class Pd4Web {
   public:
-    static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
+    static void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                              void *userData);
 
     // Main
@@ -65,13 +63,13 @@ class Pd4Web {
                                  void *userData);
 
     // Gui
-    static void mainLoop();
+    static void guiLoop();
 
     // Receivers
-    static void AW_ReceivedBang(const char *r);
-    static void AW_ReceivedFloat(const char *r, float f);
-    static void AW_ReceivedSymbol(const char *r, const char *s);
-    static void AW_ReceivedList(const char *r, int argc, t_atom *argv);
+    static void receivedBang(const char *r);
+    static void receivedFloat(const char *r, float f);
+    static void receivedSymbol(const char *r, const char *s);
+    static void receivedList(const char *r, int argc, t_atom *argv);
 
     // bind symbols
     void bindReceiver(std::string s);
@@ -98,9 +96,6 @@ class Pd4Web {
     float _getItemFromListFloat(std::string r, int i);
 
   private:
-    static int GetNInputChannels();
-    static int GetNOutputChannels();
-    static uint32_t GetSampleRate();
     void bindGuiReceivers();
 
     bool m_Pd4WebInit = false;

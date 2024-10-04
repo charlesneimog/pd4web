@@ -351,138 +351,150 @@ function GuiTglOnMouseDown(data) {
 //╭─────────────────────────────────────╮
 //│             Number: Nbx             │
 //╰─────────────────────────────────────╯
-function GuiNbxInvisibleRect(data) {
-    let x = data.x_pos;
-    let y = data.y_pos;
-    let width = data.width * 9;
-    let height = data.height;
-    return {
-        x: x,
-        y: y,
-        width: width,
-        height: height,
-        opacity: 0, // Set opacity to 0 to make it transparent
-        fill: ColFromLoad(data.bg_color),
-        id: `${data.id}_rect`,
-        class: "border clickable",
-    };
+function GuiNbxUpdateNumber(data, f) {
+    const txt = document.getElementById(`${data.id}_text`); // Find the associated text element
+    var text = f;
+    txt.numberCotent = f;
+    if (text.length >= data.width) {
+        // remove olds > and add new one
+        for (var i = 0; i < data.width; i++) {
+            if (text[i] == ">") {
+                text = text.slice(0, i) + text.slice(i + 1);
+                break;
+            }
+        }
+        text = text.slice(-data.width + 1) + ">";
+        txt.textContent = text;
+    } else {
+        txt.textContent = text;
+    }
+}
+
+function GuiNbxKeyDownListener(e) {
+    const data = Pd4Web.NbxSelected; // Get the currently selected SVG element
+    const txt = document.getElementById(`${data.id}_text`); // Find the associated text element
+    const key = e.key; // Get the key that was pressed
+
+    // TODO: Need to implement e numbers
+    // check if key is between 0-9 or . or + and i
+    if (key >= "0" && key <= "9") {
+    } else if (key === ".") {
+    } else if ((key === "+") | (key === "-")) {
+    } else if (key == "Enter") {
+        txt.setAttribute("fill", "black"); // Change fill color to black
+        txt.clicked = false;
+        const svgElement = document.getElementById("Pd4WebCanvas");
+        svgElement.removeAttribute("tabindex"); // Remove tabindex
+        Pd4Web.NbxSelected = null;
+        svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
+        if (txt.numberCotent.length > data.width) {
+            txt.textContent = "+";
+        } else {
+            txt.textContent = txt.numberCotent;
+        }
+        Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
+        return;
+    } else {
+        return;
+    }
+
+    if (txt) {
+        if (data.inputCnt == 0) {
+            txt.textContent = key; // Update the text content of the SVG text element
+            txt.numberCotent = key;
+        } else {
+            var text = txt.textContent + key;
+            txt.numberCotent += key;
+            if (text.length >= data.width) {
+                // remove olds > and add new one
+                for (var i = 0; i < data.width; i++) {
+                    if (text[i] == ">") {
+                        text = text.slice(0, i) + text.slice(i + 1);
+                        break;
+                    }
+                }
+                text = text.slice(-data.width + 1) + ">";
+                txt.textContent = text;
+            } else {
+                txt.textContent = txt.textContent + key; // Update the text content of the SVG text element
+            }
+        }
+        data.inputCnt++;
+    } else {
+        console.error(`Text element with id ${data.id}_text not found.`);
+    }
 }
 
 // ─────────────────────────────────────
 function GuiNbxPolygon(data) {
-    // Points
-    const x1 = data.x_pos; // Replace with your actual x1 coordinate
-    const y1 = data.y_pos; // Replace with your actual y1 coordinate
+    const x1 = data.x_pos;
+    const y1 = data.y_pos;
+    const widthPx = data.width * data.fontsize;
 
-    const x2 = data.x_pos + data.width * 8; // Replace with your actual x2 coordinate
-    const y2 = data.y_pos; // Replace with your actual y2 coordinate
+    const x2 = x1 + widthPx;
+    const y2 = y1;
 
-    const x3 = data.x_pos + data.width * 9; // Replace with your actual x3 coordinate
-    const y3 = data.y_pos + data.height * 0.2; // Replace with your actual y3 coordinate
+    const x3 = x1 + widthPx + 6; // Right corner for the triangle
+    const y3 = y1 + data.height * 0.2;
 
-    const x4 = data.x_pos + data.width * 9; // Replace with your actual x3 coordinate
-    const y4 = data.y_pos + data.height; // Replace with your actual y3 coordinate
+    const x4 = x1 + widthPx + 6;
+    const y4 = y1 + data.height;
 
-    const x5 = data.x_pos;
-    const y5 = data.y_pos + data.height; // Replace with your actual y4 coordinate
+    const x5 = x1;
+    const y5 = y1 + data.height;
 
     return {
-        points: `${x1},${y1} ${x2},${y2} ${x3},${y3} ${x4},${y4} ${x5}, ${y5}`,
+        points: `${x1},${y1} ${x2},${y2} ${x3},${y3} ${x4},${y4} ${x5},${y5}`,
         id: `${data.id}_polygon`,
         fill: "none",
+        stroke: "black",
+        "stroke-width": "1px",
         class: "border clickable",
     };
 }
 
 // ─────────────────────────────────────
+// Draw the small triangle (for up/down control)
 function GuiNbxTriangle(data) {
-    var x1 = data.x_pos;
-    var y1 = data.y_pos + 1;
-    var x2 = data.x_pos;
-    var y2 = data.y_pos + data.height - 1;
-    var x3 = data.x_pos + 6;
-    var y3 = data.y_pos + 7;
+    const height = data.height;
+    const tri_size = height * 0.3; // Size of the triangle
+
+    const gap = 1.5; // Gap between the triangle and the
+    const x1 = data.x_pos + gap; // Adjust the triangle position to the left of the box
+    const y1 = data.y_pos + gap;
+
+    const x2 = x1; // Same x for the bottom left corner of the triangle
+    const y2 = data.y_pos + data.height - gap;
+
+    const x3 = x1 + tri_size;
+    const y3 = data.y_pos + data.height / 2;
 
     return {
-        points: `${x1 + 0.5},${y1} ${x2 + 0.5},${y2} ${x3},${y3}`,
-        fill: "none",
-
+        points: `${x1},${y1} ${x3},${y3} ${x2},${y2}, ${x3},${y3}`,
+        fill: "white", // Filling the triangle with black to match Pd style
+        stroke: "black",
+        "stroke-width": "1px",
         id: `${data.id}_triangle`,
-        class: "border clickable",
+        class: "clickable",
     };
 }
 
 // ─────────────────────────────────────
-function GuiNbxNumbers(data) {
+// Draw the number text inside the nbx
+function GuiNbxText(data) {
+    const start_text = data.height * 0.4; // Size of the triangle
     return {
-        x: data.x_pos + 7,
-        y: data.y_pos + data.fontsize * 0.85,
-        "font-family": IEMFontFamily(data.font),
-        "font-weight": "bold",
-        "font-size": `${data.fontsize}px`,
-        fill: ColFromLoad(data.label_color),
-        transform: `translate(0, ${(data.fontsize / 2) * 0.6})`, // note: modified
-        id: `${data.id}_numbers`,
+        x: data.x_pos + start_text, // Adjust the x position to center the text in the box
+        y: data.y_pos + data.height / 2 + data.fontsize * 0.4, // Center the text vertically
+        "font-family": IEMFontFamily(data.font), // Use the specified font family
+        "font-weight": "bold", // Use bold text to match Pd number box style
+        "font-size": `${data.fontsize}px`, // Set font size
+        fill: ColFromLoad(data.label_color), // Set the color from data
+        "text-anchor": "left", // Center the text horizontally
+        id: `${data.id}_text`,
+        clicked: false,
         class: "unclickable",
     };
-}
-
-// ─────────────────────────────────────
-function GuiNbxOnMouseDown(data, e, id) {
-    const p = GuiMousePoint(e);
-    // console.log(p);
-    if (!data.steady_on_click) {
-    }
-    // gui_slider_bang(data);
-    Pd4Web.Touches[id] = {
-        data: data,
-        point: p,
-        value: data.value,
-    };
-}
-
-// ─────────────────────────────────────
-function GuiNbxClick(data, e, _) {
-    // TODO: Make this better
-    const p = GuiMousePoint(e);
-    const numberText = data.numbers;
-    let numberInput = prompt("Enter a number", numberText.textContent);
-    numberText.textContent = parseFloat(numberInput);
-    if (isNaN(parseFloat(numberInput))) {
-        alert("Please enter a valid number");
-        return;
-    }
-    sendFloat(data.receive, parseFloat(numberInput));
-}
-
-//╭─────────────────────────────────────╮
-//│           Slider: vsl/hsl           │
-//╰─────────────────────────────────────╯
-function GuiSliderRect(data) {
-    let x = data.x_pos;
-    let y = data.y_pos;
-    let width = data.width;
-    let height = data.height;
-    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.bg_color)) {
-        return {
-            x: x,
-            y: y,
-            width: width,
-            height: height,
-            id: `${data.id}_rect`,
-            class: "border clickable",
-        };
-    } else {
-        return {
-            x: x,
-            y: y,
-            width: width,
-            height: height,
-            fill: color,
-            id: `${data.id}_rect`,
-            class: "border clickable",
-        };
-    }
 }
 
 // ─────────────────────────────────────
@@ -1225,8 +1237,10 @@ function OpenPatch(content) {
     let canvasLevel = 0;
     let id = 0;
 
-    while (Pd4Web.Canvas.lastChild) {
-        Pd4Web.Canvas.removeChild(Pd4Web.Canvas.lastChild);
+    if (Pd4Web.Canvas) {
+        while (Pd4Web.Canvas.lastChild) {
+            Pd4Web.Canvas.removeChild(Pd4Web.Canvas.lastChild);
+        }
     }
 
     const lines = content.split(";\n");
@@ -1372,26 +1386,55 @@ function OpenPatch(content) {
                                 data.value = data.init ? data.default_value : 0;
                                 data.id = `${data.type}_${id++}`;
 
-                                // create svg
-                                data.rect = CreateItem("rect", GuiNbxInvisibleRect(data));
                                 data.polygon = CreateItem("polygon", GuiNbxPolygon(data));
                                 data.triangle = CreateItem("polygon", GuiNbxTriangle(data));
-                                data.numbers = CreateItem("text", GuiNbxNumbers(data));
+                                data.numbers = CreateItem("text", GuiNbxText(data));
+                                const rectList = document.getElementById(data.id + "_polygon");
                                 data.numbers.textContent = data.init;
 
-                                if (Pd4Web.isMobile) {
-                                    data.rect.addEventListener("touchstart", function (e) {
-                                        for (const _ of e.changedTouches) {
-                                            // for (const touch of e.changedTouches) {
-                                            // TODO: Check this
-                                            // gui_slider_onmousedown(data, touch, touch.identifier);
-                                        }
-                                    });
+                                if (rectList) {
+                                    if (Pd4Web.isMobile) {
+                                        rectList.addEventListener("touchstart", function (e) {
+                                            console.log("Touch detected");
+                                            for (const touch of e.changedTouches) {
+                                                // Call your function here
+                                                // gui_slider_onmousedown(data, touch, touch.identifier);
+                                            }
+                                        });
+                                    } else {
+                                        rectList.addEventListener("click", function (_) {
+                                            const id = data.id + "_text";
+                                            const txt = document.getElementById(id);
+                                            if (txt.clicked) {
+                                                txt.setAttribute("fill", "black"); // Change fill color to black
+                                                txt.clicked = false;
+                                                const svgElement = document.getElementById("Pd4WebCanvas");
+                                                svgElement.removeAttribute("tabindex"); // Remove tabindex
+                                                Pd4Web.NbxSelected = null;
+                                                svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
+                                                if (txt.numberCotent.length > data.width) {
+                                                    txt.textContent = "+";
+                                                } else {
+                                                    txt.textContent = txt.numberCotent;
+                                                }
+                                                Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
+                                            } else {
+                                                txt.setAttribute("fill", "red"); // Change fill color to black
+                                                txt.clicked = true;
+                                                const svgElement = document.getElementById("Pd4WebCanvas");
+                                                svgElement.setAttribute("tabindex", "0"); // "0" makes it focusable
+                                                svgElement.focus();
+                                                data.inputCnt = 0;
+                                                Pd4Web.NbxSelected = data;
+                                                svgElement.addEventListener("keypress", GuiNbxKeyDownListener);
+                                            }
+                                        });
+                                    }
                                 } else {
-                                    data.rect.addEventListener("click", function (e) {
-                                        GuiNbxClick(data, e, 0);
-                                    });
+                                    console.error("Element not found: " + data.id + "_rect");
                                 }
+                                BindGuiReceiver(data);
+
                                 break;
                             }
 
@@ -1604,7 +1647,7 @@ function OpenPatch(content) {
 async function Pd4WebInitGui(autoTheme) {
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
-        console.log("Pd4Web is not defined yet");
+        console.log("Pd4Web is not defined yet, wait...");
         return;
     }
 
@@ -1655,19 +1698,21 @@ async function Pd4WebInitGui(autoTheme) {
     darkModeMediaQuery.addEventListener("change", ThemeListener);
 
     // Open Patch
-    var File = "./index.pd";
-    fetch(File)
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok");
-            }
-            return response.text();
-        })
-        .then((textContent) => {
-            UpdatePatchDivSize(textContent);
-            OpenPatch(textContent);
-        })
-        .catch((error) => {
-            console.error("There has been a problem with your fetch operation:", error);
-        });
+    if (Pd4Web.Canvas) {
+        var File = "./index.pd";
+        fetch(File)
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.text();
+            })
+            .then((textContent) => {
+                UpdatePatchDivSize(textContent);
+                OpenPatch(textContent);
+            })
+            .catch((error) => {
+                console.error("There has been a problem with your fetch operation:", error);
+            });
+    }
 }

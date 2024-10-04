@@ -229,12 +229,8 @@ EM_JS(void, _JS_loadMidi, (void), {
         }, false); 
 
     };
-
     document.head.appendChild(script);
-
 });
-
-
 
 //╭─────────────────────────────────────╮
 //│         JS Receivers Hooks          │
@@ -266,8 +262,6 @@ EM_JS(void, _JS_receiveBang, (const char *r),{
         if (typeof bangFunc === 'function') {
             bangFunc();
         }
-
-
     }
 });
 
@@ -288,6 +282,9 @@ EM_JS(void, _JS_receiveFloat, (const char *r, float f),{
                 case "hsl":
                     GuiSliderSet(data, f);
                     GuiSliderBang(data);
+                    break;
+                case "nbx":
+                    GuiNbxUpdateNumber(data, f);
                     break;
                 case "vradio":
                 case "hradio":
@@ -364,6 +361,7 @@ int Pd4Web::_getReceivedListSize(std::string r) {
     }
     return -1;
 }
+
 // ─────────────────────────────────────
 std::string Pd4Web::_getItemFromListType(std::string r, int i) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
@@ -377,6 +375,7 @@ std::string Pd4Web::_getItemFromListType(std::string r, int i) {
     }
     return "";
 }
+
 // ─────────────────────────────────────
 std::string Pd4Web::_getItemFromListSymbol(std::string r, int i) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
@@ -404,13 +403,12 @@ float Pd4Web::_getItemFromListFloat(std::string r, int i) {
 // ╭─────────────────────────────────────╮
 // │     Extra PureData Definitions      │
 // ╰─────────────────────────────────────╯
-
 extern "C" void sys_putmidibyte(int portno, int byte) { return; }
 
 // ╭─────────────────────────────────────╮
 // │       Audio Worklet Receivers       │
 // ╰─────────────────────────────────────╯
-void Pd4Web::AW_ReceivedBang(const char *r) {
+void Pd4Web::receivedBang(const char *r) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -422,7 +420,7 @@ void Pd4Web::AW_ReceivedBang(const char *r) {
 };
 
 // ─────────────────────────────────────
-void Pd4Web::AW_ReceivedFloat(const char *r, float f) {
+void Pd4Web::receivedFloat(const char *r, float f) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -435,7 +433,7 @@ void Pd4Web::AW_ReceivedFloat(const char *r, float f) {
 };
 
 // ─────────────────────────────────────
-void Pd4Web::AW_ReceivedSymbol(const char *r, const char *s) {
+void Pd4Web::receivedSymbol(const char *r, const char *s) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -448,7 +446,7 @@ void Pd4Web::AW_ReceivedSymbol(const char *r, const char *s) {
 };
 
 // ─────────────────────────────────────
-void Pd4Web::AW_ReceivedList(const char *r, int argc, t_atom *argv) {
+void Pd4Web::receivedList(const char *r, int argc, t_atom *argv) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -467,13 +465,6 @@ void Pd4Web::AW_ReceivedList(const char *r, int argc, t_atom *argv) {
         }
     }
 };
-
-// ╭─────────────────────────────────────╮
-// │         Audio Configuration         │
-// ╰─────────────────────────────────────╯
-int Pd4Web::GetNInputChannels() { return PD4WEB_CHS_IN; }
-int Pd4Web::GetNOutputChannels() { return PD4WEB_CHS_OUT; }
-uint32_t Pd4Web::GetSampleRate() { return 48000; }
 
 // ╭─────────────────────────────────────╮
 // │           Receivers Hooks           │
@@ -591,7 +582,6 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
 
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
-    printf("Processing\n");
 
     libpd_process_float(2, In[0].data, LibPdOuts);
     // TODO: Fix multiple channels
@@ -617,7 +607,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
  * @param success Boolean indicating whether creation of AudioWorkletProcessor was successful.
  * @param userData Pointer to user data (not used in this function).
  */
-void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
+void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                           void *userData) {
 
     if (!success) {
@@ -625,9 +615,9 @@ void Pd4Web::AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
         return;
     }
 
-    uint32_t SR = GetSampleRate();
-    int NInCh = GetNInputChannels();
-    int NOutCh = GetNOutputChannels();
+    uint32_t SR = PD4WEB_SR;
+    int NInCh = PD4WEB_CHS_IN;
+    int NOutCh = PD4WEB_CHS_OUT;
 
     int nOutChannelsArray[1] = {NOutCh};
 
@@ -681,7 +671,7 @@ void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL succes
     };
 
     emscripten_create_wasm_audio_worklet_processor_async(
-        audioContext, &opts, &Pd4Web::AudioWorkletProcessorCreated, userData);
+        audioContext, &opts, &Pd4Web::audioWorkletProcessorCreated, userData);
 }
 
 // ─────────────────────────────────────
@@ -699,16 +689,17 @@ void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
 void Pd4Web::init() {
-    uint32_t SR = GetSampleRate();
-    float NInCh = GetNInputChannels();
-    float NOutCh = GetNOutputChannels();
+    uint32_t SR = PD4WEB_SR;
+    float NInCh = PD4WEB_CHS_IN;
+    float NOutCh = PD4WEB_CHS_OUT;
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
         .sampleRate = SR,
     };
 
-    libpd_set_printhook(Pd4Web::post); // <== Print
+    libpd_set_printhook(libpd_print_concatenator);
+    libpd_set_concatenated_printhook(&Pd4Web::post);
 
     int ret = libpd_init();
     if (ret == -2) {
@@ -716,10 +707,10 @@ void Pd4Web::init() {
         return;
     }
 
-    libpd_set_banghook(&Pd4Web::AW_ReceivedBang);
-    libpd_set_floathook(&Pd4Web::AW_ReceivedFloat);
-    libpd_set_symbolhook(&Pd4Web::AW_ReceivedSymbol);
-    libpd_set_listhook(&Pd4Web::AW_ReceivedList);
+    libpd_set_banghook(&Pd4Web::receivedBang);
+    libpd_set_floathook(&Pd4Web::receivedFloat);
+    libpd_set_symbolhook(&Pd4Web::receivedSymbol);
+    libpd_set_listhook(&Pd4Web::receivedList);
     // libpd_set_queued_messagehook(ReceiveMessage);
 
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
@@ -742,7 +733,7 @@ void Pd4Web::init() {
 // ╭─────────────────────────────────────╮
 // │              Main Loop              │
 // ╰─────────────────────────────────────╯
-void Pd4Web::mainLoop() {
+void Pd4Web::guiLoop() {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
@@ -783,7 +774,7 @@ int main() {
 
     printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
            PD4WEB_MICRO_VERSION);
-    emscripten_set_main_loop(Pd4Web::mainLoop, PD4WEB_FPS, 1);
+    emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
 
     return 0;
 }
