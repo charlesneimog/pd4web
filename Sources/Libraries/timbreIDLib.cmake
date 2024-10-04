@@ -7,9 +7,7 @@ set(PDCMAKE_DIR
 message(STATUS "PDCMAKE_DIR: ${PDCMAKE_DIR}")
 include(${PDCMAKE_DIR}/pd.cmake)
 
-set(LIB_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/timbreIDLib
-    CACHE STRING "PATH where is ROOT of else folder")
+set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/timbreIDLib)
 
 project(timbreIDLib)
 set(ENABLE_TILDE_TARGET_WARNING off)

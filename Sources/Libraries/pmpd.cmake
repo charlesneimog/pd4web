@@ -4,9 +4,8 @@ set(PDCMAKE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake
     CACHE PATH "Path to pd.cmake")
 include(${PDCMAKE_DIR}/pd.cmake)
-set(LIB_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pmpd
-    CACHE STRING "PATH where is ROOT of pd-pmpd folder")
+
+set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pmpd)
 
 # ╭──────────────────────────────────────╮
 # │           PMPD Compilation           │
