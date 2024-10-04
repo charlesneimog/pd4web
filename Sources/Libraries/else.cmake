@@ -461,14 +461,15 @@ file(GLOB BTF_SRC "${CIRCUIT_ROOT}/Libraries/BTF/*.c")
 file(GLOB COLAMD_SRC "${CIRCUIT_ROOT}/Libraries/COLAMD/*.c")
 file(GLOB COLAMD_SRC "${CIRCUIT_ROOT}/Libraries/COLAMD/*.c")
 file(GLOB KLU_SRC "${CIRCUIT_ROOT}/Libraries/KLU/*.c")
-file(GLOB SAMPLERATE_SRC "${CIRCUIT_ROOT}/Libraries/libsamplerate/*.c")
+file(GLOB SR_SRC "${LIB_DIR}/Source/Shared/libsamplerate/*.c")
 set(SUITE_SRC "${CIRCUIT_ROOT}/Libraries/SuiteSparse_config/SuiteSparse_config.c")
+
 set(SIMULATOR_SRC "${CIRCUIT_ROOT}/Source/Simulator.cpp")
 set(CIRCUIT_SRC "${CIRCUIT_ROOT}/Source/circuit~.c")
 
 pd_add_external(
     circuit~
-    "${CIRCUIT_SRC};${AMD_SRC};${BTF_SRC};${COLAMD_SRC};${KLU_SRC};${SAMPLERATE_SRC};${SUITE_SRC};${SIMULATOR_SRC}"
+    "${CIRCUIT_SRC};${AMD_SRC};${BTF_SRC};${COLAMD_SRC};${KLU_SRC};${SR_SRC};${SUITE_SRC};${SIMULATOR_SRC}"
     TARGET
     circuit_tilde)
 
