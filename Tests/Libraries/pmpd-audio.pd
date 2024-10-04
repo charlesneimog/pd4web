@@ -1,0 +1,4 @@
+#N canvas 6 28 951 1012 8;
+#X obj 46 8 vsl 25 160 0 8 0 0 s-vsl2 r-vsl2 empty 0 -9 0 8 #fcfcfc #000000 #000000 0 1;
+#X obj 28 7 vu 15 160 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0;
+#X obj 77 6 pmpd/pmpd3d~;

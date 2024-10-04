@@ -1,0 +1,5 @@
+#N canvas 6 28 951 1012 10;
+#X obj 20 40 else/slice;
+#X obj 19 70 else/routetype;
+#X obj 19 110 else/rescale;
+#X obj 20 400 else/canvas.name;
