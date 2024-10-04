@@ -3,34 +3,41 @@
 #│           Download Sources           │
 #╰──────────────────────────────────────╯
 Sources:
-  GITHUB_RELEASES: https://api.github.com/repos/{}/{}/releases
-  GITHUB_TAGS: https://api.github.com/repos/{}/{}/tags
   GITHUB: https://github.com/{}/{}
+  GITLAB: https://gitlab.com/{}/{}
+  
 #╭──────────────────────────────────────╮
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
 # ───────────────── pmpd ─────────────────
-  - Name: pmpd  # Name of the pd library
-    Source: GITHUB_TAGS  # How pd4web will download it
-    Developer: ch-nry  # Github Dev nickname
-    Repository: pd-pmpd  # Github Repository name
-    Version: v0.14.1  # Tag|Release 
-    Unsupported: [pmpd3d~, pmpd2d~, pmpd~]  # Objects that not support emscripten yet 
+  - Name: pmpd  
+    Source: GITHUB  
+    Developer: ch-nry  
+    Repository: pd-pmpd  
+    Version: v0.14.1  
+    Unsupported: [pmpd3d~, pmpd2d~, pmpd~]   
 
-# ───────────────── pmpd ─────────────────
-  - Name: timbreIDLib  # Name of the pd library
-    Source: GITHUB_TAGS  # How pd4web will download it
-    Developer: wbrent  # Github Dev nickname
-    Repository: timbreIDLib  # Github Repository name
-    Version: ef2e24a  # Tag|Release|Commit 
+# ─────────────── o.scofo~ ───────────────
+  - Name: o.scofo~
+    Source: GITHUB
+    Developer: charlesneimog
+    Repository: OScofo
+    Version: cc9026c479c7659049fbdadcfc4cfed377ff81e9
+
+# ───────────── timbreIDLib ───────────
+  - Name: timbreIDLib  
+    Source: GITHUB  
+    Developer: wbrent  
+    Repository: timbreIDLib  
+    Version: ef2e24a  
 
 # ───────────────── else ─────────────────
   - Name: else
-    Source: GITHUB_TAGS  # source
-    Developer: porres  # user name of the dev
-    Repository: pd-else  # Repository Name
-    Version: v.1.0-rc11  # Release or Tag
+    Source: GITHUB  
+    Developer: porres  
+    Repository: pd-else  
+    Version: v.1.0-rc12
     Unsupported:
       # Need implementation
       - sfz~
