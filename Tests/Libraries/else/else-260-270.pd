@@ -1,8 +1,7 @@
-#N canvas 0 0 450 300 10;
+#N canvas 963 23 951 1016 10;
 #X obj 20 40 else/pimpmul~;
 #X obj 20 80 else/cents2ratio~;
 #X obj 20 120 else/bandpass~;
-#X obj 20 160 else/cmul~;
 #X obj 20 200 else/freq.shift~;
 #X obj 20 240 else/quantizer~;
 #X obj 20 280 else/rint~;

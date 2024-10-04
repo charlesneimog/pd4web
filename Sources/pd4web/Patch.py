@@ -192,6 +192,8 @@ class Patch:
             externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
             if not os.path.exists(externalsJson):
                 self.Pd4Web.Libraries.GetLibrarySourceCode(line.library)
+                libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + line.library
+                self.Pd4Web.Objects.GetLibraryObjects(libFolder, line.library)
 
             libAbs = []
             with open(externalsJson, "r") as file:

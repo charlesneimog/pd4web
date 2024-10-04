@@ -186,9 +186,6 @@ class ExternalLibraries:
             submodule_collection = pygit2.submodules.SubmoduleCollection(pygit2.Repository(libPath))
             submodule_collection.init()
             submodule_collection.update()
-            libName = libData.name
-            libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName
-            self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
         except:
             raise Exception("Failed to initialize submodules.")
 
@@ -218,7 +215,19 @@ class ExternalLibraries:
         libFolder = self.Pd4Web.APPDATA + f"/Externals/{libData.name}"
         self.CloneLibrary(libFolder, libData)
         if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
-            shutil.copytree(libFolder, self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name, symlinks=False)
+
+            def ignore_symlinks(src, names):
+                return [name for name in names if os.path.islink(os.path.join(src, name))]
+
+            shutil.copytree(
+                libFolder,
+                self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
+                symlinks=False,
+                ignore=ignore_symlinks,
+                dirs_exist_ok=True,
+                ignore_dangling_symlinks=True,
+            )
+
         return True
 
     def GetLibrarySourceCodeOld(

@@ -1,4 +1,4 @@
-#N canvas 0 0 450 300 10;
+#N canvas 963 23 951 1016 10;
 #X obj 20 40 else/sort;
 #X obj 20 80 else/ceil;
 #X obj 20 120 else/router;
@@ -8,4 +8,3 @@
 #X obj 20 280 else/initmess;
 #X obj 20 320 else/fold;
 #X obj 20 360 else/route2;
-#X obj 20 400 else/findfile;
