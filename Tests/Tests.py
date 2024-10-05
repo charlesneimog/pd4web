@@ -6,9 +6,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from flask import Flask, send_from_directory
 from selenium.webdriver.common.by import By
+import platform
 
 import unittest
-import threading
 import shutil
 
 import shutil
@@ -81,9 +81,11 @@ def RunTest(patchPath, port):
     Pd4WebInstance.verbose = True
     Pd4WebInstance.Execute()
 
-    patchDir = os.path.dirname(pd_file)
-    execute_chrome(patchDir, port)
-    print("\n\n")
+    # just for linux,
+    if platform.system() == "Linux":
+        patchDir = os.path.dirname(pd_file)
+        execute_chrome(patchDir, port)
+        print("\n\n")
 
 
 class Pd4webElse(unittest.TestCase):
