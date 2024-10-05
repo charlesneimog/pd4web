@@ -27,7 +27,7 @@
 
 <h3 align="center">Examples</h3>
 
-Check here https://charlesneimog.github.io/pd4web/tests/.
+* Check some examples [here](https://charlesneimog.github.io/pd4web/tests/).
 
 -----
 <h3 align="center">Questions, doubts, help</h3>
