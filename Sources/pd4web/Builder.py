@@ -2,7 +2,7 @@ import os
 import re
 import shutil
 import subprocess
-import pygit2
+import importlib.metadata as importlib_metadata
 
 from .Helpers import pd4web_print
 from .Patch import PatchLine
@@ -295,6 +295,16 @@ class GetAndBuildExternals:
                 self.Pd4Web.OUTCHS_COUNT = 2
 
             f.write("// This is automatically generated code from pd4web.py script\n\n")
+
+            pd4web_version = importlib_metadata.version("pd4web")
+            numbers = pd4web_version.split(".")
+            major = numbers[0]
+            minor = numbers[1]
+            patch = numbers[2]
+            f.write(f"// Pd4Web Version\n")
+            f.write(f"#define PD4WEB_VERSION_MAJOR {major}\n")
+            f.write(f"#define PD4WEB_VERSION_MINOR {minor}\n")
+            f.write(f"#define PD4WEB_VERSION_PATCH {patch}\n\n")
 
             f.write(f"// Project Name\n")
             projectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)

@@ -497,6 +497,37 @@ function GuiNbxText(data) {
     };
 }
 
+//╭─────────────────────────────────────╮
+//│           Slider: vsl/hsl           │
+//╰─────────────────────────────────────╯
+function GuiSliderRect(data) {
+    let x = data.x_pos;
+    let y = data.y_pos;
+    let width = data.width;
+    let height = data.height;
+    if (Pd4Web.AutoTheme && AlmostWhiteOrBlack(data.bg_color)) {
+        return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            id: `${data.id}_rect`,
+            class: "border clickable",
+        };
+    } else {
+        return {
+            x: x,
+            y: y,
+            width: width,
+            height: height,
+            fill: color,
+            id: `${data.id}_rect`,
+            class: "border clickable",
+        };
+    }
+}
+
+
 // ─────────────────────────────────────
 function GuiSliderIndicatorPoints(data) {
     let x1 = data.x_pos;
@@ -1221,15 +1252,8 @@ function UpdatePatchDivSize(content) {
     const totalWidth = window.innerWidth;
     const totalHeight = window.innerHeight;
 
-    const proporH = (totalHeight / canvasHeight) * 0.6;
-    const proporW = (totalWidth / canvasWidth) * 0.6;
-
-    patchDiv.style.width = canvasWidth * proporW + "px";
-    patchDiv.style.height = canvasHeight * proporH + "px";
-    patchDiv.style.marginLeft = "auto";
-    patchDiv.style.marginRight = "auto";
-    patchDiv.style.marginTop = "auto";
-    patchDiv.style.marginBottom = "auto";
+    patchDiv.style.width = canvasHeight + "px";
+    patchDiv.style.height = canvasHeight + "px";
 }
 
 // ─────────────────────────────────────

@@ -143,6 +143,15 @@ EM_JS(void, _JS_alert, (const char *msg), {
 });
 
 // ─────────────────────────────────────
+EM_JS(void, _JS_addAlertOnError, (), {
+    window.addEventListener('error', function(event) {
+      console.log(event.filename);
+    }
+});
+
+
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_post, (const char *msg), {
     console.log(UTF8ToString(msg));
 });
@@ -771,6 +780,7 @@ int main() {
         _JS_loadGui(PD4WEB_AUTO_THEME);
     }
     _JS_setTitle(PD4WEB_PROJECT_NAME);
+    _JS_addAlertOnError();
 
     printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
            PD4WEB_MICRO_VERSION);
