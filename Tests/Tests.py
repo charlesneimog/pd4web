@@ -1,12 +1,8 @@
 import multiprocessing
 import os
 import pd4web as Pd4Web
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from flask import Flask, send_from_directory
-from selenium.webdriver.common.by import By
 import platform
+
 
 import unittest
 import shutil
@@ -16,6 +12,12 @@ import time
 
 
 def execute_chrome(path, port):
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.common.by import By
+    from flask import Flask, send_from_directory
+
     app = Flask(__name__, static_url_path="", static_folder=path)
     chrome_options = Options()
     chrome_options.add_argument("--headless=new")

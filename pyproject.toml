@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pd4web"
-version = "2.0.2"
+version = "2.0.3"
 description = "pd4web compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
 authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"
@@ -20,11 +20,12 @@ cmake = "^3.21.4"
 ninja = "^1.10.2"
 pygit2 = "^1.15.1"
 
+[build-system]
+requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]
+build-backend = "poetry.core.masonry.api"
+
 [tool.poetry.scripts]
 pd4web = "pd4web:main"
-
-[build-system]
-build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 120
