@@ -9,6 +9,7 @@ on:
 jobs:
   main:
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.11']
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -24,17 +25,14 @@ jobs:
         uses: actions/setup-python@v3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install google
-        if: runner.os == 'ubuntu-latest'
+      - name: Install linux requirements
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt update
           sudo apt install -y wget
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo apt install -y ./google-chrome-stable_current_amd64.deb
           sudo apt-get install chromium-chromedriver
-      - name: Install extra for linux
-        if: runner.os == 'ubuntu-latest'
-        run: |
           pip install selenium flask
       - name: Install pd4web
         run: |

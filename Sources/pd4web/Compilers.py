@@ -4,6 +4,7 @@ import zipfile
 import cmake
 
 import requests
+import pygit2
 
 from .Helpers import pd4web_print
 from .Pd4Web import Pd4Web
@@ -14,31 +15,22 @@ class ExternalsCompiler:
         self.Pd4Web = Pd4Web
         self.InitVariables()
         if not os.path.exists(Pd4Web.APPDATA + "/emsdk"):
-            emccGithub = "https://api.github.com/repos/emscripten-core/emsdk/tags"
-            response = requests.get(emccGithub)
-            responseJson = response.json()
-            sourceCodeLink = responseJson[0]["zipball_url"]
-            response = requests.get(sourceCodeLink)
-            EmccZip = self.Pd4Web.APPDATA + "/emcc.zip"
-            OK = Pd4Web.DownloadZip(sourceCodeLink, EmccZip, "emcc")
-            if not OK:
-                raise Exception("Failed to download emcc")
-            with zipfile.ZipFile(EmccZip, "r") as zip_ref:
-                zip_ref.extractall(Pd4Web.APPDATA)
-                extractFolderName = zip_ref.namelist()[0]
-                os.rename(
-                    self.Pd4Web.APPDATA + "/" + extractFolderName,
-                    self.Pd4Web.APPDATA + "/emsdk",
-                )
-                try:
-                    os.remove(EmccZip)
-                except:
-                    pd4web_print(
-                        "Failed to remove emcc.zip",
-                        color="yellow",
-                        silence=self.Pd4Web.SILENCE,
-                        pd4web=self.Pd4Web.PD_EXTERNAL,
-                    )
+            pd4web_print("Cloning emsdk", color="yellow")
+            emsdk_path = Pd4Web.APPDATA + "/emsdk"
+            emsdk_git = "https://github.com/emscripten-core/emsdk"
+            pygit2.clone_repository(emsdk_git, emsdk_path)
+            libRepo: pygit2.Repository = pygit2.Repository(emsdk_path)
+            tag_name = Pd4Web.EMSDK_VERSION
+
+            # commit
+            tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
+            if isinstance(tag_ref.peel(), pygit2.Tag):
+                commit = tag_ref.peel().target
+            else:
+                commit = tag_ref.peel()
+            libRepo.set_head(commit.id)
+            libRepo.checkout_tree(commit)
+            libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
             self.InstallEMCC()
 
     def InitVariables(self):

@@ -1,8 +1,0 @@
-#N canvas 6 28 951 1012 10;
-#X obj 20 40 else/lb;
-#X obj 20 80 else/s2f~;
-#X obj 20 120 else/wt~;
-#X obj 20 160 else/imp2~;
-#X obj 20 200 else/imp~;
-#X obj 20 280 else/gcd;
-#X obj 20 400 else/touch.in;

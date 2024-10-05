@@ -19,6 +19,7 @@ class Pd4Web:
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
     PD_VERSION: str = "0.55-0"
+    EMSDK_VERSION: str = "3.1.68"
 
     # Compiler
     MEMORY_SIZE: int = 512
@@ -162,11 +163,8 @@ class Pd4Web:
         self.Objects: Objects = Objects(self)
 
     def CheckDependencies(self):
-        cmake_dir = cmake.__file__
-        cmake_dir = os.path.dirname(cmake_dir)
-        cmake_dir = os.path.join(cmake_dir, "data", "bin")
+        cmake_dir = cmake.CMAKE_BIN_DIR
         cmake_bin = os.path.join(cmake_dir, "cmake")
-        cmake_bin = os.path.abspath(cmake_bin)
         if not os.path.exists(cmake_bin):
             raise Exception("Cmake (module) is not installed. Please install it.")
 
