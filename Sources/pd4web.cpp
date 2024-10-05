@@ -146,10 +146,8 @@ EM_JS(void, _JS_alert, (const char *msg), {
 EM_JS(void, _JS_addAlertOnError, (), {
     window.addEventListener('error', function(event) {
       console.log(event.filename);
-    }
+    });
 });
-
-
 
 // ─────────────────────────────────────
 EM_JS(void, _JS_post, (const char *msg), {
@@ -720,7 +718,6 @@ void Pd4Web::init() {
     libpd_set_floathook(&Pd4Web::receivedFloat);
     libpd_set_symbolhook(&Pd4Web::receivedSymbol);
     libpd_set_listhook(&Pd4Web::receivedList);
-    // libpd_set_queued_messagehook(ReceiveMessage);
 
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
@@ -782,8 +779,8 @@ int main() {
     _JS_setTitle(PD4WEB_PROJECT_NAME);
     _JS_addAlertOnError();
 
-    printf("pd4web version %d.%d.%d\n", PD4WEB_MAJOR_VERSION, PD4WEB_MINOR_VERSION,
-           PD4WEB_MICRO_VERSION);
+    printf("pd4web version %d.%d.%d\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
+           PD4WEB_VERSION_PATCH);
     emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
 
     return 0;

@@ -10,10 +10,6 @@
 
 #include "config.h"
 
-#define PD4WEB_MAJOR_VERSION 2
-#define PD4WEB_MINOR_VERSION 0
-#define PD4WEB_MICRO_VERSION 0
-
 #define PD4WEB_DEBUG true
 
 static uint8_t WasmAudioWorkletStack[1024 * 1024];

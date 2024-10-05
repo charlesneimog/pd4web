@@ -1,7 +1,6 @@
 import os
 import zipfile
 
-from pygit2.repository import Repository
 import requests
 import yaml
 import pygit2
