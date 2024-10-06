@@ -1,16 +1,13 @@
 import argparse
 import os
 import sys
-import zipfile
 import pygit2
-import cmake
 import shutil
-import platform
-import ninja
 
 import requests
 
-from .Helpers import DownloadZipFile, pd4web_print
+from .Helpers import pd4web_print
+
 
 class Pd4Web:
     # Paths
@@ -23,7 +20,7 @@ class Pd4Web:
     EMSDK_VERSION: str = "3.1.68"
 
     # Compiler
-    MEMORY_SIZE: int = 512
+    MEMORY_SIZE: int = 256
 
     # Audio
     OUTCHS_COUNT: int = 0
@@ -48,14 +45,14 @@ class Pd4Web:
             usage="pd4web.py <PureData Patch>",
         )
         parser.add_argument("patch_file", type=str, help="The patch file to be compiled", nargs="?")
-        self.actionFlags(parser)
-        self.optionsFlags(parser)
-        self.devFlags(parser)
+        self.action_flags(parser)
+        self.options_flags(parser)
+        self.dev_flags(parser)
 
         parser = parser.parse_args()
 
-        self.getMainPaths()
-        self.doActions(parser)
+        self.get_mainPaths()
+        self.do_actions(parser)
 
         self.Parser = parser
         self.Patch = os.path.abspath(self.Parser.patch_file)
@@ -79,7 +76,7 @@ class Pd4Web:
         if self.Patch == "":
             raise Exception("You must set a patch file")
 
-        self.getMainPaths()
+        self.get_mainPaths()
         self.InitVariables()
 
         # ╭──────────────────────────────────────╮
@@ -120,13 +117,11 @@ class Pd4Web:
         if not os.path.exists(emccRun):
             raise Exception("emrun not found. Please install Emscripten")
 
-        self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch)) + "/index.html"
-        if not os.path.exists(self.PROJECT_ROOT):
-            raise Exception("index.html not found, had you compiled the patch?")
-        os.chdir(os.path.dirname(self.PROJECT_ROOT))
-        os.system(f"{emccRun} index.html")
+        projectRoot = os.path.realpath(self.Patch)
+        os.chdir(projectRoot)
+        os.system(f"{emccRun} {projectRoot}/index.html")
 
-    def getMainPaths(self):
+    def get_mainPaths(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -220,7 +215,7 @@ class Pd4Web:
     def Silence(self):
         self.SILENCE = True
 
-    def doActions(self, parser):
+    def do_actions(self, parser):
         if parser.run_browser:
             self.RunBrowser()
             exit()
@@ -240,7 +235,7 @@ class Pd4Web:
             shutil.copy(newLibCmake, self.PD4WEB_LIBRARIES)
             exit()
 
-    def actionFlags(self, parser):
+    def action_flags(self, parser):
         parser.add_argument(
             "--run-browser",
             required=False,
@@ -262,7 +257,7 @@ class Pd4Web:
             help="Clear the cache before running",
         )
 
-    def optionsFlags(self, parser):
+    def options_flags(self, parser):
         parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode")
         parser.add_argument(
             "-m",
@@ -289,7 +284,7 @@ class Pd4Web:
         )
 
     # Parse
-    def devFlags(self, parser):
+    def dev_flags(self, parser):
         parser.add_argument(
             "--bypass-unsupported",
             required=False,
