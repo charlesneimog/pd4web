@@ -16,7 +16,9 @@ class ExternalsCompiler:
             pd4web_print("Cloning emsdk", color="yellow")
             emsdk_path = Pd4Web.APPDATA + "/emsdk"
             emsdk_git = "https://github.com/emscripten-core/emsdk"
-            pygit2.clone_repository(emsdk_git, emsdk_path)
+            ok = pygit2.clone_repository(emsdk_git, emsdk_path)
+            if not ok:
+                raise Exception("Failed to clone emsdk")
             libRepo: pygit2.Repository = pygit2.Repository(emsdk_path)
             tag_name = Pd4Web.EMSDK_VERSION
 
@@ -41,15 +43,13 @@ class ExternalsCompiler:
         self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
 
     def GetCmake(self):
-        cmake_dir = cmake.__file__
-        cmake_dir = os.path.dirname(cmake_dir)
-        cmake_dir = os.path.join(cmake_dir, "data", "bin")
+        cmake_dir = cmake.CMAKE_BIN_DIR
         cmake_bin = os.path.join(cmake_dir, "cmake")
-        cmake_bin = os.path.abspath(cmake_bin)
+        if platform.system() == "Windows":
+            cmake_bin += ".exe"
         if not os.path.exists(cmake_bin):
             raise Exception("Cmake (module) is not installed. Please install it.")
-        else:
-            return cmake_bin
+        return cmake_bin
 
     def InstallEMCC(self):
         if platform.system() == "Windows":

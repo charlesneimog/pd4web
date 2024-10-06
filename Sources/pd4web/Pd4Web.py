@@ -5,6 +5,7 @@ import zipfile
 import pygit2
 import cmake
 import shutil
+import platform
 
 import requests
 
@@ -80,7 +81,6 @@ class Pd4Web:
 
         self.getMainPaths()
         self.InitVariables()
-        self.CheckDependencies()  # git and cmake
 
         # ╭──────────────────────────────────────╮
         # │    NOTE: Sobre a recursivade para    │
@@ -162,12 +162,6 @@ class Pd4Web:
         self.Libraries = ExternalLibraries(self)
         self.Objects: Objects = Objects(self)
 
-    def CheckDependencies(self):
-        cmake_dir = cmake.CMAKE_BIN_DIR
-        cmake_bin = os.path.join(cmake_dir, "cmake")
-        if not os.path.exists(cmake_bin):
-            raise Exception("Cmake (module) is not installed. Please install it.")
-
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)
         response = requests.get(url, stream=True)
@@ -197,32 +191,31 @@ class Pd4Web:
 
     def GetPdSourceCode(self):
         if not os.path.exists(self.APPDATA + "/Pd"):
-            os.mkdir(self.APPDATA + "/Pd")
+            pd4web_print("Cloning Pd", color="yellow")
+            pd_path = self.APPDATA + "/Pd"
+            pd_git = "https://github.com/pure-data/pure-data"
+            ok = pygit2.clone_repository(pd_git, pd_path)
+            if not ok:
+                raise Exception("Failed to clone emsdk")
 
-        if not os.path.exists(self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"):
-            pd4web_print(
-                f"Downloading Pure Data {self.PD_VERSION}...",
-                color="green",
-                silence=self.SILENCE,
-            )
-            pdVersionSource = f"https://github.com/pure-data/pure-data/archive/refs/tags/{self.PD_VERSION}.zip"
-            pdVersionZip = self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"
-            DownloadZipFile(pdVersionSource, pdVersionZip)
-        else:
-            pdVersionZip = self.APPDATA + f"/Pd/{self.PD_VERSION}.zip"
+            libRepo: pygit2.Repository = pygit2.Repository(pd_path)
+            tag_name = Pd4Web.PD_VERSION
 
-        # Zip file to self.Pd4Web.PROJECT_ROOT /Pd4Web/pure-data
-        if not os.path.exists(self.PROJECT_ROOT + "/Pd4Web/"):
-            os.mkdir(self.PROJECT_ROOT + "/Pd4Web/")
+            # commit
+            tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
+            if isinstance(tag_ref.peel(), pygit2.Tag):
+                commit = tag_ref.peel().target
+            else:
+                commit = tag_ref.peel()
+            libRepo.set_head(commit.id)
+            libRepo.checkout_tree(commit)
+            libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
 
         if not os.path.exists(self.PROJECT_ROOT + "/Pd4Web/pure-data"):
-            with zipfile.ZipFile(pdVersionZip, "r") as zip_ref:
-                zip_ref.extractall(self.PROJECT_ROOT + "/Pd4Web/")
-                extractFolderName = zip_ref.namelist()[0]
-                os.rename(
-                    self.PROJECT_ROOT + "/Pd4Web/" + extractFolderName,
-                    self.PROJECT_ROOT + "/Pd4Web/pure-data",
-                )
+            shutil.copytree(self.APPDATA + "/Pd/src", self.PROJECT_ROOT + "/Pd4Web/pure-data/src")
+            # copy README and LICENSE
+            shutil.copytree(self.APPDATA + "/Pd/README.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/README.txt")
+            shutil.copytree(self.APPDATA + "/Pd/LICENSE.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/LICENSE.txt")
 
     def Silence(self):
         self.SILENCE = True
