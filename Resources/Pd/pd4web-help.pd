@@ -1,5 +1,5 @@
-#N canvas 6 554 951 486 12;
-#N canvas 6 28 951 486 patch 1;
+#N canvas 402 140 338 243 12;
+#N canvas 471 120 951 486 patch 0;
 #X obj 10 75 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 2048 256;
 #X obj 258 18 bng 25 250 50 0 s-compile r-compile empty -15 -10 0 12 #ffc7c6 #ff0400 #000000;
 #X obj 14 321 r r-memory;

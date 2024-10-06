@@ -1,6 +1,7 @@
 import os
 import platform
 import cmake
+import ninja
 
 import pygit2
 
@@ -41,6 +42,10 @@ class ExternalsCompiler:
             self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
         self.CMAKE = self.GetCmake()
         self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
+        self.NINJA = ninja.BIN_DIR + "/ninja"
+        if platform.system() == "Windows":
+            self.NINJA += ".exe"
+        
 
     def GetCmake(self):
         cmake_dir = cmake.CMAKE_BIN_DIR

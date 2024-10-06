@@ -70,6 +70,7 @@ static bool CheckPd4Web(Pd4Web *x) {
         return false;
     }
 #endif
+    post("%s --help", x->Pd4WebPath.c_str());
     std::string cmd = x->Pd4WebPath + " --help";
     result = std::system(cmd.c_str());
     return (result == 0);

@@ -366,6 +366,7 @@ class GetAndBuildExternals:
         os.chdir(self.Pd4Web.PROJECT_ROOT)
         emcmake = self.Pd4Web.Compiler.EMCMAKE
         cmake = self.Pd4Web.Compiler.CMAKE
+        ninja = self.Pd4Web.Compiler.NINJA
         command = [
             emcmake,
             cmake,
@@ -376,6 +377,8 @@ class GetAndBuildExternals:
             "-DPD4WEB=ON",
             "-G",
             "Ninja",
+            f"-DCMAKE_MAKE_PROGRAM={ninja}",
+            
         ]
         if self.Pd4Web.verbose:
             pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)

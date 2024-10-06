@@ -1,4 +1,6 @@
-from PyInstaller.utils.hooks import collect_all
+from PyInstaller.utils.hooks import collect_data_files, collect_all
 
-# Collect all files related to the cmake module
-datas, binaries, hiddenimports = collect_all("cmake")
+datas, binaries, hiddenimports = collect_all('cmake')
+
+# Additionally ensure data files (if any are missed)
+datas += collect_data_files('cmake')

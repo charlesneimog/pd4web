@@ -49,12 +49,12 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     set(PYINSTALLER_COMMAND
         ${PYINSTALLER_EXECUTABLE} --onefile ${CMAKE_SOURCE_DIR}/pd-pd4web.py --name
         "pd4web-${ARCH}" # --add-binary "/usr/lib/liblzma.so.5:."
-        --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --add-data
-        "${CMAKE_SOURCE_DIR}/../../Sources:pd4web" --distpath "${CMAKE_BINARY_DIR}")
+        --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --distpath "${CMAKE_BINARY_DIR}")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
     set(PYINSTALLER_COMMAND
-        ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --add-data
-        "${CMAKE_SOURCE_DIR}/../../Sources:pd4web" --distpath "${CMAKE_BINARY_DIR}"
+        ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}"
+        --distpath "${CMAKE_BINARY_DIR}"
+        --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/"
         ${CMAKE_SOURCE_DIR}/pd-pd4web.py)
 else()
     message(FATAL_ERROR "Unknown platform")

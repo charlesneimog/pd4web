@@ -6,11 +6,11 @@ import pygit2
 import cmake
 import shutil
 import platform
+import ninja
 
 import requests
 
 from .Helpers import DownloadZipFile, pd4web_print
-
 
 class Pd4Web:
     # Paths
@@ -214,8 +214,8 @@ class Pd4Web:
         if not os.path.exists(self.PROJECT_ROOT + "/Pd4Web/pure-data"):
             shutil.copytree(self.APPDATA + "/Pd/src", self.PROJECT_ROOT + "/Pd4Web/pure-data/src")
             # copy README and LICENSE
-            shutil.copytree(self.APPDATA + "/Pd/README.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/README.txt")
-            shutil.copytree(self.APPDATA + "/Pd/LICENSE.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/LICENSE.txt")
+            shutil.copy(self.APPDATA + "/Pd/README.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/README.txt")
+            shutil.copy(self.APPDATA + "/Pd/LICENSE.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/LICENSE.txt")
 
     def Silence(self):
         self.SILENCE = True
