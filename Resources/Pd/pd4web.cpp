@@ -3,15 +3,20 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <filesystem>
 #include <string>
 #include <thread>
 
 #include <m_imp.h>
 
+#include "./cpp-httplib/httplib.h"
+
 static t_class *pd4web_class;
 
-static std::atomic<bool> Pd4WebRunning(false);
-static std::atomic<bool> Pd4WebKill(false);
+static std::atomic<bool> Pd4WebBrowser(false);
+static std::atomic<bool> Pd4WebCompiler(false);
+
+static std::atomic<bool> Pd4WebKillBrowser(false);
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -23,6 +28,14 @@ class Pd4Web {
     std::string Pd4WebPath;
     std::string Pd4WebExe;
     bool Pd4WebIsReady;
+
+    // threads
+    std::thread::id CompilerThread;
+    std::thread::id BrowserThread;
+
+    // Server
+    httplib::Server *Server;
+    std::string ProjectRoot;
 
     // config
     bool verbose;
@@ -77,43 +90,63 @@ static bool CheckPd4Web(Pd4Web *x) {
 }
 
 // ─────────────────────────────────────
-static void RunCmd(Pd4Web *x, std::string cmd, bool browser) {
-    if (browser) {
-        std::thread([x, cmd]() {
-
-        }).detach();
-    } else {
-        std::thread([x, cmd]() {
-            post("[pd4web] Running...");
-            Pd4WebRunning.store(true);
-            std::array<char, 256> Buf;
-            std::string Result;
-            FILE *Pipe = popen(cmd.c_str(), "r");
-            if (!Pipe) {
-                pd_error(nullptr, "[pd4web] popen failed");
-                Pd4WebRunning.store(false); // Ensure the flag is reset on failure
-                return;
-            }
-
-            while (!Pd4WebKill.load() && fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
-                std::string Line = "[pd4web] ";
-                Line += Buf.data();
-                // remove \n
-                Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
-
-                if (Line != "[pd4web] ") {
-                    post(Line.c_str());
-                }
-            }
-            post("[pd4web] Done!");
-            pclose(Pipe);
+static std::thread::id RunCompiler(Pd4Web *x, std::string cmd) {
+    std::thread t([cmd]() {
+        post("[pd4web] Running...");
+        Pd4WebBrowser.store(true);
+        std::array<char, 256> Buf;
+        std::string Result;
+        FILE *Pipe = popen(cmd.c_str(), "r");
+        if (!Pipe) {
+            pd_error(nullptr, "[pd4web] popen failed");
+            Pd4WebBrowser.store(false); // Ensure the flag is reset on failure
             return;
-        }).detach();
+        }
+
+        while (!Pd4WebKillBrowser.load() && fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+            std::string Line = "[pd4web] ";
+            Line += Buf.data();
+            // remove \n
+            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+
+            if (Line != "[pd4web] ") {
+                post(Line.c_str());
+            }
+        }
+        post("[pd4web] Done!");
+        pclose(Pipe);
+        Pd4WebBrowser.store(false);
+    });
+
+    std::thread::id threadId = t.get_id();
+    t.detach();
+    return threadId;
+}
+
+std::string getLocalIP() {
+    char hostname[1024];
+    struct hostent *host_entry;
+    char *ip;
+
+    // Get the hostname
+    gethostname(hostname, sizeof(hostname));
+
+    // Get the host information
+    host_entry = gethostbyname(hostname);
+
+    if (host_entry == nullptr) {
+        std::cerr << "Error: Unable to get host information." << std::endl;
+        return "";
     }
+
+    // Convert the first IP address from binary to string
+    ip = inet_ntoa(*((struct in_addr *)host_entry->h_addr_list[0]));
+
+    return std::string(ip);
 }
 
 // ─────────────────────────────────────
-static void RunBrowser(Pd4Web *x) {
+static void Browser(Pd4Web *x, float f) {
     if (!x->Pd4WebIsReady) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
@@ -124,10 +157,22 @@ static void RunBrowser(Pd4Web *x) {
         return;
     }
 
-    std::string cmd = x->Pd4WebPath;
-    cmd += " --run-browser ";
-    cmd += x->patch.c_str();
-    RunCmd(x, cmd, true);
+    if (f == 1) {
+        std::thread t([x]() {
+            x->Server->set_mount_point("/", x->ProjectRoot.c_str());
+            x->Server->Get("/", [](const httplib::Request &, httplib::Response &res) {
+                res.set_redirect("/index.html");
+            });
+
+            if (!x->Server->listen("0.0.0.0", 8080)) {
+                post("[pd4web] Failed to start server");
+            }
+        });
+        t.detach();
+        post("[pd4web] Server started at http://localhost:8080");
+    } else {
+        x->Server->stop();
+    }
 }
 
 // ─────────────────────────────────────
@@ -166,8 +211,16 @@ static void SetConfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             }
         }
     } else if (config == "patch") {
-        x->patch = atom_getsymbolarg(1, argc, argv)->s_name;
-        post("[pd4web] Patch set");
+        for (int i = 1; i < argc; i++) {
+            if (argv[i].a_type != A_SYMBOL) {
+                pd_error(x, "[pd4web] Invalid argument, use [set patch <patch_name>]");
+                return;
+            }
+            x->patch += atom_getsymbolarg(i, argc, argv)->s_name;
+        }
+
+        // for ProjectRoot, get directory of the patch
+        x->ProjectRoot = std::filesystem::path(x->patch).parent_path().string();
     }
     return;
 }
@@ -194,7 +247,40 @@ static void Compile(Pd4Web *x) {
         cmd += x->patch;
     }
 
-    RunCmd(x, cmd, false);
+    if (Pd4WebCompiler.load()) {
+        pd_error(x, "[pd4web] Compiler is already running, wait");
+        return;
+    }
+
+    std::thread t([cmd]() {
+        post("[pd4web] Running...");
+        Pd4WebCompiler.store(true);
+        std::array<char, 256> Buf;
+        std::string Result;
+        FILE *Pipe = popen(cmd.c_str(), "r");
+        if (!Pipe) {
+            pd_error(nullptr, "[pd4web] popen failed");
+            Pd4WebCompiler.store(false); // Ensure the flag is reset on failure
+            return;
+        }
+
+        while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+            std::string Line = "[pd4web] ";
+            Line += Buf.data();
+            // remove \n
+            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+
+            if (Line != "[pd4web] ") {
+                post(Line.c_str());
+            }
+        }
+        post("[pd4web] Done!");
+        pclose(Pipe);
+        Pd4WebCompiler.store(false);
+    });
+
+    std::thread::id threadId = t.get_id();
+    t.detach();
 
     return;
 }
@@ -211,16 +297,23 @@ static void *Pd4WebNew(t_symbol *s, int argc, t_atom *argv) {
     // default variables
     x->verbose = true;
     x->memory = 32;
+    x->Server = new httplib::Server();
 
     return x;
 }
 
 // ─────────────────────────────────────
+static void Pd4WebFree(Pd4Web *x) {
+    x->Server->stop();
+    delete x->Server;
+}
+
+// ─────────────────────────────────────
 extern "C" void pd4web_setup(void) {
-    pd4web_class = class_new(gensym("pd4web"), (t_newmethod)Pd4WebNew, 0, sizeof(Pd4Web),
-                             CLASS_DEFAULT, A_GIMME, A_NULL);
+    pd4web_class = class_new(gensym("pd4web"), (t_newmethod)Pd4WebNew, (t_method)Pd4WebFree,
+                             sizeof(Pd4Web), CLASS_DEFAULT, A_GIMME, A_NULL);
 
     class_addmethod(pd4web_class, (t_method)SetConfig, gensym("set"), A_GIMME, A_NULL);
-    class_addmethod(pd4web_class, (t_method)RunBrowser, gensym("browser"), A_NULL);
+    class_addmethod(pd4web_class, (t_method)Browser, gensym("browser"), A_FLOAT, A_NULL);
     class_addbang(pd4web_class, (t_method)Compile);
 }

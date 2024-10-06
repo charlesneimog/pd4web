@@ -1,3 +1,6 @@
 [submodule "Sources/Libraries/pd.cmake"]
 	path = Sources/Libraries/pd.cmake
 	url = https://github.com/pure-data/pd.cmake.git
+[submodule "Resources/Pd/cpp-httplib"]
+	path = Resources/Pd/cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib.git
