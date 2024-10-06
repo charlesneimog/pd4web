@@ -1,9 +1,7 @@
 import os
 import platform
-import zipfile
 import cmake
 
-import requests
 import pygit2
 
 from .Helpers import pd4web_print
