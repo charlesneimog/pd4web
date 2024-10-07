@@ -285,7 +285,7 @@ static void pd4web_free(Pd4Web *x) {
 }
 
 // ─────────────────────────────────────
-void pd4web_setup(void) {
+extern "C" void pd4web_setup(void) {
     pd4web_class = class_new(gensym("pd4web"), (t_newmethod)pd4web_new, (t_method)pd4web_free,
                              sizeof(Pd4Web), CLASS_DEFAULT, A_GIMME, A_NULL);
 

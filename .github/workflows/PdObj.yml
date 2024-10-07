@@ -10,7 +10,7 @@ on:
     paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
 env:
   LIBNAME: pd4web
-  LIBVERSION: 0.1
+  LIBVERSION: 2.0.3
 jobs:
   macos-x86-build:
     runs-on: macos-13
@@ -125,3 +125,38 @@ jobs:
         with:
           name: ${{ env.LIBNAME }}-windows-${{matrix.arch}}-${{matrix.precision}}
           path: pd4web
+  package-artifacts:
+    needs:
+      - macos-arm-build
+      - macos-x86-build
+      - windows-build
+      - linux-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.LIBNAME }}-*
+          path: artifacts
+          merge-multiple: true
+      - name: Clear tmp files
+        run: rm -f artifacts/*.pdb
+        # ──────────────────────────────────────
+      - name: Install Deken
+        continue-on-error: true
+        run: |
+          mkdir -p ${PWD}/package
+          docker run --rm --user $(id -u) \
+          --volume ${PWD}/artifacts:/artifacts \
+          --volume ${PWD}/package:/package \
+          registry.git.iem.at/pd/deken \
+          deken package /artifacts --output-dir /package -v ${{env.LIBVERSION}} -n ${{env.LIBNAME}}
+      - name: Clear Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ env.LIBNAME }}-*
+      - name: Upload Deken
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-${{env.LIBVERSION}}
+          path: ./package/
