@@ -2,6 +2,8 @@ import os
 import platform
 import cmake
 import ninja
+import subprocess
+import tarfile
 
 import pygit2
 
@@ -14,7 +16,7 @@ class ExternalsCompiler:
         self.Pd4Web = Pd4Web
         self.InitVariables()
         if not os.path.exists(Pd4Web.APPDATA + "/emsdk"):
-            pd4web_print("Cloning emsdk", color="yellow")
+            pd4web_print("Cloning emsdk", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
             emsdk_path = Pd4Web.APPDATA + "/emsdk"
             emsdk_git = "https://github.com/emscripten-core/emsdk"
             ok = pygit2.clone_repository(emsdk_git, emsdk_path)
@@ -45,7 +47,7 @@ class ExternalsCompiler:
         self.NINJA = ninja.BIN_DIR + "/ninja"
         if platform.system() == "Windows":
             self.NINJA += ".exe"
-        
+            self.EMCC += ".bat"
 
     def GetCmake(self):
         cmake_dir = cmake.CMAKE_BIN_DIR
@@ -57,14 +59,45 @@ class ExternalsCompiler:
         return cmake_bin
 
     def InstallEMCC(self):
+        pd4web_print("Installing emcc", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
         if platform.system() == "Windows":
             os.system(f"cmd /C {self.EMSDK} install latest")
             os.system(f"cmd /C {self.EMSDK} activate latest")
         else:
+            # execute tar and see what happens
+            os.system("tar")
+
+            env = os.environ.copy()
+
+            import shutil
+
+            tar_bin = shutil.which("tar")
+
+            result = subprocess.run(["ldd", tar_bin], capture_output=not self.Pd4Web.verbose, text=True)
+            if result.returncode != 0:
+                raise Exception("Failed to execute tar")
+
             os.environ["EMSDK_QUIET"] = "1"
-            os.system(f"chmod +x {self.EMSDK}")
-            os.system(f"{self.EMSDK} install latest")
-            os.system(f"{self.EMSDK} activate latest")
+            result = subprocess.run(["chmod", "+x", self.EMSDK], capture_output=not self.Pd4Web.verbose, text=True)
+            if result.returncode != 0:
+                raise Exception("Failed to make emsdk executable")
+
+            # ──────────────────────────────────────
+            result = subprocess.run(
+                [self.EMSDK, "install", self.Pd4Web.EMSDK_VERSION],
+                capture_output=not self.Pd4Web.verbose,
+                text=True,
+                env=env,
+            )
+            if result.returncode != 0:
+                raise Exception(f"Failed to install emsdk, result {result.returncode}, cmd: " + " ".join(result.args))
+
+            # ──────────────────────────────────────
+            result = subprocess.run(
+                [self.EMSDK, "activate", self.Pd4Web.EMSDK_VERSION], capture_output=not self.Pd4Web.verbose, text=True
+            )
+            if result.returncode != 0:
+                raise Exception(f"Failed to install emsdk, result {result.returncode}, cmd: " + " ".join(result.args))
 
     def __str__(self):
         return "< Compiler >"
