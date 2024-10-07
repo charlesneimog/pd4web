@@ -68,9 +68,9 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 
   set(PYINSTALLER_COMMAND
       ${PYINSTALLER_EXECUTABLE} --onefile ${CMAKE_SOURCE_DIR}/pd-pd4web.py
-      --name "pd4web-${ARCH}" --add-binary "${TAR_BIN}:bin" --add-binary
-      "/usr/lib/libacl.so.1:lib" --additional-hooks-dir
-      "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --distpath "${CMAKE_BINARY_DIR}")
+      --name "pd4web-${ARCH}" --add-binary "${TAR_BIN}:bin"
+      --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --distpath
+      "${CMAKE_BINARY_DIR}")
 
   # ╭──────────────────────────────────────╮
   # │                MacOS                 │
@@ -106,7 +106,12 @@ add_custom_target(
 # ╰──────────────────────────────────────╯
 pd_add_external(pd4web pd4web.cpp)
 pd_add_datafile(pd4web pd4web-help.pd)
-pd_add_datafile(pd4web "${CMAKE_BINARY_DIR}/pd4web-${ARCH}")
+
+if(WIN32)
+  pd_add_datafile(pd4web "${CMAKE_BINARY_DIR}/pd4web-${ARCH}.exe")
+else()
+  pd_add_datafile(pd4web "${CMAKE_BINARY_DIR}/pd4web-${ARCH}")
+endif()
 
 set_target_properties(
   pd4web

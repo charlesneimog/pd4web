@@ -79,16 +79,15 @@ static bool pd4web_check(Pd4Web *x) {
     ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
 
     DWORD exitCode;
-    if (CreateProcess(NULL, (LPSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW,
-                      NULL, NULL, &si, &pi)) {
+    if (CreateProcess(NULL, (LPSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL,
+                      &si, &pi)) {
         WaitForSingleObject(pi.hProcess, INFINITE);
         if (GetExitCodeProcess(pi.hProcess, &exitCode)) {
             if (exitCode != 0) {
                 pd_error(nullptr, "[pd4web] pd4web failed!");
             }
         } else {
-            pd_error(nullptr,
-                     "[py4pd] Unable to retrieve exit code from command!");
+            pd_error(nullptr, "[py4pd] Unable to retrieve exit code from command!");
         }
     } else {
         pd_error(nullptr, "Error: Process creation failed!");
@@ -152,8 +151,6 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             x->patch += atom_getsymbolarg(i, argc, argv)->s_name;
             x->patch += " ";
         }
-
-        // for ProjectRoot, get directory of the patch
         x->ProjectRoot = std::filesystem::path(x->patch).parent_path().string();
     }
     return;
@@ -200,9 +197,9 @@ static void pd4web_compile(Pd4Web *x) {
 
     std::string cmd = x->Pd4WebPath;
 
-    // if (x->verbose) {
-    cmd += " --verbose ";
-    // }
+    if (x->verbose) {
+        cmd += " --verbose ";
+    }
     if (x->memory > 0) {
         cmd += " -m " + std::to_string(x->memory) + " ";
     }
@@ -217,7 +214,10 @@ static void pd4web_compile(Pd4Web *x) {
     std::thread t([cmd]() {
         int result = system(cmd.c_str());
         if (result != 0) {
-            pd_error(nullptr, "[pd4web] Command failed, if this is the first time you are running pd4web, please run '%s' in the terminal", cmd.c_str());
+            pd_error(nullptr,
+                     "[pd4web] Command failed, if this is the first time you are running pd4web, "
+                     "please run '%s' in the terminal",
+                     cmd.c_str());
         } else {
             post("[pd4web] Done!");
         }
@@ -266,7 +266,6 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->Out = outlet_new(&x->Obj, &s_anything);
     pd4web_get(x);
     x->Pd4WebPath = pd4web_class->c_externdir->s_name + x->Pd4WebExe;
-
     std::thread([x]() { x->Pd4WebIsReady = pd4web_check(x); }).detach();
 
     // default variables
@@ -274,7 +273,6 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->memory = 32;
     x->gui = true;
 
-    // Server
     x->Server = new httplib::Server();
 
     return x;

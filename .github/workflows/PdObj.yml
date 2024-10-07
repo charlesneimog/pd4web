@@ -4,100 +4,100 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    # paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
+    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
   pull_request:
     branches: [main]
-    # paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
+    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
 env:
   LIBNAME: pd4web
   LIBVERSION: 0.1
 jobs:
-  # macos-x86-build:
-  #   runs-on: macos-13
-  #   strategy:
-  #     matrix:
-  #       precision: [32, 64]
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         fetch-depth: 0
-  #     - name: Build Object for x86
-  #       run: |
-  #         brew install --cask pd
-  #         python3 -m pip install pyinstaller poetry --break-system-packages
-  #         poetry build
-  #         python3 -m pip install ./dist/*.whl --break-system-packages
-  #         cd Resources/Pd
-  #         export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/usr/local/include/"
-  #         export LDFLAGS="-L/usr/local/lib"
-  #         cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-  #         cmake --build build -j $(sysctl -n hw.logicalcpu)
-  #         cmake --install build
-  #     - name: Upload Object
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{env.LIBNAME}}-macos-x86-${{matrix.precision}}
-  #         path: Resources/Pd/pd4web
-  # macos-arm-build:
-  #   runs-on: macos-latest
-  #   strategy:
-  #     matrix:
-  #       precision: [32, 64]
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         fetch-depth: 0
-  #     - name: Build Object 
-  #       run: |
-  #         brew install --cask pd
-  #         python3 -m pip install pyinstaller poetry --break-system-packages
-  #         poetry build
-  #         python3 -m pip install ./dist/*.whl --break-system-packages
-  #         cd Resources/Pd
-  #         export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/opt/homebrew/include/"
-  #         export LDFLAGS="-L/opt/homebrew/lib"
-  #         cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-  #         cmake --build build -j $(sysctl -n hw.logicalcpu)
-  #         cmake --install build
-  #     - name: Upload Object
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{env.LIBNAME}}-macos-arm-${{matrix.precision}}
-  #         path: Resources/Pd/pd4web
-  # linux-build:
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       arch: [amd64]
-  #       precision: [32, 64]
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         submodules: recursive
-  #         fetch-depth: 0
-  #     - name: PureData Sources
-  #       run: |
-  #         sudo apt update
-  #         sudo add-apt-repository ppa:pure-data/pure-data -y
-  #         sudo apt install puredata -y
-  #         sudo apt install python3 -y
-  #         sudo apt install xz-utils -y
-  #     - name: Build Object
-  #       run: |
-  #         python3 -m pip install pyinstaller poetry
-  #         poetry build
-  #         python3 -m pip install ./dist/*.whl
-  #         cd Resources/Pd
-  #         cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-  #         cmake --build build -- -j$(nproc)
-  #         cmake --install build
-  #     - name: Upload Object
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: ${{ env.LIBNAME }}-linux-${{matrix.arch}}-${{matrix.precision}}
-  #         path: Resources/Pd/pd4web
+  macos-x86-build:
+    runs-on: macos-13
+    strategy:
+      matrix:
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Build Object for x86
+        run: |
+          brew install --cask pd
+          python3 -m pip install pyinstaller poetry --break-system-packages
+          poetry build
+          python3 -m pip install ./dist/*.whl --break-system-packages
+          cd Resources/Pd
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/usr/local/include/"
+          export LDFLAGS="-L/usr/local/lib"
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
+          cmake --build build -j $(sysctl -n hw.logicalcpu)
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.LIBNAME}}-macos-x86-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  macos-arm-build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Build Object
+        run: |
+          brew install --cask pd
+          python3 -m pip install pyinstaller poetry --break-system-packages
+          poetry build
+          python3 -m pip install ./dist/*.whl --break-system-packages
+          cd Resources/Pd
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/opt/homebrew/include/"
+          export LDFLAGS="-L/opt/homebrew/lib"
+          cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
+          cmake --build build -j $(sysctl -n hw.logicalcpu)
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.LIBNAME}}-macos-arm-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  linux-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64]
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: PureData Sources
+        run: |
+          sudo apt update
+          sudo add-apt-repository ppa:pure-data/pure-data -y
+          sudo apt install puredata -y
+          sudo apt install python3 -y
+          sudo apt install xz-utils -y
+      - name: Build Object
+        run: |
+          python3 -m pip install pyinstaller poetry
+          poetry build
+          python3 -m pip install ./dist/*.whl
+          cd Resources/Pd
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
+          cmake --build build -- -j$(nproc)
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-linux-${{matrix.arch}}-${{matrix.precision}}
+          path: Resources/Pd/pd4web
   windows-build:
     runs-on: windows-latest
     strategy:
@@ -115,17 +115,13 @@ jobs:
       - name: Build Object
         run: |
           python3 -m pip install pyinstaller poetry
-          poetry build
-          python3 -m pip install ./dist/*.whl
+          pip install .
           cd Resources/Pd
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-          cmake --build build 
-          ls build
-          ls build/x64
-          ls build/pd4web.dir
-          # cmake --install build
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR="./../../"
+          cmake --build build --config Release 
+          cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.LIBNAME }}-windows-${{matrix.arch}}-${{matrix.precision}}
-          path: Resources/Pd/pd4web
+          path: pd4web
