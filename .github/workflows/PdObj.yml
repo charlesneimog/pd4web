@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [./Resources/Pd/pd4web.cpp]
+    paths: [Resources/Pd/pd4web.cpp]
   pull_request:
     branches: [main]
-    paths: [./Resources/Pd/pd4web.cpp]
+    paths: [Resources/Pd/pd4web.cpp]
 env:
   LIBNAME: pd4web
   LIBVERSION: 0.1
