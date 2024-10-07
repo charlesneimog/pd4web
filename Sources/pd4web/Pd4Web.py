@@ -257,6 +257,14 @@ class Pd4Web:
             help="Clear the cache before running",
         )
 
+        parser.add_argument(
+            "--install-emcc",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Install emcc",
+        )
+
     def options_flags(self, parser):
         parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose mode")
         parser.add_argument(

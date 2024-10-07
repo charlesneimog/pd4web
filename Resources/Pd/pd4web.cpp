@@ -172,11 +172,13 @@ static void pd4web_compile(Pd4Web *x) {
         return;
     }
 
+    setenv("PATH", "/usr/local/bin:/usr/bin:/bin", 1);
+
     std::string cmd = x->Pd4WebPath;
 
-    if (x->verbose) {
-        cmd += " --verbose ";
-    }
+    // if (x->verbose) {
+    cmd += " --verbose ";
+    // }
     if (x->memory > 0) {
         cmd += " -m " + std::to_string(x->memory) + " ";
     }
@@ -188,10 +190,10 @@ static void pd4web_compile(Pd4Web *x) {
     }
 
     std::thread t([cmd]() {
-        post("[pd4web] Running...");
         std::array<char, 256> Buf;
         std::string Result;
         FILE *Pipe = popen(cmd.c_str(), "r");
+
         if (!Pipe) {
             pd_error(nullptr, "[pd4web] popen failed");
             return;
@@ -205,8 +207,17 @@ static void pd4web_compile(Pd4Web *x) {
                 post(Line.c_str());
             }
         }
-        post("[pd4web] Done!");
-        pclose(Pipe);
+
+        int exitCode = pclose(Pipe);
+        if (exitCode != 0) {
+            pd_error(nullptr,
+                     "[pd4web] Command failed, if this is the first time you are running "
+                     "pd4web, please run '%s' in the terminal",
+                     cmd.c_str());
+
+        } else {
+            post("[pd4web] Done!");
+        }
     });
     t.detach();
 

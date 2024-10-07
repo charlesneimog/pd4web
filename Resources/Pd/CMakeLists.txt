@@ -45,13 +45,31 @@ set(ARCH "${PLATFORM}${ARCHITECTURE}")
 # ╭──────────────────────────────────────╮
 # │      Compile using pyinstaller       │
 # ╰──────────────────────────────────────╯
+
+# ╭──────────────────────────────────────╮
+# │                Linux                 │
+# ╰──────────────────────────────────────╯
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-  message(STATUS "${CMAKE_CURRENT_SOURCE_DIR}/hooks/")
+  # find where is tar
+  find_program(TAR_BIN tar)
+
+  if(TAR_BIN)
+    message(STATUS "Found binary: ${TAR_BIN}")
+  else()
+    message(FATAL_ERROR "Binary of tar was not found, please install it")
+  endif()
+
+  # add tar as binary
+
   set(PYINSTALLER_COMMAND
       ${PYINSTALLER_EXECUTABLE} --onefile ${CMAKE_SOURCE_DIR}/pd-pd4web.py
-      --name "pd4web-${ARCH}" # --add-binary "/usr/lib/liblzma.so.5:."
-      --additional-hooks-dir "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --distpath
-      "${CMAKE_BINARY_DIR}")
+      --name "pd4web-${ARCH}" --add-binary "${TAR_BIN}:bin" --add-binary
+      "/usr/lib/libacl.so.1:lib" --additional-hooks-dir
+      "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" --distpath "${CMAKE_BINARY_DIR}")
+
+  # ╭──────────────────────────────────────╮
+  # │                MacOS                 │
+  # ╰──────────────────────────────────────╯
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
   set(PYINSTALLER_COMMAND
       ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --distpath
