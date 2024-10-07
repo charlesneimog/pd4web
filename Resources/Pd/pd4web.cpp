@@ -68,8 +68,9 @@ static void pd4web_get(Pd4Web *x) {
 // ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
 #if defined(_WIN32) || defined(_WIN64)
-    // TODO: Need to implement
-
+    std::string cmd = "\"" + x->Pd4WebPath + "\" --help";
+    int result = system(cmd.c_str());
+    return (result == 0);
 #else
     std::string allow = "chmod +x " + x->Pd4WebPath;
     int result = std::system(allow.c_str());
@@ -77,11 +78,10 @@ static bool pd4web_check(Pd4Web *x) {
         pd_error(x, "[pd4web] chmod +x failed");
         return false;
     }
-#endif
-    post("%s --help", x->Pd4WebPath.c_str());
     std::string cmd = x->Pd4WebPath + " --help";
     result = std::system(cmd.c_str());
     return (result == 0);
+#endif
 }
 
 // ─────────────────────────────────────
@@ -172,8 +172,6 @@ static void pd4web_compile(Pd4Web *x) {
         return;
     }
 
-    setenv("PATH", "/usr/local/bin:/usr/bin:/bin", 1);
-
     std::string cmd = x->Pd4WebPath;
 
     // if (x->verbose) {
@@ -189,6 +187,82 @@ static void pd4web_compile(Pd4Web *x) {
         cmd += x->patch;
     }
 
+#if defined(_WIN32) || defined(_WIN64)
+    std::array<char, 256> Buf;
+    std::string Result;
+
+    // Prepare the command
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    // Create a pipe for the child process's output
+    HANDLE hReadPipe, hWritePipe;
+    SECURITY_ATTRIBUTES sa;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&hReadPipe, &hWritePipe, &sa, 0)) {
+        pd_error(nullptr, "[pd4web] CreatePipe failed");
+        return;
+    }
+
+    // Set the write end of the pipe to be inheritable
+    SetHandleInformation(hWritePipe, HANDLE_FLAG_INHERIT, 0);
+
+    // Redirect standard output to the write end of the pipe
+    si.hStdOutput = hWritePipe;
+    si.hStdError = hWritePipe;
+    si.dwFlags |= STARTF_USESTDHANDLES;
+
+    // Create the child process
+    if (!CreateProcess(nullptr, const_cast<char *>(cmd.c_str()), nullptr, nullptr, TRUE, 0, nullptr,
+                       nullptr, &si, &pi)) {
+        pd_error(nullptr, "[pd4web] CreateProcess failed");
+        CloseHandle(hReadPipe);
+        CloseHandle(hWritePipe);
+        return;
+    }
+
+    // Close the write end of the pipe
+    CloseHandle(hWritePipe);
+
+    // Read the output from the child process
+    DWORD bytesRead;
+    while (ReadFile(hReadPipe, Buf.data(), static_cast<DWORD>(Buf.size()), &bytesRead, nullptr) &&
+           bytesRead > 0) {
+        std::string Line = "[pd4web] ";
+        Line.append(Buf.data(), bytesRead);
+        Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+        if (Line != "[pd4web] ") {
+            post(Line.c_str());
+        }
+    }
+
+    // Wait for the child process to finish
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Get the exit code
+    DWORD exitCode;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+
+    // Close the process and thread handles
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    CloseHandle(hReadPipe);
+
+    if (exitCode != 0) {
+        pd_error(nullptr,
+                 "[pd4web] Command failed, if this is the first time you are running "
+                 "pd4web, please run '%s' in the terminal",
+                 cmd.c_str());
+    } else {
+        post("[pd4web] Done!");
+    }
+#else
     std::thread t([cmd]() {
         std::array<char, 256> Buf;
         std::string Result;
@@ -220,6 +294,7 @@ static void pd4web_compile(Pd4Web *x) {
         }
     });
     t.detach();
+#endif
 
     return;
 }

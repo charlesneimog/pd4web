@@ -32,7 +32,12 @@ else()
   message(FATAL_ERROR "Unknown platform")
 endif()
 
-if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64")
+# x86_64
+
+message(STATUS "CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+
+if(${CMAKE_SYSTEM_PROCESSOR} MATCHES "x86_64" OR ${CMAKE_SYSTEM_PROCESSOR}
+                                                 MATCHES "AMD64")
   set(ARCHITECTURE "x86")
 elseif(${CMAKE_SYSTEM_PROCESSOR} MATCHES "arm" OR ${CMAKE_SYSTEM_PROCESSOR}
                                                   MATCHES "aarch64")
@@ -75,6 +80,17 @@ elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
       ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --distpath
       "${CMAKE_BINARY_DIR}" --additional-hooks-dir
       "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" ${CMAKE_SOURCE_DIR}/pd-pd4web.py)
+
+  # ╭──────────────────────────────────────╮
+  # │               Windows                │
+  # ╰──────────────────────────────────────╯
+
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+  set(PYINSTALLER_COMMAND
+      ${PYINSTALLER_EXECUTABLE} --onefile --name "pd4web-${ARCH}" --distpath
+      "${CMAKE_BINARY_DIR}" --additional-hooks-dir
+      "${CMAKE_CURRENT_SOURCE_DIR}/hooks/" ${CMAKE_SOURCE_DIR}/pd-pd4web.py)
+
 else()
   message(FATAL_ERROR "Unknown platform")
 endif()
