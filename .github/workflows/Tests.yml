@@ -4,8 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
+    paths: [Sources/**/*.py, Sources/*.py]
   pull_request:
     branches: [main]
+    paths: [Sources/**/*.py, Sources/*.py]
 jobs:
   main:
     strategy:

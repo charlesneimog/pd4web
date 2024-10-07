@@ -111,13 +111,11 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         return;
     } else if (config == "gui") {
         bool gui = atom_getintarg(1, argc, argv);
-        if (gui != x->gui) {
-            x->gui = gui;
-            if (x->gui) {
-                post("[pd4web] Gui set to true");
-            } else {
-                post("[pd4web] Gui set to false");
-            }
+        x->gui = gui;
+        if (x->gui) {
+            post("[pd4web] Gui set to true");
+        } else {
+            post("[pd4web] Gui set to false");
         }
     } else if (config == "patch") {
         for (int i = 1; i < argc; i++) {
@@ -126,6 +124,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
                 return;
             }
             x->patch += atom_getsymbolarg(i, argc, argv)->s_name;
+            x->patch += " ";
         }
 
         // for ProjectRoot, get directory of the patch

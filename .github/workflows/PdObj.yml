@@ -4,32 +4,54 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [Resources/Pd/pd4web.cpp]
+    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
   pull_request:
     branches: [main]
-    paths: [Resources/Pd/pd4web.cpp]
+    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
 env:
   LIBNAME: pd4web
   LIBVERSION: 0.1
 jobs:
-  macos-universal-build:
-    runs-on: macos-latest
+  macos-x86-build:
+    runs-on: macos-13
     strategy:
       matrix:
-        arch: [arm64]
         precision: [32, 64]
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-      - name: Install PureData and Deps arm64 Mac
-        if: ${{ matrix.arch == 'arm64' }}
+      - name: Build Object for x86
         run: |
-          brew install pd
-      - name: Build Object for Arm
-        if: ${{ matrix.arch == 'arm64' }}
+          brew install --cask pd
+          python3 -m pip install pyinstaller poetry --break-system-packages
+          poetry build
+          python3 -m pip install ./dist/*.whl --break-system-packages
+          cd Resources/Pd
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/usr/local/include/"
+          export LDFLAGS="-L/usr/local/lib"
+          cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
+          cmake --build build -j $(sysctl -n hw.logicalcpu)
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.LIBNAME}}-macos-x86-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  macos-arm-build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Build Object 
         run: |
+          brew install --cask pd
           python3 -m pip install pyinstaller poetry --break-system-packages
           poetry build
           python3 -m pip install ./dist/*.whl --break-system-packages
@@ -42,7 +64,7 @@ jobs:
       - name: Upload Object
         uses: actions/upload-artifact@v4
         with:
-          name: ${{env.LIBNAME}}-macos-${{matrix.arch}}-${{matrix.precision}}
+          name: ${{env.LIBNAME}}-macos-arm-${{matrix.precision}}
           path: Resources/Pd/pd4web
   linux-build:
     runs-on: ubuntu-latest
