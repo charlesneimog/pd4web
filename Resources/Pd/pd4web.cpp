@@ -1,8 +1,7 @@
-#include <m_pd.h>
-
 #include <algorithm>
 #include <array>
 #include <filesystem>
+#include <m_pd.h>
 #include <string>
 #include <thread>
 
@@ -15,61 +14,31 @@ static t_class *pd4web_class;
 // ─────────────────────────────────────
 class Pd4Web {
   public:
-    t_object Obj;
-    bool pythonInstalled;
-    bool pipInstalled;
-    bool pd4webInstalled;
-    std::string Pd4WebPath;
-    std::string Pd4WebExe;
-    bool Pd4WebIsReady;
-
-    // threads
-    std::thread::id CompilerThread;
-    std::thread::id BrowserThread;
+    t_object obj;
+    bool python;
+    bool pip;
+    bool installed;
+    std::string bin;
+    bool isReady;
+    bool running;
 
     // Server
-    httplib::Server *Server;
-    std::string ProjectRoot;
+    httplib::Server *server;
+    std::string projectRoot;
+    std::string objRoot;
 
     // config
+    std::string patch;
     bool verbose;
     int memory;
     int gui;
-    std::string patch;
 
     t_outlet *Out;
 };
 
 // ─────────────────────────────────────
-static void pd4web_get(Pd4Web *x) {
-    std::string arch = "/pd4web-";
-
-    // OS
-#if defined(_WIN32) || defined(_WIN64)
-    arch += "w-";
-#elif defined(__APPLE__)
-    arch += "m-";
-#elif defined(__linux__)
-    arch += "l-";
-#endif
-
-    // Arch
-#if defined(__x86_64__) || defined(_M_X64)
-    arch += "x86";
-#elif defined(__aarch64__) || defined(_M_ARM64)
-    arch += "arm";
-#elif defined(__arm__) || defined(_M_ARM)
-    arch += "arm";
-#endif
-
-#if defined(_WIN32) || defined(_WIN64)
-    arch += ".exe";
-#endif
-    x->Pd4WebExe = arch;
-}
-
-// ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
+    int result;
 #if defined(_WIN32) || defined(_WIN64)
     std::string command = x->Pd4WebPath + " --help";
     STARTUPINFO si;
@@ -97,20 +66,39 @@ static bool pd4web_check(Pd4Web *x) {
     CloseHandle(pi.hThread);
     return true;
 #else
-    std::string allow = "chmod +x " + x->Pd4WebPath;
-    int result = std::system(allow.c_str());
+    // check if python3 is installed
+    result = std::system("python3 --version > /dev/null 2>&1");
     if (result != 0) {
-        pd_error(x, "[pd4web] chmod +x failed");
+        pd_error(nullptr, "[pd4web] Python 3 is not installed. Please install Python first.");
         return false;
     }
-    std::string cmd = x->Pd4WebPath + " --help";
-    result = std::system(cmd.c_str());
-    return (result == 0);
+    std::string venv_cmd = "python3 -m venv " + x->objRoot + "/.venv";
+    result = std::system(venv_cmd.c_str());
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Failed to create virtual environment");
+        return false;
+    }
+    // install pd4web
+    std::string pip_cmd = x->objRoot + "/.venv/bin/pip install pd4web";
+    result = std::system(pip_cmd.c_str());
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Failed to install pd4web");
+        return false;
+    }
+    post("[pd4web] pd4web is ready!");
+    return true;
+
 #endif
 }
 
 // ─────────────────────────────────────
 static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
+    if (x->running) {
+        pd_error(
+            x, "[pd4web] pd4web is running, please wait it to finish before change configurations");
+        return;
+    }
+
     if (argv[0].a_type != A_SYMBOL) {
         pd_error(x, "[pd4web] Invalid argument, use [set <config_symbol> <value>]");
         return;
@@ -143,22 +131,29 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             post("[pd4web] Gui set to false");
         }
     } else if (config == "patch") {
+        std::string newpatch;
         for (int i = 1; i < argc; i++) {
             if (argv[i].a_type != A_SYMBOL) {
                 pd_error(x, "[pd4web] Invalid argument, use [set patch <patch_name>]");
                 return;
             }
-            x->patch += atom_getsymbolarg(i, argc, argv)->s_name;
-            x->patch += " ";
+            newpatch += atom_getsymbolarg(i, argc, argv)->s_name;
+            newpatch += " ";
         }
-        x->ProjectRoot = std::filesystem::path(x->patch).parent_path().string();
+
+        x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
+        x->patch = newpatch;
     }
     return;
 }
 
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
-    if (!x->Pd4WebIsReady) {
+    if (x->running) {
+        pd_error(x, "[pd4web] pd4web is running, please wait it to finish before open the browser");
+        return;
+    }
+    if (!x->isReady) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
     }
@@ -170,12 +165,12 @@ static void pd4web_browser(Pd4Web *x, float f) {
 
     if (f == 1) {
         std::thread t([x]() {
-            x->Server->set_mount_point("/", x->ProjectRoot.c_str());
-            x->Server->Get("/", [](const httplib::Request &, httplib::Response &res) {
+            x->server->set_mount_point("/", x->projectRoot.c_str());
+            x->server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });
 
-            if (!x->Server->listen("0.0.0.0", 8080)) {
+            if (!x->server->listen("0.0.0.0", 8080)) {
                 post("[pd4web] Failed to start server");
             }
         });
@@ -184,18 +179,21 @@ static void pd4web_browser(Pd4Web *x, float f) {
         pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
 
     } else {
-        x->Server->remove_mount_point("/");
-        x->Server->stop();
+        x->server->remove_mount_point("/");
+        x->server->stop();
     }
 }
 // ─────────────────────────────────────
 static void pd4web_compile(Pd4Web *x) {
-    if (!x->Pd4WebIsReady) {
+    x->running = true;
+    if (!x->isReady) {
         pd_error(x, "[pd4web] pd4web is not ready");
+        x->running = false;
         return;
     }
 
-    std::string cmd = x->Pd4WebPath;
+    // pd4web bin
+    std::string cmd = x->objRoot + "/.venv/bin/pd4web --pd-external";
 
     if (x->verbose) {
         cmd += " --verbose ";
@@ -218,19 +216,23 @@ static void pd4web_compile(Pd4Web *x) {
                      "[pd4web] Command failed, if this is the first time you are running pd4web, "
                      "please run '%s' in the terminal",
                      cmd.c_str());
+            x->running = false;
+            return;
         } else {
             post("[pd4web] Done!");
         }
     });
     t.detach();
 #else
-    std::thread t([cmd]() {
+    pd_error(x, "[pd4web] Compiling patch on background, please wait...");
+    std::thread t([x, cmd]() {
         std::array<char, 256> Buf;
         std::string Result;
         FILE *Pipe = popen(cmd.c_str(), "r");
 
         if (!Pipe) {
             pd_error(nullptr, "[pd4web] popen failed");
+            x->running = false;
             return;
         }
 
@@ -245,13 +247,15 @@ static void pd4web_compile(Pd4Web *x) {
 
         int exitCode = pclose(Pipe);
         if (exitCode != 0) {
+            x->running = false;
             pd_error(nullptr,
                      "[pd4web] Command failed, if this is the first time you are running "
                      "pd4web, please run '%s' in the terminal",
                      cmd.c_str());
 
         } else {
-            post("[pd4web] Done!");
+            x->running = false;
+            pd_error(x, "[pd4web] Done!");
         }
     });
     t.detach();
@@ -263,25 +267,25 @@ static void pd4web_compile(Pd4Web *x) {
 // ─────────────────────────────────────
 static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     Pd4Web *x = (Pd4Web *)pd_new(pd4web_class);
-    x->Out = outlet_new(&x->Obj, &s_anything);
-    pd4web_get(x);
-    x->Pd4WebPath = pd4web_class->c_externdir->s_name + x->Pd4WebExe;
-    std::thread([x]() { x->Pd4WebIsReady = pd4web_check(x); }).detach();
+    x->Out = outlet_new(&x->obj, &s_anything);
+    x->objRoot = pd4web_class->c_externdir->s_name;
+    x->running = false;
+    post("[pd4web] Checking pd4web...");
+    std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
 
     // default variables
     x->verbose = true;
     x->memory = 32;
     x->gui = true;
 
-    x->Server = new httplib::Server();
-
+    x->server = new httplib::Server();
     return x;
 }
 
 // ─────────────────────────────────────
 static void pd4web_free(Pd4Web *x) {
-    x->Server->stop();
-    delete x->Server;
+    x->server->stop();
+    delete x->server;
 }
 
 // ─────────────────────────────────────

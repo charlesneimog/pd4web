@@ -67,6 +67,7 @@ class Pd4Web:
         self.MEMORY_SIZE = self.Parser.initial_memory
         self.GUI = not self.Parser.nogui
         self.PD_VERSION = self.Parser.pd_version
+        self.PD_EXTERNAL = self.Parser.pd_external
         self.BYPASS_UNSUPPORTED = self.Parser.bypass_unsupported
 
         self.Execute()
@@ -292,6 +293,13 @@ class Pd4Web:
             default="0.55-0",
             type=str,
             help="Pure Data version to use",
+        )
+        parser.add_argument(
+            "--pd-external",
+            required=False,
+            default=False,
+            action="store_true",
+            help="If is it pd4web external",
         )
 
     # Parse
