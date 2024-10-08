@@ -1,15 +1,12 @@
 import argparse
 import os
 import sys
+
+os.environ["GIT_SSL_NO_VERIFY"] = "true"
 import pygit2
+
+
 import shutil
-
-import certifi
-cert_file = certifi.where()
-os.environ["SSL_CERT_FILE"] = cert_file
-
-
-
 import requests
 
 from .Helpers import pd4web_print

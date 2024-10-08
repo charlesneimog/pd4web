@@ -4,10 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
   pull_request:
     branches: [main]
-    paths: [Resources/Pd/pd4web.cpp, .github/workflow/PdObj.yml]
 env:
   LIBNAME: pd4web
   LIBVERSION: 2.0.3
