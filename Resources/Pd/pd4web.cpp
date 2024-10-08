@@ -40,30 +40,28 @@ class Pd4Web {
 static bool pd4web_check(Pd4Web *x) {
     int result;
 #if defined(_WIN32) || defined(_WIN64)
-    std::string command = x->Pd4WebPath + " --help";
-    STARTUPINFO si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(STARTUPINFO));
-    si.cb = sizeof(STARTUPINFO);
-    ZeroMemory(&pi, sizeof(PROCESS_INFORMATION));
-
-    DWORD exitCode;
-    if (CreateProcess(NULL, (LPSTR)command.c_str(), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL,
-                      &si, &pi)) {
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        if (GetExitCodeProcess(pi.hProcess, &exitCode)) {
-            if (exitCode != 0) {
-                pd_error(nullptr, "[pd4web] pd4web failed!");
-            }
-        } else {
-            pd_error(nullptr, "[py4pd] Unable to retrieve exit code from command!");
-        }
-    } else {
-        pd_error(nullptr, "Error: Process creation failed!");
+    result = std::system("python --version > NUL 2>&1");
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Python is not installed. Please install Python first.");
         return false;
     }
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+
+    std::string venv_cmd = "python -m venv " + x->objRoot + "\\.venv";
+    result = std::system(venv_cmd.c_str());
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Failed to create virtual environment");
+        return false;
+    }
+
+    // install pd4web
+    std::string pip_cmd = x->objRoot + "\\.venv\\Scripts\\pip install pd4web";
+    result = std::system(pip_cmd.c_str());
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Failed to install pd4web");
+        return false;
+    }
+
+    post("[pd4web] pd4web is ready!");
     return true;
 #else
     // check if python3 is installed
@@ -193,8 +191,11 @@ static void pd4web_compile(Pd4Web *x) {
     }
 
     // pd4web bin
-    std::string cmd = x->objRoot + "/.venv/bin/pd4web --pd-external";
-
+    std::string cmd = x->objRoot + "/.venv/bin/pd4web";
+#if defined(_WIN32) || defined(_WIN64)
+    cmd += ".exe ";
+#endif
+    cmd += " --pd-external ";
     if (x->verbose) {
         cmd += " --verbose ";
     }
@@ -209,7 +210,7 @@ static void pd4web_compile(Pd4Web *x) {
     }
 
 #if defined(_WIN32) || defined(_WIN64)
-    std::thread t([cmd]() {
+    std::thread t([x, cmd]() {
         int result = system(cmd.c_str());
         if (result != 0) {
             pd_error(nullptr,

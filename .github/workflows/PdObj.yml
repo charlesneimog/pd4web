@@ -23,15 +23,12 @@ jobs:
       - name: Build Object for x86
         run: |
           brew install --cask pd
-          python3 -m pip install pyinstaller poetry --break-system-packages
-          poetry build
-          python3 -m pip install ./dist/*.whl --break-system-packages
           cd Resources/Pd
           export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/usr/local/include/"
           export LDFLAGS="-L/usr/local/lib"
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-          cmake --build build -j $(sysctl -n hw.logicalcpu)
-          cmake --install build
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j $(sysctl -n hw.logicalcpu) 
+          cmake --install build --config Release
       - name: Upload Object
         uses: actions/upload-artifact@v4
         with:
@@ -50,14 +47,11 @@ jobs:
       - name: Build Object
         run: |
           brew install --cask pd
-          python3 -m pip install pyinstaller poetry --break-system-packages
-          poetry build
-          python3 -m pip install ./dist/*.whl --break-system-packages
           cd Resources/Pd
           export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/opt/homebrew/include/"
           export LDFLAGS="-L/opt/homebrew/lib"
-          cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-          cmake --build build -j $(sysctl -n hw.logicalcpu)
+          cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j $(sysctl -n hw.logicalcpu) --config Release
           cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4
@@ -80,16 +74,11 @@ jobs:
           sudo apt update
           sudo add-apt-repository ppa:pure-data/pure-data -y
           sudo apt install puredata -y
-          sudo apt install python3 -y
-          sudo apt install xz-utils -y
       - name: Build Object
         run: |
-          python3 -m pip install pyinstaller poetry
-          poetry build
-          python3 -m pip install ./dist/*.whl
           cd Resources/Pd
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./
-          cmake --build build -- -j$(nproc)
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j$(nproc) --config Release
           cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4
@@ -112,17 +101,15 @@ jobs:
           choco install puredata
       - name: Build Object
         run: |
-          python3 -m pip install pyinstaller poetry
-          pip install .
           cd Resources/Pd
-          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR="./../../"
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR="./"
           cmake --build build --config Release 
           cmake --install build
       - name: Upload Object
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.LIBNAME }}-windows-${{matrix.arch}}-${{matrix.precision}}
-          path: pd4web
+          path: Resources/Pd/pd4web
   package-artifacts:
     needs:
       - macos-arm-build

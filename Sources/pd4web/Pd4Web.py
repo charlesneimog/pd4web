@@ -1,10 +1,7 @@
 import argparse
 import os
 import sys
-
-os.environ["GIT_SSL_NO_VERIFY"] = "true"
 import pygit2
-
 
 import shutil
 import requests

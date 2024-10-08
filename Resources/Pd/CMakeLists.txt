@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.25)
 project(pd4web)
 
 set(PDCMAKE_DIR
@@ -11,10 +11,10 @@ add_subdirectory(cpp-httplib EXCLUDE_FROM_ALL)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-pd_add_external(pd4web pd4web.cpp)
+pd_add_external(pd4web pd4web.cpp LINK_LIBRARIES httplib)
 pd_add_datafile(pd4web pd4web-help.pd)
 pd_add_datafile(pd4web Projects/Project1.pd)
-target_link_libraries(pd4web httplib)
+pd_add_datafile(pd4web README.deken.pd)
 
 set_target_properties(
   pd4web
