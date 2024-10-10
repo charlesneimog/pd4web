@@ -67,6 +67,13 @@ static int pd4web_winterminal(const char *cmd) {
 static bool pd4web_check(Pd4Web *x) {
     int result;
 #if defined(_WIN32) || defined(_WIN64)
+    std::string check_installation = x->objRoot + "/.venv/Scripts/python.exe -c \"import pd4web\"";
+    result = pd4web_winterminal(check_installation.c_str());
+    if (result == 0) {
+        post("[pd4web] pd4web is ready!");
+        return true;
+    }
+
     result = pd4web_winterminal("python --version > NUL 2>&1");
     if (result != 0) {
         pd_error(nullptr, "[pd4web] Python is not installed. Please install Python first.");
@@ -83,7 +90,7 @@ static bool pd4web_check(Pd4Web *x) {
 
     // install pd4web
     post("[pd4web] Installing pd4web...");
-    std::string pip_cmd = x->objRoot + "\\.venv\\Scripts\\pip install pd4web";
+    std::string pip_cmd = x->objRoot + "\\.venv\\Scripts\\pip.exe install pd4web";
     result = pd4web_winterminal(pip_cmd.c_str());
     if (result != 0) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
@@ -220,12 +227,12 @@ static void pd4web_compile(Pd4Web *x) {
 
     // pd4web bin
 #if defined(_WIN32) || defined(_WIN64)
-    std::string cmd = x->objRoot + "/.venv/Scripts/pd4web.exe";
+    std::string cmd = x->objRoot + "/.venv/Scripts/pd4web.exe ";
 #else
-    std::string cmd = x->objRoot + "/.venv/bin/pd4web";
+    std::string cmd = x->objRoot + "/.venv/bin/pd4web ";
+    cmd += "--pd-external ";
 #endif
 
-    cmd += " --pd-external ";
     if (x->verbose) {
         cmd += " --verbose ";
     }

@@ -8,7 +8,7 @@ on:
     branches: [main]
 env:
   LIBNAME: pd4web
-  LIBVERSION: 2.0.3
+  LIBVERSION: 2.0.4
 jobs:
   macos-x86-build:
     runs-on: macos-13
