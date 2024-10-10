@@ -6,6 +6,11 @@ import pygit2
 import shutil
 import requests
 
+import certifi
+
+os.environ["SSL_CERT_FILE"] = certifi.where()
+
+
 from .Helpers import pd4web_print
 
 

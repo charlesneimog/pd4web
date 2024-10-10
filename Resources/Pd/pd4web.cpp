@@ -37,30 +37,58 @@ class Pd4Web {
 };
 
 // ─────────────────────────────────────
+static int pd4web_winterminal(const char *cmd) {
+#if defined(_WIN32) || defined(_WIN64)
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE; // Hide the window
+
+    ZeroMemory(&pi, sizeof(pi));
+
+    // Create the process
+    if (CreateProcess(NULL, const_cast<char *>(cmd), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        return 0;
+    } else {
+        return -1;
+    }
+#endif
+
+    return 0;
+}
+
+// ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
     int result;
 #if defined(_WIN32) || defined(_WIN64)
-    result = std::system("python --version > NUL 2>&1");
+    result = pd4web_winterminal("python --version > NUL 2>&1");
     if (result != 0) {
         pd_error(nullptr, "[pd4web] Python is not installed. Please install Python first.");
         return false;
     }
 
+    post("[pd4web] Creating virtual environment...");
     std::string venv_cmd = "python -m venv " + x->objRoot + "\\.venv";
-    result = std::system(venv_cmd.c_str());
+    result = pd4web_winterminal(venv_cmd.c_str());
     if (result != 0) {
         pd_error(nullptr, "[pd4web] Failed to create virtual environment");
         return false;
     }
 
     // install pd4web
+    post("[pd4web] Installing pd4web...");
     std::string pip_cmd = x->objRoot + "\\.venv\\Scripts\\pip install pd4web";
-    result = std::system(pip_cmd.c_str());
+    result = pd4web_winterminal(pip_cmd.c_str());
     if (result != 0) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
-
     post("[pd4web] pd4web is ready!");
     return true;
 #else
@@ -191,10 +219,12 @@ static void pd4web_compile(Pd4Web *x) {
     }
 
     // pd4web bin
-    std::string cmd = x->objRoot + "/.venv/bin/pd4web";
 #if defined(_WIN32) || defined(_WIN64)
-    cmd += ".exe ";
+    std::string cmd = x->objRoot + "/.venv/Scripts/pd4web.exe";
+#else
+    std::string cmd = x->objRoot + "/.venv/bin/pd4web";
 #endif
+
     cmd += " --pd-external ";
     if (x->verbose) {
         cmd += " --verbose ";
