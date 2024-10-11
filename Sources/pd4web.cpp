@@ -1,8 +1,6 @@
 #include "pd4web.hpp"
 #include <cstdio>
 
-std::atomic<bool> Pd4WebMainLoopRunning(false);
-std::atomic<bool> Pd4WebSavingData(false);
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 
 // ╭─────────────────────────────────────╮
