@@ -113,10 +113,10 @@ EM_JS(void, _JS_post2, (const char *msg), { console.log(UTF8ToString(msg)); });
 // ╰─────────────────────────────────────╯
 #if PD4WEB_DEBUG
 #define LOG(message, ...)                                                                          \
-    std::stringstream ss;                                                                          \
-    ss << "Pd4Web: " << __FILE__ << ":" << __LINE__ << " " << message;                             \
-    std::string mys = ss.str();                                                                    \
-    _JS_post2(mys.c_str());
+    // std::stringstream ss;                                                                          \
+    // ss << "Pd4Web: " << __FILE__ << ":" << __LINE__ << " " << message;                             \
+    // std::string mys = ss.str();                                                                    \
+    // _JS_post2(mys.c_str());
 #endif
 
 // ╭─────────────────────────────────────╮
