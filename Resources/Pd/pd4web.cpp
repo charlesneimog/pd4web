@@ -32,6 +32,7 @@ class Pd4Web {
     bool verbose;
     int memory;
     int gui;
+    float zoom;
 
     t_outlet *Out;
 };
@@ -163,6 +164,10 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         } else {
             post("[pd4web] Gui set to false");
         }
+    } else if (config == "zoom") {
+        float zoom = atom_getfloatarg(1, argc, argv);
+        x->zoom = zoom;
+        post("[pd4web] Zoom set to %f", x->zoom);
     } else if (config == "patch") {
         std::string newpatch;
         for (int i = 1; i < argc; i++) {
@@ -242,12 +247,16 @@ static void pd4web_compile(Pd4Web *x) {
     if (!x->gui) {
         cmd += " --nogui ";
     }
+    if (x->zoom != 1) {
+        cmd += " --patch-zoom " + std::to_string(x->zoom) + " ";
+    }
     if (x->patch != "") {
         cmd += x->patch;
     }
 
 #if defined(_WIN32) || defined(_WIN64)
     std::thread t([x, cmd]() {
+        // here we show the terminal window
         int result = system(cmd.c_str());
         if (result != 0) {
             pd_error(nullptr,
@@ -315,6 +324,7 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->verbose = true;
     x->memory = 32;
     x->gui = true;
+    x->zoom = 1;
 
     x->server = new httplib::Server();
     return x;

@@ -297,8 +297,8 @@ class Pd4Web:
             "-z",
             "--patch-zoom",
             required=False,
-            type=int,  # Use 'int' if you want to store an integer, or 'float' for a decimal
-            default=1,  # Set a default value here
+            type=float,
+            default=1,
             help="Zoom level for the patch (must be a number)",
         )
 
