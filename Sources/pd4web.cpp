@@ -98,7 +98,7 @@ EM_JS(void, _JS_onReceived, (), {
 });
 
 // ─────────────────────────────────────
-EM_JS(void, _JS_loadGui, (bool AutoTheming, int Zoom), {
+EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
     if (document.getElementById("pd4web-gui") != null){
         return;
     }
