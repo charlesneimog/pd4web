@@ -35,6 +35,7 @@ class Pd4Web:
     FPS: int = 60
     GUI: bool = True
     AUTO_THEME: bool = True
+    PATCH_ZOOM: int = 1
 
     # Midi
     MIDI: bool = False
@@ -67,6 +68,7 @@ class Pd4Web:
         # default values
         self.verbose = self.Parser.verbose
         self.MEMORY_SIZE = self.Parser.initial_memory
+        self.PATCH_ZOOM = self.Parser.patch_zoom
         self.GUI = not self.Parser.nogui
         self.PD_VERSION = self.Parser.pd_version
         self.PD_EXTERNAL = self.Parser.pd_external
@@ -281,6 +283,8 @@ class Pd4Web:
             type=int,
             help="Initial memory size in MB",
         )
+
+        # GUI
         parser.add_argument(
             "-nogui",
             "--nogui",
@@ -289,6 +293,15 @@ class Pd4Web:
             default=False,
             help="If set to False, it will not load the GUI interface.",
         )
+        parser.add_argument(
+            "-z",
+            "--patch-zoom",
+            required=False,
+            type=int,  # Use 'int' if you want to store an integer, or 'float' for a decimal
+            default=1,  # Set a default value here
+            help="Zoom level for the patch (must be a number)",
+        )
+
         parser.add_argument(
             "--pd-version",
             required=False,

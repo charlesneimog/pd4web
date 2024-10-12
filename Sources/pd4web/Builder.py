@@ -60,6 +60,9 @@ class GetAndBuildExternals:
         self.cmakeFile.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")')
         self.cmakeFile.append("include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
         self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
+        # self.cmakeFile.append("add_definitions(-DPDINSTANCE)")
+        self.cmakeFile.append("add_definitions(-DPDTHREADS)")
+
         self.cmakeFile.append("")
 
         # Pd4web executable
@@ -322,7 +325,7 @@ class GetAndBuildExternals:
             else:
                 f.write(f"#define PD4WEB_GUI false\n")
             f.write(f"#define PD4WEB_FPS {self.Pd4Web.FPS}\n")
-
+            f.write(f"#define PD4WEB_PATCH_ZOOM {self.Pd4Web.PATCH_ZOOM}\n")
             if self.Pd4Web.AUTO_THEME:
                 f.write(f"#define PD4WEB_AUTO_THEME true\n\n")
             else:
@@ -378,7 +381,6 @@ class GetAndBuildExternals:
             "-G",
             "Ninja",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
-            
         ]
         if self.Pd4Web.verbose:
             pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)

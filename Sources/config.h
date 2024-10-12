@@ -15,6 +15,7 @@
 
 // GUI Interface
 #define PD4WEB_GUI true
+#define PD4WEB_PATCH_ZOOM 1
 #define PD4WEB_FPS 60
 #define PD4WEB_AUTO_THEME true
 
