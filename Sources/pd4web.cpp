@@ -2,6 +2,7 @@
 #include <cstdio>
 
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
+// t_pdinstance *Pd4WebPdInstance;
 
 // ╭─────────────────────────────────────╮
 // │        JavaScript Functions         │
@@ -97,7 +98,7 @@ EM_JS(void, _JS_onReceived, (), {
 });
 
 // ─────────────────────────────────────
-EM_JS(void, _JS_loadGui, (bool AutoTheming), {
+EM_JS(void, _JS_loadGui, (bool AutoTheming, int Zoom), {
     if (document.getElementById("pd4web-gui") != null){
         return;
     }
@@ -107,7 +108,7 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming), {
     script.src = "./pd4web.gui.js";
     script.id = "pd4web-gui";
     script.onload = function() {
-        Pd4WebInitGui(AutoTheming); // defined in pd4web.gui.js
+        Pd4WebInitGui(AutoTheming, Zoom); // defined in pd4web.gui.js
     };
 
     document.head.appendChild(script); 
@@ -414,6 +415,7 @@ extern "C" void sys_putmidibyte(int portno, int byte) { return; }
 // │       Audio Worklet Receivers       │
 // ╰─────────────────────────────────────╯
 void Pd4Web::receivedBang(const char *r) {
+    LOG("Pd4Web::receivedBang");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -426,6 +428,7 @@ void Pd4Web::receivedBang(const char *r) {
 
 // ─────────────────────────────────────
 void Pd4Web::receivedFloat(const char *r, float f) {
+    LOG("Pd4Web::receivedFloat");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -439,6 +442,7 @@ void Pd4Web::receivedFloat(const char *r, float f) {
 
 // ─────────────────────────────────────
 void Pd4Web::receivedSymbol(const char *r, const char *s) {
+    LOG("Pd4Web::receivedSymbol");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -452,6 +456,7 @@ void Pd4Web::receivedSymbol(const char *r, const char *s) {
 
 // ─────────────────────────────────────
 void Pd4Web::receivedList(const char *r, int argc, t_atom *argv) {
+    LOG("Pd4Web::receivedList");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
@@ -486,6 +491,7 @@ void Pd4Web::post(const char *message) {
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
 bool Pd4Web::_startMessage(int argc) {
+    LOG("Pd4Web::_startMessage");
     if (libpd_start_message(argc)) {
         return false;
     }
@@ -493,42 +499,51 @@ bool Pd4Web::_startMessage(int argc) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::_addFloat(float f) { libpd_add_float(f); }
-void Pd4Web::_addSymbol(std::string s) { libpd_add_symbol(s.c_str()); }
-void Pd4Web::_finishMessage(std::string s) { libpd_finish_list(s.c_str()); }
+void Pd4Web::_addFloat(float f) {
+    LOG("Pd4Web::_addFloat");
+    libpd_add_float(f);
+}
+
+void Pd4Web::_addSymbol(std::string s) {
+    LOG("Pd4Web::_addSymbol");
+    libpd_add_symbol(s.c_str());
+}
+int Pd4Web::_finishMessage(std::string s) {
+    LOG("Pd4Web::finishMessage");
+    int ok = libpd_finish_list(s.c_str());
+    return ok != 0;
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::sendBang(std::string r) {
+    LOG("Pd4Web::sendBang");
     int ok = libpd_bang(r.c_str());
-    if (!ok) {
-        return false;
-    }
-    return true;
+    return ok != 0;
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::sendFloat(std::string r, float f) {
+    LOG("Pd4Web::sendFloat");
     int ok = libpd_float(r.c_str(), f);
-    if (!ok) {
-        return false;
-    }
-    return true;
+    return ok != 0;
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::sendSymbol(std::string r, std::string s) {
+    LOG("Pd4Web::sendSymbol");
     int ok = libpd_symbol(r.c_str(), s.c_str());
-    if (!ok) {
-        return false;
-    }
-    return true;
+    return ok != 0;
 }
 
 // ─────────────────────────────────────
 void Pd4Web::noteOn(int channel, int pitch, int velocity) {
+    LOG("Pd4Web::noteOn");
     libpd_noteon(channel, pitch, velocity);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::bindReceiver(std::string s) {
+    LOG("Pd4Web::bindReceiver");
     void *Receiver = libpd_bind(s.c_str());
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == s) {
@@ -543,12 +558,14 @@ void Pd4Web::bindReceiver(std::string s) {
 
 // ─────────────────────────────────────
 void Pd4Web::addGuiReceiver(std::string s) {
+    LOG("Pd4Web::addGuiReceiver");
     m_Receivers.push_back(s);
     return;
 }
 
 // ─────────────────────────────────────
 void Pd4Web::bindGuiReceivers() {
+    LOG("Pd4Web::bindGuiReceivers");
     for (auto &s : m_Receivers) {
         bindReceiver(s);
     }
@@ -585,10 +602,12 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *userData) {
 
+    LOG("Pd4Web::process");
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
 
     libpd_process_float(2, In[0].data, LibPdOuts);
+
     // TODO: Fix multiple channels
 
     int OutI = 0;
@@ -601,6 +620,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
 
     return EM_TRUE;
 }
+
 // ─────────────────────────────────────
 /**
  * Callback function called when AudioWorkletProcessor is created.
@@ -615,6 +635,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
 void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                           void *userData) {
 
+    LOG("Pd4Web::audioWorkletProcessorCreated");
     if (!success) {
         _JS_alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
@@ -632,14 +653,16 @@ void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
         .outputChannelCounts = nOutChannelsArray,
     };
 
-    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
-        audioContext, "pd4web", &options, &Pd4Web::process, 0);
-
     Pd4WebInitExternals();
 
     libpd_add_to_search_path("./Libs/");
     libpd_add_to_search_path("./Extras/");
     libpd_add_to_search_path("./Audios/");
+
+    if (!libpd_openfile("index.pd", "./")) {
+        _JS_alert("Failed to open patch | Please Report!\n");
+        return;
+    }
 
     // turn audio on
     libpd_start_message(1);
@@ -647,11 +670,11 @@ void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
     libpd_finish_message("pd", "dsp");
     libpd_init_audio(NInCh, NOutCh, SR);
 
-    if (!libpd_openfile("index.pd", "./")) {
-        _JS_alert("Failed to open patch | Please Report!\n");
-        return;
-    }
+    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
+        audioContext, "pd4web", &options, &Pd4Web::process, userData);
     _JS_getMicAccess(audioContext, AudioWorkletNode, NInCh);
+
+    _JS_post("Audio Processor Created");
 }
 
 // ─────────────────────────────────────
@@ -666,6 +689,7 @@ void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
  * @param userData Pointer to user data (not used in this function).
  */
 void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
+    LOG("Pd4Web::audioWorkletInit");
     if (!success) {
         _JS_alert("WebAudio worklet thread initialization failed!\n");
         return;
@@ -677,6 +701,7 @@ void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL succes
 
     emscripten_create_wasm_audio_worklet_processor_async(
         audioContext, &opts, &Pd4Web::audioWorkletProcessorCreated, userData);
+    _JS_post("Pd4web WebAudio Worklet thread initialization done!\n");
 }
 
 // ─────────────────────────────────────
@@ -694,6 +719,7 @@ void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
 void Pd4Web::init() {
+    LOG("Pd4Web::init");
     uint32_t SR = PD4WEB_SR;
     float NInCh = PD4WEB_CHS_IN;
     float NOutCh = PD4WEB_CHS_OUT;
@@ -706,8 +732,14 @@ void Pd4Web::init() {
     libpd_set_printhook(libpd_print_concatenator);
     libpd_set_concatenated_printhook(&Pd4Web::post);
 
+    // Pd4WebPdInstance = libpd_new_instance();
+    // if (!Pd4WebPdInstance) {
+    //     _JS_alert("libpd_init() failed, please report!");
+    //     return;
+    // }
+    // libpd_set_instance(Pd4WebPdInstance);
     int ret = libpd_init();
-    if (ret == -2) {
+    if (ret) {
         _JS_alert("libpd_init() failed, please report!");
         return;
     }
@@ -716,6 +748,8 @@ void Pd4Web::init() {
     libpd_set_floathook(&Pd4Web::receivedFloat);
     libpd_set_symbolhook(&Pd4Web::receivedSymbol);
     libpd_set_listhook(&Pd4Web::receivedList);
+
+    // TODO: add midi hooks
 
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
@@ -738,6 +772,7 @@ void Pd4Web::init() {
 // │              Main Loop              │
 // ╰─────────────────────────────────────╯
 void Pd4Web::guiLoop() {
+    LOG("guiLoop");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
@@ -770,9 +805,10 @@ void Pd4Web::guiLoop() {
 // │            Main Function            │
 // ╰─────────────────────────────────────╯
 int main() {
+    LOG("main");
     if (PD4WEB_GUI) {
         _JS_loadStyle();
-        _JS_loadGui(PD4WEB_AUTO_THEME);
+        _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
     }
     _JS_setTitle(PD4WEB_PROJECT_NAME);
     _JS_addAlertOnError();

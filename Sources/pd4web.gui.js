@@ -370,6 +370,7 @@ function GuiNbxUpdateNumber(data, f) {
     }
 }
 
+// ─────────────────────────────────────
 function GuiNbxKeyDownListener(e) {
     const data = Pd4Web.NbxSelected; // Get the currently selected SVG element
     const txt = document.getElementById(`${data.id}_text`); // Find the associated text element
@@ -526,7 +527,6 @@ function GuiSliderRect(data) {
         };
     }
 }
-
 
 // ─────────────────────────────────────
 function GuiSliderIndicatorPoints(data) {
@@ -1240,20 +1240,20 @@ function GuiTextText(data, line_index) {
 //╭─────────────────────────────────────╮
 //│           Patch Handling            │
 //╰─────────────────────────────────────╯
-function UpdatePatchDivSize(content) {
+function UpdatePatchDivSize(content, patch_zoom) {
     const patchDiv = document.getElementById("Pd4WebPatchDiv");
     if (patchDiv == null) {
         return;
     }
     const lines = content.split(";\n");
     var args = lines[0].split(" ");
-    const canvasWidth = parseInt(args[4]);
     const canvasHeight = parseInt(args[5]);
-    const totalWidth = window.innerWidth;
-    const totalHeight = window.innerHeight;
+    const canvasWidth = parseInt(args[4]);
 
-    patchDiv.style.width = canvasHeight + "px";
-    patchDiv.style.height = canvasHeight + "px";
+    patchDiv.style.width = canvasWidth * patch_zoom + "px";
+    patchDiv.style.height = canvasHeight * patch_zoom + "px";
+    patchDiv.style.marginLeft = "auto";
+    patchDiv.style.marginRight = "auto";
 }
 
 // ─────────────────────────────────────
@@ -1668,7 +1668,7 @@ function OpenPatch(content) {
 }
 
 // ─────────────────────────────────────
-async function Pd4WebInitGui(autoTheme) {
+async function Pd4WebInitGui(autoTheme, patch_zoom) {
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
         console.log("Pd4Web is not defined yet, wait...");
@@ -1732,7 +1732,7 @@ async function Pd4WebInitGui(autoTheme) {
                 return response.text();
             })
             .then((textContent) => {
-                UpdatePatchDivSize(textContent);
+                UpdatePatchDivSize(textContent, patch_zoom);
                 OpenPatch(textContent);
             })
             .catch((error) => {

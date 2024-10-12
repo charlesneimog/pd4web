@@ -1,5 +1,8 @@
 #pragma once
 
+#include <iostream>
+#include <sstream>
+
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
@@ -83,7 +86,7 @@ class Pd4Web {
     bool _startMessage(int argc);
     void _addFloat(float f);
     void _addSymbol(std::string s);
-    void _finishMessage(std::string s);
+    int _finishMessage(std::string s);
 
     // libpd HOOKs helpers
     int _getReceivedListSize(std::string r);
@@ -102,6 +105,19 @@ class Pd4Web {
     void *m_AudioWorkletInstance;
     std::vector<std::string> m_Receivers;
 };
+
+EM_JS(void, _JS_post2, (const char *msg), { console.log(UTF8ToString(msg)); });
+
+// ╭─────────────────────────────────────╮
+// │            Log Functions            │
+// ╰─────────────────────────────────────╯
+#if PD4WEB_DEBUG
+#define LOG(message, ...)                                                                          \
+    std::stringstream ss;                                                                          \
+    ss << "Pd4Web: " << __FILE__ << ":" << __LINE__ << " " << message;                             \
+    std::string mys = ss.str();                                                                    \
+    _JS_post2(mys.c_str());
+#endif
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
