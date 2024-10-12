@@ -687,8 +687,9 @@ function GuiSliderBang(data) {
     if (out < 1.0e-10 && out > -1.0e-10) {
         out = 0;
     }
+
     if (Pd4Web) {
-        Pd4Web.sendFloat(data.receive, out);
+        Pd4Web.sendFloat(data.send, out);
     }
 }
 
