@@ -1,7 +1,9 @@
 #include "pd4web.hpp"
+#include "z_libpd.h"
 #include <cstdio>
 
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
+Pd4WebGuiReceiverList Pd4WebGuiSenders;
 // t_pdinstance *Pd4WebPdInstance;
 
 // ╭─────────────────────────────────────╮
@@ -18,16 +20,16 @@ EM_JS(void, _JS_sendList, (void), {
 
     Pd4Web.sendList = function (r, vec) {
         const vecLength = vec.length;
-        var ok = Pd4Web._startMessage(vecLength);
+        var ok = Pd4Web._startMessage(r, vecLength);
         if (!ok) {
             console.error('Failed to start message');
             return;
         }
         for (let i = 0; i < vecLength; i++) {
             if (typeof vec[i] === 'string') {
-                Pd4Web._addSymbol(vec[i]);
+                Pd4Web._addSymbol(r, vec[i]);
             } else if (typeof vec[i] === 'number') {
-                Pd4Web._addFloat(vec[i]);
+                Pd4Web._addFloat(r, vec[i]);
             } else{
                 console.error('Invalid type');
             }
@@ -420,7 +422,7 @@ void Pd4Web::receivedBang(const char *r) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
             GuiReceiver.Updated = true;
-            GuiReceiver.Type = Pd4WebGuiReceiver::BANG;
+            GuiReceiver.Type = Pd4WebGuiConnector::BANG;
             GuiReceiver.BeingUpdated = false;
         }
     }
@@ -433,7 +435,7 @@ void Pd4Web::receivedFloat(const char *r, float f) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
             GuiReceiver.Updated = true;
-            GuiReceiver.Type = Pd4WebGuiReceiver::FLOAT;
+            GuiReceiver.Type = Pd4WebGuiConnector::FLOAT;
             GuiReceiver.Float = f;
             GuiReceiver.BeingUpdated = false;
         }
@@ -447,7 +449,7 @@ void Pd4Web::receivedSymbol(const char *r, const char *s) {
         if (GuiReceiver.Receiver == r) {
             GuiReceiver.BeingUpdated = true;
             GuiReceiver.Updated = true;
-            GuiReceiver.Type = Pd4WebGuiReceiver::SYMBOL;
+            GuiReceiver.Type = Pd4WebGuiConnector::SYMBOL;
             GuiReceiver.Symbol = s;
             GuiReceiver.BeingUpdated = false;
         }
@@ -459,10 +461,8 @@ void Pd4Web::receivedList(const char *r, int argc, t_atom *argv) {
     LOG("Pd4Web::receivedList");
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
-            GuiReceiver.BeingUpdated = true;
             GuiReceiver.Updated = true;
-            GuiReceiver.Type = Pd4WebGuiReceiver::LIST;
-            GuiReceiver.BeingUpdated = false;
+            GuiReceiver.Type = Pd4WebGuiConnector::LIST;
             GuiReceiver.List.clear();
             for (int i = 0; i < argc; i++) {
                 t_atom *a = argv + i;
@@ -490,42 +490,95 @@ void Pd4Web::post(const char *message) {
 // ╭─────────────────────────────────────╮
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
-bool Pd4Web::_startMessage(int argc) {
-    LOG("Pd4Web::_startMessage");
-    if (libpd_start_message(argc)) {
-        return false;
+bool Pd4Web::_startMessage(std::string r, int argc) {
+    bool found = false;
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == r) {
+            GuiSender.List.clear();
+            GuiSender.Updated = true;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        Pd4WebGuiConnector GuiSender;
+        GuiSender.Sender = r;
+        GuiSender.Type = Pd4WebGuiConnector::LIST;
+        GuiSender.Updated = true;
+        Pd4WebGuiSenders.push_back(GuiSender);
+    }
+
+    return true;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::_addFloat(std::string r, float f) {
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == r) {
+            GuiSender.Updated = true;
+            GuiSender.List.push_back(f);
+        }
+    }
+}
+
+// ─────────────────────────────────────
+void Pd4Web::_addSymbol(std::string r, std::string s) {
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == r) {
+            GuiSender.Updated = true;
+            GuiSender.List.push_back(s);
+        }
+    }
+}
+
+// ─────────────────────────────────────
+int Pd4Web::_finishMessage(std::string s) {
+    //
+    return true;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::sendBang(std::string s) {
+    bool found = false;
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == s) {
+            GuiSender.Updated = true;
+            GuiSender.Type = Pd4WebGuiConnector::BANG;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        Pd4WebGuiConnector GuiSender;
+        GuiSender.Sender = s;
+        GuiSender.Updated = true;
+        GuiSender.Type = Pd4WebGuiConnector::BANG;
+        Pd4WebGuiSenders.push_back(GuiSender);
     }
     return true;
 }
 
 // ─────────────────────────────────────
-void Pd4Web::_addFloat(float f) {
-    LOG("Pd4Web::_addFloat");
-    libpd_add_float(f);
-}
+bool Pd4Web::sendFloat(std::string s, float f) {
+    bool found = false;
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == s) {
+            GuiSender.Updated = true;
+            GuiSender.Type = Pd4WebGuiConnector::FLOAT;
+            GuiSender.Float = f;
+            found = true;
+        }
+    }
 
-void Pd4Web::_addSymbol(std::string s) {
-    LOG("Pd4Web::_addSymbol");
-    libpd_add_symbol(s.c_str());
-}
-int Pd4Web::_finishMessage(std::string s) {
-    LOG("Pd4Web::finishMessage");
-    int ok = libpd_finish_list(s.c_str());
-    return ok != 0;
-}
-
-// ─────────────────────────────────────
-bool Pd4Web::sendBang(std::string r) {
-    LOG("Pd4Web::sendBang");
-    int ok = libpd_bang(r.c_str());
-    return ok != 0;
-}
-
-// ─────────────────────────────────────
-bool Pd4Web::sendFloat(std::string r, float f) {
-    LOG("Pd4Web::sendFloat");
-    int ok = libpd_float(r.c_str(), f);
-    return ok != 0;
+    if (!found) {
+        Pd4WebGuiConnector GuiSender;
+        GuiSender.Sender = s;
+        GuiSender.Updated = true;
+        GuiSender.Type = Pd4WebGuiConnector::FLOAT;
+        GuiSender.Float = f;
+        Pd4WebGuiSenders.push_back(GuiSender);
+    }
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -550,7 +603,7 @@ void Pd4Web::bindReceiver(std::string s) {
             return;
         }
     }
-    Pd4WebGuiReceiver GuiReceiver;
+    Pd4WebGuiConnector GuiReceiver;
     GuiReceiver.Receiver = s;
     Pd4WebGuiReceivers.push_back(GuiReceiver);
     return;
@@ -602,7 +655,45 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *userData) {
 
-    LOG("Pd4Web::process");
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Updated) {
+            switch (GuiSender.Type) {
+            case Pd4WebGuiConnector::BANG: {
+                libpd_bang(GuiSender.Sender.c_str());
+                break;
+            }
+            case Pd4WebGuiConnector::FLOAT: {
+                libpd_float(GuiSender.Sender.c_str(), GuiSender.Float);
+                break;
+            }
+            case Pd4WebGuiConnector::SYMBOL: {
+                libpd_symbol(GuiSender.Sender.c_str(), GuiSender.Symbol.c_str());
+                break;
+            }
+            case Pd4WebGuiConnector::LIST: {
+                int size = GuiSender.List.size();
+                libpd_start_message(size);
+                for (int i = 0; i < size; i++) {
+                    if (std::holds_alternative<float>(GuiSender.List[i])) {
+                        float f = std::get<float>(GuiSender.List[i]);
+                        libpd_add_float(f);
+                    } else if (std::holds_alternative<std::string>(GuiSender.List[i])) {
+                        std::string s = std::get<std::string>(GuiSender.List[i]);
+                        libpd_add_symbol(s.c_str());
+                    }
+                }
+                libpd_finish_list(GuiSender.Sender.c_str());
+
+                break;
+            }
+            case Pd4WebGuiConnector::MESSAGE: {
+                printf("Unhandled message\n");
+            }
+            }
+            GuiSender.Updated = false;
+        }
+    }
+
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
 
@@ -776,23 +867,23 @@ void Pd4Web::guiLoop() {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
-            case Pd4WebGuiReceiver::BANG: {
+            case Pd4WebGuiConnector::BANG: {
                 _JS_receiveBang(GuiReceiver.Receiver.c_str());
                 break;
             }
-            case Pd4WebGuiReceiver::FLOAT: {
+            case Pd4WebGuiConnector::FLOAT: {
                 _JS_receiveFloat(GuiReceiver.Receiver.c_str(), GuiReceiver.Float);
                 break;
             }
-            case Pd4WebGuiReceiver::SYMBOL: {
+            case Pd4WebGuiConnector::SYMBOL: {
                 _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Receiver.c_str());
                 break;
             }
-            case Pd4WebGuiReceiver::LIST: {
+            case Pd4WebGuiConnector::LIST: {
                 _JS_receiveList(GuiReceiver.Receiver.c_str());
                 break;
             }
-            case Pd4WebGuiReceiver::MESSAGE: {
+            case Pd4WebGuiConnector::MESSAGE: {
                 printf("Unhandled message\n");
             }
             }
