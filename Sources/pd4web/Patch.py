@@ -459,20 +459,50 @@ class Patch:
                 line.library = line.Tokens[4].split("/")[0]
                 line.name = line.completName.split("/")[-1]
                 line.objGenSym = 'class_new(gensym("' + line.name + '")'
+
         elif self.objThatIsSingleLib(line):
             line.isExternal = True
             line.library = line.completName
             line.name = line.completName
             line.objGenSym = 'class_new(gensym("' + line.name + '")'
+
         elif self.objInDeclaredLib(line):
             line.isExternal = True
             line.name = line.completName
+
         elif self.absInDeclaredPath(line):
             line.isAbstraction = True
             line.name = line.completName
+
         elif self.tokenIsFloat(line.Tokens[4]) != float("inf"):
             line.name = line.completName
             line.isExternal = False
+
+        elif line.completName == "clone":
+            clone_patch = line.Tokens[6]
+            if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[6] + ".pd"):
+                pd4web_print(
+                    f"Found Clone Abstraction: {line.Tokens[4]}",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
+                )
+                line.isAbstraction = True
+                abs = Patch(
+                    self.Pd4Web,
+                    abs=True,
+                    patch=self.PROJECT_ROOT + "/" + line.Tokens[6] + ".pd",
+                )
+                self.absProcessed.append(abs)
+
+            elif self.isLibAbs(line):
+                line.isAbstraction = True
+                line.isExternal = False
+            else:
+                line.isExternal = True
+                line.library = line.Tokens[4].split("/")[0]
+                line.name = line.completName.split("/")[-1]
+                line.objGenSym = 'class_new(gensym("' + line.name + '")'
 
         elif self.tokenIsDollarSign(line.Tokens[4]):
             line.name = line.completName
