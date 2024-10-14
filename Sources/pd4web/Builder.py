@@ -94,7 +94,6 @@ class GetAndBuildExternals:
             "    -sWASM=1",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
-            # "    -sASYNCIFY",
             ")",
         ]
 

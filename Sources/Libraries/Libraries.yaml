@@ -42,6 +42,7 @@ Libraries:
       # Need implementation
       - sfz~
       - sfont~
+
       # Pd GUI Related
       - oscope~
       - midi
