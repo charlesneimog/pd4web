@@ -123,6 +123,8 @@ class Objects:
         with open(externalsJson, "w") as file:
             json.dump(externalsDict, file, indent=4)
 
+        print(externalsJson)
+
     def GetSupportedObjects(self, libName: str):
         if libName == "pure-data":
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)

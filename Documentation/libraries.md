@@ -7,7 +7,7 @@ hide:
 # Supported Objects
 
 <p style="text-align: center">
-This table presents an overview of all PureData externals supported by <code>pd4web</code>.
+List of Pd externals supported by <code>pd4web</code>.
 </p>
 
 ----------------------------------
@@ -17,7 +17,7 @@ This table presents an overview of all PureData externals supported by <code>pd4
         <tr>
           <th>Library Name</th>
           <th>Health</th>
-          <th>Not Supported Objects</th>
+          <th>Description</th>
           <th>Numbers of Objects</th>
           <th>Main Dev</th>
         </tr>
@@ -26,44 +26,25 @@ This table presents an overview of all PureData externals supported by <code>pd4
         <tr>
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
           <td>🟢️</td>
-          <td><code>sfz~</code>, <code>sfont~</code></td> 
+          <td><code>else</code> is a library required. It make a lot of things easier.</td> 
           <td>509</td>
           <td>Alexandre Porres</th>
         </tr>
     </tbody>
     <tbody>
       <tr>
-        <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
-        <td>🟢️</td>
-        <td> <code>coll</code> </td>
-        <td>244</td>
-        <td>Alexandre Porres</th>
-      </tr>
-    </tbody>
-    <tbody>
-      <tr>
         <td><a href="https://github.com/pd-externals/earplug/">earplug</a></td>
         <td>🟢️</td>
-        <td> - </td>
+        <td>For binaural spacialization.</td>
         <td>1</td>
         <td>Dan Wilcox</th>
       </tr>
     </tbody>
     <tbody>
         <tr>
-            <td><a href="https://github.com/wbrent/convolve_tilde/">convolve~</a></td>
-            <td>🟡️</td>
-            <td> - </td>
-            <td>1</td>
-            <td>Willian Brent</td>
-        </tr>
-    </tbody>
-
-    <tbody>
-        <tr>
             <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
-            <td>🟡️</td>
-            <td> - </td>
+            <td>🟢️</td>
+            <td>Music Analisys and MIR in general.</td>
             <td>110</td>
             <td>Willian Brent</td>
         </tr>
@@ -73,45 +54,24 @@ This table presents an overview of all PureData externals supported by <code>pd4
         <tr>
             <td><a href="  https://github.com/avilleret/pd-pmpd">pmpd</a></td>
             <td>🟢️</td>
-            <td> - </td>
+            <td>Physical Modeling for PureData</td>
             <td>30</td>
             <td>Cyrille Henry</td>
         </tr>
     </tbody>
-    
-    <tbody>
+        <tbody>
         <tr>
-            <td><a href="  https://github.com/charlesneimog/grainer_tilde">grainer~</a></td>
+            <td><a href="  https://github.com/charlesneimog/OScofo">o.scofo~</a></td>
             <td>🟢️</td>
-            <td> - </td>
+            <td>Score Follower.</td>
             <td>1</td>
-            <td>Pablo Di Liscia</td>
+            <td>Charles K. Neimog</td>
         </tr>
     </tbody>
-    <tbody>
-        <tr>
-            <td><a href="https://github.com/ericlyon/pd-fftease">fftease~</a></td>
-            <td>🔴️</td>
-            <td> - </td>
-            <td>33</td>
-            <td>Eric Lyon</td>
-        </tr>
-    </tbody>
+    
     
  </table>
 
-??? info "Extra Infos"
-    ```
-    🟢️ = Well Tested
-    
-    🟡️ = Tested
-    
-    🔴️ = Initial Support
-    
-    ```
-
-<br>
 <p style="text-align: center">
-If there is some object of these supported libraries that not work, please report in <a href="https://github.com/charlesneimog/pd4web/issues">Github</a>.
+Need some other library, please tell us on <a>https://github.com/charlesneimog/pd4web/issues</a>. 
 </p>
-
