@@ -1,6 +1,4 @@
 #include "pd4web.hpp"
-#include "z_libpd.h"
-#include <cstdio>
 
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 Pd4WebGuiReceiverList Pd4WebGuiSenders;

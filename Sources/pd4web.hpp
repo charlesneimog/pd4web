@@ -1,8 +1,5 @@
 #pragma once
 
-#include <iostream>
-#include <sstream>
-
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
