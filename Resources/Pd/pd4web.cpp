@@ -213,8 +213,8 @@ static void pd4web_browser(Pd4Web *x, float f) {
             }
         });
         t.detach();
-        post("[pd4web] Server started at http://0.0.0.0:8080");
-        pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://0.0.0.0:8080");
+        post("[pd4web] Server started at http://localhost:8080");
+        pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
 
     } else {
         x->server->remove_mount_point("/");
