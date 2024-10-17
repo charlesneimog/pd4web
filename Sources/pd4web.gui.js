@@ -1897,6 +1897,7 @@ async function Pd4WebInitGui(autoTheme, patch_zoom) {
                 return response.text();
             })
             .then((textContent) => {
+                textContent = textContent.replace(/\r/g, "");
                 UpdatePatchDivSize(textContent, patch_zoom);
                 OpenPatch(textContent);
             })
