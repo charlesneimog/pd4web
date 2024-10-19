@@ -1,13 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pd4Web Examples</title>
-    <favicon
-      href="favicon.ico"
-      type="image/x-icon"
-    />
+    <favicon href="favicon.ico" type="image/x-icon" />
     <link rel="stylesheet" href="style.css" />
     <link
       rel="stylesheet"
@@ -27,25 +24,27 @@
     <div class="container">
       <!-- New Card -->
       <div class="card">
-        <h3 class="card-title">Simple <code>[osc~]</code> Patch</h3>
+        <h3 class="card-title">Scofo Follower</h3>
         <img
-          src="./1-AudioOut/patch.png"
-          onclick="window.open('./1-AudioOut', '_blank')"
+          src="./OScofo/patch.png"
+          onclick="window.open('./OScofo', '_blank')"
           class="card-img"
         />
         <div class="button-container">
-          <a href="./1-AudioOut" class="button" target="_blank"
+          <a href="./OScofo/" class="button" target="_blank"
             ><i class="fa-solid fa-play fa-sm"></i> Open</a
           >
-          <a href="./1-AudioOut/main.pd" class="button" target="_blank"
+          <a href="./OScofo/main.pd" class="button" target="_blank"
             ><i class="fa-solid fa-circle-down"></i> Download</a
           >
         </div>
         <p>
-          Just a simple <code>[osc~]</code>connected on the <code>[dac~]</code>.
+          Show the use of the object <code>o.scofo~</code> with pd4web. Personal
+          project for live-electronics.
         </p>
       </div>
       <!-- End Card -->
+
       <!-- New Card -->
       <div class="card">
         <h3 class="card-title">Mic In (latency)</h3>
@@ -87,8 +86,7 @@
     </div>
 
     <hr style="margin-top: 20px" />
-
-    <h2>More Complet Examples</h2>
+    <h2>With personalized GUI Interfaces</h2>
     <div class="container">
       <!-- New Card -->
       <div class="card">
