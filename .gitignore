@@ -30,3 +30,11 @@ Tests/Libraries/**/build/
 Tests/**/CMakeLists.txt
 
 Tests/Libraries/else/else/else-000-010
+Tests/Basic/gui/Pd4Web
+Tests/Basic/gui/WebPatch
+Tests/Basic/gui/.gitignore
+Tests/Basic/gui/favicon.ico
+Tests/Basic/gui/index.html
+Tests/Libraries/ambi~/.gitignore
+Tests/Libraries/ambi~/favicon.ico
+Tests/Libraries/ambi~/index.html
