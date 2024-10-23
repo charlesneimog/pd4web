@@ -110,7 +110,7 @@
           var clickableSpan = document.getElementById("Pd4WebAudioSwitch");
           if (clickableSpan.classList.contains("pd4web-sound-on")) {
             clickableSpan.classList.remove("pd4web-sound-on");
-            Pd4Web.suspendAudio();
+            await Pd4Web.suspendAudio();
             clickableSpan.classList.add("pd4web-sound-off");
             return;
           }
@@ -118,7 +118,7 @@
           clickableSpan.classList.remove("pd4web-sound-off");
           clickableSpan.classList.add("pd4web-sound-loading");
 
-          Pd4Web.init(); // <== This is the unique important thing here, running this from any click event will make the PureData turn on.
+          await Pd4Web.init(); // <== This is the unique important thing here, running this from any click event will make the PureData turn on.
 
           clickableSpan.classList.remove("pd4web-sound-loading");
           clickableSpan.classList.add("pd4web-sound-on");
