@@ -2,6 +2,7 @@
 
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 Pd4WebGuiReceiverList Pd4WebGuiSenders;
+
 // t_pdinstance *Pd4WebPdInstance;
 
 // ╭─────────────────────────────────────╮
@@ -580,10 +581,28 @@ bool Pd4Web::sendFloat(std::string s, float f) {
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::sendSymbol(std::string r, std::string s) {
+bool Pd4Web::sendSymbol(std::string s, std::string thing) {
     LOG("Pd4Web::sendSymbol");
-    int ok = libpd_symbol(r.c_str(), s.c_str());
-    return ok != 0;
+
+    bool found = false;
+    for (auto &GuiSender : Pd4WebGuiSenders) {
+        if (GuiSender.Sender == s) {
+            GuiSender.Updated = true;
+            GuiSender.Type = Pd4WebGuiConnector::SYMBOL;
+            GuiSender.Symbol = thing;
+            found = true;
+        }
+    }
+
+    if (!found) {
+        Pd4WebGuiConnector GuiSender;
+        GuiSender.Sender = s;
+        GuiSender.Updated = true;
+        GuiSender.Type = Pd4WebGuiConnector::SYMBOL;
+        GuiSender.Symbol = thing;
+        Pd4WebGuiSenders.push_back(GuiSender);
+    }
+    return true;
 }
 
 // ─────────────────────────────────────
