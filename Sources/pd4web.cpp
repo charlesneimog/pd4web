@@ -109,7 +109,8 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
     script.src = "./pd4web.gui.js";
     script.id = "pd4web-gui";
     script.onload = function() {
-        Pd4WebInitGui(AutoTheming, Zoom); // defined in pd4web.gui.js
+        Pd4Web.Zoom = Zoom;
+        Pd4WebInitGui(); // defined in pd4web.gui.js
     };
 
     document.head.appendChild(script); 

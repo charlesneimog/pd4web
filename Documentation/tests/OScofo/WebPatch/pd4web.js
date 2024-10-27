@@ -86,7 +86,7 @@ var ENVIRONMENT_IS_WASM_WORKER = Module['$ww'];
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /tmp/tmp5pffnxar.js
+// include: /tmp/tmp4cs4idfi.js
 
   if (!Module['expectedDataFileDownloads']) {
     Module['expectedDataFileDownloads'] = 0;
@@ -203,6 +203,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
         if (!check) throw msg + new Error().stack;
       }
 Module['FS_createPath']("/", "Audios", true, true);
+Module['FS_createPath']("/", "Extras", true, true);
 
       /** @constructor */
       function DataRequest(start, end, audio) {
@@ -270,25 +271,25 @@ Module['FS_createPath']("/", "Audios", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/Audios/audio.wav", "start": 0, "end": 10549442, "audio": 1}, {"filename": "/Audios/score.txt", "start": 10549442, "end": 10554512}, {"filename": "/index.pd", "start": 10554512, "end": 10556049}], "remote_package_size": 10556049});
+    loadPackage({"files": [{"filename": "/Audios/audio.wav", "start": 0, "end": 10549442, "audio": 1}, {"filename": "/Extras/score.txt", "start": 10549442, "end": 10554512}, {"filename": "/index.pd", "start": 10554512, "end": 10556142}], "remote_package_size": 10556142});
 
   })();
 
-// end include: /tmp/tmp5pffnxar.js
-// include: /tmp/tmpaggkg5yk.js
+// end include: /tmp/tmp4cs4idfi.js
+// include: /tmp/tmpsxksno_j.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /tmp/tmpaggkg5yk.js
-// include: /tmp/tmpwxhtt2o6.js
+  // end include: /tmp/tmpsxksno_j.js
+// include: /tmp/tmp0a0yksj9.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /tmp/tmpwxhtt2o6.js
+  // end include: /tmp/tmp0a0yksj9.js
 
 
 // Sometimes an existing Module object exists with properties
@@ -825,7 +826,7 @@ if (!ENVIRONMENT_IS_PTHREAD) {
     wasmMemory = Module['wasmMemory'];
   } else
   {
-    var INITIAL_MEMORY = Module['INITIAL_MEMORY'] || 134217728;legacyModuleProp('INITIAL_MEMORY', 'INITIAL_MEMORY');
+    var INITIAL_MEMORY = Module['INITIAL_MEMORY'] || 536870912;legacyModuleProp('INITIAL_MEMORY', 'INITIAL_MEMORY');
 
     assert(INITIAL_MEMORY >= 65536, 'INITIAL_MEMORY should be larger than STACK_SIZE, was ' + INITIAL_MEMORY + '! (STACK_SIZE=' + 65536 + ')');
     wasmMemory = new WebAssembly.Memory({
@@ -1411,7 +1412,7 @@ function dbg(...args) {
 function _JS_post2(msg) { console.log(UTF8ToString(msg)); }
 function _JS_sendList() { if (typeof Pd4Web.GuiReceivers === "undefined") { Pd4Web.GuiReceivers = {}; } Pd4Web.sendList = function (r, vec) { const vecLength = vec.length; var ok = Pd4Web._startMessage(r, vecLength); if (!ok) { console.error('Failed to start message'); return; } for (let i = 0; i < vecLength; i++) { if (typeof vec[i] === 'string') { Pd4Web._addSymbol(r, vec[i]); } else if (typeof vec[i] === 'number') { Pd4Web._addFloat(r, vec[i]); } else{ console.error('Invalid type'); } } Pd4Web._finishMessage(r); }; }
 function _JS_onReceived() { Pd4Web.onBangReceived = function(receiver, myFunc) { if (typeof Pd4Web._userBangFunc === 'undefined') { Pd4Web._userBangFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 0) { console.error('Invalid number of arguments for function, expected 0 arguments'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userBangFunc[receiver] = myFunc; }; Pd4Web.onFloatReceived = function(receiver, myFunc) { if (typeof Pd4Web._userFloatFunc === 'undefined') { Pd4Web._userFloatFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function, expected 1, just the float received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userFloatFunc[receiver] = myFunc; }; Pd4Web.onSymbolReceived = function(receiver, myFunc) { if (typeof Pd4Web._userSymbolFunc === 'undefined') { Pd4Web._userSymbolFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function. Required 1, just the symbol (aka string) received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userSymbolFunc[receiver] = myFunc; }; Pd4Web.onListReceived = function(receiver, myFunc) { if (typeof Pd4Web._userListFunc === 'undefined') { Pd4Web._userListFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function. Required 1, just the list received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userListFunc[receiver] = myFunc; }; }
-function _JS_loadGui(AutoTheming,Zoom) { if (document.getElementById("pd4web-gui") != null){ return; } var script = document.createElement('script'); script.type = "text/javascript"; script.src = "./pd4web.gui.js"; script.id = "pd4web-gui"; script.onload = function() { Pd4WebInitGui(AutoTheming, Zoom); }; document.head.appendChild(script); }
+function _JS_loadGui(AutoTheming,Zoom) { if (document.getElementById("pd4web-gui") != null){ return; } var script = document.createElement('script'); script.type = "text/javascript"; script.src = "./pd4web.gui.js"; script.id = "pd4web-gui"; script.onload = function() { Pd4Web.Zoom = Zoom; Pd4WebInitGui(); }; document.head.appendChild(script); }
 function _JS_loadStyle() { if (document.getElementById("pd4web-style") != null){ console.log("GUI already loaded"); return; } var link = document.createElement('link'); link.rel = "stylesheet"; link.type = "text/css"; link.href = "./pd4web.style.css"; link.id = "pd4web-style"; document.head.appendChild(link); }
 function _JS_setTitle(projectName) { let title = UTF8ToString(projectName); document.title = title; }
 function _JS_alert(msg) { alert(UTF8ToString(msg)); }
