@@ -1375,15 +1375,38 @@ function OpenPatch(content) {
     }
 
     const lines = content.split(";\n");
+
+    // let graph = ["", "", ""];
+    // let lastCanvas = null;
+    // const isGraph = ["#N canvas", "#X coords", "#X restore"];
+
     for (let line of lines) {
         line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
         const args = line.split(" ");
         const type = args.slice(0, 2).join(" ");
+        // graph.shift();
+        // graph.push(type);
+        // if (
+        //   graph[0] === isGraph[0] &&
+        //   graph[1] === isGraph[1] &&
+        //   graph[2] === isGraph[2]
+        // ) {
+        //   console.log("graph found");
+        //   data = {};
+        //   data.x_pos = parseInt(lastCanvas[5]);
+        //   data.y_pos = parseInt(lastCanvas[4]);
+        //   data.size = parseInt(lastCanvas[3]);
+        //   data.bg_color = "#ff0000";
+        //   data.type = "graph";
+        //   data.id = `${data.type}_${id++}`;
+        //   data.rect = CreateItem("rect", GuiRect(data));
+        // }
+
         switch (type) {
             case "#N canvas":
                 canvasLevel++;
+                lastCanvas = args;
                 if (canvasLevel === 1 && args.length === 7) {
-                    // should be called only once
                     Pd4Web.CanvasWidth = parseInt(args[4]);
                     Pd4Web.CanvasHeight = parseInt(args[5]);
                     Pd4Web.FontSize = parseInt(args[6]);
@@ -1579,7 +1602,8 @@ function OpenPatch(content) {
                             ) {
                                 const data = {};
                                 data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                // check https://github.com/pure-data/pure-data/issues/2391
+                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
                                 data.type = args[4];
                                 data.width = parseInt(args[5]);
                                 data.height = parseInt(args[6]);
@@ -1739,13 +1763,12 @@ function OpenPatch(content) {
                             if (canvasLevel === 1 && args.length === 17 && args[7] !== "empty") {
                                 const data = {};
                                 data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                // Check https://github.com/pure-data/pure-data/issues/2391
+                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
                                 data.type = args[4];
-                                // #X obj 331 111 vu 18 160 empty empty -1 -9 0 10 #404040 #000000 1 0;
                                 data.width = args[5];
                                 data.height = args[6];
                                 data.receive = args[7];
-                                // data.receive = args[8];
                                 data.id = `${data.type}_${id++}`;
 
                                 // create svg
@@ -1833,14 +1856,13 @@ function OpenPatch(content) {
 }
 
 // ─────────────────────────────────────
-async function Pd4WebInitGui(autoTheme, patch_zoom) {
+async function Pd4WebInitGui() {
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
         console.log("Pd4Web is not defined yet, wait...");
         return;
     }
 
-    Pd4Web.AutoTheme = autoTheme;
     Pd4Web.isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
@@ -1898,7 +1920,7 @@ async function Pd4WebInitGui(autoTheme, patch_zoom) {
             })
             .then((textContent) => {
                 textContent = textContent.replace(/\r/g, "");
-                UpdatePatchDivSize(textContent, patch_zoom);
+                UpdatePatchDivSize(textContent, Pd4Web.Zoom);
                 OpenPatch(textContent);
             })
             .catch((error) => {
