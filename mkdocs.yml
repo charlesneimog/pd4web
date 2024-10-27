@@ -65,7 +65,7 @@ nav:
   - Compile your patch:
       - Intro: patch/install.md
       - Compile: patch/compile.md
-      - Upload: patch/upload.md
+      - Problems: patch/problems.md
   - libraries.md
   - devs.md
   - Examples: tests/
