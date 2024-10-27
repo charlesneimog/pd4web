@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 cyclone/vectral~;
+#X obj 20 80 cyclone/lores~;
+#X obj 20 120 cyclone/bitand~;
+#X obj 20 160 cyclone/delay~;
+#X obj 20 200 cyclone/dbtoa~;
+#X obj 20 240 cyclone/onepole~;
+#X obj 20 280 cyclone/downsamp~;
+#X obj 20 320 cyclone/bitor~;
+#X obj 20 360 cyclone/atanh~;
+#X obj 20 400 cyclone/lookup~;

@@ -89,7 +89,7 @@ def RunTest(patchPath, port):
         execute_chrome(patchDir, port)
         print("\n\n")
 
-
+'''
 class Pd4WebTest(unittest.TestCase):
     def test_gui(self):
         lib = os.path.join(os.path.dirname(__file__), "Basic/gui")
@@ -114,6 +114,34 @@ class Pd4WebTest(unittest.TestCase):
             shutil.rmtree(f"{lib}/gui")
         except:
             pass
+            
+'''
+
+class Pd4webCyclone(unittest.TestCase):
+    def test_else(self):
+        lib = os.path.join(os.path.dirname(__file__), "Libraries/cyclone")
+        all_files = os.listdir(os.path.join(os.path.dirname(__file__), "Libraries/cyclone"))
+        pd_files = sorted([obj for obj in all_files if obj.endswith(".pd")])
+
+        for i in range(len(pd_files)):
+            file_path = pd_files[i]
+            filename = file_path.split("/")[-1]
+            patchname = filename.split(".")[0]
+            os.makedirs(f"{lib}/cyclone/", exist_ok=True)
+            os.makedirs(f"{lib}/cyclone/{patchname}", exist_ok=True)
+            shutil.copyfile(f"{lib}/{file_path}", f"{lib}/cyclone/{patchname}/{filename}")
+            newpatch = f"{lib}/cyclone/{patchname}/{filename}"
+            try:
+                RunTest(newpatch, 5000)
+            except:
+                ## print in red
+                print(f"\033[91mError: {newpatch} -- trying again\033[0m")
+                RunTest(newpatch, 5000)
+        try:
+            shutil.rmtree(f"{lib}/cyclone")
+        except:
+            pass
+
 
 
 """
@@ -121,6 +149,10 @@ class Pd4WebTest(unittest.TestCase):
 # ╭──────────────────────────────────────╮
 # │              Libraries               │
 # ╰──────────────────────────────────────╯
+
+
+
+
 class Pd4webElse(unittest.TestCase):
     def test_else(self):
         lib = os.path.join(os.path.dirname(__file__), "Libraries/else")

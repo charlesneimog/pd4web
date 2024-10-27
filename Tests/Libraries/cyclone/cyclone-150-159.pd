@@ -1,0 +1,9 @@
+#N canvas 1282 23 632 1016 10;
+#X obj 20 40 cyclone/reson~;
+#X obj 20 80 cyclone/slide~;
+#X obj 20 120 cyclone/phaseshift~;
+#X obj 20 160 cyclone/maximum~;
+#X obj 20 200 cyclone/overdrive~;
+#X obj 20 240 cyclone/count~;
+#X obj 20 280 cyclone/greaterthaneq~;
+#X obj 20 320 cyclone/phasewrap~;

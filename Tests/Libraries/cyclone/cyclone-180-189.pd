@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 cyclone/lessthaneq~;
+#X obj 20 80 cyclone/sampstoms~;
+#X obj 20 120 cyclone/greaterthan~;
+#X obj 20 160 cyclone/thresh~;
+#X obj 20 200 cyclone/edge~;
+#X obj 20 240 cyclone/atan~;
+#X obj 20 280 cyclone/minmax~;
+#X obj 20 320 cyclone/scale~;
+#X obj 20 360 cyclone/bitshift~;
+#X obj 20 400 cyclone/record~;
