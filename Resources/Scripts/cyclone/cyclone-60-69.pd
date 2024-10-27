@@ -1,0 +1,7 @@
+#N canvas 1282 23 632 1016 10;
+#X obj 20 120 cyclone/listfunnel;
+#X obj 20 160 cyclone/thresh;
+#X obj 20 200 cyclone/peak;
+#X obj 20 280 cyclone/bucket;
+#X obj 20 360 cyclone/funnel;
+#X obj 20 400 cyclone/midiparse;

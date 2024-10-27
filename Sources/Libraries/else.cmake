@@ -4,7 +4,6 @@ set(PDCMAKE_DIR
     ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake
     CACHE PATH "Path to pd.cmake")
 
-message(STATUS "PDCMAKE_DIR: ${PDCMAKE_DIR}")
 include(${PDCMAKE_DIR}/pd.cmake)
 
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/else)

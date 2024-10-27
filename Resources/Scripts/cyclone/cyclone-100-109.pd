@@ -1,0 +1,9 @@
+#N canvas 1282 23 632 1016 10;
+#X obj 20 40 cyclone/decide;
+#X obj 20 80 cyclone/anal;
+#X obj 20 120 cyclone/speedlim;
+#X obj 20 200 cyclone/pak;
+#X obj 20 240 cyclone/minimum;
+#X obj 20 360 cyclone/xnoteout;
+#X obj 20 400 cyclone/tanh;
+#X obj 20 280 cyclone/append;

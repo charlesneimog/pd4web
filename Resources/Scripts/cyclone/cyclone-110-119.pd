@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 cyclone/cartopol;
+#X obj 20 80 cyclone/rdiv;
+#X obj 20 120 cyclone/forward;
+#X obj 20 160 cyclone/tosymbol;
+#X obj 20 200 cyclone/prob;
+#X obj 20 240 cyclone/midiflush;
+#X obj 20 280 cyclone/cosh;
+#X obj 20 320 cyclone/active;
+#X obj 20 360 cyclone/asin;
+#X obj 20 400 cyclone/sustain;

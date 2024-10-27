@@ -1,0 +1,10 @@
+#N canvas 389 23 377 1016 10;
+#X obj 20 40 cyclone/offer;
+#X obj 20 80 cyclone/xbendout2;
+#X obj 20 120 cyclone/drunk;
+#X obj 20 160 cyclone/seq;
+#X obj 20 280 cyclone/loadmess;
+#X obj 20 320 cyclone/match;
+#X obj 20 360 cyclone/xbendout;
+#X obj 20 400 cyclone/cycle;
+#X obj 20 200 cyclone/clip;

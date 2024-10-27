@@ -1,0 +1,10 @@
+#N canvas 1282 23 632 1016 10;
+#X obj 20 40 cyclone/!/~;
+#X obj 20 80 cyclone/%~;
+#X obj 20 120 cyclone/+=~;
+#X obj 20 160 cyclone/togedge;
+#X obj 20 240 cyclone/accum;
+#X obj 20 280 cyclone/xbendin2;
+#X obj 20 320 cyclone/zl;
+#X obj 20 360 cyclone/poltocar;
+#X obj 20 400 cyclone/xnotein;

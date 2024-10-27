@@ -17,6 +17,14 @@ Libraries:
     Version: v0.14.1
     Unsupported: [pmpd3d~, pmpd2d~, pmpd~]
 
+# ─────────────── cyclone ─────────────
+  - Name: cyclone
+    Source: GITHUB
+    Developer: porres
+    Repository: pd-cyclone
+    Version: cyclone_0.9-1
+    # Unsupported: [pmpd3d~, pmpd2d~, pmpd~]
+
 # ─────────────── o.scofo~ ───────────────
   - Name: ambi~
     Source: GITHUB

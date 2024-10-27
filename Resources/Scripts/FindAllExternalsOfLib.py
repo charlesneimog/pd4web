@@ -8,6 +8,9 @@ class PdObjectsInSource:
         self.objPerPatch = 10
         self.patch = []
         self.objsFounded = []
+        if (len(sys.argv) < 2):
+            print("Use python FindAllExternalsOfLib.py <libName> <libDir>")
+            exit()
         self.libName = sys.argv[1]
         self.libDir = sys.argv[2]
         self.thisFolder = os.path.dirname(os.path.abspath(__file__))
