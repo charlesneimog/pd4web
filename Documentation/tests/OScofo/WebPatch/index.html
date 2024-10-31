@@ -4,13 +4,11 @@
     <title>Pd4Web</title>
     <meta charset="UTF-8" />
     <script src="./pd4web.threads.js"></script>
-    <!-- Just necessary if you are using Github Pages -->
     <script src="./pd4web.js"></script>
+    <script src="
+https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdisplay.min.js
+"></script>
     <style>
-      /* 
-            In order to ensure pd4web's independence from any CSS framework, I've opted to include FontAwesome icons in base64 format. This provides a visually appealing yet straightforward interface without relying on external resources. If you choose not to utilize icons or initiate pd4web through an alternative method, feel free to remove the style tag containing the icon references.
-        */
-
       @keyframes spin {
         0% {
           transform: rotate(0deg);
@@ -83,6 +81,40 @@
         preserveAspectRatio="xMidYMin meet"
       ></svg>
     </div>
+    <div style="width=70%" id="sheet-container"></div>
+    <div></div>
+    <script>
+      var notes = [];
+      var prevNote = null;
+      var osmd = null;
+
+      document.addEventListener("DOMContentLoaded", async () => {
+        osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(
+          "sheet-container",
+        );
+        try {
+          await osmd.load("BWV-1013.xml");
+          // set zoom
+          // osmd.zoom = 0.7;
+
+          osmd.render();
+          const graphicalNotes = [];
+          for (const staff of osmd.GraphicSheet.MeasureList) {
+            for (const measure of staff) {
+              for (const staffEntry of measure.staffEntries) {
+                for (const voiceEntry of staffEntry.graphicalVoiceEntries) {
+                  graphicalNotes.push(...voiceEntry.notes);
+                }
+              }
+            }
+          }
+          notes = graphicalNotes;
+        } catch (err) {
+          console.error("Error loading or rendering MusicXML file:", err);
+        }
+      });
+    </script>
+
     <script>
       // ╭─────────────────────────────────────╮
       // │      Load Pd4Web audio engine       │
@@ -122,6 +154,17 @@
 
           clickableSpan.classList.remove("pd4web-sound-loading");
           clickableSpan.classList.add("pd4web-sound-on");
+
+          var timeCount = 1; // pause
+          var measureToRender = 1;
+
+          Pd4Web.onFloatReceived("score-render", function (f) {
+            var svgId = notes[f].getSVGId();
+            var svgElement = document.getElementById("vf-" + svgId);
+            var noteheadElement = svgElement.querySelector(".vf-notehead");
+            var pathElement = noteheadElement.querySelector("path");
+            pathElement.setAttribute("fill", "red");
+          });
         });
     </script>
   </body>

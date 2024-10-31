@@ -7,7 +7,7 @@
    viewBox="0 0 8.4666665 8.4666666"
    version="1.1"
    id="svg1"
-   inkscape:version="1.3.2 (091e20ef0f, 2023-11-25, custom)"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
    sodipodi:docname="favicon.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -23,15 +23,15 @@
      inkscape:pagecheckerboard="0"
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
-     inkscape:zoom="18.442193"
-     inkscape:cx="16.700834"
-     inkscape:cy="16.673722"
-     inkscape:window-width="1908"
-     inkscape:window-height="1046"
+     inkscape:zoom="5.4187449"
+     inkscape:cx="10.980402"
+     inkscape:cy="36.447554"
+     inkscape:window-width="1340"
+     inkscape:window-height="1048"
      inkscape:window-x="0"
      inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:window-maximized="0"
+     inkscape:current-layer="Workspace" />
   <defs
      id="defs1">
     <inkscape:path-effect
@@ -103,57 +103,20 @@
          x="0"
          y="0"
          style="fill:none;stroke-width:0.470459" />
-      <path
-         class="cls-2"
-         d="m 18.54,14.5 a 7,7 0 0 1 -13.08,0"
-         id="path1"
-         style="fill:none;stroke:#ffffff;stroke-width:1.37145;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <path
-         class="cls-2"
-         d="m 5.46,9.5 a 7,7 0 0 1 13.08,0"
-         id="path2"
-         style="fill:none;stroke:#ffffff;stroke-width:1.37145;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <line
-         class="cls-2"
-         x1="5.46"
-         x2="18.540001"
-         y1="9.5"
-         y2="9.5"
-         id="line2"
-         style="fill:none;stroke:#ffffff;stroke-width:0.470459;stroke-linecap:round;stroke-linejoin:round;stroke-opacity:1" />
-      <line
-         class="cls-2"
-         x1="5.46"
-         x2="18.540001"
-         y1="14.5"
-         y2="14.5"
-         id="line3"
-         style="fill:none;stroke:#ffffff;stroke-width:1.37145;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <polyline
-         class="cls-2"
-         points="4 11 5 13 6 11 7 13 8 11"
-         id="polyline3"
-         style="fill:none;stroke:#ffffff;stroke-width:0.469179;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <polyline
-         class="cls-2"
-         points="10 11 11 13 12 11 13 13 14 11"
-         id="polyline4"
-         style="fill:none;stroke:#ffffff;stroke-width:0.469179;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <polyline
-         class="cls-2"
-         points="16 11 17 13 18 11 19 13 20 11"
-         id="polyline5"
-         style="fill:none;stroke:#ffffff;stroke-width:0.469179;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <path
-         class="cls-2"
-         d="M 14.68,9.5 A 9.21,9.21 0 0 0 12,5 9.18,9.18 0 0 0 9.33,9.47"
-         id="path5"
-         style="fill:none;stroke:#ffffff;stroke-width:1.37145;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
-      <path
-         class="cls-2"
-         d="M 9.32,14.5 A 9.21,9.21 0 0 0 12,19 9.21,9.21 0 0 0 14.68,14.5"
-         id="path6"
-         style="fill:none;stroke:#ffffff;stroke-width:1.37145;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1" />
+      <rect
+         x="6.0974498"
+         y="6.0133939"
+         width="11.952154"
+         height="11.92035"
+         id="7fb48d028a00BASE-7"
+         style="fill:#00fc04;stroke:#000000;stroke-width:0.795749" />
+      <ellipse
+         cx="12.073527"
+         cy="11.973569"
+         id="7fb48d028a00BUT-5"
+         style="fill:#00fc04;stroke:#000000;stroke-width:0.795749"
+         rx="5.1792669"
+         ry="5.1654849" />
     </g>
   </g>
 </svg>
