@@ -23,7 +23,7 @@ theme:
     - navigation.instant
     - header.autohide
   palette:
-    - media: "(prefers-color-scheme)"
+    - media: (prefers-color-scheme)
       toggle:
         icon: material/brightness-auto
         name: Switch to light mode
@@ -71,6 +71,7 @@ nav:
       - Compile: patch/compile.md
       - Problems: patch/problems.md
   - libraries.md
+  - js.md
   - devs.md
  # - Examples: tests/
 plugins:
