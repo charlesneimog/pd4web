@@ -75,6 +75,9 @@ https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.9/build/opensheetmusicdis
             );
           if (isMobile) {
             osmd.zoom = 1.5;
+            const pd4webSoundOff = document.querySelector(".pd4web-sound-off");
+            pd4webSoundOff.style.height = "100px"; // Increase height
+            pd4webSoundOff.style.width = "100px"; // Increase width
           }
 
           osmd.render();
