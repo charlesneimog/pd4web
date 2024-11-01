@@ -86,7 +86,7 @@ var ENVIRONMENT_IS_WASM_WORKER = Module['$ww'];
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /tmp/tmpr3ouy1b2.js
+// include: /tmp/tmpdqqeb4l_.js
 
   if (!Module['expectedDataFileDownloads']) {
     Module['expectedDataFileDownloads'] = 0;
@@ -271,25 +271,25 @@ Module['FS_createPath']("/", "Extras", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/Audios/audio.wav", "start": 0, "end": 10549442, "audio": 1}, {"filename": "/Extras/score.txt", "start": 10549442, "end": 10554512}, {"filename": "/index.pd", "start": 10554512, "end": 10555864}], "remote_package_size": 10555864});
+    loadPackage({"files": [{"filename": "/Audios/audio.wav", "start": 0, "end": 10549442, "audio": 1}, {"filename": "/Extras/score.txt", "start": 10549442, "end": 10554512}, {"filename": "/index.pd", "start": 10554512, "end": 10556124}], "remote_package_size": 10556124});
 
   })();
 
-// end include: /tmp/tmpr3ouy1b2.js
-// include: /tmp/tmpuohy9z3j.js
+// end include: /tmp/tmpdqqeb4l_.js
+// include: /tmp/tmpvi6bp7pc.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /tmp/tmpuohy9z3j.js
-// include: /tmp/tmp1qtku4g3.js
+  // end include: /tmp/tmpvi6bp7pc.js
+// include: /tmp/tmpj6ohqezz.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /tmp/tmp1qtku4g3.js
+  // end include: /tmp/tmpj6ohqezz.js
 
 
 // Sometimes an existing Module object exists with properties
