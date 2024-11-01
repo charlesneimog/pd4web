@@ -79,6 +79,9 @@ plugins:
   - exclude:
       glob: [tests/**/Pd4Web/**]
 extra:
+  analytics:
+    provider: google
+    property: G-E81RWT6R4V
   social:
     - icon: fontawesome/brands/instagram
       link: https://www.instagram.com/charlesneimog/
