@@ -1,4 +1,4 @@
-# Js Module
+# JavaScript Module
 
 `pd4web` has a WebAsssembly module called `Pd4Web`. If you see the `index.html` page inside `WebPatch` you will see that is it always loaded as: 
 

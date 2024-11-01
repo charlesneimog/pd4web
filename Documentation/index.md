@@ -1,10 +1,16 @@
 ---
 hide:
-  - navigation
-  - toc
+ - navigation
+ - toc
 ---
+<style>
+  .md-typeset h1,
+  .md-content__button {
+    display: none;
+  }
+</style>
 
-# Introduction
+# Home
 
 <p align="center"> Welcome to the <code>pd4web</code> documentation! </p>
 
@@ -58,6 +64,19 @@ hide:
       Used to exemplify the concept of Local Maxima used on Partial Tracking.
     </p>
   </div>
+  
+    <div class="card">
+    <h3 class="card-title">VexFlow, Choir, and <code>pd4web</code></h3>
+    <img
+      src="./tests/assets/patch5.jpeg"
+      onclick="window.open('https://charlesneimog.github.io/Pandemonio', '_blank')"
+      class="card-img"
+      style="width: 40%"
+    />
+    <p style="width: 80%; text-align: center">
+        Online algorithm piece that generate the piece based in the real-time spectrum.
+    </p>
+  </div>
 </div>
 
 ---
@@ -84,6 +103,16 @@ hide:
         Using Physical Modelling for Synthesis.
     </p>
   </div>
+  <div class="card">
+    <h3 class="card-title">cartographie <code>p5js</code> + puredata</h3>
+    <img
+      src="./tests/assets/patch4.png"
+      onclick="window.open('https://jyg.github.io/carto_p5', '_blank')"
+      class="card-img"
+    />
+    <p style="width: 80%; text-align: center">Project from Jean-Yves Gratius.</p>
+  </div>
 </div>
 
 ---
+
