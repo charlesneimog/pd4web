@@ -1,6 +1,5 @@
 #N canvas 1282 23 632 1016 10;
 #X obj 20 40 cyclone/wave~;
-#X obj 167 35 cyclone/scope~ 130 130 256 3 128 -1 1 0 0 0 0 205 229 232 74 79 77 96 98 102 0 empty;
 #X obj 20 160 cyclone/selector~;
 #X obj 20 200 cyclone/pink~;
 #X obj 20 320 cyclone/bitxor~;

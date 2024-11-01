@@ -89,7 +89,12 @@ def RunTest(patchPath, port):
         execute_chrome(patchDir, port)
         print("\n\n")
 
-'''
+
+# ╭──────────────────────────────────────╮
+# │              Libraries               │
+# ╰──────────────────────────────────────╯
+
+
 class Pd4WebTest(unittest.TestCase):
     def test_gui(self):
         lib = os.path.join(os.path.dirname(__file__), "Basic/gui")
@@ -114,11 +119,10 @@ class Pd4WebTest(unittest.TestCase):
             shutil.rmtree(f"{lib}/gui")
         except:
             pass
-            
-'''
+
 
 class Pd4webCyclone(unittest.TestCase):
-    def test_else(self):
+    def test_cyclone(self):
         lib = os.path.join(os.path.dirname(__file__), "Libraries/cyclone")
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), "Libraries/cyclone"))
         pd_files = sorted([obj for obj in all_files if obj.endswith(".pd")])
@@ -143,17 +147,7 @@ class Pd4webCyclone(unittest.TestCase):
             pass
 
 
-
-"""
-
-# ╭──────────────────────────────────────╮
-# │              Libraries               │
-# ╰──────────────────────────────────────╯
-
-
-
-
-class Pd4webElse(unittest.TestCase):
+class Pd4WebElse(unittest.TestCase):
     def test_else(self):
         lib = os.path.join(os.path.dirname(__file__), "Libraries/else")
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), "Libraries/else"))
@@ -179,7 +173,7 @@ class Pd4webElse(unittest.TestCase):
             pass
 
 
-class Pd4webPmpd(unittest.TestCase):
+class Pd4WebPmpd(unittest.TestCase):
     def test_pmpd(self):
         lib = os.path.join(os.path.dirname(__file__), "Libraries/pmpd")
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), "Libraries/pmpd"))
@@ -205,7 +199,6 @@ class Pd4webPmpd(unittest.TestCase):
         except:
             pass
 
-"""
 
 if __name__ == "__main__":
     unittest.main(failfast=True)

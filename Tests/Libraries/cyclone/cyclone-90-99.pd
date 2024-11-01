@@ -2,10 +2,6 @@
 #X obj 20 40 cyclone/unjoin;
 #X obj 20 80 cyclone/split;
 #X obj 20 120 cyclone/prepend;
-#X obj 20 160 cyclone/coll;
-#C restore;
-#X obj 20 200 cyclone/coll;
-#C restore;
 #X obj 20 240 cyclone/urn;
 #X obj 20 280 cyclone/atanh;
 #X obj 20 320 cyclone/mean;

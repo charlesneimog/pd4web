@@ -2,7 +2,6 @@
 #X obj 20 40 cyclone/scale;
 #X obj 20 80 cyclone/switch;
 #X obj 20 120 cyclone/counter;
-#X obj 20 160 cyclone/capture;
 #X obj 20 200 cyclone/past;
 #X obj 20 240 cyclone/buddy;
 #X obj 20 280 cyclone/linedrive;

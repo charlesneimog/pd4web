@@ -11,6 +11,17 @@ set(ENABLE_TILDE_TARGET_WARNING off)
 
 include_directories(${LIB_DIR}/shared/)
 
+function(ReplaceLine file line new_line)
+    file(READ ${file} FILE_CONTENTS)
+    string(REPLACE "${line}" "${new_line}" FILE_CONTENTS "${FILE_CONTENTS}")
+    file(WRITE ${file} "${FILE_CONTENTS}")
+endfunction()
+
+ReplaceLine(
+    "${LIB_DIR}/shared/common/shared.h"
+    "#if defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__GNU__)"
+    "#if defined(__linux__) || defined(__FreeBSD_kernel__) || defined(__GNU__) || defined(__EMSCRIPTEN__)")
+
 # ╭──────────────────────────────────────╮
 # │               Control                │
 # ╰──────────────────────────────────────╯
@@ -233,3 +244,59 @@ set(hseq
     "${LIB_DIR}/shared/control/mifi.c;${LIB_DIR}/shared/common/file.c;${LIB_DIR}/shared/common/grow.c"
 )
 pd_add_external(seq "${LIB_DIR}/cyclone_objects/binaries/control/seq.c;${hseq}")
+
+# New dependencies
+pd_add_external(grab "${LIB_DIR}/cyclone_objects/binaries/control/grab.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(decide "${LIB_DIR}/cyclone_objects/binaries/control/decide.c;${LIB_DIR}/shared/common/random.c")
+
+# New dependencies for rand~ and pink~
+pd_add_external(rand~ "${LIB_DIR}/cyclone_objects/binaries/audio/rand.c;${LIB_DIR}/shared/common/random.c")
+pd_add_external(pink~ "${LIB_DIR}/cyclone_objects/binaries/audio/pink.c;${LIB_DIR}/shared/common/random.c")
+
+# New dependencies for frameaccum~ and framedelta~
+pd_add_external(frameaccum~ "${LIB_DIR}/cyclone_objects/binaries/audio/frameaccum.c;${LIB_DIR}/shared/common/grow.c")
+pd_add_external(framedelta~ "${LIB_DIR}/cyclone_objects/binaries/audio/framedelta.c;${LIB_DIR}/shared/common/grow.c")
+
+# New dependency for capture~
+pd_add_external(capture~ "${LIB_DIR}/cyclone_objects/binaries/audio/capture.c;${LIB_DIR}/shared/common/file.c")
+
+# New dependencies for various audio objects using magicbit
+pd_add_external(cartopol~ "${LIB_DIR}/cyclone_objects/binaries/audio/cartopol.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(delay~ "${LIB_DIR}/cyclone_objects/binaries/audio/delay.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(plusequals~ "${LIB_DIR}/cyclone_objects/binaries/audio/plusequals.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(minmax~ "${LIB_DIR}/cyclone_objects/binaries/audio/minmax.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(poltocar~ "${LIB_DIR}/cyclone_objects/binaries/audio/poltocar.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(matrix~ "${LIB_DIR}/cyclone_objects/binaries/audio/matrix.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(sah~ "${LIB_DIR}/cyclone_objects/binaries/audio/sah.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(gate~ "${LIB_DIR}/cyclone_objects/binaries/audio/gate.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(selector~ "${LIB_DIR}/cyclone_objects/binaries/audio/selector.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(kink~ "${LIB_DIR}/cyclone_objects/binaries/audio/kink.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(vectral~ "${LIB_DIR}/cyclone_objects/binaries/audio/vectral.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitand~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitand.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitnot~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitnot.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitor~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitor.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitsafe~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitsafe.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitshift~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitshift.c;${LIB_DIR}/shared/common/magicbit.c")
+pd_add_external(bitxor~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitxor.c;${LIB_DIR}/shared/common/magicbit.c")
+
+# New dependency for scope~
+pd_add_external(scope~ "${LIB_DIR}/cyclone_objects/binaries/audio/scope.c;${LIB_DIR}/shared/common/magicbit.c")
+
+# New dependency for comment
+pd_add_external(comment "${LIB_DIR}/cyclone_objects/binaries/control/comment.c;${LIB_DIR}/shared/control/s_cycloneutf8.c")
+
+# New dependencies for audio objects using cybuf
+pd_add_external(buffir~ "${LIB_DIR}/cyclone_objects/binaries/audio/buffir.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(lookup~ "${LIB_DIR}/cyclone_objects/binaries/audio/lookup.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(index~ "${LIB_DIR}/cyclone_objects/binaries/audio/index.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(peek~ "${LIB_DIR}/cyclone_objects/binaries/audio/peek.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(poke~ "${LIB_DIR}/cyclone_objects/binaries/audio/poke.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(record~ "${LIB_DIR}/cyclone_objects/binaries/audio/record.c;${LIB_DIR}/shared/signal/cybuf.c")
+pd_add_external(wave~ "${LIB_DIR}/cyclone_objects/binaries/audio/wave.c;${LIB_DIR}/shared/signal/cybuf.c")
+
+# New dependency for play~ using both magicbit and cybuf
+pd_add_external(play~ "${LIB_DIR}/cyclone_objects/binaries/audio/play.c;${LIB_DIR}/shared/common/magicbit.c;${LIB_DIR}/shared/signal/cybuf.c")
+
+# New dependency for cyclone using magicbit
+pd_add_external(cyclone "${LIB_DIR}/cyclone_objects/binaries/cyclone_lib.c;${LIB_DIR}/shared/common/magicbit.c")
+

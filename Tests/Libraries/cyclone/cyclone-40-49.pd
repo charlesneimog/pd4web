@@ -7,4 +7,3 @@
 #X obj 20 240 cyclone/fromsymbol;
 #X obj 20 280 cyclone/bangbang;
 #X obj 20 320 cyclone/rminus;
-#X obj 20 360 cyclone/mousestate;

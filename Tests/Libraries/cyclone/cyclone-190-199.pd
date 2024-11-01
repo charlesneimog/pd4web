@@ -1,6 +1,5 @@
-#N canvas 0 0 450 300 10;
+#N canvas 1282 23 632 1016 10;
 #X obj 20 40 cyclone/change~;
-#X obj 20 80 cyclone/capture~;
 #X obj 20 120 cyclone/zerox~;
 #X obj 20 160 cyclone/asinh~;
 #X obj 20 200 cyclone/round~;

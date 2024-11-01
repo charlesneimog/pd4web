@@ -4,5 +4,4 @@
 #X obj 20 160 cyclone/iter;
 #X obj 20 200 cyclone/substitute;
 #X obj 20 240 cyclone/histo;
-#X obj 20 360 cyclone/mousefilter;
 #X obj 20 400 cyclone/dbtoa;
