@@ -6,6 +6,9 @@ on:
     tags: '*'
 permissions:
   contents: write
+env:
+  LIBNAME: pd4web
+  LIBVERSION: ${{ github.ref_name }}
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -72,11 +75,146 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Install pd4web
         run: |
-          pip install poetry
-          poetry build
-          pip install dist/*.whl
+          pip install . 
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  # PureData Object        
+  macos-x86-build:
+    runs-on: macos-13
+    strategy:
+      matrix:
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Build Object for x86
+        run: |
+          brew install --cask pd
+          cd Resources/Pd
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/usr/local/include/"
+          export LDFLAGS="-L/usr/local/lib"
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j $(sysctl -n hw.logicalcpu) 
+          cmake --install build --config Release
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.LIBNAME}}-macos-x86-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  macos-arm-build:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Build Object
+        run: |
+          brew install --cask pd
+          cd Resources/Pd
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/opt/homebrew/include/"
+          export LDFLAGS="-L/opt/homebrew/lib"
+          cmake . -B build -DCMAKE_OSX_ARCHITECTURES=arm64 -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j $(sysctl -n hw.logicalcpu) --config Release
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{env.LIBNAME}}-macos-arm-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  linux-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64]
+        precision: [32, 64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: PureData Sources
+        run: |
+          sudo apt update
+          sudo add-apt-repository ppa:pure-data/pure-data -y
+          sudo apt install puredata -y
+      - name: Build Object
+        run: |
+          cd Resources/Pd
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR=./ -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j$(nproc) --config Release
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-linux-${{matrix.arch}}-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  windows-build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [amd64]
+        precision: [32]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: PureData Sources
+        run: |
+          choco install puredata
+      - name: Build Object
+        run: |
+          cd Resources/Pd
+          cmake . -B build -DPD_FLOATSIZE=${{ matrix.precision }} -DPDLIBDIR="./"
+          cmake --build build --config Release 
+          cmake --install build
+      - name: Upload Object
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-windows-${{matrix.arch}}-${{matrix.precision}}
+          path: Resources/Pd/pd4web
+  package-artifacts:
+    needs:
+      - macos-arm-build
+      - macos-x86-build
+      - windows-build
+      - linux-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.LIBNAME }}-*
+          path: artifacts
+          merge-multiple: true
+      - name: Clear tmp files
+        run: rm -f artifacts/*.pdb
+        # ──────────────────────────────────────
+      - name: Install Deken
+        continue-on-error: true
+        run: |
+          mkdir -p ${PWD}/package
+          docker run --rm --user $(id -u) \
+          --volume ${PWD}/artifacts:/artifacts \
+          --volume ${PWD}/package:/package \
+          registry.git.iem.at/pd/deken \
+          deken package /artifacts --output-dir /package -v ${{env.LIBVERSION}} -n ${{env.LIBNAME}}
+      - name: Clear Artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: ${{ env.LIBNAME }}-*
+      - name: Upload Deken
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.LIBNAME }}-${{env.LIBVERSION}}
+          path: ./package/
