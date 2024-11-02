@@ -10,7 +10,7 @@ on:
     paths: [Resources/Pd/Sources/*.cpp]
 env:
   LIBNAME: pd4web
-  LIBVERSION: 2.0.8
+  LIBVERSION: 2.0.9
 jobs:
   macos-x86-build:
     runs-on: macos-13
