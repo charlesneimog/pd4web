@@ -115,6 +115,7 @@ class Pd4WebTest(unittest.TestCase):
                 ## print in red
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 RunTest(newpatch, 5000)
+            shutil.rmtree(f"{lib}/gui/{patchname}")
         try:
             shutil.rmtree(f"{lib}/gui")
         except:
@@ -141,6 +142,7 @@ class Pd4webCyclone(unittest.TestCase):
                 ## print in red
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 RunTest(newpatch, 5000)
+            shutil.rmtree(f"{lib}/cyclone/{patchname}")
         try:
             shutil.rmtree(f"{lib}/cyclone")
         except:
@@ -167,6 +169,7 @@ class Pd4WebElse(unittest.TestCase):
                 ## print in red
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 RunTest(newpatch, 5000)
+            shutil.rmtree(f"{lib}/else/{patchname}")
         try:
             shutil.rmtree(f"{lib}/else")
         except:
@@ -193,7 +196,7 @@ class Pd4WebPmpd(unittest.TestCase):
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 RunTest(newpatch, 5000)
                 pass
-
+            shutil.rmtree(f"{lib}/pmpd/{patchname}")
         try:
             shutil.rmtree(f"{lib}/pmpd")
         except:
