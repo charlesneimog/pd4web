@@ -76,14 +76,12 @@ List of Pd externals supported by <code>pd4web</code>.
             <td>Charles K. Neimog</td>
         </tr>
     </tbody>
-    
-    
  </table>
 
 ----------------------------------
 
 <p style="text-align: center">
-    More than 1000 objects are supported by <code>pd4web</code>.
+    Almost 1000 objects are supported by <code>pd4web</code>, more is coming.
 </p>
 
 ----------------------------------

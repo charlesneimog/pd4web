@@ -3,6 +3,7 @@ site_name: pd4web
 docs_dir: Documentation
 copyright: Copyright &copy 2023 | Charles K. Neimog | University of São Paulo.
 theme:
+  language: en
   logo: assets/icon-light.svg
   custom_dir: Documentation/overrides
   logo_dark_mode: assets/icon-dark.svg
@@ -65,20 +66,27 @@ repo_url: https://github.com/charlesneimog/pd4web
 extra_css: [extra/extra.css]
 extra_javascript: [js/index_slider.js]
 nav:
-  - index.md
+  - Home: en/index.md
   - Compile your patch:
-      - Intro: patch/install.md
-      - Compile: patch/compile.md
-      - Problems: patch/problems.md
-  - libraries.md
-  - js.md
-  - devs.md
+      - Intro: en/patch/install.md
+      - Compile: en/patch/compile.md
+      - Problems: en/patch/problems.md
+  - en/libraries.md
+  - en/js.md
+  - en/devs.md
  # - Examples: tests/
 plugins:
   - search
   - exclude:
       glob: [tests/**/Pd4Web/**]
 extra:
+  #alternate:
+  #  - name: English
+  #    link: /en
+  #    lang: en
+  #  - name: Português
+  #    link: /pt/
+  #    lang: pt
   analytics:
     provider: google
     property: G-E81RWT6R4V
