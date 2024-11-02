@@ -54,7 +54,7 @@ hide:
   </div>
   
   <div class="card">
-    <h3 class="card-title">Didatical patches</h3>
+    <h3 class="card-title">Didactic patches</h3>
     <img
       src="../tests/assets/didaticos.png"
       onclick="window.open('https://charlesneimog.github.io/Tese/Pages/Local-Maxima/', '_blank')"
