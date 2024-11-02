@@ -263,7 +263,7 @@ static void pd4web_update(Pd4Web *x) {
             Line += Buf.data();
             Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
             if (Line != "[pd4web] ") {
-                LastLine = "pd4web "+Line;
+                LastLine = "pd4web " + Line;
             }
         }
         post(LastLine.c_str());
