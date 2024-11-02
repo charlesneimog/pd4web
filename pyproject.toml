@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pd4web"
-version = "2.0.7"
+version = "2.0.10"
 description = "pd4web compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
 authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
 readme = "README.md"

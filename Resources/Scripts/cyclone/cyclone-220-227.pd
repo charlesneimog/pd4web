@@ -1,9 +1,0 @@
-#N canvas 0 0 450 300 10;
-#X obj 20 40 cyclone/play~;
-#X obj 20 80 cyclone/equals~;
-#X obj 20 120 cyclone/cosh~;
-#X obj 20 160 cyclone/deltaclip~;
-#X obj 20 200 cyclone/rampsmooth~;
-#X obj 20 240 cyclone/asin~;
-#X obj 20 280 cyclone/atodb~;
-#X obj 20 320 cyclone/lessthan~;

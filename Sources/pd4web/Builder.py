@@ -414,38 +414,52 @@ class GetAndBuildExternals:
     def CopyExtraJsFiles(self):
         cwd = os.getcwd()
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gitignore",
-            self.Pd4Web.PROJECT_ROOT + "/.gitignore",
-        )
+        # just copy files if they don't exist
+        
+        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.gitignore"):
+            shutil.copy(
+                self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gitignore",
+                self.Pd4Web.PROJECT_ROOT + "/.gitignore",
+            )
 
         os.chdir(self.Pd4Web.PROJECT_ROOT)
-        # shutil.copy(self.Pd4Web.Patch, self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.pd")
+        
+        # Define source and destination paths
+        favicon_src = self.Pd4Web.PD4WEB_ROOT + "/../favicon.ico"
+        favicon_dest = self.Pd4Web.PROJECT_ROOT + "/favicon.ico"
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../favicon.ico",
-            self.Pd4Web.PROJECT_ROOT + "/",
-        )
+        threads_src = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.threads.js"
+        threads_dest = self.Pd4Web.PROJECT_ROOT + "/WebPatch/pd4web.threads.js"
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.threads.js",
-            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
-        )
+        midi_src = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.midi.js"
+        midi_dest = self.Pd4Web.PROJECT_ROOT + "/WebPatch/pd4web.midi.js"
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.midi.js",
-            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
-        )
+        css_src = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.style.css"
+        css_dest = self.Pd4Web.PROJECT_ROOT + "/WebPatch/pd4web.style.css"
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.style.css",
-            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
-        )
+        js_src = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gui.js"
+        js_dest = self.Pd4Web.PROJECT_ROOT + "/WebPatch/pd4web.gui.js"
+        
+        # Copy favicon if it does not exist at the destination
+        if not os.path.exists(favicon_dest):
+            shutil.copy(favicon_src, favicon_dest)
 
-        shutil.copy(
-            self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gui.js",
-            self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
-        )
+        # Copy threads.js if it does not exist at the destination
+        if not os.path.exists(threads_dest):
+            shutil.copy(threads_src, threads_dest)
+
+        # Copy midi.js if it does not exist at the destination
+        if not os.path.exists(midi_dest):
+            shutil.copy(midi_src, midi_dest)
+
+        # Copy CSS file if it does not exist at the destination
+        if not os.path.exists(css_dest):
+            shutil.copy(css_src, css_dest)
+
+        # Copy JS file if it does not exist at the destination
+        if not os.path.exists(js_dest):
+            shutil.copy(js_src, js_dest)
+    
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html"):
             shutil.copy(
                 self.Pd4Web.PD4WEB_ROOT + "/../index.html",

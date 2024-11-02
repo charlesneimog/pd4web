@@ -221,6 +221,70 @@ static void pd4web_browser(Pd4Web *x, float f) {
         x->server->stop();
     }
 }
+
+// ─────────────────────────────────────
+static void pd4web_update(Pd4Web *x) {
+        // pd4web bin
+#if defined(_WIN32) || defined(_WIN64)
+    std::string cmd = x->objRoot + "/.venv/Scripts/pip.exe install pd4web --upgrade";
+#else
+    std::string cmd = x->objRoot + "/.venv/bin/pip install pd4web --upgrade";
+#endif
+#if defined(_WIN32) || defined(_WIN64)
+    std::thread t([x, cmd]() {
+        int result = system(cmd.c_str());
+        if (result != 0) {
+            pd_error(nullptr,
+                     "[pd4web] Update failed, please report this issue to the pd4web repository");
+            x->running = false;
+            return;
+        } else {
+            x->running = false;
+            post("[pd4web] Done!");
+        }
+    });
+    t.detach();
+#else
+    pd_error(x, "[pd4web] Updating pd4web on background, please wait...");
+    std::thread t([x, cmd]() {
+        std::array<char, 256> Buf;
+        std::string Result;
+        FILE *Pipe = popen(cmd.c_str(), "r");
+
+        if (!Pipe) {
+            pd_error(nullptr, "[pd4web] popen failed");
+            x->running = false;
+            return;
+        }
+
+        std::string LastLine = "";
+        while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+            std::string Line = "[pd4web] ";
+            Line += Buf.data();
+            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+            if (Line != "[pd4web] ") {
+                LastLine = "pd4web " + Line;
+            }
+        }
+        post(LastLine.c_str());
+        int exitCode = pclose(Pipe);
+        if (exitCode != 0) {
+            x->running = false;
+            pd_error(nullptr,
+                     "[pd4web] Update failed, please report this issue to the pd4web repository");
+
+        } else {
+            x->running = false;
+            pd_error(x, "[pd4web] Done!");
+        }
+    });
+    t.detach();
+#endif
+
+    return;
+
+}
+
 // ─────────────────────────────────────
 static void pd4web_compile(Pd4Web *x) {
     x->running = true;
@@ -344,5 +408,6 @@ extern "C" void pd4web_setup(void) {
 
     class_addmethod(pd4web_class, (t_method)pd4web_setconfig, gensym("set"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_NULL);
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }

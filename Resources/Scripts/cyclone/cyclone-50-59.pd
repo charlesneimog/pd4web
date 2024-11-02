@@ -1,9 +1,0 @@
-#N canvas 1282 23 632 1016 10;
-#X obj 20 80 cyclone/onebang;
-#X obj 20 160 cyclone/flush;
-#X obj 20 200 cyclone/trough;
-#X obj 20 280 cyclone/mtr;
-#C restore;
-#X obj 20 320 cyclone/universal;
-#X obj 20 360 cyclone/table;
-#C restore;

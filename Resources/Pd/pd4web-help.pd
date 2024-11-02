@@ -1,5 +1,5 @@
-#N canvas 799 378 322 306 12;
-#N canvas 4 21 1912 1020 patch 0;
+#N canvas 627 212 330 327 12;
+#N canvas 0 37 1470 891 patch 0;
 #X obj 10 106 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 2048 256;
 #X obj 29 221 bng 25 250 50 0 s-compile r-compile empty -15 -10 0 12 #ffc7c6 #ff0400 #000000;
 #X obj 14 321 r r-memory;
@@ -78,7 +78,7 @@
 #X obj 14 441 expr if($f1 > 2048 \, 2048 \, $f1);
 #X obj 14 491 nbx 5 18 -1e+37 1e+37 0 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 256;
 #X obj 93 7 cnv 15 133 25 empty empty Pd4Web\ Compiler 20 12 0 12 #dfdfdf #000000 0;
-#X obj 7 37 cnv 5 310 10 empty empty 1)\ Choose\ Patch 2 5 0 8 #c6ffc7 #000000 0;
+#X obj 7 37 cnv 5 150 10 empty empty 1)\ Choose\ Patch 2 5 0 8 #c6ffc7 #000000 0;
 #X obj 6 209 cnv 5 310 10 empty empty 3)\ Compile\ Patch 2 5 0 8 #ffc7c6 #000000 0;
 #X obj 6 88 cnv 5 310 10 empty empty 2)\ Configurations 2 5 0 8 #ffe3c6 #000000 0;
 #X obj 59 109 cnv 5 240 10 empty empty Memory\ (Mb)\ -\ Big\ patches\ require\ more\ memory. 2 5 0 8 #feffc6 #000000 0;
@@ -125,6 +125,10 @@
 #X obj 159 542 nbx 5 18 -1e+37 1e+37 0 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 256;
 #X obj 159 517 r r-zoom;
 #X msg 159 565 set zoom \$1;
+#X obj 167 37 cnv 5 150 10 empty empty Update\ pd4web\ package 2 5 0 8 #e3c6ff #000000 0;
+#X obj 219 49 bng 25 250 50 0 s-pd4web-update r-pd4web-update empty 0 -10 0 12 #e3c6ff #0f4710 #000000;
+#X obj 279 486 r s-pd4web-update;
+#X msg 279 510 update;
 #X connect 2 0 3 0;
 #X connect 3 0 19 0;
 #X connect 3 0 37 0;
@@ -150,5 +154,7 @@
 #X connect 45 0 47 0;
 #X connect 46 0 45 0;
 #X connect 47 0 18 0;
+#X connect 50 0 51 0;
+#X connect 51 0 18 0;
 #X coords 0 -1 1 1 315 300 2 5 5;
-#X restore 3 3 pd patch;
+#X restore 5 6 pd patch;

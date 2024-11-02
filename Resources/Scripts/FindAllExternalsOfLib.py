@@ -20,6 +20,25 @@ class PdObjectsInSource:
                     completePath = os.path.join(root, file)
                     self.regexSearch(completePath)
         self.writePatches()
+        
+        # found all the Abstractions, Abstractions
+        pd_files = []
+        for root, _, files in os.walk(self.libDir):
+            for file in files:
+                if file.endswith(".pd"):
+                    pd_patch = os.path.join(root, file)
+                    pd_file = os.path.basename(pd_patch)
+                    pd_files.append(pd_file)
+        
+        # loop through all the pd files and find all the .pd files that have and equivalent -help.pd file
+        abs_count = 0
+
+        for pd_file in pd_files:
+            patch_name = os.path.basename(pd_file).replace(".pd", "")
+            if patch_name + "-help.pd" in pd_files:
+                abs_count += 1
+        print(f"Total of Abs:      {abs_count}")
+
 
     def regexSearch(self, file):
         with open(file, "r", encoding="utf-8") as c_file:
