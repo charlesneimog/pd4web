@@ -115,3 +115,19 @@ hide:
 
 ---
 
+
+## <h2 align="center"> **Contributors** </h2>
+
+<img src="https://contrib.rocks/image?repo=charlesneimog/pd4web"
+    style="height: auto; width: auto; position: relative; left: 50%; transform: translateX(-50%); margin-bottom: 50px;">
+
+---
+
+## <h2 align="center"> **About me** </h2>
+
+<div style="margin-left: 20%; margin-right: 20%; display: flex; align-items: center; text-align: justify;">
+    <img style="border-radius: 40px; width: 20%; margin-right: 20px;" src="https://www.gravatar.com/avatar/35bfca6c25d1dd5a35dac8b4a1240c65" alt="Profile Picture">
+    <p style="margin: 0;">
+        I am Charles K. Neimog, a composer and researcher in the field of computer music. <code>pd4web</code> is a project to make possible the use of PureData in web browsers, improving the accessibility of electronic music. 
+    </p>
+</div>

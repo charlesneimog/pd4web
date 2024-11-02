@@ -8,7 +8,7 @@ theme:
   custom_dir: Documentation/overrides
   logo_dark_mode: assets/icon-dark.svg
   logo_light_mode: assets/icon-light.svg
-  favicon: assets/icon.png
+  favicon: assets/favicon.svg
   name: material
   features:
     - navigation.top
