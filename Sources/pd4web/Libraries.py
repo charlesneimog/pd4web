@@ -160,6 +160,7 @@ class ExternalLibraries:
             curr_commit: pygit2.Commit = libRepo.head.peel()
             lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
             if curr_commit.id == lib_commit.id:
+                # pd4web_print(f"Library {libData.repo} is in the right commit", color="green")
                 return  # library up-to-date
             libRepo.set_head(lib_commit.id)
             libRepo.checkout_tree(lib_commit)
@@ -174,7 +175,7 @@ class ExternalLibraries:
             raise Exception(f"Failed to clone repository: {str(e)}")
 
         libRepo: pygit2.Repository = pygit2.Repository(libPath)
-        tagName = libData.version  # Assuming libData.version contains either a tag or a commit hash
+        tagName = libData.version
         commit = self.getLibCommitVersion(libRepo, tagName)
         libRepo.set_head(commit.id)
         libRepo.checkout_tree(commit)
@@ -215,67 +216,77 @@ class ExternalLibraries:
         libFolder = self.Pd4Web.APPDATA + f"/Externals/{libData.name}"
         self.CloneLibrary(libFolder, libData)
         if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
+            try:
+                shutil.copytree(
+                    libFolder,
+                    self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
+                    symlinks=False,
+                    dirs_exist_ok=True,
+                    ignore_dangling_symlinks=True,
+                    ignore=shutil.ignore_patterns(".git"),
+                )
+            except:
 
-            def ignore_symlinks(src, names):
-                return [name for name in names if os.path.islink(os.path.join(src, name))]
+                def ignore_symlinks(src, names):
+                    return [name for name in names if os.path.islink(os.path.join(src, name))]
 
-            shutil.copytree(
-                libFolder,
-                self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
-                symlinks=False,
-                ignore=ignore_symlinks,
-                dirs_exist_ok=True,
-                ignore_dangling_symlinks=True,
-            )
+                shutil.copytree(
+                    libFolder,
+                    self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
+                    symlinks=False,
+                    ignore=ignore_symlinks,
+                    dirs_exist_ok=True,
+                    ignore_dangling_symlinks=True,
+                )
 
         return True
 
-    def GetLibrarySourceCodeOld(
-        self,
-        libName: str,
-    ):
-        if self.isSupportedLibrary(libName):
-            if os.path.exists(os.path.join(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName)):
-                return True
-            if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
-                os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
-
-            # Library Download
-            libData = self.GetLibraryData(libName)
-            if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
-                os.mkdir(self.Pd4Web.APPDATA + "/Externals")
-            libPath = self.Pd4Web.APPDATA + f"/Externals/{libData.name}/"
-            if not os.path.exists(libPath):
-                os.mkdir(libPath)
-
-            libZip = f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
-            if not os.path.exists(libZip):
-                pd4web_print(
-                    f"Downloading {libData.name} {libData.version}...\n",
-                    color="green",
-                    silence=self.Pd4Web.SILENCE,
-                )
-                libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/refs/tags/{libData.version}.zip"
-                if not self.CheckLibraryLink(libSource):
-                    libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/{libData.version}.zip"
-                    if not self.CheckLibraryLink(libSource):
-                        raise Exception(
-                            f"Error: Could not find good download link for {libData.name} version {libData.version}."
-                        )
-                DownloadZipFile(libSource, libZip)  # <== Download Library
-
-            if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
-                with zipfile.ZipFile(libZip, "r") as zip_ref:
-                    zip_ref.extractall(self.PROJECT_ROOT + "/Pd4Web/Externals/")
-                    extractFolderName = zip_ref.namelist()[0]
-                    os.rename(
-                        self.PROJECT_ROOT + "/Pd4Web/Externals/" + extractFolderName,
-                        self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
-                    )
-
-            libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName
-            self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
-            return True
+    # def GetLibrarySourceCodeOld(
+    #     self,
+    #     libName: str,
+    # ):
+    #     if self.isSupportedLibrary(libName):
+    #         if os.path.exists(os.path.join(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName)):
+    #             return True
+    #         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
+    #             os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
+    #
+    #         # Library Download
+    #         libData = self.GetLibraryData(libName)
+    #         if not os.path.exists(self.Pd4Web.APPDATA + "/Externals"):
+    #             os.mkdir(self.Pd4Web.APPDATA + "/Externals")
+    #         libPath = self.Pd4Web.APPDATA + f"/Externals/{libData.name}/"
+    #         if not os.path.exists(libPath):
+    #             os.mkdir(libPath)
+    #
+    #         libZip = f"{self.Pd4Web.APPDATA}/Externals/{libData.name}/{libData.version}.zip"
+    #         if not os.path.exists(libZip):
+    #             pd4web_print(
+    #                 f"Downloading {libData.name} {libData.version}...\n",
+    #                 color="green",
+    #                 silence=self.Pd4Web.SILENCE,
+    #             )
+    #             libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/refs/tags/{libData.version}.zip"
+    #             if not self.CheckLibraryLink(libSource):
+    #                 libSource = f"https://github.com/{libData.dev}/{libData.repo}/archive/{libData.version}.zip"
+    #                 if not self.CheckLibraryLink(libSource):
+    #                     raise Exception(
+    #                         f"Error: Could not find good download link for {libData.name} version {libData.version}."
+    #                     )
+    #             DownloadZipFile(libSource, libZip)  # <== Download Library
+    #
+    #         if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
+    #             with zipfile.ZipFile(libZip, "r") as zip_ref:
+    #                 zip_ref.extractall(self.PROJECT_ROOT + "/Pd4Web/Externals/")
+    #                 extractFolderName = zip_ref.namelist()[0]
+    #                 os.rename(
+    #                     self.PROJECT_ROOT + "/Pd4Web/Externals/" + extractFolderName,
+    #                     self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
+    #                 )
+    #
+    #         libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName
+    #         self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
+    #         return True
 
     def AddUsedLibraries(self, LibraryName):
         self.UsedLibraries.append(LibraryName)
