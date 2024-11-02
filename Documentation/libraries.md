@@ -16,7 +16,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <thead>
         <tr>
           <th>Library Name</th>
-          <th>Health</th>
           <th>Description</th>
           <th>Numbers of Objects</th>
           <th>Numbers of Abs</th>
@@ -26,7 +25,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
         <tr>
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
-          <td>🟢️</td>
           <td><code>else</code> is a library required. It make a lot of things easier.</td> 
           <td>337</td>
           <td>242</td>
@@ -36,7 +34,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
         <tr>
           <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
-          <td>🟢️</td>
           <td><code>cyclone</code> clone a lot of Max objects.</td> 
           <td>271</td>
           <td>2</td>
@@ -46,7 +43,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
       <tr>
         <td><a href="https://github.com/pd-externals/earplug/">earplug</a></td>
-        <td>🟢️</td>
         <td>For binaural spacialization.</td>
         <td>1</td>
         <td>0</td>
@@ -56,7 +52,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
         <tr>
             <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
-            <td>🟢️</td>
             <td>Music Analisys and MIR in general.</td>
             <td>110</td>
             <td>0</td>
@@ -66,7 +61,6 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
         <tr>
             <td><a href="https://github.com/avilleret/pd-pmpd">pmpd</a></td>
-            <td>🟢️</td>
             <td>Physical Modeling for PureData</td>
             <td>32</td>
             <td>0</td>
@@ -76,7 +70,6 @@ List of Pd externals supported by <code>pd4web</code>.
         <tbody>
         <tr>
             <td><a href="  https://github.com/charlesneimog/OScofo">o.scofo~</a></td>
-            <td>🟢️</td>
             <td>Score Follower.</td>
             <td>1</td>
             <td>0</td>
@@ -87,6 +80,13 @@ List of Pd externals supported by <code>pd4web</code>.
     
  </table>
 
+----------------------------------
+
+<p style="text-align: center">
+    More than 1000 objects are supported by <code>pd4web</code>.
+</p>
+
+----------------------------------
 <p style="text-align: center">
 Need another library? Please let us know on <a href="https://github.com/charlesneimog/pd4web/issues" target="_blank">GitHub</a>.
 </p>
