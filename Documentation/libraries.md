@@ -19,6 +19,7 @@ List of Pd externals supported by <code>pd4web</code>.
           <th>Health</th>
           <th>Description</th>
           <th>Numbers of Objects</th>
+          <th>Numbers of Abs</th>
           <th>Main Dev</th>
         </tr>
     </thead>
@@ -27,7 +28,18 @@ List of Pd externals supported by <code>pd4web</code>.
           <td><a href="https://github.com/porres/pd-else">pd-else</a></td>
           <td>🟢️</td>
           <td><code>else</code> is a library required. It make a lot of things easier.</td> 
-          <td>509</td>
+          <td>337</td>
+          <td>242</td>
+          <td>Alexandre Porres</th>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+          <td><a href="https://github.com/porres/pd-cyclone">pd-cyclone</a></td>
+          <td>🟢️</td>
+          <td><code>cyclone</code> clone a lot of Max objects.</td> 
+          <td>271</td>
+          <td>2</td>
           <td>Alexandre Porres</th>
         </tr>
     </tbody>
@@ -37,6 +49,7 @@ List of Pd externals supported by <code>pd4web</code>.
         <td>🟢️</td>
         <td>For binaural spacialization.</td>
         <td>1</td>
+        <td>0</td>
         <td>Dan Wilcox</th>
       </tr>
     </tbody>
@@ -46,16 +59,17 @@ List of Pd externals supported by <code>pd4web</code>.
             <td>🟢️</td>
             <td>Music Analisys and MIR in general.</td>
             <td>110</td>
+            <td>0</td>
             <td>Willian Brent</td>
         </tr>
     </tbody>
-    
     <tbody>
         <tr>
-            <td><a href="  https://github.com/avilleret/pd-pmpd">pmpd</a></td>
+            <td><a href="https://github.com/avilleret/pd-pmpd">pmpd</a></td>
             <td>🟢️</td>
             <td>Physical Modeling for PureData</td>
-            <td>30</td>
+            <td>32</td>
+            <td>0</td>
             <td>Cyrille Henry</td>
         </tr>
     </tbody>
@@ -65,6 +79,7 @@ List of Pd externals supported by <code>pd4web</code>.
             <td>🟢️</td>
             <td>Score Follower.</td>
             <td>1</td>
+            <td>0</td>
             <td>Charles K. Neimog</td>
         </tr>
     </tbody>
@@ -73,5 +88,5 @@ List of Pd externals supported by <code>pd4web</code>.
  </table>
 
 <p style="text-align: center">
-Need some other library, please tell us on <a>https://github.com/charlesneimog/pd4web/issues</a>. 
+Need another library? Please let us know on <a href="https://github.com/charlesneimog/pd4web/issues" target="_blank">GitHub</a>.
 </p>
