@@ -51,7 +51,7 @@ Libraries:
     Source: GITHUB
     Developer: porres
     Repository: pd-else
-    Version: v.1.0-rc12
+    Version: faa72218e7290769b689cddc9b66ae0db5c2faaa
     Unsupported:
       # Need implementation
       - sfz~
