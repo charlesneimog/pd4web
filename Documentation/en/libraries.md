@@ -10,8 +10,6 @@ hide:
 List of Pd externals supported by <code>pd4web</code>.
 </p>
 
-----------------------------------
-
 <table class="special-table">
     <thead>
         <tr>
