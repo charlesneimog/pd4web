@@ -115,6 +115,24 @@ hide:
 
 ---
 
+<div class="container">
+  <div class="card">
+    <h3 class="card-title"><code>p5js</code>, <code>ml5</code> and <code>pd4web</code></h3>
+    <img
+      src="../tests/assets/code-train.png"
+      onclick="window.open('../tests/ml5', '_blank')"
+      class="card-img"
+    />
+    <p style="width: 80%; text-align: center">Hand recognition with PureData. Stealing code from the Code-Train channel</p>
+  </div> 
+
+ <div>
+  </div> 
+
+  <div></div> 
+</div>
+---
+
 
 ## <h2 align="center"> **About me** </h2>
 
