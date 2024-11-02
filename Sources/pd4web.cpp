@@ -922,7 +922,7 @@ int main() {
     _JS_setTitle(PD4WEB_PROJECT_NAME);
     _JS_addAlertOnError();
 
-    printf("pd4web version %d.%d.%d\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
+    printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
            PD4WEB_VERSION_PATCH);
     emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
 

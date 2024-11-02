@@ -143,7 +143,6 @@ class ExternalLibraries:
             else:
                 commit = tag_ref.peel()
         except:
-            pd4web_print(f"Tag not found, trying to get commit by hash", color="yellow")
             commit = libRepo.head.peel()
         return commit
 

@@ -303,10 +303,11 @@ class GetAndBuildExternals:
             major = numbers[0]
             minor = numbers[1]
             patch = numbers[2]
+
             f.write(f"// Pd4Web Version\n")
-            f.write(f"#define PD4WEB_VERSION_MAJOR {major}\n")
-            f.write(f"#define PD4WEB_VERSION_MINOR {minor}\n")
-            f.write(f"#define PD4WEB_VERSION_PATCH {patch}\n\n")
+            f.write(f'#define PD4WEB_VERSION_MAJOR "{major}"\n')
+            f.write(f'#define PD4WEB_VERSION_MINOR "{minor}"\n')
+            f.write(f'#define PD4WEB_VERSION_PATCH "{patch}"\n\n')
 
             f.write(f"// Project Name\n")
             projectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
@@ -415,7 +416,7 @@ class GetAndBuildExternals:
         cwd = os.getcwd()
 
         # just copy files if they don't exist
-        
+
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.gitignore"):
             shutil.copy(
                 self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gitignore",
@@ -423,7 +424,7 @@ class GetAndBuildExternals:
             )
 
         os.chdir(self.Pd4Web.PROJECT_ROOT)
-        
+
         # Define source and destination paths
         favicon_src = self.Pd4Web.PD4WEB_ROOT + "/../favicon.ico"
         favicon_dest = self.Pd4Web.PROJECT_ROOT + "/favicon.ico"
@@ -439,7 +440,7 @@ class GetAndBuildExternals:
 
         js_src = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gui.js"
         js_dest = self.Pd4Web.PROJECT_ROOT + "/WebPatch/pd4web.gui.js"
-        
+
         # Copy favicon if it does not exist at the destination
         if not os.path.exists(favicon_dest):
             shutil.copy(favicon_src, favicon_dest)
@@ -459,7 +460,7 @@ class GetAndBuildExternals:
         # Copy JS file if it does not exist at the destination
         if not os.path.exists(js_dest):
             shutil.copy(js_src, js_dest)
-    
+
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html"):
             shutil.copy(
                 self.Pd4Web.PD4WEB_ROOT + "/../index.html",

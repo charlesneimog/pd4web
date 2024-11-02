@@ -1,9 +1,9 @@
 // This is automatically generated code from pd4web.py script
 
 // Pd4Web Version
-#define PD4WEB_VERSION_MAJOR 2
-#define PD4WEB_VERSION_MINOR 0
-#define PD4WEB_VERSION_PATCH 3
+#define PD4WEB_VERSION_MAJOR "test"
+#define PD4WEB_VERSION_MINOR "dev"
+#define PD4WEB_VERSION_PATCH "beta"
 
 // Project Name
 #define PD4WEB_PROJECT_NAME "Test10"
