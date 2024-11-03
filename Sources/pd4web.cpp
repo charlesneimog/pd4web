@@ -112,6 +112,9 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
         Pd4Web.Zoom = Zoom;
         Pd4WebInitGui(); // defined in pd4web.gui.js
     };
+    script.onerror = function() {
+        console.warn("GUI file not found.");
+    };
 
     document.head.appendChild(script); 
 });
@@ -119,7 +122,6 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
 // ─────────────────────────────────────
 EM_JS(void, _JS_loadStyle, (void), {
     if (document.getElementById("pd4web-style") != null){
-        console.log("GUI already loaded");
         return;
     }
 
@@ -130,6 +132,9 @@ EM_JS(void, _JS_loadStyle, (void), {
     link.href = "./pd4web.style.css";
     link.id = "pd4web-style";
     document.head.appendChild(link);
+    link.onerror = function() {
+        console.warn("CSS file not found.");
+    };
 });
 
 // ─────────────────────────────────────
@@ -918,8 +923,8 @@ int main() {
     if (PD4WEB_GUI) {
         _JS_loadStyle();
         _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
+        _JS_setTitle(PD4WEB_PROJECT_NAME);
     }
-    _JS_setTitle(PD4WEB_PROJECT_NAME);
     _JS_addAlertOnError();
 
     printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
