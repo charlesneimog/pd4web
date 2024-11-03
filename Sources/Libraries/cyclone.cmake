@@ -1,13 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(cyclone)
 
-set(PDCMAKE_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake
-    CACHE PATH "Path to pd.cmake")
-include(${PDCMAKE_DIR}/pd.cmake)
-
-set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/cyclone)
-set(ENABLE_TILDE_TARGET_WARNING off)
+set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})
 
 include_directories(${LIB_DIR}/shared/)
 
