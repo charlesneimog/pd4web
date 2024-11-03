@@ -291,7 +291,7 @@ class Pd4Web:
             required=False,
             action="store_true",
             default=False,
-            help="If set to False, it will not load the GUI interface.",
+            help="Do not use GUI interface",
         )
         parser.add_argument(
             "-z",
