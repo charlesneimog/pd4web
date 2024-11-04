@@ -72,7 +72,12 @@ nav:
       - Compile: en/patch/compile.md
       - Problems: en/patch/problems.md
   - en/libraries.md
-  - en/js.md
+  - Pd4Web JavaScript Module: 
+    - JavaScript Module: en/js/js.md
+    - en/js/requirements.md
+    - en/js/engine.md
+    - en/js/receive.md
+    - en/js/send.md
   - en/devs.md
  # - Examples: tests/
 plugins:

@@ -11,7 +11,7 @@ To integrate a new library, you must create a `CMakeLists.txt`. It's highly reco
 ``` yaml
 
   - Name: cyclone # name of the pd library
-    Source: GITHUB_RELEASES # source
+    Source: GITHUB # source
     Developer: porres # in this case, Github user name
     Repository: pd-cyclone # in this case, Github Repo
     Version: cyclone_0.7-0 # version
@@ -55,23 +55,14 @@ Below the complete fields for enviroment.
       </tr>
     </tbody>
     
-    <tbody>
-      <tr>
-        <td><code>DirectLink</code></td>
-        <td>If you repository dev don't publish Releases or Tags you must use the direct link to a zip file.</td>
-      </tr>
-    </tbody>
-    
-    
-    <tbody>
-      <tr>
-        <td><code>Dependencies</code></td>
-        <td>It is a list of all dynamic libraries used, for example, <code>convolve~</code> uses fftw3 so we need to set <code>["fftw3"]</code>. It should be in the supported Dynamic Libraries.</code>.</td>
-      </tr>
-    </tbody>
-    
   </table>
 
 <br>
 
 
+
+## Building the CmakeLists.txt
+
+The `CMakeLists.txt` file is the most important file for the compilation of the external. It is responsible for defining the external's name, the source files, and the dependencies. The following is an example of a `CMakeLists.txt` file for the `cyclone` library.
+
+``` cmake

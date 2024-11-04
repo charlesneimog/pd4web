@@ -1856,7 +1856,7 @@ function OpenPatch(content) {
 }
 
 // ─────────────────────────────────────
-async function Pd4WebInitGui() {
+async function Pd4WebInitGui(patch) {
     if (Pd4Web === undefined) {
         setTimeout(Pd4WebInitGui, 150);
         console.log("Pd4Web is not defined yet, wait...");
@@ -1910,7 +1910,7 @@ async function Pd4WebInitGui() {
 
     // Open Patch
     if (Pd4Web.Canvas) {
-        var File = "./index.pd";
+        var File = patch;
         fetch(File)
             .then((response) => {
                 if (!response.ok) {

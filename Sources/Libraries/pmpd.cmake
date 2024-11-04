@@ -1,17 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
-
-set(PDCMAKE_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake
-    CACHE PATH "Path to pd.cmake")
-include(${PDCMAKE_DIR}/pd.cmake)
-
-set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pmpd)
-
-# ╭──────────────────────────────────────╮
-# │           PMPD Compilation           │
-# ╰──────────────────────────────────────╯
-
 project(pmpd)
+set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})
+
 configure_file("${LIB_DIR}/pmpd_version.c.in" "${CMAKE_BINARY_DIR}/pmpd_version.c" @ONLY)
 
 include_directories(${CMAKE_BINARY_DIR})

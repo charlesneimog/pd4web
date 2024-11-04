@@ -1,11 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
+project(ambi~) # MUST BE THE SAME NAME AS IS NAME FROM Libraries.yaml
 
-set(PDCMAKE_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Resources/pd.cmake
-    CACHE PATH "Path to pd.cmake")
-
-include(${PDCMAKE_DIR}/pd.cmake)
-set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/ambi~)
+set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})
 
 function(ReplaceLine file line new_line)
     file(READ ${file} FILE_CONTENTS)

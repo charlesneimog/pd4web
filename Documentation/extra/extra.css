@@ -203,3 +203,33 @@ body::-webkit-scrollbar-thumb {
   background-color: darkgrey;
   outline: 1px solid slategrey;
 }
+
+
+.responsive-flex {
+  margin-left: 20%; 
+  margin-right: 20%; 
+  display: flex; 
+  align-items: center; 
+  text-align: justify;
+  flex-direction: column;
+}
+
+/* Styling for the image */
+.responsive-image {
+  border-radius: 40px; 
+  width: 20%; 
+  margin-right: 20px; 
+}
+
+/* Media query for larger screens */
+@media (min-width: 768px) {
+  .responsive-flex {
+      flex-direction: row; /* Image on the left */
+      align-items: flex-start;
+  }
+
+  .responsive-image {
+      margin-right: 20px; /* Space on the right for desktop */
+      margin-bottom: 40px; /* Remove bottom margin */
+  }
+}

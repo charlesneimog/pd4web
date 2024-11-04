@@ -103,33 +103,53 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
     if (document.getElementById("pd4web-gui") != null){
         return;
     }
+    let scripts = document.getElementsByTagName('script');
+    let pd4webPath = null;
+    for (let script of scripts) {
+        if (script.src && script.src.includes('pd4web.js')) {
+            pd4webPath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+            break;
+        }
+    }
 
     var script = document.createElement('script');
     script.type = "text/javascript";
-    script.src = "./pd4web.gui.js";
+    script.src = pd4webPath + "pd4web.gui.js";
     script.id = "pd4web-gui";
     script.onload = function() {
         Pd4Web.Zoom = Zoom;
-        Pd4WebInitGui(); // defined in pd4web.gui.js
+        Pd4WebInitGui("index.pd"); // defined in pd4web.gui.js
     };
-
+    script.onerror = function() {
+        console.warn("GUI file not found.");
+    };
     document.head.appendChild(script); 
 });
 
 // ─────────────────────────────────────
 EM_JS(void, _JS_loadStyle, (void), {
     if (document.getElementById("pd4web-style") != null){
-        console.log("GUI already loaded");
         return;
+    }
+    let scripts = document.getElementsByTagName('script');
+    let pd4webPath = null;
+    for (let script of scripts) {
+        if (script.src && script.src.includes('pd4web.js')) {
+            pd4webPath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+            break;
+        }
     }
 
     // Load the CSS file
     var link = document.createElement('link');
     link.rel = "stylesheet";
     link.type = "text/css";
-    link.href = "./pd4web.style.css";
+    link.href = pd4webPath + "pd4web.style.css";
     link.id = "pd4web-style";
     document.head.appendChild(link);
+    link.onerror = function() {
+        console.warn("CSS file not found.");
+    };
 });
 
 // ─────────────────────────────────────
@@ -201,10 +221,18 @@ EM_JS(void, _JS_loadMidi, (void), {
     if (document.getElementById("pd4web-midi") != null){
         return;
     }
+    let scripts = document.getElementsByTagName('script');
+    let pd4webPath = null;
+    for (let script of scripts) {
+        if (script.src && script.src.includes('pd4web.js')) {
+            pd4webPath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
+            break;
+        }
+    }
     
     var script = document.createElement('script');
     script.type = "text/javascript";
-    script.src = "./pd4web.midi.js";
+    script.src = pd4webPath + "pd4web.midi.js";
     script.id = "pd4web-midi";
     script.onload = function() {
         if (typeof WebMidi != "object") {
@@ -918,8 +946,8 @@ int main() {
     if (PD4WEB_GUI) {
         _JS_loadStyle();
         _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
+        _JS_setTitle(PD4WEB_PROJECT_NAME);
     }
-    _JS_setTitle(PD4WEB_PROJECT_NAME);
     _JS_addAlertOnError();
 
     printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,

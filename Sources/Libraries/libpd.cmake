@@ -1,12 +1,8 @@
 cmake_minimum_required(VERSION 3.25)
 project(libpd C)
 
-set(PD_SOURCE_DIR
-    ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/
-    CACHE STRING "PATH where is located PureData Source Code")
-
-message(STATUS "PD_SOURCES: ${PD_SOURCE_DIR}")
-
+set(ENABLE_TILDE_TARGET_WARNING off)
+set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
 
 # ╭──────────────────────────────────────╮
