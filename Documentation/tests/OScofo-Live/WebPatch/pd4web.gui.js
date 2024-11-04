@@ -1407,10 +1407,7 @@ function OpenPatch(content) {
                 canvasLevel++;
                 lastCanvas = args;
                 if (canvasLevel === 1 && args.length === 7) {
-                    Pd4Web.CanvasWidth = parseInt(args[4]);
-                    Pd4Web.CanvasHeight = parseInt(args[5]);
-                    Pd4Web.FontSize = parseInt(args[6]);
-                    Pd4Web.Canvas.setAttributeNS(null, "viewBox", `0 0 ${Pd4Web.CanvasWidth} ${Pd4Web.CanvasHeight}`);
+                    
                 }
                 break;
             case "#X restore":
@@ -1456,7 +1453,7 @@ function OpenPatch(content) {
                                 data.flashed = false;
                                 data.interrupt_timer = null;
                                 data.hold_timer = null;
-                                if (Pd4Web.isMobile) {
+                                if (true) {
                                     data.rect.addEventListener("touchstart", function () {
                                         GuiBngOnMouseDown(data);
                                     });
@@ -1466,7 +1463,7 @@ function OpenPatch(content) {
                                     });
                                 }
                                 // subscribe receiver
-                                BindGuiReceiver(data);
+                               // BindGuiReceiver(data);
                             }
                             break;
                         case "tgl":
@@ -1500,7 +1497,7 @@ function OpenPatch(content) {
                                 data.text.textContent = data.label;
 
                                 // handle event
-                                if (Pd4Web.isMobile) {
+                                if (true) {
                                     data.rect.addEventListener("touchstart", function () {
                                         GuiTglOnMouseDown(data);
                                     });
@@ -1509,7 +1506,7 @@ function OpenPatch(content) {
                                         GuiTglOnMouseDown(data);
                                     });
                                 }
-                                BindGuiReceiver(data);
+                                //BindGuiReceiver(data);
                             }
                             break;
 
