@@ -723,6 +723,9 @@ function GuiSliderOnMouseMove(e, id) {
         } else {
             data.value = Math.max(Math.min(value + (p.x - point.x) * 100, (data.width - 1) * 100), 0);
         }
+        if (Pd4Web.isMobile) {
+            document.body.style.overflow = "hidden";
+        }
         GuiSliderUpdateIndicator(data);
         GuiSliderBang(data);
     }
@@ -732,6 +735,10 @@ function GuiSliderOnMouseMove(e, id) {
 function GuiSliderOnMouseUp(id) {
     if (id in Pd4Web.Touches) {
         delete Pd4Web.Touches[id];
+    }
+
+    if (Pd4Web.isMobile) {
+        document.body.style.overflow = "auto";
     }
 }
 
@@ -1352,15 +1359,22 @@ function UpdatePatchDivSize(content, patch_zoom) {
     if (patchDiv == null) {
         return;
     }
-    const lines = content.split(";\n");
-    var args = lines[0].split(" ");
-    const canvasHeight = parseInt(args[5]);
-    const canvasWidth = parseInt(args[4]);
 
-    patchDiv.style.width = canvasWidth * patch_zoom + "px";
-    patchDiv.style.height = canvasHeight * patch_zoom + "px";
-    patchDiv.style.marginLeft = "auto";
-    patchDiv.style.marginRight = "auto";
+    if (Pd4Web.isMobile) {
+        patchDiv.style.width = "90%";
+        patchDiv.style.marginLeft = "auto";
+        patchDiv.style.marginRight = "auto";
+    } else {
+        const lines = content.split(";\n");
+        var args = lines[0].split(" ");
+        const canvasHeight = parseInt(args[5]);
+        const canvasWidth = parseInt(args[4]);
+
+        patchDiv.style.width = canvasWidth * patch_zoom + "px";
+        patchDiv.style.height = canvasHeight * patch_zoom + "px";
+        patchDiv.style.marginLeft = "auto";
+        patchDiv.style.marginRight = "auto";
+    }
 }
 
 // ─────────────────────────────────────
@@ -1640,6 +1654,11 @@ function OpenPatch(content) {
                                             GuiSliderOnMouseDown(data, touch, touch.identifier);
                                         }
                                     });
+                                    data.rect.addEventListener("touchend", function (e) {
+                                        for (const _ of e.changedTouches) {
+                                            GuiSliderOnMouseUp(data.id);
+                                        }
+                                    });
                                 } else {
                                     data.rect.addEventListener("mousedown", function (e) {
                                         GuiSliderOnMouseDown(data, e, 0);
@@ -1863,7 +1882,7 @@ async function Pd4WebInitGui(patch) {
         return;
     }
 
-    Pd4Web.isMobile = navigator.userAgent.indexOf("IEMobile") !== -1;
+    Pd4Web.isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
     Pd4Web.FontSize = 12;
