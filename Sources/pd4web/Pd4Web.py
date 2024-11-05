@@ -5,6 +5,8 @@ import pygit2
 
 import shutil
 import requests
+import importlib.metadata as importlib_metadata
+
 
 import certifi
 
@@ -243,6 +245,15 @@ class Pd4Web:
             shutil.copy(newLibCmake, self.PD4WEB_LIBRARIES)
             exit()
 
+        if parser.version:
+            pd4web_version = importlib_metadata.version("pd4web")
+            numbers = pd4web_version.split(".")
+            major = numbers[0]
+            minor = numbers[1]
+            patch = numbers[2]
+            print(f"pd4web version {major}.{minor}.{patch}")
+            exit()
+
     def action_flags(self, parser):
         parser.add_argument(
             "--run-browser",
@@ -256,6 +267,12 @@ class Pd4Web:
             required=False,
             type=str,
             help="Add new library to pd4web supported libraries",
+        )
+        parser.add_argument(
+            "--version",
+            required=False,
+            action="store_true",
+            help="Get the version of pd4web",
         )
         parser.add_argument(
             "--clear",
