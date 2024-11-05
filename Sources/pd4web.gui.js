@@ -140,6 +140,8 @@ function GuiRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
+        rx: 2,
+        ry: 2,
         width: data.size,
         height: data.size,
         fill: ColFromLoad(data.bg_color),
@@ -511,6 +513,8 @@ function GuiSliderRect(data) {
         return {
             x: x,
             y: y,
+            rx: 2,
+            ry: 2,
             width: width,
             height: height,
             id: `${data.id}_rect`,
@@ -520,6 +524,8 @@ function GuiSliderRect(data) {
         return {
             x: x,
             y: y,
+            rx: 2,
+            ry: 2,
             width: width,
             height: height,
             fill: color,
@@ -575,7 +581,7 @@ function GuiSliderIndicator(data) {
             x2: p.x2,
             y2: p.y2,
             stroke: ColFromLoad(data.fg_color),
-            "stroke-width": 3,
+            "stroke-width": 2,
             fill: "none",
             id: `${data.id}_indicator`,
             class: "unclickable",
@@ -589,6 +595,8 @@ function GuiSliderIndicator(data) {
                 y1: p.y1,
                 x2: p.x2,
                 y2: p.y2,
+                rx: 2,
+                ry: 2,
                 stroke: ColFromLoad(data.fg_color),
                 fill: "none",
                 id: `${data.id}_indicator`,
@@ -600,6 +608,8 @@ function GuiSliderIndicator(data) {
             y1: p.y1,
             x2: p.x2,
             y2: p.y2,
+            rx: 2,
+            ry: 2,
             stroke: ColFromLoad(data.fg_color),
             "stroke-width": 3,
             fill: "none",
@@ -612,6 +622,17 @@ function GuiSliderIndicator(data) {
 // ─────────────────────────────────────
 function GuiSliderText(data) {
     return GuiText(data);
+}
+
+// ─────────────────────────────────────
+function GuiSliderUpdateIndicatorRect(data) {
+    const p = GuiSliderIndicatorPoints(data);
+    ConfigureItem(data.indicator, {
+        x1: p.x1,
+        y1: p.y1,
+        x2: p.x2,
+        y2: p.y2,
+    });
 }
 
 // ─────────────────────────────────────
@@ -911,6 +932,8 @@ function GuiVuRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
+        rx: 2,
+        ry: 2,
         width: width,
         height: height,
         fill: ColFromLoad(data.bg_color),
@@ -1616,8 +1639,12 @@ function OpenPatch(content) {
                             ) {
                                 const data = {};
                                 data.x_pos = parseInt(args[2]);
-                                // check https://github.com/pure-data/pure-data/issues/2391
-                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
+                                if (args[4] === "vsl") {
+                                    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
+                                } else {
+                                    data.y_pos = parseInt(args[3]);
+                                }
+
                                 data.type = args[4];
                                 data.width = parseInt(args[5]);
                                 data.height = parseInt(args[6]);
