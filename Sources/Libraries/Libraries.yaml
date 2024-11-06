@@ -23,7 +23,22 @@ Libraries:
     Developer: porres
     Repository: pd-cyclone
     Version: cyclone_0.9-1
-    Unsupported: [active, mousefilter, mousestate, scope~, coll, mtr, capture, hrandfile, prob, funbuff, seq, hrandgrowfile, hrandfile, capture~, table]
+    Unsupported:
+      - active
+      - mousefilter
+      - mousestate
+      - scope~
+      - coll
+      - mtr
+      - capture
+      - hrandfile
+      - prob
+      - funbuff
+      - seq
+      - hrandgrowfile
+      - hrandfile
+      - capture~
+      - table
 
 # ─────────────── o.scofo~ ───────────────
   - Name: ambi~
@@ -61,7 +76,7 @@ Libraries:
       - oscope~
       - midi
       - numbox~
-      - keyboard
+      # - keyboard
       - pic
       - bicoeff
       - function
