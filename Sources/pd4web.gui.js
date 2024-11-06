@@ -252,6 +252,51 @@ function GuiBngOnMouseDown(data) {
     Pd4Web.sendBang(data.send);
 }
 
+// ─────────────────────────────────────
+function GuiBngSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    data.type = args[4];
+    data.size = parseInt(args[5]);
+    data.hold = parseInt(args[6]);
+    data.interrupt = parseInt(args[7]);
+    data.init = parseInt(args[8]);
+    data.send = args[9];
+    data.receive = args[10];
+    data.label = args[11] === "empty" ? "" : args[11];
+    data.x_off = parseInt(args[12]);
+    data.y_off = parseInt(args[13]);
+    data.font = parseInt(args[14]);
+    data.fontsize = parseInt(args[15]);
+    data.bg_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+    data.fg_color = isNaN(args[17]) ? args[17] : parseInt(args[17]);
+    data.label_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.rect = CreateItem("rect", GuiBngRect(data));
+    data.circle = CreateItem("circle", GuiBngCircle(data));
+    data.text = CreateItem("text", GuiBngText(data));
+    data.text.textContent = data.label;
+
+    // handle event
+    data.flashed = false;
+    data.interrupt_timer = null;
+    data.hold_timer = null;
+    if (Pd4Web.isMobile) {
+        data.rect.addEventListener("touchstart", function () {
+            GuiBngOnMouseDown(data);
+        });
+    } else {
+        data.rect.addEventListener("mousedown", function () {
+            GuiBngOnMouseDown(data);
+        });
+    }
+    // subscribe receiver
+    BindGuiReceiver(data);
+}
+
 //╭─────────────────────────────────────╮
 //│             Toggle: Tgl             │
 //╰─────────────────────────────────────╯
@@ -347,6 +392,49 @@ function GuiTglOnMouseDown(data) {
     data.value = data.value ? 0 : data.default_value;
     GuiTglUpdateCross(data);
     Pd4Web.sendFloat(data.send, data.value);
+}
+
+// ─────────────────────────────────────
+function GuiTglSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    data.type = args[4];
+    data.size = parseInt(args[5]);
+    data.init = parseInt(args[6]);
+    data.send = args[7];
+    data.receive = args[8];
+    data.label = args[9] === "empty" ? "" : args[9];
+    data.x_off = parseInt(args[10]);
+    data.y_off = parseInt(args[11]);
+    data.font = parseInt(args[12]);
+    data.fontsize = parseInt(args[13]);
+    data.bg_color = isNaN(args[14]) ? args[14] : parseInt(args[14]);
+    data.fg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
+    data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+    data.init_value = parseFloat(args[17]);
+    data.default_value = parseFloat(args[18]);
+    data.value = data.init && data.init_value ? data.default_value : 0;
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.rect = CreateItem("rect", GuiTglRect(data));
+    data.cross1 = CreateItem("polyline", GuiTglCross1(data));
+    data.cross2 = CreateItem("polyline", GuiTglCross2(data));
+    data.text = CreateItem("text", GuiTglText(data));
+    data.text.textContent = data.label;
+
+    // handle event
+    if (Pd4Web.isMobile) {
+        data.rect.addEventListener("touchstart", function () {
+            GuiTglOnMouseDown(data);
+        });
+    } else {
+        data.rect.addEventListener("mousedown", function () {
+            GuiTglOnMouseDown(data);
+        });
+    }
+    BindGuiReceiver(data);
 }
 
 //╭─────────────────────────────────────╮
@@ -488,6 +576,79 @@ function GuiNbxText(data) {
         clicked: false,
         class: "unclickable",
     };
+}
+
+// ─────────────────────────────────────
+function GuiNbxSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    data.type = args[4];
+    data.width = parseInt(args[5]);
+    data.height = parseInt(args[6]);
+    data.bottom = parseInt(args[7]);
+    data.top = parseInt(args[8]);
+    data.log = parseInt(args[9]);
+    data.init = parseInt(args[10]);
+    data.send = args[11];
+    data.receive = args[12];
+    data.label = args[13] === "empty" ? "" : args[13];
+    data.x_off = parseInt(args[14]);
+    data.y_off = parseInt(args[15]);
+    data.font = parseInt(args[16]);
+    data.fontsize = parseInt(args[17]);
+    data.bg_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
+    data.fg_color = isNaN(args[19]) ? args[19] : parseInt(args[19]);
+    data.label_color = isNaN(args[20]) ? args[20] : parseInt(args[20]);
+    data.default_value = parseFloat(args[21]);
+    data.log_height = parseFloat(args[22]);
+    data.value = data.init ? data.default_value : 0;
+    data.id = `${data.type}_${id++}`;
+
+    data.rect = CreateItem("rect", GuiNbxRect(data));
+    data.triangle = CreateItem("polygon", GuiNbxTriangle(data));
+    data.numbers = CreateItem("text", GuiNbxText(data));
+    const rectList = document.getElementById(data.id + "_rect");
+    data.numbers.textContent = data.init;
+
+    if (rectList) {
+        if (Pd4Web.isMobile) {
+            rectList.addEventListener("touchstart", function (e) {
+                for (const _ of e.changedTouches) {
+                    // Call your function here
+                    // gui_slider_onmousedown(data, touch, touch.identifier);
+                }
+            });
+        } else {
+            rectList.addEventListener("click", function (_) {
+                const id = data.id + "_text";
+                const txt = document.getElementById(id);
+                if (txt.clicked) {
+                    txt.setAttribute("fill", "black"); // Change fill color to black
+                    txt.clicked = false;
+                    const svgElement = document.getElementById("Pd4WebCanvas");
+                    svgElement.removeAttribute("tabindex"); // Remove tabindex
+                    Pd4Web.NbxSelected = null;
+                    svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
+                    if (txt.numberCotent.length > data.width) {
+                        txt.textContent = "+";
+                    } else {
+                        txt.textContent = txt.numberCotent;
+                    }
+                    Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
+                } else {
+                    txt.setAttribute("fill", "red"); // Change fill color to black
+                    txt.clicked = true;
+                    const svgElement = document.getElementById("Pd4WebCanvas");
+                    svgElement.setAttribute("tabindex", "0"); // "0" makes it focusable
+                    svgElement.focus();
+                    data.inputCnt = 0;
+                    Pd4Web.NbxSelected = data;
+                    svgElement.addEventListener("keypress", GuiNbxKeyDownListener);
+                }
+            });
+        }
+    }
 }
 
 //╭─────────────────────────────────────╮
@@ -753,6 +914,62 @@ function GuiSliderOnMouseUp(id) {
     }
 }
 
+// ─────────────────────────────────────
+function GuiSliderSetup(args, id) {
+    const data = {};
+    data.type = args[4];
+
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+
+    if (data.type == "vsl") {
+        data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - Pd4Web.y_pos;
+    } else {
+        data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    }
+    data.width = parseInt(args[5]);
+    data.height = parseInt(args[6]);
+    data.bottom = parseInt(args[7]);
+    data.top = parseInt(args[8]);
+    data.log = parseInt(args[9]);
+    data.init = parseInt(args[10]);
+    data.send = args[11];
+    data.receive = args[12];
+    data.label = args[13] === "empty" ? "" : args[13];
+    data.x_off = parseInt(args[14]);
+    data.y_off = parseInt(args[15]);
+    data.font = parseInt(args[16]);
+    data.fontsize = parseInt(args[17]);
+    data.bg_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
+    data.fg_color = isNaN(args[19]) ? args[19] : parseInt(args[19]);
+    data.label_color = isNaN(args[20]) ? args[20] : parseInt(args[20]);
+    data.default_value = parseFloat(args[21]);
+    data.steady_on_click = parseFloat(args[22]);
+    data.value = data.init ? data.default_value : 0;
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.rect = CreateItem("rect", GuiSliderRect(data));
+    data.indicator = CreateItem("line", GuiSliderIndicator(data));
+    data.text = CreateItem("text", GuiSliderText(data));
+    data.text.textContent = data.label;
+
+    // handle event
+    GuiSliderCheckMinMax(data);
+    if (Pd4Web.isMobile) {
+        data.rect.addEventListener("touchstart", function (e) {
+            for (const touch of e.changedTouches) {
+                GuiSliderOnMouseDown(data, touch, touch.identifier);
+            }
+        });
+    } else {
+        data.rect.addEventListener("mousedown", function (e) {
+            GuiSliderOnMouseDown(data, e, 0);
+        });
+    }
+    // subscribe receiver
+    BindGuiReceiver(data);
+}
+
 //╭─────────────────────────────────────╮
 //│        Radio: vradio/hradio         │
 //╰─────────────────────────────────────╯
@@ -915,6 +1132,51 @@ function GuiRadioOnMouseDown(data, e) {
     }
     GuiRadioUpdateButton(data);
     Pd4Web.sendFloat(data.receive, data.value);
+}
+
+// ─────────────────────────────────────
+function GuiRadioSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    data.type = args[4];
+    data.size = parseInt(args[5]);
+    data.new_old = parseInt(args[6]);
+    data.init = parseInt(args[7]);
+    data.number = parseInt(args[8]) || 1;
+    data.send = args[9];
+    data.receive = args[10];
+    data.label = args[11] === "empty" ? "" : args[11];
+    data.x_off = parseInt(args[12]);
+    data.y_off = parseInt(args[13]);
+    data.font = parseInt(args[14]);
+    data.fontsize = parseInt(args[15]);
+    data.bg_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+    data.fg_color = isNaN(args[17]) ? args[17] : parseInt(args[17]);
+    data.label_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
+    data.default_value = parseFloat(args[19]);
+    data.value = data.init ? data.default_value : 0;
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.rect = CreateItem("rect", GuiRadioRect(data));
+    GuiRadioCreateLinesButtons(data);
+    data.text = CreateItem("text", GuiRadioText(data));
+    data.text.textContent = data.label;
+
+    // handle event
+    if (Pd4Web.isMobile) {
+        data.rect.addEventListener("touchstart", function (e) {
+            for (const touch of e.changedTouches) {
+                GuiRadioOnMouseDown(data, touch);
+            }
+        });
+    } else {
+        data.rect.addEventListener("mousedown", function (e) {
+            GuiRadioOnMouseDown(data, e);
+        });
+    }
+    BindGuiReceiver(data);
 }
 
 //╭─────────────────────────────────────╮
@@ -1104,6 +1366,25 @@ function GuiVuUpdateGain(data) {
     }
 }
 
+// ─────────────────────────────────────
+function GuiVuSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - patch.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
+    data.type = args[4];
+    data.width = args[5];
+    data.height = args[6];
+    data.receive = args[7];
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.rect = CreateItem("rect", GuiVuRect(data));
+    GuiVudBRects(data);
+
+    // subscribe receiver
+    BindGuiReceiver(data);
+}
+
 //╭─────────────────────────────────────╮
 //│             Canvas: Cnv             │
 //╰─────────────────────────────────────╯
@@ -1137,6 +1418,37 @@ function GuiCnvSelectableRect(data) {
 // ─────────────────────────────────────
 function GuiCnvText(data) {
     return GuiText(data);
+}
+
+// ─────────────────────────────────────
+function GuiCnvSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]);
+    data.y_pos = parseInt(args[3]);
+    data.type = args[4];
+    data.size = parseInt(args[5]);
+    data.width = parseInt(args[6]);
+    data.height = parseInt(args[7]);
+    data.send = args[8];
+    data.receive = args[9];
+    data.label = args[10] === "empty" ? "" : args[10];
+    data.x_off = parseInt(args[11]);
+    data.y_off = parseInt(args[12]);
+    data.font = parseInt(args[13]);
+    data.fontsize = parseInt(args[14]);
+    data.bg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
+    data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+    data.unknown = parseFloat(args[17]);
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.visible_rect = CreateItem("rect", GuiCnvVisibleRect(data));
+    data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
+    data.text = CreateItem("text", GuiCnvText(data));
+    data.text.textContent = data.label;
+
+    // subscribe receiver
+    BindGuiReceiver(data);
 }
 
 //╭─────────────────────────────────────╮
@@ -1244,6 +1556,37 @@ function GuiKnobOnMouseUp(data, e, n) {
     data.beingDragged = false;
 }
 
+// ─────────────────────────────────────
+function GuiKnobSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]);
+    data.y_pos = parseInt(args[3]);
+    data.type = args[4];
+    data.size = parseInt(args[5]);
+    data.width = parseInt(args[6]);
+    data.height = parseInt(args[7]);
+    data.send = args[8];
+    data.receive = args[9];
+    data.label = args[10] === "empty" ? "" : args[10];
+    data.x_off = parseInt(args[11]);
+    data.y_off = parseInt(args[12]);
+    data.font = parseInt(args[13]);
+    data.fontsize = parseInt(args[14]);
+    data.bg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
+    data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
+    data.unknown = parseFloat(args[17]);
+    data.id = `${data.type}_${id++}`;
+
+    // create svg
+    data.visible_rect = CreateItem("rect", GuiCnvVisibleRect(data));
+    data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
+    data.text = CreateItem("text", GuiCnvText(data));
+    data.text.textContent = data.label;
+
+    // subscribe receiver
+    BindGuiReceiver(data);
+}
+
 //╭─────────────────────────────────────╮
 //│              KeyBoard               │
 //╰─────────────────────────────────────╯
@@ -1263,6 +1606,98 @@ function GuiKeyboardRect(data) {
         fill: data.fill,
         id: `${data.id}_key`,
     };
+}
+
+// ─────────────────────────────────────
+function GuiKeyboardSetup(args, id) {
+    const data = {};
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
+    data.type = args[4];
+    data.width = parseInt(args[5]);
+    data.height = parseInt(args[6]);
+    data.octave = parseInt(args[7]);
+    data.lowC = parseInt(args[8]);
+    data.velocity_nor = parseInt(args[9]);
+    data.toggle = parseInt(args[10]);
+    data.send = args[11];
+    data.receive = args[12];
+
+    data.keys = [];
+    let keyI = 0;
+    let keyX = data.x_pos;
+
+    let allKeys = [];
+    for (let i = 0; i < data.octave; i++) {
+        for (let j = 0; j < 7; j++) {
+            let key = {};
+            key.x_pos = keyX;
+            key.y_pos = data.y_pos;
+            key.width = data.width;
+            key.height = data.height;
+            key.fill = "transparent";
+            key.stroke = "black";
+            key.midi = (data.lowC + 1) * 12 + keyI;
+            key.send = data.send;
+            key.id = "white_" + keyI;
+            key.index = keyI;
+            allKeys[keyI] = key;
+            keyI += 1;
+            if (j !== 2 && j !== 6) {
+                let blackKey = {};
+                blackKey.id = "black_" + keyI;
+                blackKey.x_pos = keyX + data.width / 1.5;
+                blackKey.y_pos = data.y_pos;
+                blackKey.fill = "black";
+                blackKey.stroke = "black";
+                blackKey.midi = (data.lowC + 1) * 12 + keyI;
+                blackKey.send = data.send;
+                blackKey.width = data.width * 0.66;
+                blackKey.height = data.height * 0.6;
+                blackKey.index = keyI;
+                allKeys[keyI] = blackKey;
+                keyI += 1;
+            }
+            keyX += data.width;
+        }
+    }
+    for (let key of allKeys) {
+        if (key.fill === "transparent") {
+            data.keys[key.index] = CreateItem("rect", GuiKeyboardRect(key));
+        }
+    }
+    for (let key of allKeys) {
+        if (key.fill === "black") {
+            data.keys[key.index] = CreateItem("rect", GuiKeyboardRect(key));
+        }
+    }
+
+    data.keys.forEach((keyElement) => {
+        keyElement.addEventListener("mousedown", function (e) {
+            const p = GuiMousePoint(e);
+            let midi = e.target.getAttribute("midi");
+            let vel = ((p.y - data.y_pos) / data.height) * 127;
+            e.target.setAttribute("fill", "red");
+            if (Pd4Web) {
+                if (Pd4Web.sendList !== undefined) {
+                    Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), vel]);
+                }
+            }
+        });
+        keyElement.addEventListener("mouseup", function (e) {
+            if (e.target.id.includes("black")) {
+                e.target.setAttribute("fill", "black");
+            } else {
+                e.target.setAttribute("fill", "transparent");
+            }
+            let midi = e.target.getAttribute("midi");
+            if (Pd4Web) {
+                if (Pd4Web.sendList !== undefined) {
+                    Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), 0]);
+                }
+            }
+        });
+    });
 }
 
 //╭─────────────────────────────────────╮
@@ -1436,6 +1871,7 @@ function UpdatePatchDivSizeCoords(width, height, patch_zoom) {
 
 // ─────────────────────────────────────
 function OpenPatch(content) {
+    content = content.replace(/\r/g, "");
     let canvasLevel = 0;
     let id = 0;
 
@@ -1445,10 +1881,11 @@ function OpenPatch(content) {
         }
     }
 
+    UpdatePatchDivSize(content, Pd4Web.Zoom);
+
     const lines = content.split(";\n");
-    const patch = {};
-    patch.x_pos = 0;
-    patch.y_pos = 0;
+    Pd4Web.x_pos = 0;
+    Pd4Web.y_pos = 0;
     let canvasLevelLocal = 0;
     for (let line of lines) {
         line = line.replace(/[\r\n]+/g, " ").trim();
@@ -1456,22 +1893,24 @@ function OpenPatch(content) {
         const type = args.slice(0, 2).join(" ");
         switch (type) {
             case "#N canvas":
-                if (canvasLevelLocal == 1) {
-                    patch.width = parseInt(args[4]);
-                    patch.height = parseInt(args[5]);
-                }
                 canvasLevelLocal++;
+                if (canvasLevelLocal == 1) {
+                    Pd4Web.width = parseInt(args[4]);
+                    Pd4Web.height = parseInt(args[5]);
+                }
                 break;
             case "#X restore":
                 canvasLevelLocal--;
                 break;
             case "#X coords":
                 if (canvasLevelLocal == 1) {
-                    patch.width = parseInt(args[6]);
-                    patch.height = parseInt(args[7]);
-                    patch.x_pos = parseInt(args[9]);
-                    patch.y_pos = parseInt(args[10]);
-                    UpdatePatchDivSizeCoords(patch.width, patch.height, Pd4Web.Zoom);
+                    if (args.length == 11) {
+                        Pd4Web.width = parseInt(args[6]);
+                        Pd4Web.height = parseInt(args[7]);
+                        Pd4Web.x_pos = parseInt(args[9]);
+                        Pd4Web.y_pos = parseInt(args[10]);
+                        UpdatePatchDivSizeCoords(Pd4Web.width, Pd4Web.height, Pd4Web.Zoom);
+                    }
                 }
                 break;
         }
@@ -1481,32 +1920,12 @@ function OpenPatch(content) {
         line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
         const args = line.split(" ");
         const type = args.slice(0, 2).join(" ");
-        // graph.shift();
-        // graph.push(type);
-        // if (
-        //   graph[0] === isGraph[0] &&
-        //   graph[1] === isGraph[1] &&
-        //   graph[2] === isGraph[2]
-        // ) {
-        //   console.log("graph found");
-        //   data = {};
-        //   data.x_pos = parseInt(lastCanvas[5]);
-        //   data.y_pos = parseInt(lastCanvas[4]);
-        //   data.size = parseInt(lastCanvas[3]);
-        //   data.bg_color = "#ff0000";
-        //   data.type = "graph";
-        //   data.id = `${data.type}_${id++}`;
-        //   data.rect = CreateItem("rect", GuiRect(data));
-        // }
-
         switch (type) {
             case "#N canvas":
                 canvasLevel++;
-                lastCanvas = args;
                 if (canvasLevel === 1 && args.length === 7) {
-                    console.log(patch.width, patch.height);
-                    Pd4Web.CanvasWidth = patch.width;
-                    Pd4Web.CanvasHeight = patch.height;
+                    Pd4Web.CanvasWidth = Pd4Web.width;
+                    Pd4Web.CanvasHeight = Pd4Web.height;
                     Pd4Web.FontSize = parseInt(args[6]);
                     Pd4Web.Canvas.setAttributeNS(null, "viewBox", `0 0 ${Pd4Web.CanvasWidth} ${Pd4Web.CanvasHeight}`);
                 }
@@ -1524,170 +1943,20 @@ function OpenPatch(content) {
                                 args[9] !== "empty" &&
                                 args[10] !== "empty"
                             ) {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.size = parseInt(args[5]);
-                                data.hold = parseInt(args[6]);
-                                data.interrupt = parseInt(args[7]);
-                                data.init = parseInt(args[8]);
-                                data.send = args[9];
-                                data.receive = args[10];
-                                data.label = args[11] === "empty" ? "" : args[11];
-                                data.x_off = parseInt(args[12]);
-                                data.y_off = parseInt(args[13]);
-                                data.font = parseInt(args[14]);
-                                data.fontsize = parseInt(args[15]);
-                                data.bg_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
-                                data.fg_color = isNaN(args[17]) ? args[17] : parseInt(args[17]);
-                                data.label_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.rect = CreateItem("rect", GuiBngRect(data));
-                                data.circle = CreateItem("circle", GuiBngCircle(data));
-                                data.text = CreateItem("text", GuiBngText(data));
-                                data.text.textContent = data.label;
-
-                                // handle event
-                                data.flashed = false;
-                                data.interrupt_timer = null;
-                                data.hold_timer = null;
-                                if (Pd4Web.isMobile) {
-                                    data.rect.addEventListener("touchstart", function () {
-                                        GuiBngOnMouseDown(data);
-                                    });
-                                } else {
-                                    data.rect.addEventListener("mousedown", function () {
-                                        GuiBngOnMouseDown(data);
-                                    });
-                                }
-                                // subscribe receiver
-                                BindGuiReceiver(data);
+                                GuiBngSetup(args, id);
                             }
                             break;
                         case "tgl":
                             if (canvasLevel === 1 && args.length === 19 && args[7] !== "empty" && args[8] !== "empty") {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.size = parseInt(args[5]);
-                                data.init = parseInt(args[6]);
-                                data.send = args[7];
-                                data.receive = args[8];
-                                data.label = args[9] === "empty" ? "" : args[9];
-                                data.x_off = parseInt(args[10]);
-                                data.y_off = parseInt(args[11]);
-                                data.font = parseInt(args[12]);
-                                data.fontsize = parseInt(args[13]);
-                                data.bg_color = isNaN(args[14]) ? args[14] : parseInt(args[14]);
-                                data.fg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
-                                data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
-                                data.init_value = parseFloat(args[17]);
-                                data.default_value = parseFloat(args[18]);
-                                data.value = data.init && data.init_value ? data.default_value : 0;
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.rect = CreateItem("rect", GuiTglRect(data));
-                                data.cross1 = CreateItem("polyline", GuiTglCross1(data));
-                                data.cross2 = CreateItem("polyline", GuiTglCross2(data));
-                                data.text = CreateItem("text", GuiTglText(data));
-                                data.text.textContent = data.label;
-
-                                // handle event
-                                if (Pd4Web.isMobile) {
-                                    data.rect.addEventListener("touchstart", function () {
-                                        GuiTglOnMouseDown(data);
-                                    });
-                                } else {
-                                    data.rect.addEventListener("mousedown", function () {
-                                        GuiTglOnMouseDown(data);
-                                    });
-                                }
-                                BindGuiReceiver(data);
+                                GuiTglSetup(args, id);
                             }
                             break;
 
                         case "nbx":
                             if (canvasLevel === 1 && args.length === 23 && args[7] !== "empty" && args[8] !== "empty") {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.width = parseInt(args[5]);
-                                data.height = parseInt(args[6]);
-                                data.bottom = parseInt(args[7]);
-                                data.top = parseInt(args[8]);
-                                data.log = parseInt(args[9]);
-                                data.init = parseInt(args[10]);
-                                data.send = args[11];
-                                data.receive = args[12];
-                                data.label = args[13] === "empty" ? "" : args[13];
-                                data.x_off = parseInt(args[14]);
-                                data.y_off = parseInt(args[15]);
-                                data.font = parseInt(args[16]);
-                                data.fontsize = parseInt(args[17]);
-                                data.bg_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
-                                data.fg_color = isNaN(args[19]) ? args[19] : parseInt(args[19]);
-                                data.label_color = isNaN(args[20]) ? args[20] : parseInt(args[20]);
-                                data.default_value = parseFloat(args[21]);
-                                data.log_height = parseFloat(args[22]);
-                                data.value = data.init ? data.default_value : 0;
-                                data.id = `${data.type}_${id++}`;
-
-                                data.rect = CreateItem("rect", GuiNbxRect(data));
-                                data.triangle = CreateItem("polygon", GuiNbxTriangle(data));
-                                data.numbers = CreateItem("text", GuiNbxText(data));
-                                const rectList = document.getElementById(data.id + "_rect");
-                                data.numbers.textContent = data.init;
-
-                                if (rectList) {
-                                    if (Pd4Web.isMobile) {
-                                        rectList.addEventListener("touchstart", function (e) {
-                                            for (const touch of e.changedTouches) {
-                                                // Call your function here
-                                                // gui_slider_onmousedown(data, touch, touch.identifier);
-                                            }
-                                        });
-                                    } else {
-                                        rectList.addEventListener("click", function (_) {
-                                            const id = data.id + "_text";
-                                            const txt = document.getElementById(id);
-                                            if (txt.clicked) {
-                                                txt.setAttribute("fill", "black"); // Change fill color to black
-                                                txt.clicked = false;
-                                                const svgElement = document.getElementById("Pd4WebCanvas");
-                                                svgElement.removeAttribute("tabindex"); // Remove tabindex
-                                                Pd4Web.NbxSelected = null;
-                                                svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
-                                                if (txt.numberCotent.length > data.width) {
-                                                    txt.textContent = "+";
-                                                } else {
-                                                    txt.textContent = txt.numberCotent;
-                                                }
-                                                Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
-                                            } else {
-                                                txt.setAttribute("fill", "red"); // Change fill color to black
-                                                txt.clicked = true;
-                                                const svgElement = document.getElementById("Pd4WebCanvas");
-                                                svgElement.setAttribute("tabindex", "0"); // "0" makes it focusable
-                                                svgElement.focus();
-                                                data.inputCnt = 0;
-                                                Pd4Web.NbxSelected = data;
-                                                svgElement.addEventListener("keypress", GuiNbxKeyDownListener);
-                                            }
-                                        });
-                                    }
-                                } else {
-                                    console.error("Element not found: " + data.id + "_rect");
-                                }
-                                BindGuiReceiver(data);
-
-                                break;
+                                GuiNbxSetup(args, id);
                             }
+                            break;
 
                         case "vsl":
                         case "hsl":
@@ -1697,62 +1966,7 @@ function OpenPatch(content) {
                                 args[11] !== "empty" &&
                                 args[12] !== "empty"
                             ) {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                if (args[4] === "vsl") {
-                                    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
-                                } else {
-                                    data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                }
-
-                                data.type = args[4];
-                                data.width = parseInt(args[5]);
-                                data.height = parseInt(args[6]);
-                                data.bottom = parseInt(args[7]);
-                                data.top = parseInt(args[8]);
-                                data.log = parseInt(args[9]);
-                                data.init = parseInt(args[10]);
-                                data.send = args[11];
-                                data.receive = args[12];
-                                data.label = args[13] === "empty" ? "" : args[13];
-                                data.x_off = parseInt(args[14]);
-                                data.y_off = parseInt(args[15]);
-                                data.font = parseInt(args[16]);
-                                data.fontsize = parseInt(args[17]);
-                                data.bg_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
-                                data.fg_color = isNaN(args[19]) ? args[19] : parseInt(args[19]);
-                                data.label_color = isNaN(args[20]) ? args[20] : parseInt(args[20]);
-                                data.default_value = parseFloat(args[21]);
-                                data.steady_on_click = parseFloat(args[22]);
-                                data.value = data.init ? data.default_value : 0;
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.rect = CreateItem("rect", GuiSliderRect(data));
-                                data.indicator = CreateItem("line", GuiSliderIndicator(data));
-                                data.text = CreateItem("text", GuiSliderText(data));
-                                data.text.textContent = data.label;
-
-                                // handle event
-                                GuiSliderCheckMinMax(data);
-                                if (Pd4Web.isMobile) {
-                                    data.rect.addEventListener("touchstart", function (e) {
-                                        for (const touch of e.changedTouches) {
-                                            GuiSliderOnMouseDown(data, touch, touch.identifier);
-                                        }
-                                    });
-                                    data.rect.addEventListener("touchend", function (e) {
-                                        for (const _ of e.changedTouches) {
-                                            GuiSliderOnMouseUp(data.id);
-                                        }
-                                    });
-                                } else {
-                                    data.rect.addEventListener("mousedown", function (e) {
-                                        GuiSliderOnMouseDown(data, e, 0);
-                                    });
-                                }
-                                // subscribe receiver
-                                BindGuiReceiver(data);
+                                GuiSliderSetup(args, id);
                             }
                             break;
                         case "vradio":
@@ -1763,252 +1977,33 @@ function OpenPatch(content) {
                                 args[9] !== "empty" &&
                                 args[10] !== "empty"
                             ) {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.size = parseInt(args[5]);
-                                data.new_old = parseInt(args[6]);
-                                data.init = parseInt(args[7]);
-                                data.number = parseInt(args[8]) || 1;
-                                data.send = args[9];
-                                data.receive = args[10];
-                                data.label = args[11] === "empty" ? "" : args[11];
-                                data.x_off = parseInt(args[12]);
-                                data.y_off = parseInt(args[13]);
-                                data.font = parseInt(args[14]);
-                                data.fontsize = parseInt(args[15]);
-                                data.bg_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
-                                data.fg_color = isNaN(args[17]) ? args[17] : parseInt(args[17]);
-                                data.label_color = isNaN(args[18]) ? args[18] : parseInt(args[18]);
-                                data.default_value = parseFloat(args[19]);
-                                data.value = data.init ? data.default_value : 0;
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.rect = CreateItem("rect", GuiRadioRect(data));
-                                GuiRadioCreateLinesButtons(data);
-                                data.text = CreateItem("text", GuiRadioText(data));
-                                data.text.textContent = data.label;
-
-                                // handle event
-                                if (Pd4Web.isMobile) {
-                                    data.rect.addEventListener("touchstart", function (e) {
-                                        for (const touch of e.changedTouches) {
-                                            GuiRadioOnMouseDown(data, touch);
-                                        }
-                                    });
-                                } else {
-                                    data.rect.addEventListener("mousedown", function (e) {
-                                        GuiRadioOnMouseDown(data, e);
-                                    });
-                                }
-                                BindGuiReceiver(data);
+                                GuiRadioSetup(args, id);
                             }
                             break;
                         case "vu":
                             if (canvasLevel === 1 && args.length === 17 && args[7] !== "empty") {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
-                                data.type = args[4];
-                                data.width = args[5];
-                                data.height = args[6];
-                                data.receive = args[7];
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.rect = CreateItem("rect", GuiVuRect(data));
-                                GuiVudBRects(data);
-
-                                // subscribe receiver
-                                BindGuiReceiver(data);
+                                GuiVuSetup(args, id);
                             }
                             break;
                         case "cnv":
                             if (canvasLevel === 1 && args.length === 18 && args[8] !== "empty" && args[9] !== "empty") {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.size = parseInt(args[5]);
-                                data.width = parseInt(args[6]);
-                                data.height = parseInt(args[7]);
-                                data.send = args[8];
-                                data.receive = args[9];
-                                data.label = args[10] === "empty" ? "" : args[10];
-                                data.x_off = parseInt(args[11]);
-                                data.y_off = parseInt(args[12]);
-                                data.font = parseInt(args[13]);
-                                data.fontsize = parseInt(args[14]);
-                                data.bg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
-                                data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
-                                data.unknown = parseFloat(args[17]);
-                                data.id = `${data.type}_${id++}`;
-
-                                // create svg
-                                data.visible_rect = CreateItem("rect", GuiCnvVisibleRect(data));
-                                data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
-                                data.text = CreateItem("text", GuiCnvText(data));
-                                data.text.textContent = data.label;
-
-                                // subscribe receiver
-                                BindGuiReceiver(data);
+                                GuiCnvSetup(args, id);
                             }
                             break;
 
-                        // External Gui Objects
-
+                        //╭─────────────────────────────────────╮
+                        //│        External Gui Objects         │
+                        //╰─────────────────────────────────────╯
                         case "knob": // ELSE/KNOB
                             if (canvasLevel === 1) {
-                                // x->x_size, // 01: i SIZE
-                                //         (float)x->x_lower, // 02: f lower
-                                //         (float)x->x_upper, // 03: f upper
-                                //         x->x_log ? 1 : x->x_exp, // 04: f exp
-                                //         x->x_load, // 05: f load
-                                //         x->x_snd_raw, // 06: s snd
-                                //         x->x_rcv_raw, // 07: s rcv
-                                //         x->x_bg, // 08: s bgcolor
-                                //         x->x_mg, // 09: s mgcolor
-                                //         x->x_fg, // 10: s fgcolor
-                                //         x->x_outline, // 11: i outline
-                                //         x->x_circular, // 12: i circular
-                                //         x->x_ticks, // 13: i ticks
-                                //         x->x_discrete, // 14: i discrete
-                                //         x->x_arc, // 15: i arc
-                                //         x->x_range, // 16: i range
-                                //         x->x_offset, // 17: i offset
-                                //         x->x_jump, // 17: i offset
-                                //         x->x_start); // 18: f start
-                                // #X obj 4 109 else/knob 50 0 127 0 0 s-knob1 r-knob1 #dfdfdf #7c7c7c black 1 0 0 0 1 320 0 0 0;
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.size = args[5];
-                                data.lower = parseFloat(args[6]);
-                                data.upper = parseFloat(args[7]);
-                                data.log = parseInt(args[8]);
-                                data.load = parseInt(args[9]);
-                                data.send = args[10];
-                                data.receive = args[11];
-                                // data.rect = CreateItem("rect", GuiKnobRect(data));
-                                data.circle = CreateItem("circle", GuiKnobCircleBackground(data));
-                                data.circleCenter = CreateItem("circle", GuiKnobCircleCenter(data));
-                                data.pointer = CreateItem("path", GuiKnobPointer(data));
-                                data.id = `${data.type}_${id++}`;
-                                if (Pd4Web.isMobile) {
-                                    data.circle.addEventListener("touchstart", function (e) {
-                                        for (const touch of e.changedTouches) {
-                                            GuiKnobOnMouseDown(data);
-                                        }
-                                    });
-                                } else {
-                                    data.circle.addEventListener("mousedown", function (e) {
-                                        GuiKnobOnMouseDown(data, e, 0);
-                                    });
-                                    data.circle.addEventListener("mousemove", function (e) {
-                                        GuiKnobOnMouseMove(data, e, 0);
-                                    });
-                                    data.circle.addEventListener("mouseup", function (e) {
-                                        GuiKnobOnMouseUp(data, e, 0);
-                                    });
-                                }
+                                GuiKnobSetup(args, id);
                             }
                             break;
                         case "keyboard": // ELSE/KEYBOARD
                             if (canvasLevel === 1) {
-                                const data = {};
-                                data.x_pos = parseInt(args[2]) - patch.x_pos;
-                                data.y_pos = parseInt(args[3]) - patch.y_pos;
-                                data.type = args[4];
-                                data.width = parseInt(args[5]);
-                                data.height = parseInt(args[6]);
-                                data.octave = parseInt(args[7]);
-                                data.lowC = parseInt(args[8]);
-                                data.velocity_nor = parseInt(args[9]);
-                                data.toggle = parseInt(args[10]);
-                                data.send = args[11];
-                                data.receive = args[12];
-
-                                data.keys = [];
-                                let keyI = 0;
-                                let keyX = data.x_pos;
-
-                                let allKeys = [];
-                                for (let i = 0; i < data.octave; i++) {
-                                    for (let j = 0; j < 7; j++) {
-                                        let key = {};
-                                        key.x_pos = keyX;
-                                        key.y_pos = data.y_pos;
-                                        key.width = data.width;
-                                        key.height = data.height;
-                                        key.fill = "transparent";
-                                        key.stroke = "black";
-                                        key.midi = (data.lowC + 1) * 12 + keyI;
-                                        key.send = data.send;
-                                        key.id = "white_" + keyI;
-                                        key.index = keyI;
-                                        allKeys[keyI] = key;
-                                        keyI += 1;
-                                        if (j !== 2 && j !== 6) {
-                                            let blackKey = {};
-                                            blackKey.id = "black_" + keyI;
-                                            blackKey.x_pos = keyX + data.width / 1.5;
-                                            blackKey.y_pos = data.y_pos;
-                                            blackKey.fill = "black";
-                                            blackKey.stroke = "black";
-                                            blackKey.midi = (data.lowC + 1) * 12 + keyI;
-                                            blackKey.send = data.send;
-                                            blackKey.width = data.width * 0.66;
-                                            blackKey.height = data.height * 0.6;
-                                            blackKey.index = keyI;
-                                            allKeys[keyI] = blackKey;
-                                            keyI += 1;
-                                        }
-                                        keyX += data.width;
-                                    }
-                                }
-                                for (let key of allKeys) {
-                                    if (key.fill === "transparent") {
-                                        data.keys[key.index] = CreateItem("rect", GuiKeyboardRect(key));
-                                    }
-                                }
-                                for (let key of allKeys) {
-                                    if (key.fill === "black") {
-                                        data.keys[key.index] = CreateItem("rect", GuiKeyboardRect(key));
-                                    }
-                                }
-
-                                data.keys.forEach((keyElement) => {
-                                    keyElement.addEventListener("mousedown", function (e) {
-                                        const p = GuiMousePoint(e);
-                                        let midi = e.target.getAttribute("midi");
-                                        let vel = ((p.y - data.y_pos) / data.height) * 127;
-                                        e.target.setAttribute("fill", "red");
-                                        if (Pd4Web) {
-                                            if (Pd4Web.sendList !== undefined) {
-                                                Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), vel]);
-                                            }
-                                        }
-                                    });
-                                    keyElement.addEventListener("mouseup", function (e) {
-                                        if (e.target.id.includes("black")) {
-                                            e.target.setAttribute("fill", "black");
-                                        } else {
-                                            e.target.setAttribute("fill", "transparent");
-                                        }
-                                        let midi = e.target.getAttribute("midi");
-                                        if (Pd4Web) {
-                                            if (Pd4Web.sendList !== undefined) {
-                                                Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), 0]);
-                                            }
-                                        }
-                                    });
-                                });
-
-                                break;
+                                GuiKeyboardSetup(args, id);
                             }
+                            break;
                     }
                 }
                 break;
@@ -2017,8 +2012,8 @@ function OpenPatch(content) {
                     // console.log(canvasLevel);
                     const data = {};
                     data.type = args[1];
-                    data.x_pos = parseInt(args[2]) - patch.x_pos;
-                    data.y_pos = parseInt(args[3]) - patch.y_pos;
+                    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+                    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
                     data.comment = [];
                     const lines = args
                         .slice(4)
@@ -2117,8 +2112,6 @@ async function Pd4WebInitGui(patch) {
                 return response.text();
             })
             .then((textContent) => {
-                textContent = textContent.replace(/\r/g, "");
-                UpdatePatchDivSize(textContent, Pd4Web.Zoom);
                 OpenPatch(textContent);
             })
             .catch((error) => {
