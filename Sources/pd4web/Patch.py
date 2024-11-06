@@ -185,7 +185,6 @@ class Patch:
         return False
 
     def isLibAbs(self, line: PatchLine):
-        line.isExternal = True
         line.library = line.Tokens[4].split("/")[0]
         line.name = line.completName.split("/")[-1]
         if self.Pd4Web.Libraries.isSupportedLibrary(line.library):
@@ -201,7 +200,13 @@ class Patch:
                 if line.library in externalsDict:
                     libAbs = externalsDict[line.library]["abs"]
                 else:
-                    libAbs = []
+                    libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + line.library
+                    self.Pd4Web.Objects.GetLibraryObjects(libFolder, line.library)
+
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+                if line.library in externalsDict:
+                    libFolder = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + line.library
 
             if line.name in libAbs:
                 externalSpace = 17 - len(line.name)
@@ -508,8 +513,15 @@ class Patch:
                 )
                 self.absProcessed.append(abs)
             elif self.isLibAbs(line):
+                pd4web_print(
+                    f"Found Library Abstraction: {line.Tokens[4]}",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
+                )
                 line.isAbstraction = True
                 line.isExternal = False
+
             else:
                 line.isExternal = True
                 line.library = line.Tokens[4].split("/")[0]
@@ -576,7 +588,6 @@ class Patch:
                         raise ValueError(f"The object {line.name} from {line.library} is not supported by Pd4Web yet.")
             else:
                 msg = f"Library or Object can't be processed, please report: ["
-                # remove 4 first tokens
                 tokens = line.Tokens[4:]
                 msg += " ".join(tokens) + "]"
                 msg += f" inside {self.patchFile}"

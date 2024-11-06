@@ -189,7 +189,6 @@ class GetAndBuildExternals:
         for patchLine in self.Patch.patchLinesProcessed:
             if patchLine.isExternal:
                 foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
-
                 if foundLibrary:
                     for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + patchLine.library):
                         for file in files:
@@ -218,7 +217,7 @@ class GetAndBuildExternals:
                         pd4web=self.Pd4Web.PD_EXTERNAL,
                     )
                 else:
-                    raise Exception("Could not find " + patchLine.name)
+                    raise Exception("Could not the source of the object " + patchLine.name)
         return True
 
     def BuildExternalsObjects(self):
