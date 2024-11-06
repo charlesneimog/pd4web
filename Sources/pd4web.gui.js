@@ -1407,9 +1407,28 @@ function UpdatePatchDivSize(content, patch_zoom) {
         var args = lines[0].split(" ");
         const canvasHeight = parseInt(args[5]);
         const canvasWidth = parseInt(args[4]);
-
         patchDiv.style.width = canvasWidth * patch_zoom + "px";
         patchDiv.style.height = canvasHeight * patch_zoom + "px";
+        patchDiv.style.marginLeft = "auto";
+        patchDiv.style.marginRight = "auto";
+    }
+}
+
+// ─────────────────────────────────────
+function UpdatePatchDivSizeCoords(width, height, patch_zoom) {
+    const patchDiv = document.getElementById("Pd4WebPatchDiv");
+    if (patchDiv == null) {
+        console.warn("Patch div not found");
+        return;
+    }
+
+    if (Pd4Web.isMobile) {
+        patchDiv.style.width = "90%";
+        patchDiv.style.marginLeft = "auto";
+        patchDiv.style.marginRight = "auto";
+    } else {
+        patchDiv.style.width = width * patch_zoom + "px";
+        patchDiv.style.height = height * patch_zoom + "px";
         patchDiv.style.marginLeft = "auto";
         patchDiv.style.marginRight = "auto";
     }
@@ -1427,10 +1446,36 @@ function OpenPatch(content) {
     }
 
     const lines = content.split(";\n");
-
-    // let graph = ["", "", ""];
-    // let lastCanvas = null;
-    // const isGraph = ["#N canvas", "#X coords", "#X restore"];
+    const patch = {};
+    patch.x_pos = 0;
+    patch.y_pos = 0;
+    let canvasLevelLocal = 0;
+    for (let line of lines) {
+        line = line.replace(/[\r\n]+/g, " ").trim();
+        const args = line.split(" ");
+        const type = args.slice(0, 2).join(" ");
+        switch (type) {
+            case "#N canvas":
+                if (canvasLevelLocal == 1) {
+                    patch.width = parseInt(args[4]);
+                    patch.height = parseInt(args[5]);
+                }
+                canvasLevelLocal++;
+                break;
+            case "#X restore":
+                canvasLevelLocal--;
+                break;
+            case "#X coords":
+                if (canvasLevelLocal == 1) {
+                    patch.width = parseInt(args[6]);
+                    patch.height = parseInt(args[7]);
+                    patch.x_pos = parseInt(args[9]);
+                    patch.y_pos = parseInt(args[10]);
+                    UpdatePatchDivSizeCoords(patch.width, patch.height, Pd4Web.Zoom);
+                }
+                break;
+        }
+    }
 
     for (let line of lines) {
         line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
@@ -1459,8 +1504,9 @@ function OpenPatch(content) {
                 canvasLevel++;
                 lastCanvas = args;
                 if (canvasLevel === 1 && args.length === 7) {
-                    Pd4Web.CanvasWidth = parseInt(args[4]);
-                    Pd4Web.CanvasHeight = parseInt(args[5]);
+                    console.log(patch.width, patch.height);
+                    Pd4Web.CanvasWidth = patch.width;
+                    Pd4Web.CanvasHeight = patch.height;
                     Pd4Web.FontSize = parseInt(args[6]);
                     Pd4Web.Canvas.setAttributeNS(null, "viewBox", `0 0 ${Pd4Web.CanvasWidth} ${Pd4Web.CanvasHeight}`);
                 }
@@ -1479,8 +1525,8 @@ function OpenPatch(content) {
                                 args[10] !== "empty"
                             ) {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.size = parseInt(args[5]);
                                 data.hold = parseInt(args[6]);
@@ -1524,8 +1570,8 @@ function OpenPatch(content) {
                         case "tgl":
                             if (canvasLevel === 1 && args.length === 19 && args[7] !== "empty" && args[8] !== "empty") {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.size = parseInt(args[5]);
                                 data.init = parseInt(args[6]);
@@ -1568,8 +1614,8 @@ function OpenPatch(content) {
                         case "nbx":
                             if (canvasLevel === 1 && args.length === 23 && args[7] !== "empty" && args[8] !== "empty") {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.width = parseInt(args[5]);
                                 data.height = parseInt(args[6]);
@@ -1652,11 +1698,11 @@ function OpenPatch(content) {
                                 args[12] !== "empty"
                             ) {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
                                 if (args[4] === "vsl") {
-                                    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
+                                    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
                                 } else {
-                                    data.y_pos = parseInt(args[3]);
+                                    data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 }
 
                                 data.type = args[4];
@@ -1718,8 +1764,8 @@ function OpenPatch(content) {
                                 args[10] !== "empty"
                             ) {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.size = parseInt(args[5]);
                                 data.new_old = parseInt(args[6]);
@@ -1763,9 +1809,8 @@ function OpenPatch(content) {
                         case "vu":
                             if (canvasLevel === 1 && args.length === 17 && args[7] !== "empty") {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                // Check https://github.com/pure-data/pure-data/issues/2391
-                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom;
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
                                 data.type = args[4];
                                 data.width = args[5];
                                 data.height = args[6];
@@ -1783,8 +1828,8 @@ function OpenPatch(content) {
                         case "cnv":
                             if (canvasLevel === 1 && args.length === 18 && args[8] !== "empty" && args[9] !== "empty") {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.size = parseInt(args[5]);
                                 data.width = parseInt(args[6]);
@@ -1837,8 +1882,8 @@ function OpenPatch(content) {
                                 //         x->x_start); // 18: f start
                                 // #X obj 4 109 else/knob 50 0 127 0 0 s-knob1 r-knob1 #dfdfdf #7c7c7c black 1 0 0 0 1 320 0 0 0;
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.size = args[5];
                                 data.lower = parseFloat(args[6]);
@@ -1874,8 +1919,8 @@ function OpenPatch(content) {
                         case "keyboard": // ELSE/KEYBOARD
                             if (canvasLevel === 1) {
                                 const data = {};
-                                data.x_pos = parseInt(args[2]);
-                                data.y_pos = parseInt(args[3]);
+                                data.x_pos = parseInt(args[2]) - patch.x_pos;
+                                data.y_pos = parseInt(args[3]) - patch.y_pos;
                                 data.type = args[4];
                                 data.width = parseInt(args[5]);
                                 data.height = parseInt(args[6]);
@@ -1941,6 +1986,8 @@ function OpenPatch(content) {
                                         let midi = e.target.getAttribute("midi");
                                         let vel = ((p.y - data.y_pos) / data.height) * 127;
                                         e.target.setAttribute("fill", "red");
+                                        console.log(Pd4Web);
+
                                         if (Pd4Web) {
                                             if (Pd4Web.sendList !== undefined) {
                                                 Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), vel]);
@@ -1972,8 +2019,8 @@ function OpenPatch(content) {
                     // console.log(canvasLevel);
                     const data = {};
                     data.type = args[1];
-                    data.x_pos = parseInt(args[2]);
-                    data.y_pos = parseInt(args[3]);
+                    data.x_pos = parseInt(args[2]) - patch.x_pos;
+                    data.y_pos = parseInt(args[3]) - patch.y_pos;
                     data.comment = [];
                     const lines = args
                         .slice(4)
