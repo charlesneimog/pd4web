@@ -1986,8 +1986,6 @@ function OpenPatch(content) {
                                         let midi = e.target.getAttribute("midi");
                                         let vel = ((p.y - data.y_pos) / data.height) * 127;
                                         e.target.setAttribute("fill", "red");
-                                        console.log(Pd4Web);
-
                                         if (Pd4Web) {
                                             if (Pd4Web.sendList !== undefined) {
                                                 Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), vel]);
