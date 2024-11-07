@@ -18,9 +18,6 @@ class GetAndBuildExternals:
 
         self.Patch = Pd4Web.ProcessedPatch
         self.Libraries = Pd4Web.Libraries
-        OK = self.GetObjectsSourceCode()
-        if not OK:
-            raise Exception("Error: Could not get the externals source code")
 
         # update setup funciton for
         self.UpdateSetupFunction()
@@ -184,41 +181,6 @@ class GetAndBuildExternals:
             if "." in functionName:
                 functionName = functionName.replace(".", "0x2e")
             self.RegexSearch(patchLine, functionName, os.path.join(root, file))
-
-    def GetObjectsSourceCode(self):
-        for patchLine in self.Patch.patchLinesProcessed:
-            if patchLine.isExternal:
-                foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
-                if foundLibrary:
-                    for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + patchLine.library):
-                        for file in files:
-                            if file.endswith(".c") or file.endswith(".cpp"):
-                                self.SearchCFunction(patchLine, root, file)
-                else:
-                    raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
-
-                if patchLine.objFound and patchLine.isAbstraction:
-                    externalSpace = 20 - len(patchLine.name)
-                    absName = patchLine.name + (" " * externalSpace)
-                    pd4web_print(
-                        f"Found Abstraction: {absName}  | Lib: {patchLine.library}",
-                        color="green",
-                        silence=self.Pd4Web.SILENCE,
-                        pd4web=self.Pd4Web.PD_EXTERNAL,
-                    )
-
-                elif patchLine.objFound and not patchLine.isAbstraction:
-                    externalSpace = 20 - len(patchLine.name)
-                    objName = patchLine.name + (" " * externalSpace)
-                    pd4web_print(
-                        f"Found External: {objName}  | Lib: {patchLine.library}",
-                        color="green",
-                        silence=self.Pd4Web.SILENCE,
-                        pd4web=self.Pd4Web.PD_EXTERNAL,
-                    )
-                else:
-                    raise Exception("Could not the source of the object " + patchLine.name)
-        return True
 
     def BuildExternalsObjects(self):
         """

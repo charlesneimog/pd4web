@@ -35,7 +35,7 @@ class ExternalsCompiler:
             libRepo.set_head(commit.id)
             libRepo.checkout_tree(commit)
             libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-        self.InstallEMCC()
+            self.InstallEMCC()
 
     def InitVariables(self):
         self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
@@ -60,7 +60,6 @@ class ExternalsCompiler:
         return cmake_bin
 
     def InstallEMCC(self):
-        pd4web_print("Installing emcc", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
         if platform.system() == "Windows":
             os.system(f"cmd /C {self.EMSDK} install latest")
             os.system(f"cmd /C {self.EMSDK} activate latest")
