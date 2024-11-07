@@ -33,6 +33,9 @@ I recommend using the file structure shown below.
 
 After you compile your patch, will be created in the ROOT of the project a file `index.html` and a new folder called `WebPatch`. All things that matter are inside the `WebPatch`. 
 
+## <h2 align="center">How to use Abstractions?</h2>
+
+Abstractions files must be inside `Libs` folder and be called as `Libs/myabs`. For now, use things like `declare -path Libs` and then trying to create `myabs` will not work!
 
 ## Compiling using PureData
 
