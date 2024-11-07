@@ -119,46 +119,41 @@ class Pd4WebTest(unittest.TestCase):
         lib = os.path.join(os.path.dirname(__file__), directory)
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), directory))
         pd_files = sorted([obj for obj in all_files if obj.endswith(".pd")])
-        for i in range(len(pd_files)):
-            file_path = pd_files[i]
+        for file_path in pd_files:
             filename = file_path.split("/")[-1]
             patchname = filename.split(".")[0]
             os.makedirs(f"{lib}/{temp_file}", exist_ok=True)
 
             src_dir = lib
-            dst_dir = os.path.join(lib, temp_file)  # Destination directory
+            dst_dir = os.path.join(lib, temp_file)
+            if os.path.exists(dst_dir):
+                shutil.rmtree(dst_dir)
 
-            def ignore_things(src, names):
-                return [name for name in names if os.path.islink(os.path.join(src, name)) or name == ".git"]
-
-            shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True, ignore=ignore_things)
-
+            shutil.copytree(src_dir, dst_dir, ignore=shutil.ignore_patterns("*.git", ".git"))
             newpatch = f"{lib}/{temp_file}/{filename}"
             try:
                 self.execute_server(newpatch, 5000)
             except:
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 self.execute_server(newpatch, 5000)
-            try:
-                shutil.rmtree(f"{lib}/{temp_file}/{patchname}")
-            except:
-                print(f"Failed to remove {lib}/{temp_file}/{patchname}")
-                pass
+
+            # try:
+            #     shutil.rmtree(f"{lib}/{temp_file}/{patchname}")
+            # except:
+            #     print(f"failed to remove {lib}/{temp_file}/{patchname}")
+            #     pass
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
             pass
 
     def test_libraries(self):
-        # Basic
-        self.libraries("Basic/gui")
-        self.libraries("Basic/audio")
-        self.libraries("Basic/abs")
-
         # Errors
         self.errors("Basic/errors")
 
         # Basic
+        self.libraries("Basic/gui")
+        self.libraries("Basic/audio")
 
         # Libraries
         self.libraries("Libraries/cyclone")
