@@ -80,6 +80,9 @@ class Patch:
             pd4web_print(
                 "Processing Abstraction", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
             )
+        else:
+            libFolder = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/pure-data/src")
+            self.Pd4Web.Objects.GetLibraryObjects(libFolder, "pure-data")
 
         if patch is not None:
             self.patchFile = patch
@@ -309,10 +312,10 @@ class Patch:
         for line in enumerate(self.patchLines):
             patchLine = PatchLine()
             patchLine.index, patchLine.completLine = line
-            Tokens = patchLine.completLine.replace("\n", "")
-            Tokens = Tokens.replace(";", "")
-            Tokens = Tokens.replace(",", "")  # when width is specificied
-            patchLine.Tokens = Tokens.split(" ")
+            tokens = patchLine.completLine.replace("\n", "")
+            tokens = tokens.replace(";", "")
+            tokens = tokens.replace(",", "")  # when width is specificied
+            patchLine.Tokens = tokens.split(" ")
 
             # no objects
             if len(patchLine.Tokens) < 5 or patchLine.Tokens[1] != "obj":
