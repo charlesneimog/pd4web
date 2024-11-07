@@ -733,6 +733,7 @@ function GuiSliderIndicator(data) {
             y2: p.y2,
             stroke: ColFromLoad(data.fg_color),
             "stroke-width": 2,
+            "stroke-linecap": "round",
             fill: "none",
             id: `${data.id}_indicator`,
             class: "unclickable",
@@ -763,6 +764,7 @@ function GuiSliderIndicator(data) {
             ry: 2,
             stroke: ColFromLoad(data.fg_color),
             "stroke-width": 3,
+            "stroke-linecap": "round",
             fill: "none",
             id: `${data.id}_indicator`,
             class: "unclickable",
@@ -922,7 +924,7 @@ function GuiSliderSetup(args, id) {
     data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
 
     if (data.type == "vsl") {
-        data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - Pd4Web.y_pos;
+        data.y_pos = parseInt(args[3]) - 2 - Pd4Web.y_pos;
     } else {
         data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
     }
@@ -1370,7 +1372,7 @@ function GuiVuUpdateGain(data) {
 function GuiVuSetup(args, id) {
     const data = {};
     data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
-    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - Pd4Web.y_pos;
+    data.y_pos = parseInt(args[3]) - 2 - Pd4Web.y_pos;
     data.type = args[4];
     data.width = args[5];
     data.height = args[6];
