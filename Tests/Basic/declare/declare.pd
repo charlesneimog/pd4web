@@ -1,0 +1,4 @@
+#N canvas 1282 23 632 1016 10;
+#X declare -path Libs;
+#X obj 10 6 declare -path Libs;
+#X obj 52 77 myabs;

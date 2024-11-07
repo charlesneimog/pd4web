@@ -1,0 +1,4 @@
+#N canvas 644 328 632 406 8;
+#X obj 7 7 vsl 15 80 0 127 0 0 s-vsl1 r-vsl1 empty 0 -9 0 8 #fcfcfc #000000 #000000 0 1;
+#X obj 26 7 vu 15 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0;
+#X coords 0 406 1 405 380 250 0;
