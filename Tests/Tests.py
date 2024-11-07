@@ -121,7 +121,6 @@ class Pd4WebTest(unittest.TestCase):
         pd_files = sorted([obj for obj in all_files if obj.endswith(".pd")])
         for file_path in pd_files:
             filename = file_path.split("/")[-1]
-            patchname = filename.split(".")[0]
             os.makedirs(f"{lib}/{temp_file}", exist_ok=True)
 
             src_dir = lib
@@ -137,11 +136,6 @@ class Pd4WebTest(unittest.TestCase):
                 print(f"\033[91mError: {newpatch} -- trying again\033[0m")
                 self.execute_server(newpatch, 5000)
 
-            # try:
-            #     shutil.rmtree(f"{lib}/{temp_file}/{patchname}")
-            # except:
-            #     print(f"failed to remove {lib}/{temp_file}/{patchname}")
-            #     pass
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
@@ -152,13 +146,18 @@ class Pd4WebTest(unittest.TestCase):
         self.errors("Basic/errors")
 
         # Basic
-        self.libraries("Basic/gui")
+        self.libraries("Basic/abs")
         self.libraries("Basic/audio")
+        self.libraries("Basic/declare")
+        self.libraries("Basic/file")
+        self.libraries("Basic/gui")
 
         # Libraries
         self.libraries("Libraries/cyclone")
         self.libraries("Libraries/else")
         self.libraries("Libraries/pmpd")
+        self.libraries("Libraries/o.scofo~")
+        self.libraries("Libraries/ambi~")
 
 
 if __name__ == "__main__":
