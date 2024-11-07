@@ -2,7 +2,12 @@ cmake_minimum_required(VERSION 3.25)
 project(libpd C)
 
 set(ENABLE_TILDE_TARGET_WARNING off)
-set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
+
+if (LSP_SUPPORT)
+	set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/pure-data/src/)
+else()
+	set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
+endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
 
 # ╭──────────────────────────────────────╮
