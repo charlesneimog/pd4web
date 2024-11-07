@@ -92,6 +92,7 @@ class GetAndBuildExternals:
             f"    -sINITIAL_MEMORY={self.Pd4Web.MEMORY_SIZE}MB",
             "    -sUSE_PTHREADS=1",
             "    -sPTHREAD_POOL_SIZE=4",
+            "    -sWASMFS=1",
             "    -sWASM=1",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
