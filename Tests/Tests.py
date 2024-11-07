@@ -23,7 +23,7 @@ class Pd4WebTest(unittest.TestCase):
             patchDir = os.path.dirname(pd_file)
             self.execute_chrome(patchDir, port)
             print("\n\n")
-        
+
     def execute_chrome(self, path, port):
         from selenium import webdriver
         from selenium.webdriver.chrome.options import Options
@@ -40,7 +40,7 @@ class Pd4WebTest(unittest.TestCase):
 
         # Caminho para o ChromeDriver
         chrome_service = Service(executable_path=ChromeDriver)
-        
+
         @app.after_request
         def add_coop_coep_headers(response):
             response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
@@ -81,7 +81,7 @@ class Pd4WebTest(unittest.TestCase):
             server_process.terminate()
             server_process.join()
             time.sleep(1)  # Ensure the port is released before the next test
-        
+
     def errors(self, directory):
         temp_file = directory.split("/")[-1]
         lib = os.path.join(os.path.dirname(__file__), directory)
@@ -90,7 +90,7 @@ class Pd4WebTest(unittest.TestCase):
         error_dict = {
             "objnotfound": "Library or Object can't be processed, please report",
         }
-            
+
         for i in range(len(pd_files)):
             file_path = pd_files[i]
             filename = file_path.split("/")[-1]
@@ -113,8 +113,7 @@ class Pd4WebTest(unittest.TestCase):
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
             pass
-        
-        
+
     def libraries(self, directory):
         temp_file = directory.split("/")[-1]
         lib = os.path.join(os.path.dirname(__file__), directory)
@@ -125,9 +124,16 @@ class Pd4WebTest(unittest.TestCase):
             filename = file_path.split("/")[-1]
             patchname = filename.split(".")[0]
             os.makedirs(f"{lib}/{temp_file}", exist_ok=True)
-            os.makedirs(f"{lib}/{temp_file}/{patchname}", exist_ok=True)
-            shutil.copyfile(f"{lib}/{file_path}", f"{lib}/{temp_file}/{patchname}/{filename}")
-            newpatch = f"{lib}/{temp_file}/{patchname}/{filename}"
+
+            src_dir = lib
+            dst_dir = os.path.join(lib, temp_file)  # Destination directory
+
+            def ignore_things(src, names):
+                return [name for name in names if os.path.islink(os.path.join(src, name)) or name == ".git"]
+
+            shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True, ignore=ignore_things)
+
+            newpatch = f"{lib}/{temp_file}/{filename}"
             try:
                 self.execute_server(newpatch, 5000)
             except:
@@ -142,20 +148,23 @@ class Pd4WebTest(unittest.TestCase):
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
             pass
-        
+
     def test_libraries(self):
+        # Basic
+        self.libraries("Basic/gui")
+        self.libraries("Basic/audio")
+        self.libraries("Basic/abs")
+
         # Errors
         self.errors("Basic/errors")
 
         # Basic
-        self.libraries("Basic/gui")
-        self.libraries("Basic/audio")
-        
+
         # Libraries
         self.libraries("Libraries/cyclone")
         self.libraries("Libraries/else")
         self.libraries("Libraries/pmpd")
-        
-    
+
+
 if __name__ == "__main__":
     unittest.main(failfast=True)
