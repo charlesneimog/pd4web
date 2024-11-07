@@ -1369,8 +1369,8 @@ function GuiVuUpdateGain(data) {
 // ─────────────────────────────────────
 function GuiVuSetup(args, id) {
     const data = {};
-    data.x_pos = parseInt(args[2]) - patch.x_pos;
-    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - patch.y_pos;
+    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.Zoom - Pd4Web.y_pos;
     data.type = args[4];
     data.width = args[5];
     data.height = args[6];
@@ -1388,6 +1388,7 @@ function GuiVuSetup(args, id) {
 //╭─────────────────────────────────────╮
 //│             Canvas: Cnv             │
 //╰─────────────────────────────────────╯
+
 function GuiCnvVisibleRect(data) {
     return {
         x: data.x_pos,
