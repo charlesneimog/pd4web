@@ -27,6 +27,7 @@ class PatchLine:
         self.objFound = False
         self.uiReceiver = False
         self.uiSymbol = ""
+        self.absPath = ""
         self.Tokens = []
         self.SpecialObjects = ["adc~", "dac~"]
 
@@ -75,6 +76,11 @@ class Patch:
         self.Pd4Web = Pd4Web
         self.isAbstraction = abs
 
+        if abs:
+            pd4web_print(
+                "Processing Abstraction", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+            )
+
         if patch is not None:
             self.patchFile = patch
         else:
@@ -93,7 +99,7 @@ class Patch:
         # Main Functions
         self.execute()
 
-        # Rewrite the patches
+        # Rewrite the patches to remove preffix
         self.reConfigurePatch()
 
         # if not abs:
@@ -127,12 +133,12 @@ class Patch:
         """
         This function list all pd patch in the same folder of the main patch.
         """
-        LocalAbstractions = []
+        localAbstractions = []
         files = os.listdir(os.path.dirname(self.PROJECT_ROOT))
         for file in files:
             if file.endswith(".pd"):
-                LocalAbstractions.append(file.split(".pd")[0])
-        self.localAbstractions = LocalAbstractions
+                localAbstractions.append(file.split(".pd")[0])
+        self.localAbstractions = localAbstractions
 
     # ╭──────────────────────────────────────╮
     # │        Find Externals Objects        │
@@ -201,7 +207,7 @@ class Patch:
                     return False
 
             if line.name in libAbs:
-                externalSpace = 17 - len(line.name)
+                externalSpace = 25 - len(line.name)
                 absName = line.name + (" " * externalSpace)
                 pd4web_print(
                     f"Found Abs: {absName}  | Lib: {line.library}",
@@ -214,12 +220,7 @@ class Patch:
                 for root, _, files in os.walk(libPath):
                     for file in files:
                         if file == line.name + ".pd":
-                            abs = Patch(
-                                self.Pd4Web,
-                                abs=True,
-                                patch=os.path.join(root, file),
-                            )
-                            self.absProcessed.append(abs)
+                            line.absPath = os.path.join(root, file)
                             return True
                 return True
 
@@ -419,8 +420,6 @@ class Patch:
                 if lib not in externalsDict.keys():
                     raise Exception(f"Library {lib} not found in {externalsJson}")
 
-                    pass
-
                 self.declaredAbs.extend(externalsDict[lib]["abs"])
                 if patchLine.completName in self.declaredAbs:
                     libName = lib
@@ -481,11 +480,14 @@ class Patch:
     def patchObject(self, line: PatchLine):
         """ """
         line.completName = line.Tokens[4]
-
         if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
+                name = line.Tokens[4].split("/")[-1]
+                library = line.Tokens[4].split("/")[0]
+                externalSpace = 11 - len(name)
+                name = name + (" " * externalSpace)
                 pd4web_print(
-                    f"Found Local Abstraction: {line.Tokens[4]}",
+                    f"Found Local Abstraction: {name}  | Path: {library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
@@ -497,7 +499,14 @@ class Patch:
                     patch=self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd",
                 )
                 self.absProcessed.append(abs)
+
             elif self.isLibAbs(line):
+                abs = Patch(
+                    self.Pd4Web,
+                    abs=True,
+                    patch=line.absPath,
+                )
+                self.absProcessed.append(abs)
                 line.isAbstraction = True
                 line.isExternal = False
 
@@ -507,6 +516,15 @@ class Patch:
                 line.name = line.completName.split("/")[-1]
                 line.objGenSym = 'class_new(gensym("' + line.name + '")'
                 self.Pd4Web.Libraries.GetLibrarySourceCode(line.library)
+                line.objFound = True
+                externalSpace = 20 - len(line.name)
+                objName = line.name + (" " * externalSpace)
+                pd4web_print(
+                    f"Found External: {objName}  | Lib: {line.library}",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
+                )
 
         elif self.objThatIsSingleLib(line):
             line.isExternal = True
