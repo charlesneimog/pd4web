@@ -75,6 +75,7 @@ class Pd4Web {
     static void receivedFloat(const char *r, float f);
     static void receivedSymbol(const char *r, const char *s);
     static void receivedList(const char *r, int argc, t_atom *argv);
+    static void receivedMessage(const char *recv, const char *symbol, int argc, t_atom *argv);
 
     // bind symbols
     void bindReceiver(std::string s);

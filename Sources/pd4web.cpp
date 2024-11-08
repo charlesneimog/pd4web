@@ -387,6 +387,12 @@ EM_JS(void, _JS_receiveList, (const char *r),{
     }
 });
 
+// ─────────────────────────────────────
+EM_JS(void, _JS_receiveMessage, (const char *r),{
+
+
+});
+
 // clang-format on
 // ─────────────────────────────────────
 int Pd4Web::_getReceivedListSize(std::string r) {
@@ -503,6 +509,11 @@ void Pd4Web::receivedList(const char *r, int argc, t_atom *argv) {
         }
     }
 };
+
+// ─────────────────────────────────────
+void Pd4Web::receivedMessage(const char *recv, const char *symbol, int argc, t_atom *argv) {
+    return;
+}
 
 // ╭─────────────────────────────────────╮
 // │           Receivers Hooks           │
@@ -697,6 +708,23 @@ void Pd4Web::unbindReceiver() {
  * @return true if processing succeeded, false otherwise.
  */
 
+#include <filesystem>
+
+namespace fs = std::filesystem;
+
+static int list_files = 0;
+void listDirectoryRecursive(const fs::path &directory) {
+    for (const auto &entry : fs::directory_iterator(directory)) {
+        // Print the file or directory name
+        _JS_post(entry.path().filename().string().c_str());
+
+        // If the entry is a directory, call this function recursively
+        if (entry.is_directory()) {
+            listDirectoryRecursive(entry.path());
+        }
+    }
+}
+
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *userData) {
@@ -869,12 +897,6 @@ void Pd4Web::init() {
     libpd_set_printhook(libpd_print_concatenator);
     libpd_set_concatenated_printhook(&Pd4Web::post);
 
-    // Pd4WebPdInstance = libpd_new_instance();
-    // if (!Pd4WebPdInstance) {
-    //     _JS_alert("libpd_init() failed, please report!");
-    //     return;
-    // }
-    // libpd_set_instance(Pd4WebPdInstance);
     int ret = libpd_init();
     if (ret) {
         _JS_alert("libpd_init() failed, please report!");
@@ -885,6 +907,7 @@ void Pd4Web::init() {
     libpd_set_floathook(&Pd4Web::receivedFloat);
     libpd_set_symbolhook(&Pd4Web::receivedSymbol);
     libpd_set_listhook(&Pd4Web::receivedList);
+    libpd_set_messagehook(&Pd4Web::receivedMessage);
 
     // TODO: add midi hooks
 
@@ -930,7 +953,7 @@ void Pd4Web::guiLoop() {
                 break;
             }
             case Pd4WebGuiConnector::MESSAGE: {
-                printf("Unhandled message\n");
+                _JS_receiveMessage(GuiReceiver.Receiver.c_str());
             }
             }
             GuiReceiver.Updated = false;
