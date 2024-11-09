@@ -1280,7 +1280,11 @@ function GuiSliderSetup(args, id) {
     const data = {};
     data.type = args[4];
 
-    data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    if (data.type == "hsl") {
+        data.x_pos = parseInt(args[2]) - 3 - Pd4Web.x_pos;
+    } else{
+        data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
+    }
 
     if (data.type == "vsl") {
         data.y_pos = parseInt(args[3]) - 2 - Pd4Web.y_pos;
@@ -1734,7 +1738,7 @@ function GuiVuSetup(args, id) {
     data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
     data.type = args[4];
     data.width = args[5];
-    data.height = args[6];
+    data.height = parseInt(args[6]);
     data.receive = args[7];
     data.id = `${data.type}_${id++}`;
 
@@ -1821,7 +1825,18 @@ function GuiCnvSetup(args, id) {
 //│           else/knob Knob            │
 //╰─────────────────────────────────────╯
 function GuiKnobRect(data) {
-    return GuiRect(data);
+    console.log(data);
+    return {
+        x: data.x_pos,
+        y: data.y_pos,
+        rx: 2,
+        ry: 2,
+        width: data.size,
+        height: data.size,
+        fill: ColFromLoad(data.bg_color),
+        id: `${data.id}_rect`,
+        class: "border clickable",
+    };
 }
 
 // ─────────────────────────────────────
@@ -1832,50 +1847,74 @@ function GuiKnobCircleCenter(data) {
     return {
         cx: cx,
         cy: cy,
-        r: 1.5,
+        r: data.size / 50,
         fill: "black",
         stroke: "black",
         "stroke-width": 0.5,
         id: `${data.id}_knob_center`,
+        class: "unclickable",
     };
 }
 
 // ─────────────────────────────────────
-function GuiKnobCircleBackground(data) {
-    const r = (data.size - 2) / 2;
-    const cx = data.x_pos + r + 1;
-    const cy = data.y_pos + r + 1;
+function GuiKnobArc(data) {
+    const r = ((data.size - 2) / 2) * 0.9; // Radius scaled down by 0.9
+    const cx = data.x_pos + (data.size - 2) / 2 + 1;
+    const cy = data.y_pos + (data.size - 2) / 2 + 1;
+
+    // Angle in degrees (0 to 360)
+    const angle = data.ag_range;
+
+    // Calculate the half angle to center the arc around 12 o'clock
+    const halfAngle = (Math.PI * (angle / 360));
+    const startAngle = -Math.PI / 2 - halfAngle; // Start point adjusted based on angle
+    const endAngle = -Math.PI / 2 + halfAngle; // End point adjusted to be symmetric
+
+    // Calculate the coordinates for the arc's endpoints
+    const x1 = cx + r * Math.cos(startAngle);
+    const y1 = cy + r * Math.sin(startAngle);
+    const x2 = cx + r * Math.cos(endAngle);
+    const y2 = cy + r * Math.sin(endAngle);
+
+    // Large arc flag: 1 if angle is greater than 180 degrees, else 0
+    const largeArcFlag = angle > 180 ? 1 : 0;
+
+    // SVG path for the arc
+    const d = `M ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2}`;
+
     return {
-        cx: cx,
-        cy: cy,
-        r: r,
-        fill: "lightgray",
-        stroke: "black",
-        strokeWidth: 2,
-        id: `${data.id}_knob_bg`,
-        class: "clickable",
+        d: d,
+        fill: "transparent",
+        stroke: "white",
+        "stroke-width": 1,
+        "stroke-linecap": "round",
+        id: `${data.id}_knob_arc`,
+        class: "unclickable",
     };
 }
 
 // ─────────────────────────────────────
 function GuiKnobPointer(data) {
-    const r = (data.size - 2) / 2;
-    const cx = data.x_pos + r + 1;
-    const cy = data.y_pos + r + 1;
-    const startAngle = 135; // Start angle for the pointer
+    var r = (data.size - 2) / 2;
+    data.cx = data.x_pos + r + 1;
+    data.cy = data.y_pos + r + 1;
+    r = r * 0.7; // Adjust pointer length relative to knob size
 
-    const pointerRadius = r * 0.9;
-    const x1 = cx + pointerRadius * Math.cos((Math.PI / 180) * startAngle); // Start point of the arc
-    const y1 = cy + pointerRadius * Math.sin((Math.PI / 180) * startAngle);
+    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const startAngle = -Math.PI / 2 - halfAngle; // Start point adjusted based on angle
+    const x1 = data.cx + r * Math.cos(startAngle);
+    const y1 = data.cy + r * Math.sin(startAngle);
 
-    // move one line from x1,y1 to the center of the circle
+
     return {
-        d: `M ${x1} ${y1} A 0 0 0 0 1 ${cx} ${cy}`,
-        stroke: "black",
+        x1: x1,
+        y1: y1,
+        x2: data.cx,
+        y2: data.cy,
+        stroke: "white",
         "stroke-width": 2,
-        fill: "black",
-        id: `${data.id}_knob_pointer`,
-        // class: "clickable",
+        "stroke-linecap": "round",
+        class: "unclickable",
     };
 }
 
@@ -1883,72 +1922,96 @@ function GuiKnobPointer(data) {
 function GuiKnobOnMouseDown(data, e, n) {
     data.beingDragged = true;
     data.pointer.setAttribute("stroke", "red");
-    data.circleCenter.setAttribute("stroke", "red");
-    data.circleCenter.setAttribute("fill", "red");
     data.startMoveX = e.clientX;
     data.startMoveY = e.clientY;
 }
 
 // ─────────────────────────────────────
-function GuiKnobOnMouseMove(data, e, n) {
+function GuiKnobOnMouseMove(data, e) {
     if (!data.beingDragged) {
         return;
     }
 
-    const dx = e.clientX - data.startMoveX;
-    const dy = e.clientY - data.startMoveY;
-    var distance = 0;
-    if (e.clientY < data.startMoveY) {
-        distance = Math.sqrt(dx * dx + dy * dy);
-    }
+    // Calculate the vertical movement (dy) since the dragging started
+    const startY = data.startMoveY;
+    const endY = e.clientY;
+    const dy = startY - endY; // Positive dy means upward movement, negative means downward
 
-    const value = Math.max(0, Math.min(1, distance / (data.size * 2)));
-    const angle = value * (360 - 45);
+    // Calculate the change in value based on dy
+    const knobRange = data.ag_range; // Maximum knob value (in degrees)
+    const sensitivity = data.size * 2; // Full range achieved with twice the size of the knob
+    const valueChange = (dy / sensitivity) * knobRange;
 
-    // Apply the rotation using transform: rotate() to the pointer element
-    const rotation = `rotate(${angle} ${data.x_pos + data.size / 2} ${data.y_pos + data.size / 2})`;
+    // Update the knob value and clamp it within the allowed range
+    data.knobValue = Math.min(Math.max(data.init_value + valueChange, 0), knobRange);
 
-    // Update the pointer's rotation
-    if (data.pointer) {
-        data.pointer.setAttribute("transform", rotation);
-    }
+    // Calculate the half angle to center the arc around 12 o'clock
+    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const startAngle = -Math.PI / 2 - halfAngle; // Adjusted start point
+
+    // Convert knobValue to radians, mapping it within the defined angle range
+    const angleRadians = startAngle + (data.knobValue / knobRange) * (2 * halfAngle);
+
+    // Update the pointer position based on the new angle
+    const pointerRadius = (data.size - 2) / 2 * 0.7; // Adjust pointer length relative to knob size
+    const x1 = data.cx + pointerRadius * Math.cos(angleRadians);
+    const y1 = data.cy + pointerRadius * Math.sin(angleRadians);
+
+    // Update the SVG line attributes for the pointer
+    data.pointer.setAttribute("x1", x1);
+    data.pointer.setAttribute("y1", y1);
+    data.pointer.setAttribute("x2", data.cx);
+    data.pointer.setAttribute("y2", data.cy);
 }
+
+
 
 // ─────────────────────────────────────
 function GuiKnobOnMouseUp(data, e, n) {
     data.pointer.setAttribute("stroke", "black");
-    data.circleCenter.setAttribute("stroke", "black");
-    data.circleCenter.setAttribute("fill", "black");
+    //data.circleCenter.setAttribute("stroke", "black");
+    //data.circleCenter.setAttribute("fill", "black");
     data.beingDragged = false;
 }
 
 // ─────────────────────────────────────
 function GuiKnobSetup(args, id) {
+    console.log(args);
     const data = {};
     data.x_pos = parseInt(args[2]);
     data.y_pos = parseInt(args[3]);
     data.type = args[4];
+    
     data.size = parseInt(args[5]);
-    data.width = parseInt(args[6]);
-    data.height = parseInt(args[7]);
-    data.send = args[8];
-    data.receive = args[9];
-    data.label = args[10] === "empty" ? "" : args[10];
-    data.x_off = parseInt(args[11]);
-    data.y_off = parseInt(args[12]);
-    data.font = parseInt(args[13]);
-    data.fontsize = parseInt(args[14]);
-    data.bg_color = isNaN(args[15]) ? args[15] : parseInt(args[15]);
-    data.label_color = isNaN(args[16]) ? args[16] : parseInt(args[16]);
-    data.unknown = parseFloat(args[17]);
+    data.min = parseFloat(args[6]);
+    data.max = parseFloat(args[7]);
+    data.init_value = parseFloat(args[8]);
+    //data.asd = parseFloat(args[9]);
+    data.send = args[10];
+    data.receive = args[11];
+    data.bg = args[12];
+    data.arc_color = args[13];
+    data.fg = args[14];
+    
+    data.ag_range = parseInt(args[20]);
     data.id = `${data.type}_${id++}`;
+    console.log(data);
 
     // create svg
-    data.visible_rect = CreateItem("rect", GuiKnobRect(data));
-    data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
-    data.pointer = CreateItem("path", GuiKnobPointer(data));
-    data.text = CreateItem("text", GuiCnvText(data));
-    data.text.textContent = data.label;
+    data.rect = CreateItem("rect", GuiKnobRect(data));
+    data.circle = CreateItem("circle", GuiKnobCircleCenter(data));
+    data.circleBg = CreateItem("path", GuiKnobArc(data));
+    data.pointer = CreateItem("line", GuiKnobPointer(data));
+    
+    data.rect.addEventListener("mousedown", function (e) { 
+        GuiKnobOnMouseDown(data, e, 0);
+    });
+    data.rect.addEventListener("mousemove", function (e) {
+        GuiKnobOnMouseMove(data, e, 0);
+    });
+    data.rect.addEventListener("mouseup", function (e) {
+        GuiKnobOnMouseUp(data, e, 0);
+    });
 
     // subscribe receiver
     BindGuiReceiver(data);
@@ -2045,6 +2108,7 @@ function GuiKeyboardSetup(args, id) {
             let midi = e.target.getAttribute("midi");
             let vel = ((p.y - data.y_pos) / data.height) * 127;
             e.target.setAttribute("fill", "red");
+            e.target.timeStamp = Date.now();
             if (Pd4Web) {
                 if (Pd4Web.sendList !== undefined) {
                     Pd4Web.sendList(e.target.getAttribute("send"), [parseFloat(midi), vel]);
@@ -2052,6 +2116,7 @@ function GuiKeyboardSetup(args, id) {
             }
         });
         keyElement.addEventListener("mouseup", function (e) {
+            
             if (e.target.id.includes("black")) {
                 e.target.setAttribute("fill", "black");
             } else {
