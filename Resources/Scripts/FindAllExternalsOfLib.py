@@ -19,7 +19,7 @@ class PdObjectsInSource:
                 if file.endswith(".c") or file.endswith(".cpp"):
                     completePath = os.path.join(root, file)
                     self.regexSearch(completePath)
-        self.writePatches()
+        self.writeCompiledPatches()
         
         # found all the Abstractions, Abstractions
         pd_files = []
@@ -31,13 +31,7 @@ class PdObjectsInSource:
                     pd_files.append(pd_file)
         
         # loop through all the pd files and find all the .pd files that have and equivalent -help.pd file
-        abs_count = 0
-
-        for pd_file in pd_files:
-            patch_name = os.path.basename(pd_file).replace(".pd", "")
-            if patch_name + "-help.pd" in pd_files:
-                abs_count += 1
-        print(f"Total of Abs:      {abs_count}")
+        self.writeAbstractionPatches(pd_files)
 
 
     def regexSearch(self, file):
@@ -48,25 +42,31 @@ class PdObjectsInSource:
             for match in matches:
                 objectName = match.group(1)
                 self.objsFounded.append(objectName)
-
-    def writePatches(self):
-        objCount = 0
+                
+    def writeAbstractionPatches(self, patches):
+        abs_count = 0
         objPosition = 0
         lastWritten = 0
-        print("Total of Objects: ", len(self.objsFounded))
-        if not os.path.exists(os.path.join(self.thisFolder, self.libName)):
-            os.makedirs(os.path.join(self.thisFolder, self.libName))
-        for objName in self.objsFounded:
+        found_abs = []
+        for pd_file in patches:
+            patch_name = os.path.basename(pd_file).replace(".pd", "")
+            if patch_name + "-help.pd" in patches:
+                found_abs.append(patch_name)
+                abs_count += 1
+        print(f"Total of Abs:      {abs_count}")
+        objPosition = 0
+        lastWritten = 0
+        for objName in found_abs:
             if objName[0] != "_":
-                objCount += 1
+                self.objCount += 1
                 objPosition += 1
-                if objCount == 1:
+                if self.objCount == 1:
                     self.patch.append("#N canvas 0 0 450 300 10;")
                 objPatchPosition = objPosition * 40
                 self.patch.append(f"#X obj 20 {objPatchPosition} {self.libName}/{objName};")
-                if objCount % self.objPerPatch == 0:
-                    obj = objCount - self.objPerPatch
-                    patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{objCount - 1}.pd")
+                if self.objCount % self.objPerPatch == 0:
+                    obj = self.objCount - self.objPerPatch
+                    patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
                     with open(patchPath, "w") as f:
                         for line in self.patch:
                             f.write(line + "\n")
@@ -76,7 +76,42 @@ class PdObjectsInSource:
                     self.patch.append("#N canvas 0 0 450 300 10;")
         if len(self.patch) > 1:
             obj = lastWritten + self.objPerPatch
-            patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{objCount - 1}.pd")
+            patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+            with open(patchPath, "w") as f:
+                for line in self.patch:
+                    f.write(line + "\n")
+            self.patch = []
+            objPosition = 0
+
+    def writeCompiledPatches(self):
+        self.objCount = 0
+        objPosition = 0
+        lastWritten = 0
+        print("Total of Objects: ", len(self.objsFounded))
+        if not os.path.exists(os.path.join(self.thisFolder, self.libName)):
+            os.makedirs(os.path.join(self.thisFolder, self.libName))
+        self.objsFounded.sort()
+        for objName in self.objsFounded:
+            if objName[0] != "_":
+                self.objCount += 1
+                objPosition += 1
+                if self.objCount == 1:
+                    self.patch.append("#N canvas 0 0 450 300 10;")
+                objPatchPosition = objPosition * 40
+                self.patch.append(f"#X obj 20 {objPatchPosition} {self.libName}/{objName};")
+                if self.objCount % self.objPerPatch == 0:
+                    obj = self.objCount - self.objPerPatch
+                    patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+                    with open(patchPath, "w") as f:
+                        for line in self.patch:
+                            f.write(line + "\n")
+                    self.patch = []
+                    objPosition = 0
+                    lastWritten = obj
+                    self.patch.append("#N canvas 0 0 450 300 10;")
+        if len(self.patch) > 1:
+            obj = lastWritten + self.objPerPatch
+            patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
             with open(patchPath, "w") as f:
                 for line in self.patch:
                     f.write(line + "\n")
