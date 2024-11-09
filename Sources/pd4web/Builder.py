@@ -190,7 +190,7 @@ class GetAndBuildExternals:
 
     def getObjectsSourceCode(self):
         for patchLine in self.Patch.patchLinesProcessed:
-            print(patchLine, patchLine.isExternal)
+            #print(patchLine, patchLine.isExternal)
             if patchLine.isExternal:
                 foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
                 if foundLibrary:
@@ -202,7 +202,7 @@ class GetAndBuildExternals:
                     raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
                 if patchLine.functionName == "":
                     raise Exception(f"Error: Could not find the setup function for {patchLine.name}")
-                print(patchLine.functionName)
+                #print(patchLine.functionName)
         return True
 
     def BuildExternalsObjects(self):
