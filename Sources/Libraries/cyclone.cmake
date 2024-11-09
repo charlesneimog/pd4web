@@ -185,7 +185,7 @@ pd_add_external(rminus~ "${LIB_DIR}/cyclone_objects/binaries/audio/rminus.c")
 pd_add_external(round~ "${LIB_DIR}/cyclone_objects/binaries/audio/round.c")
 pd_add_external(scale~ "${LIB_DIR}/cyclone_objects/binaries/audio/scale.c")
 pd_add_external(thresh~ "${LIB_DIR}/cyclone_objects/binaries/audio/thresh.c")
-pd_add_external(trunc~ "${LIB_DIR}/cyclone_objects/binaries/audio/trunc.c")
+#pd_add_external(trunc~ "${LIB_DIR}/cyclone_objects/binaries/audio/trunc.c")
 
 # ╭──────────────────────────────────────╮
 # │      Classes with Dependencies       │
@@ -245,7 +245,7 @@ pd_add_external(decide "${LIB_DIR}/cyclone_objects/binaries/control/decide.c;${L
 
 # New dependencies for rand~ and pink~
 pd_add_external(rand~ "${LIB_DIR}/cyclone_objects/binaries/audio/rand.c;${LIB_DIR}/shared/common/random.c")
-pd_add_external(pink~ "${LIB_DIR}/cyclone_objects/binaries/audio/pink.c;${LIB_DIR}/shared/common/random.c")
+#pd_add_external(pink~ "${LIB_DIR}/cyclone_objects/binaries/audio/pink.c;${LIB_DIR}/shared/common/random.c")
 
 # New dependencies for frameaccum~ and framedelta~
 pd_add_external(frameaccum~ "${LIB_DIR}/cyclone_objects/binaries/audio/frameaccum.c;${LIB_DIR}/shared/common/grow.c")
@@ -274,7 +274,7 @@ pd_add_external(bitshift~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitshift.c;
 pd_add_external(bitxor~ "${LIB_DIR}/cyclone_objects/binaries/audio/bitxor.c;${LIB_DIR}/shared/common/magicbit.c")
 
 # New dependency for scope~
-pd_add_external(scope~ "${LIB_DIR}/cyclone_objects/binaries/audio/scope.c;${LIB_DIR}/shared/common/magicbit.c")
+#pd_add_external(scope~ "${LIB_DIR}/cyclone_objects/binaries/audio/scope.c;${LIB_DIR}/shared/common/magicbit.c")
 
 # New dependency for comment
 pd_add_external(comment "${LIB_DIR}/cyclone_objects/binaries/control/comment.c;${LIB_DIR}/shared/control/s_cycloneutf8.c")
