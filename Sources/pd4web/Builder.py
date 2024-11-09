@@ -164,6 +164,7 @@ class GetAndBuildExternals:
                 matches = re.finditer(pattern, file_contents, re.DOTALL)
                 listMatches = list(matches)
                 if len(listMatches) > 0:
+                    line.objFound = True
                     line.functionName = functionName
                     line.setupFunction = functionName
 
@@ -185,18 +186,23 @@ class GetAndBuildExternals:
             if "." in functionName:
                 functionName = functionName.replace(".", "0x2e")
             self.regexSearch(patchLine, functionName, os.path.join(root, file))
+            
 
     def getObjectsSourceCode(self):
         for patchLine in self.Patch.patchLinesProcessed:
+            print(patchLine, patchLine.isExternal)
             if patchLine.isExternal:
                 foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
                 if foundLibrary:
                     for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + patchLine.library):
                         for file in files:
-                            if file.endswith(".c") or file.endswith(".cpp"):
+                            if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
                                 self.searchCFunction(patchLine, root, file)
                 else:
                     raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
+                if patchLine.functionName == "":
+                    raise Exception(f"Error: Could not find the setup function for {patchLine.name}")
+                print(patchLine.functionName)
         return True
 
     def BuildExternalsObjects(self):

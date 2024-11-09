@@ -535,7 +535,6 @@ class Patch:
                 line.name = line.completName.split("/")[-1]
                 line.objGenSym = 'class_new(gensym("' + line.name + '")'
                 self.Pd4Web.Libraries.GetLibrarySourceCode(line.library)
-                line.objFound = True
                 externalSpace = 20 - len(line.name)
                 objName = line.name + (" " * externalSpace)
                 pd4web_print(
