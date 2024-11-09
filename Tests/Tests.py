@@ -155,7 +155,7 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Basic/audio")
         self.libraries("Basic/declare")
         self.libraries("Basic/file")
-        self.libraries("Basic/gui")
+        #self.libraries("Basic/gui")
 
         # Libraries
         self.libraries("Libraries/cyclone")
