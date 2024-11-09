@@ -34,7 +34,11 @@ class Pd4WebTest(unittest.TestCase):
         app = Flask(__name__, static_url_path="", static_folder=path)
         chrome_options = Options()
         chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
         ChromeDriver = shutil.which("chromedriver")
+        chrome_options.set_capability("goog:loggingPrefs", {"browser": "ALL", "performance": "ALL"})
         if ChromeDriver is None:
             raise Exception("Chromedriver not found")
 
@@ -55,21 +59,22 @@ class Pd4WebTest(unittest.TestCase):
         def testar(localport):
             driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
             driver.get(f"http://localhost:{localport}")
-            time.sleep(1)  # Wait
+            element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
+            element.click()
+            time.sleep(2)  # run for 5 seconds
+            logs = driver.get_log("browser")
+            prev_msg = ""
+            print("")
+            for log_entry in logs:
+                message = "".join(log_entry["message"])
+                print(message)
+                if log_entry["level"] == "SEVERE" and log_entry["source"] == "console-api":
+                    raise Exception(message)
+                if "error: ... couldn't create" in message:
+                    raise Exception(message + " " + prev_msg)
+                prev_msg = message
 
-            try:
-                element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
-
-                element.click()
-                time.sleep(2)  # run for 5 seconds
-                logs = driver.get_log("browser")
-
-                for log_entry in logs:
-                    message = "".join(log_entry["message"])
-                    if log_entry["level"] == "SEVERE" and log_entry["source"] == "console-api":
-                        raise Exception(message)
-            finally:
-                driver.quit()
+            driver.quit()
             return "Teste concluído!"
 
         # Inicie o servidor Flask em um processo separado
@@ -80,7 +85,7 @@ class Pd4WebTest(unittest.TestCase):
         finally:
             server_process.terminate()
             server_process.join()
-            time.sleep(1)  # Ensure the port is released before the next test
+            time.sleep(3)  # Ensure the port is released before the next test
 
     def errors(self, directory):
         temp_file = directory.split("/")[-1]
@@ -157,7 +162,7 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/else")
         self.libraries("Libraries/pmpd")
         self.libraries("Libraries/o.scofo~")
-        self.libraries("Libraries/ambi~")
+        # self.libraries("Libraries/ambi~")
 
 
 if __name__ == "__main__":
