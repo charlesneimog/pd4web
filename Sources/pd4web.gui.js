@@ -46,6 +46,364 @@ function AlmostWhiteOrBlack(hex) {
     return almostBlack || almostWhite;
 }
 
+// ─────────────────────────────────────
+// Interative listener for the objects
+function MessageListener(source, symbol, list) {
+    for (const data of Pd4Web.GuiReceivers[source]) {
+        switch (data.type) {
+            case "bng":
+                switch (symbol) {
+                    case "size":
+                        data.size = list[0] || 8;
+                        ConfigureItem(data.rect, GuiBngRect(data));
+                        ConfigureItem(data.circle, GuiBngCircle(data));
+                        break;
+                    case "flashtime":
+                        data.interrupt = list[0] || 10;
+                        data.hold = list[1] || 50;
+                        break;
+                    case "init":
+                        data.init = list[0];
+                        break;
+                    case "send":
+                        data.send = list[0];
+                        break;
+                    case "receive":
+                        UnbindGuiReceiver(data);
+                        data.receive = list[0];
+                        BindGuiReceiver(data);
+                        break;
+                    case "label":
+                        data.label = list[0] === "empty" ? "" : list[0];
+                        data.text.textContent = data.label;
+                        break;
+                    case "label_pos":
+                        data.x_off = list[0];
+                        data.y_off = list[1] || 0;
+                        ConfigureItem(data.text, GuiBngText(data));
+                        break;
+                    case "label_font":
+                        data.font = list[0];
+                        data.fontsize = list[1] || 0;
+                        ConfigureItem(data.text, GuiBngText(data));
+                        break;
+                    case "color":
+                        data.bg_color = list[0];
+                        data.fg_color = list[1] || 0;
+                        data.label_color = list[2] || 0;
+                        ConfigureItem(data.rect, GuiBngRect(data));
+                        ConfigureItem(data.text, GuiBngText(data));
+                        break;
+                    case "pos":
+                        data.x_pos = list[0];
+                        data.y_pos = list[1] || 0;
+                        ConfigureItem(data.rect, GuiBngRect(data));
+                        ConfigureItem(data.circle, GuiBngCircle(data));
+                        ConfigureItem(data.text, GuiBngText(data));
+                        break;
+                    case "delta":
+                        data.x_pos += list[0];
+                        data.y_pos += list[1] || 0;
+                        ConfigureItem(data.rect, GuiBngRect(data));
+                        ConfigureItem(data.circle, GuiBngCircle(data));
+                        ConfigureItem(data.text, GuiBngText(data));
+                        break;
+                    default:
+                        GuiBngUpdateCircle(data);
+                }
+                break;
+            case "tgl":
+                switch (symbol) {
+                    case "size":
+                        data.size = list[0] || 8;
+                        ConfigureItem(data.rect, GuiTglRect(data));
+                        ConfigureItem(data.cross1, GuiTglCross1(data));
+                        ConfigureItem(data.cross2, GuiTglCross2(data));
+                        break;
+                    case "nonzero":
+                        data.default_value = list[0];
+                        break;
+                    case "init":
+                        data.init = list[0];
+                        break;
+                    case "send":
+                        data.send = list[0];
+                        break;
+                    case "receive":
+                        UnbindGuiReceiver(data);
+                        data.receive = list[0];
+                        BindGuiReceiver(data);
+                        break;
+                    case "label":
+                        data.label = list[0] === "empty" ? "" : list[0];
+                        data.text.textContent = data.label;
+                        break;
+                    case "label_pos":
+                        data.x_off = list[0];
+                        data.y_off = list[1] || 0;
+                        ConfigureItem(data.text, GuiTglText(data));
+                        break;
+                    case "label_font":
+                        data.font = list[0];
+                        data.fontsize = list[1] || 0;
+                        ConfigureItem(data.text, GuiTglText(data));
+                        break;
+                    case "color":
+                        data.bg_color = list[0];
+                        data.fg_color = list[1] || 0;
+                        data.label_color = list[2] || 0;
+                        ConfigureItem(data.rect, GuiTglRect(data));
+                        ConfigureItem(data.cross1, GuiTglCross1(data));
+                        ConfigureItem(data.cross2, GuiTglCross2(data));
+                        ConfigureItem(data.text, GuiTglText(data));
+                        break;
+                    case "pos":
+                        data.x_pos = list[0];
+                        data.y_pos = list[1] || 0;
+                        ConfigureItem(data.rect, GuiTglRect(data));
+                        ConfigureItem(data.cross1, GuiTglCross1(data));
+                        ConfigureItem(data.cross2, GuiTglCross2(data));
+                        ConfigureItem(data.text, GuiTglText(data));
+                        break;
+                    case "delta":
+                        data.x_pos += list[0];
+                        data.y_pos += list[1] || 0;
+                        ConfigureItem(data.rect, GuiTglRect(data));
+                        ConfigureItem(data.cross1, GuiTglCross1(data));
+                        ConfigureItem(data.cross2, GuiTglCross2(data));
+                        ConfigureItem(data.text, GuiTglText(data));
+                        break;
+                    case "set":
+                        data.default_value = list[0];
+                        data.value = data.default_value;
+                        GuiTglUpdateCross(data);
+                        break;
+                }
+                break;
+            case "vsl":
+            case "hsl":
+                switch (symbol) {
+                    case "size":
+                        if (list.length === 1) {
+                            data.width = list[0] || 8;
+                        }
+                        else {
+                            data.width = list[0] || 8;
+                            data.height = list[1] || 2;
+                        }
+                        ConfigureItem(data.rect, gui_slider_rect(data));
+                        ConfigureItem(data.indicator, gui_slider_indicator(data));
+                        GuiSliderCheckMinmax(data);
+                        break;
+                    case "range":
+                        data.bottom = list[0];
+                        data.top = list[1] || 0;
+                        GuiSliderCheckMinmax(data);
+                        break;
+                    case "lin":
+                        data.log = 0;
+                        GuiSliderCheckMinmax(data);
+                        break;
+                    case "log":
+                        data.log = 1;
+                        GuiSliderCheckMinmax(data);
+                        break;
+                    case "init":
+                        data.init = list[0];
+                        break;
+                    case "steady":
+                        data.steady_on_click = list[0];
+                        break;
+                    case "send":
+                        data.send = list[0];
+                        break;
+                    case "receive":
+                        UnbindGuiReceiver(data);
+                        data.receive = list[0];
+                        BindGuiReceiver(data);
+                        break;
+                    case "label":
+                        data.label = list[0] === "empty" ? "" : list[0];
+                        data.text.textContent = data.label;
+                        break;
+                    case "label_pos":
+                        data.x_off = list[0];
+                        data.y_off = list[1] || 0;
+                        ConfigureItem(data.text, gui_slider_text(data));
+                        break;
+                    case "label_font":
+                        data.font = list[0];
+                        data.fontsize = list[1] || 0;
+                        ConfigureItem(data.text, gui_slider_text(data));
+                        break;
+                    case "color":
+                        data.bg_color = list[0];
+                        data.fg_color = list[1] || 0;
+                        data.label_color = list[2] || 0;
+                        ConfigureItem(data.rect, gui_slider_rect(data));
+                        ConfigureItem(data.indicator, gui_slider_indicator(data));
+                        ConfigureItem(data.text, gui_slider_text(data));
+                        break;
+                    case "pos":
+                        data.x_pos = list[0];
+                        data.y_pos = list[1] || 0;
+                        ConfigureItem(data.rect, gui_slider_rect(data));
+                        ConfigureItem(data.indicator, gui_slider_indicator(data));
+                        ConfigureItem(data.text, gui_slider_text(data));
+                        break;
+                    case "delta":
+                        data.x_pos += list[0];
+                        data.y_pos += list[1] || 0;
+                        ConfigureItem(data.rect, gui_slider_rect(data));
+                        ConfigureItem(data.indicator, gui_slider_indicator(data));
+                        ConfigureItem(data.text, gui_slider_text(data));
+                        break;
+                    case "set":
+                        GuiSliderSet(data, list[0]);
+                        break;
+                }
+                break;
+            case "vradio":
+            case "hradio":
+                switch (symbol) {
+                    case "size":
+                        data.size = list[0] || 8;
+                        ConfigureItem(data.rect, GuiRadioRect(data));
+                        GuiRadioUpdateLinesButtons(data);
+                        break;
+                    case "init":
+                        data.init = list[0];
+                        break;
+                    case "number":
+                        const n = Math.min(Math.max(Math.floor(list[0]), 1), 128);
+                        if (n !== data.number) {
+                            data.number = n;
+                            if (data.value >= data.number) {
+                                data.value = data.number - 1;
+                            }
+                            ConfigureItem(data.rect, GuiRadioRect(data));
+                            GuiRadioRemoveLinesButtons(data);
+                            GuiRadioCreateLinesButtons(data);
+                        }
+                        break;
+                    case "send":
+                        data.send = list[0];
+                        break;
+                    case "receive":
+                        UnbindGuiReceiver(data);
+                        data.receive = list[0];
+                        BindGuiReceiver(data);
+                        break;
+                    case "label":
+                        data.label = list[0] === "empty" ? "" : list[0];
+                        data.text.textContent = data.label;
+                        break;
+                    case "label_pos":
+                        data.x_off = list[0];
+                        data.y_off = list[1] || 0;
+                        ConfigureItem(data.text, GuiRadioText(data));
+                        break;
+                    case "label_font":
+                        data.font = list[0];
+                        data.fontsize = list[1] || 0;
+                        ConfigureItem(data.text, GuiRadioText(data));
+                        break;
+                    case "color":
+                        data.bg_color = list[0];
+                        data.fg_color = list[1] || 0;
+                        data.label_color = list[2] || 0;
+                        ConfigureItem(data.rect, GuiRadioRect(data));
+                        GuiRadioUpdateLinesButtons(data);
+                        ConfigureItem(data.text, GuiRadioText(data));
+                        break;
+                    case "pos":
+                        data.x_pos = list[0];
+                        data.y_pos = list[1] || 0;
+                        ConfigureItem(data.rect, GuiRadioRect(data));
+                        GuiRadioUpdateLinesButtons(data);
+                        ConfigureItem(data.text, GuiRadioText(data));
+                        break;
+                    case "delta":
+                        data.x_pos += list[0];
+                        data.y_pos += list[1] || 0;
+                        ConfigureItem(data.rect, GuiRadioRect(data));
+                        GuiRadioUpdateLinesButtons(data);
+                        ConfigureItem(data.text, GuiRadioText(data));
+                        break;
+                    case "set":
+                        data.value = Math.min(Math.max(Math.floor(list[0]), 0), data.number - 1);
+                        GuiRadioUpdateButton(data);
+                        break;
+                }
+                break;
+            case "cnv":
+                switch (symbol) {
+                    case "size":
+                        data.size = list[0] || 1;
+                        ConfigureItem(data.selectable_rect, GuiCnvSelectableRect(data));
+                        break;
+                    case "vis_size":
+                        if (list.length === 1) {
+                            data.width = list[0] || 1;
+                            data.height = data.width;
+                        }
+                        else {
+                            data.width = list[0] || 1;
+                            data.height = list[1] || 1;
+                        }
+                        ConfigureItem(data.visible_rect, GuiCnvVisibleRect(data));
+                        break;
+                    case "send":
+                        data.send = list[0];
+                        break;
+                    case "receive":
+                        UnbindGuiReceiver(data);
+                        data.receive = list[0];
+                        BindGuiReceiver(data);
+                        break;
+                    case "label":
+                        data.label = list[0] === "empty" ? "" : list[0];
+                        data.text.textContent = data.label;
+                        break;
+                    case "label_pos":
+                        data.x_off = list[0];
+                        data.y_off = list[1] || 0;
+                        ConfigureItem(data.text, GuiCnvText(data));
+                        break;
+                    case "label_font":
+                        data.font = list[0];
+                        data.fontsize = list[1] || 0;
+                        ConfigureItem(data.text, GuiCnvText(data));
+                        break;
+                    case "get_pos":
+                        break;
+                    case "color":
+                        data.bg_color = list[0];
+                        data.label_color = list[1] || 0;
+                        ConfigureItem(data.visible_rect, GuiCnvVisibleRect(data));
+                        ConfigureItem(data.selectable_rect, GuiCnvSelectableRect(data));
+                        ConfigureItem(data.text, GuiCnvText(data));
+                        break;
+                    case "pos":
+                        data.x_pos = list[0];
+                        data.y_pos = list[1] || 0;
+                        ConfigureItem(data.visible_rect, GuiCnvVisibleRect(data));
+                        ConfigureItem(data.selectable_rect, GuiCnvSelectableRect(data));
+                        ConfigureItem(data.text, GuiCnvText(data));
+                        break;
+                    case "delta":
+                        data.x_pos += list[0];
+                        data.y_pos += list[1] || 0;
+                        ConfigureItem(data.visible_rect, GuiCnvVisibleRect(data));
+                        ConfigureItem(data.selectable_rect, GuiCnvSelectableRect(data));
+                        ConfigureItem(data.text, GuiCnvText(data));
+                        break;
+                }
+                break;
+        }
+    }
+}
+
 //╭─────────────────────────────────────╮
 //│            Gui Handling             │
 //╰─────────────────────────────────────╯
@@ -648,6 +1006,7 @@ function GuiNbxSetup(args, id) {
                 }
             });
         }
+        BindGuiReceiver(data);
     }
 }
 
@@ -1372,7 +1731,7 @@ function GuiVuUpdateGain(data) {
 function GuiVuSetup(args, id) {
     const data = {};
     data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
-    data.y_pos = parseInt(args[3]) - 2 - Pd4Web.y_pos;
+    data.y_pos = parseInt(args[3]) - Pd4Web.y_pos;
     data.type = args[4];
     data.width = args[5];
     data.height = args[6];
@@ -1395,6 +1754,8 @@ function GuiCnvVisibleRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
+        rx: 2,
+        ry: 2,
         width: data.width,
         height: data.height,
         fill: ColFromLoad(data.bg_color),
@@ -1409,6 +1770,8 @@ function GuiCnvSelectableRect(data) {
     return {
         x: data.x_pos,
         y: data.y_pos,
+        rx: 2,
+        ry: 2,
         width: data.size,
         height: data.size,
         fill: "none",
@@ -1581,8 +1944,9 @@ function GuiKnobSetup(args, id) {
     data.id = `${data.type}_${id++}`;
 
     // create svg
-    data.visible_rect = CreateItem("rect", GuiCnvVisibleRect(data));
+    data.visible_rect = CreateItem("rect", GuiKnobRect(data));
     data.selectable_rect = CreateItem("rect", GuiCnvSelectableRect(data));
+    data.pointer = CreateItem("path", GuiKnobPointer(data));
     data.text = CreateItem("text", GuiCnvText(data));
     data.text.textContent = data.label;
 
@@ -1859,7 +2223,6 @@ function UpdatePatchDivSizeCoords(width, height, patch_zoom) {
         console.warn("Patch div not found");
         return;
     }
-
     if (Pd4Web.isMobile) {
         patchDiv.style.width = "90%";
         patchDiv.style.marginLeft = "auto";

@@ -32,7 +32,7 @@ struct Pd4WebGuiConnector {
 
     float Float;
     std::string Symbol;
-
+    std::string Selector;
     ItemList List;
     t_atom *Atoms;
 };
@@ -101,6 +101,8 @@ class Pd4Web {
     std::string _getItemFromListSymbol(std::string r, int i);
     float _getItemFromListFloat(std::string r, int i);
 
+    std::string _getMessageSelector(std::string r);
+
   private:
     void bindGuiReceivers();
 
@@ -152,6 +154,9 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         .function("_getItemFromListType", &Pd4Web::_getItemFromListType)
         .function("_getItemFromListSymbol", &Pd4Web::_getItemFromListSymbol)
         .function("_getItemFromListFloat", &Pd4Web::_getItemFromListFloat)
+
+        // Get selector
+        .function("_getMessageSelector", &Pd4Web::_getMessageSelector)
 
         // Midi
         .function("noteOn", &Pd4Web::noteOn)

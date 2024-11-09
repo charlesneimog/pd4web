@@ -96,6 +96,8 @@ EM_JS(void, _JS_onReceived, (), {
         Pd4Web.bindReceiver(receiver);
         Pd4Web._userListFunc[receiver] = myFunc;
     };
+
+    // TODO: Implementing the message receiver
 });
 
 // ─────────────────────────────────────
@@ -179,7 +181,6 @@ EM_JS(void, _JS_post, (const char *msg), {
 EM_JS(void, _JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
-
 
     async function _GetMicAccess(stream) {
       try {
@@ -389,7 +390,27 @@ EM_JS(void, _JS_receiveList, (const char *r),{
 
 // ─────────────────────────────────────
 EM_JS(void, _JS_receiveMessage, (const char *r),{
+    var source = UTF8ToString(r);
+    const listSize = Pd4Web._getReceivedListSize(source);
+    var pdList = [];
+    for (let i = 0; i < listSize; i++) {
+        let type = Pd4Web._getItemFromListType(source, i);
+        if (type === "float") {
+            pdList.push(Pd4Web._getItemFromListFloat(source, i));
+        } else if (type === "symbol") {
+            pdList.push(Pd4Web._getItemFromListSymbol(source, i));
+        } else{
+            console.error("Invalid type");
+        }
+    }
 
+    if (source in Pd4Web.GuiReceivers) {
+        let sel = Pd4Web._getMessageSelector(source);
+        MessageListener(source, sel, pdList); 
+        return;
+    } else{
+        console.error("Not implemented");
+    }
 
 });
 
@@ -434,12 +455,22 @@ std::string Pd4Web::_getItemFromListSymbol(std::string r, int i) {
 float Pd4Web::_getItemFromListFloat(std::string r, int i) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
-            if (std::holds_alternative<std::string>(GuiReceiver.List[i])) {
+            if (std::holds_alternative<float>(GuiReceiver.List[i])) {
                 return std::get<float>(GuiReceiver.List[i]);
             }
         }
     }
     return 0;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::_getMessageSelector(std::string r){
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            return GuiReceiver.Selector;
+        }
+    }
+    return "";
 }
 
 // ╭─────────────────────────────────────╮
@@ -506,12 +537,33 @@ void Pd4Web::receivedList(const char *r, int argc, t_atom *argv) {
                     GuiReceiver.List.push_back(libpd_get_symbol(a));
                 }
             }
+            break;
         }
     }
 };
 
 // ─────────────────────────────────────
-void Pd4Web::receivedMessage(const char *recv, const char *symbol, int argc, t_atom *argv) {
+void Pd4Web::receivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
+    LOG("Pd4Web::receivedMessage");
+    for (auto &GuiReceiver : Pd4WebGuiReceivers) {
+        if (GuiReceiver.Receiver == r) {
+            GuiReceiver.Updated = true;
+            GuiReceiver.Type = Pd4WebGuiConnector::MESSAGE;
+            GuiReceiver.Selector = s;
+            GuiReceiver.List.clear();
+            for (int i = 0; i < argc; i++) {
+                t_atom *a = argv + i;
+                if (a->a_type == A_FLOAT) {
+                    GuiReceiver.List.push_back(libpd_get_float(a));
+                } else if (a->a_type == A_SYMBOL) {
+                    GuiReceiver.List.push_back(libpd_get_symbol(a));
+                } else {
+                    _JS_post("Unhandled message");
+                }
+            }
+            break;
+        }
+    }
     return;
 }
 
@@ -708,23 +760,6 @@ void Pd4Web::unbindReceiver() {
  * @return true if processing succeeded, false otherwise.
  */
 
-#include <filesystem>
-
-namespace fs = std::filesystem;
-
-static int list_files = 0;
-void listDirectoryRecursive(const fs::path &directory) {
-    for (const auto &entry : fs::directory_iterator(directory)) {
-        // Print the file or directory name
-        _JS_post(entry.path().filename().string().c_str());
-
-        // If the entry is a directory, call this function recursively
-        if (entry.is_directory()) {
-            listDirectoryRecursive(entry.path());
-        }
-    }
-}
-
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *userData) {
@@ -911,21 +946,22 @@ void Pd4Web::init() {
 
     // TODO: add midi hooks
 
+    // Start the audio context
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
                                                      Pd4Web::audioWorkletInit, 0);
-
     m_Context = AudioContext;
-    _JS_sendList();
-    _JS_onReceived();
 
+    // After load, it defines some extra functions
+    _JS_sendList(); 
+    _JS_onReceived();
     if (PD4WEB_MIDI) {
-        _JS_loadMidi();
+        _JS_loadMidi(); 
     }
 
+    // Bind the receivers
     bindGuiReceivers();
-
     return;
 }
 // ╭─────────────────────────────────────╮
