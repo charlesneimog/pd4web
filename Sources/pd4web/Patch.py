@@ -525,7 +525,7 @@ class Patch:
             # Local Abstraction
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
                 name = line.Tokens[4].split("/")[-1]
-                externalSpace = 18 - len(name)
+                externalSpace = 19 - len(name)
                 name = name + (" " * externalSpace)
                 pd4web_print(
                     f"Found Local Abs: {name}  | Path: {library}",

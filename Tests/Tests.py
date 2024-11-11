@@ -113,6 +113,7 @@ class Pd4WebTest(unittest.TestCase):
                         print(f"Passed: {newpatch}")
                         break
                 else:
+                    shutil.rmtree(f"{lib}/{temp_file}")
                     raise Exception(f"Please check {newpatch} for errors")
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
@@ -135,8 +136,12 @@ class Pd4WebTest(unittest.TestCase):
 
             shutil.copytree(src_dir, dst_dir, ignore=shutil.ignore_patterns("*.git", ".git"))
             newpatch = f"{lib}/{temp_file}/{filename}"
-            self.execute_server(newpatch, 5000)
-
+            try:
+                self.execute_server(newpatch, 5000)
+                shutil.rmtree(f"{lib}/{temp_file}")
+            except Exception as e:
+                shutil.rmtree(f"{lib}/{temp_file}")
+                raise Exception(f"Please check {newpatch} for errors")
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
