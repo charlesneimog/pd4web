@@ -30,23 +30,22 @@ function startVideo() {
 }
 
 function draw() {
-  image(video, 0, 0);
-  if (Pd4Web) {
-    Pd4Web.sendFloat("amp", 0);
-  }
-  if (hands.length > 0) {
-    for (let hand of hands) {
-      if (hand.confidence > 0.2) {
-        let index = hand.index_finger_tip;
-        let thumb = hand.thumb_tip;
-        noStroke();
-        fill(255, 0, 0);
-        circle(index.x, index.y, 16);
-        circle(thumb.x, thumb.y, 16);
-        let d = dist(index.x, index.y, thumb.x, thumb.y) / 480; // amp
-        let avg_vertical = 1 - (index.y + thumb.y) / 2 / 480; // freq
-        Pd4Web.sendFloat("amp", d);
-        Pd4Web.sendFloat("freq", avg_vertical);
+  // Draw the webcam video
+  image(video, 0, 0, width, height);
+
+  // Draw all the tracked hand points
+  for (let i = 0; i < hands.length; i++) {
+    let hand = hands[i];
+    for (let j = 0; j < hand.keypoints.length; j++) {
+      let keypoint = hand.keypoints[j];
+      let whichHand = hand.handedness;
+      fill(255, 0, 0);
+      noStroke();
+      circle(keypoint.x, keypoint.y, 5);
+      if (Pd4Web){
+        let x = keypoint.x / width;
+        let y = keypoint.y / height;
+        Pd4Web.sendList(whichHand[0] + "-" + j, [x, y]);
       }
     }
   }

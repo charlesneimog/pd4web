@@ -1,2 +1,2 @@
 template: redirect.html
-location: /pd4web/en/
+location: /pd4web/
