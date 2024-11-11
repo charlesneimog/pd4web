@@ -399,7 +399,7 @@ pd_add_external(plaits~ "${PLAITS_SRC}")
 # ╭──────────────────────────────────────╮
 # │                SFONT                 │
 # ╰──────────────────────────────────────╯
-if(NOT PD4WEB)
+if(NOT EMSCRIPTEN)
     set(BUILD_SFONT ON)
     if(BUILD_SFONT)
 
