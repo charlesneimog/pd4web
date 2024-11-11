@@ -135,11 +135,7 @@ class Pd4WebTest(unittest.TestCase):
 
             shutil.copytree(src_dir, dst_dir, ignore=shutil.ignore_patterns("*.git", ".git"))
             newpatch = f"{lib}/{temp_file}/{filename}"
-            try:
-                self.execute_server(newpatch, 5000)
-            except:
-                print(f"\033[91mError: {newpatch} -- trying again\033[0m")
-                self.execute_server(newpatch, 5000)
+            self.execute_server(newpatch, 5000)
 
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
@@ -155,7 +151,7 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Basic/audio")
         self.libraries("Basic/declare")
         self.libraries("Basic/file")
-        #self.libraries("Basic/gui")
+        self.libraries("Basic/gui")
 
         # Libraries
         self.libraries("Libraries/cyclone")
@@ -163,6 +159,12 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/pmpd")
         self.libraries("Libraries/o.scofo~")
         # self.libraries("Libraries/ambi~")
+        
+        # Issues
+        self.libraries("Issues/#22-1")
+        self.libraries("Issues/#22-2")
+
+        
 
 
 if __name__ == "__main__":
