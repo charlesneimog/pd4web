@@ -16,7 +16,10 @@ This means that you need to use a higher number for memory and recompile your pa
 
 ### Compilation problems
 
+If you have problems to compile, the easiear way to solve is to report what is the problem using the GitHub issues. 
 
 ### `flutex.c` problems
 
+These problems are common when using some set of objects. If this happens, probably is because you are using some object that I don't use in my patches. So, you need to report this problem to me and I will try to solve this. 
 
+To report the problem you must share the patch that is causing the problem, without the patch is impossible to solve the problem. You can always reduce the patch to the minimum size that is causing the problem. 

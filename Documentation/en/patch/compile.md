@@ -37,7 +37,7 @@ After you compile your patch, will be created in the ROOT of the project a file 
 
 Abstractions files must be inside `Libs` folder and be called as `Libs/myabs`. For now, use things like `declare -path Libs` and then trying to create `myabs` will not work!
 
-## Compiling using PureData
+## <h2 align="center">Compile your patch</h2>
 
 To compile your `patch` using Pd you need to use the `pd4web` object and its help patch. To access it you can create a new patch, create the `pd4web` object, click with the right click on it, and click on help.
 

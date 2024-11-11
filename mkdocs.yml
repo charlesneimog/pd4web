@@ -69,6 +69,7 @@ nav:
   - Home: en/index.md
   - Compile your patch:
       - Intro: en/patch/install.md
+      - Gui Objects: en/patch/gui.md
       - Compile: en/patch/compile.md
       - Problems: en/patch/problems.md
   - en/libraries.md
