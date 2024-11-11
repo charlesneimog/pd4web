@@ -222,7 +222,6 @@ class ExternalLibraries:
                 pd4web=self.Pd4Web.PD_EXTERNAL,
             )
             try:
-
                 shutil.copytree(
                     libFolder,
                     self.PROJECT_ROOT + "/Pd4Web/Externals/" + libData.name,
@@ -245,7 +244,7 @@ class ExternalLibraries:
                     ignore_dangling_symlinks=True,
                 )
             self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
-
+            externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         return True
 
     def AddUsedLibraries(self, LibraryName):
