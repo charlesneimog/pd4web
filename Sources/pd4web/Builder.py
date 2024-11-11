@@ -52,7 +52,10 @@ class GetAndBuildExternals:
 
     def InitCMakeLists(self):
         # get name of the project using the project folder name
-        self.ProjectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
+        if "#" in self.Pd4Web.PROJECT_ROOT:
+            self.ProjectName = f'"{os.path.basename(self.Pd4Web.PROJECT_ROOT)}"'
+        else:
+            self.ProjectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
         self.cmakeFile.append("cmake_minimum_required(VERSION 3.25)")
         self.cmakeFile.append(f"project({self.ProjectName})\n")
 
@@ -200,9 +203,6 @@ class GetAndBuildExternals:
                                 self.searchCFunction(patchLine, root, file)
                 else:
                     raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
-                if patchLine.functionName == "":
-                    raise Exception(f"Error: Could not find the setup function for {patchLine.name}")
-                #print(patchLine.functionName)
         return True
 
     def BuildExternalsObjects(self):
@@ -225,17 +225,12 @@ class GetAndBuildExternals:
                 # TODO: Need to check for extra objects
                 continue
             libraryPath = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + library
-            pd4web_print(
-                f"Creating compilation process for {library}\n",
-                color="green",
-                silence=self.Pd4Web.SILENCE,
-                pd4web=self.Pd4Web.PD_EXTERNAL,
-            )
             for pdobject in objects:
+                
                 if pdobject not in self.Pd4Web.externalsLinkLibraries:
                     self.Pd4Web.externalsLinkLibraries.append(pdobject)
-                if libraryPath + "/.build" not in self.Pd4Web.externalsLinkLibrariesFolders:
-                    self.Pd4Web.externalsLinkLibrariesFolders.append(libraryPath + "/.build")
+                if libraryPath + "/build" not in self.Pd4Web.externalsLinkLibrariesFolders:
+                    self.Pd4Web.externalsLinkLibrariesFolders.append(libraryPath + "/build")
                 target = pdobject.replace("~", "_tilde")
 
                 externalsTargets.append(target)
@@ -365,7 +360,6 @@ class GetAndBuildExternals:
             "-B",
             "build",
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
-            "-DPD4WEB=ON",
             "-G",
             "Ninja",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
