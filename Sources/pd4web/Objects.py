@@ -128,14 +128,20 @@ class Objects:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)
         else:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Libraries", libName)
+            
+        if self.Pd4Web.Libraries.isSupportedLibrary(libName):
+            self.Pd4Web.Libraries.GetLibrarySourceCode(libName) 
 
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
             self.GetLibraryObjects(libFolder, libName)
+                        
         with open(externalsJson, "r") as file:
             externalsDict = json.load(file)
+            
         if libName not in externalsDict:
             self.GetLibraryObjects(libFolder, libName)
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
+                       
         return externalsDict[libName]["objs"]

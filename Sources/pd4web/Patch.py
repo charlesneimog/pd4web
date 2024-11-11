@@ -205,15 +205,21 @@ class Patch:
             externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
             if not os.path.exists(externalsJson):
                 raise Exception("Externals Json not found!")
-
             libAbs = []
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
                 if line.library in externalsDict:
                     libAbs = externalsDict[line.library]["abs"]
                 else:
-                    return False
-
+                    self.Pd4Web.Objects.GetSupportedObjects(line.library)
+                    
+            with open(externalsJson, "r") as file:
+                externalsDict = json.load(file)
+                if line.library in externalsDict:
+                    libAbs = externalsDict[line.library]["abs"]
+                else:
+                    raise Exception(f"Library {line.library} not found in {externalsJson}")
+                    
             if line.name in libAbs:
                 externalSpace = 25 - len(line.name)
                 absName = line.name + (" " * externalSpace)
@@ -273,6 +279,7 @@ class Patch:
             self.Pd4Web.MIDI = True
 
     def addGuiReceiver(self, line: PatchLine, index: int):
+        ''' '''
         self.guiObject += 1
         line.Tokens[index] = f"pd4web_gui_{self.guiObject}"
         line.uiReceiver = True
@@ -280,6 +287,9 @@ class Patch:
         pass
 
     def searchForGuiObject(self, line: PatchLine):
+        '''
+        '''
+        # TODO: Automatic gui objects
         if not self.Pd4Web.GUI:
             return
         if line.Tokens[0] == "#X" and line.Tokens[1] == "obj":
@@ -296,6 +306,7 @@ class Patch:
                     self.addGuiReceiver(line, 12)
 
     def tokenIsFloat(self, token):
+        '''All floats are valid as objects'''
         token = token.replace("\n", "").replace(";", "").replace(",", "")
         try:
             return float(token)
@@ -303,6 +314,7 @@ class Patch:
             return float("inf")
 
     def tokenIsDollarSign(self, token):
+        ''' Objects like $0'''
         if token[0] == "$":
             return True
         elif token[0] == "\\" and token[1] == "$":
@@ -331,9 +343,11 @@ class Patch:
                         if not self.Pd4Web.Libraries.isSupportedLibrary(path):
                             raise Exception(f"Library not supported: {path} in {self.patchFile}")
                         self.Pd4Web.Libraries.GetLibrarySourceCode(path)
+                        self.Pd4Web.Objects.GetSupportedObjects(path)
                         self.declaredLibs.append(path)
 
                     elif patchLine.Tokens[2] == "-path":
+                        #print("Path")   
                         path = patchLine.Tokens[3]
                         if self.Pd4Web.Libraries.isSupportedLibrary(path):
                             self.Pd4Web.Libraries.GetLibrarySourceCode(path)
@@ -380,6 +394,9 @@ class Patch:
                     f.write(line.completLine)
 
     def objThatIsSingleLib(self, patchLine: PatchLine):
+        '''
+        This function will check if the object is a single library object. For example earplug~, ambi~, and others
+        '''
         if patchLine.Tokens[0] == "#X" and patchLine.Tokens[1] == "obj":
             supportedLibs = self.Pd4Web.Libraries.SupportedLibraries
             libs = [lib["Name"] for lib in supportedLibs]
@@ -392,6 +409,7 @@ class Patch:
 
     def objInDeclaredLib(self, patchLine: PatchLine):
         """ """
+            
         declaredObjs = []
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
@@ -498,15 +516,19 @@ class Patch:
     def patchObject(self, line: PatchLine):
         """ """
         line.completName = line.Tokens[4]
-
+        library = line.Tokens[4].split("/")[0]
+        if self.Pd4Web.Libraries.isSupportedLibrary(library):
+            self.Pd4Web.Objects.GetSupportedObjects(line.library)
         if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):
+            
+                
+            # Local Abstraction
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
                 name = line.Tokens[4].split("/")[-1]
-                library = line.Tokens[4].split("/")[0]
                 externalSpace = 11 - len(name)
                 name = name + (" " * externalSpace)
                 pd4web_print(
-                    f"Found Local Abstraction: {name}  | Path: {library}",
+                    f"Found Local Abs: {name}  | Path: {library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
@@ -519,7 +541,19 @@ class Patch:
                 )
                 self.absProcessed.append(abs)
 
+            # Library Abstraction
             elif self.isLibAbs(line):
+                name = line.Tokens[4].split("/")[-1]
+                library = line.Tokens[4].split("/")[0]
+                externalSpace = 16 - len(name)
+                
+                name = name + (" " * externalSpace)
+                pd4web_print(
+                    f"Found External Abs: {name}  | Path: {library}",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
+                )
                 abs = Patch(
                     self.Pd4Web,
                     abs=True,
@@ -529,12 +563,11 @@ class Patch:
                 line.isAbstraction = True
                 line.isExternal = False
 
+            # External Object
             else:
                 line.isExternal = True
                 line.library = line.Tokens[4].split("/")[0]
                 line.name = line.completName.split("/")[-1]
-                line.objGenSym = 'class_new(gensym("' + line.name + '")'
-                self.Pd4Web.Libraries.GetLibrarySourceCode(line.library)
                 externalSpace = 20 - len(line.name)
                 objName = line.name + (" " * externalSpace)
                 pd4web_print(
