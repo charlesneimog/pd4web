@@ -60,7 +60,7 @@
 #X obj 457 117 else/plaits~ -model 11 -midi;
 #X msg 513 76 tr_active 1;
 #X obj 513 57 loadbang;
-#X obj 3 165 cnv 19 126 80 s-cnv1 r-cnv1 empty 20 12 0 12 #102e5d #404040 0;
+#X obj 3 165 cnv 19 126 80 s-cnv1 r-cnv1 empty 20 12 0 12 #5e7a3c #404040 0;
 #X obj 170 329 loadbang;
 #X obj 170 360 metro 1000;
 #X obj 408 714 s r-cnv1;
@@ -113,6 +113,7 @@
 #X obj 458 413 expr random(1 \, 127);
 #X msg 408 683 color \$1;
 #X obj 3 131 hradio 15 1 0 8 s-hr1 r-hr1 empty 0 -8 0 8 #fcfcfc #000000 #000000 0;
+#X obj 134 165 else/keyboard 17 80 2 2 0 0 s-key1 r-key1;
 #X obj 131 99 else/knob 45 3 124 0 3 s-knob1 r-knob1 #dfdfdf #7c7c7c black 0 0 5 1 1 320 0 0 3;
 #X obj 473 225 else/vu~;
 #X obj 473 269 s r-vu1;
@@ -121,7 +122,7 @@
 #X obj 346 77 vu 10 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0;
 #X connect 9 0 10 0;
 #X connect 10 0 8 0;
-#X connect 10 0 24 0;
+#X connect 10 0 25 0;
 #X connect 11 0 10 0;
 #X connect 12 0 11 0;
 #X connect 14 0 15 0;
@@ -133,6 +134,6 @@
 #X connect 19 0 17 1;
 #X connect 20 0 17 2;
 #X connect 21 0 16 0;
-#X connect 24 0 26 0;
-#X connect 26 0 25 0;
+#X connect 25 0 27 0;
+#X connect 27 0 26 0;
 #X coords 0 -1 1 1 380 250 1 0 0;
