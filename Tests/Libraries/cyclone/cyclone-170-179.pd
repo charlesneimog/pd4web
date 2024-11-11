@@ -1,4 +1,4 @@
-#N canvas 0 0 450 300 10;
+#N canvas 0 37 558 501 10;
 #X obj 20 40 cyclone/rminus~;
 #X obj 20 80 cyclone/bitsafe~;
 #X obj 20 120 cyclone/cross~;
@@ -6,6 +6,5 @@
 #X obj 20 200 cyclone/cosx~;
 #X obj 20 240 cyclone/atan2~;
 #X obj 20 280 cyclone/peakamp~;
-#X obj 20 320 cyclone/trunc~;
 #X obj 20 360 cyclone/svf~;
 #X obj 20 400 cyclone/peek~;
