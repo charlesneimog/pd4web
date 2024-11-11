@@ -1,7 +1,6 @@
-#N canvas 1282 23 632 1016 10;
+#N canvas 729 37 632 891 10;
 #X obj 20 40 cyclone/wave~;
 #X obj 20 160 cyclone/selector~;
-#X obj 20 200 cyclone/pink~;
 #X obj 20 320 cyclone/bitxor~;
 #X obj 20 360 cyclone/train~;
 #X obj 20 400 cyclone/spike~;
