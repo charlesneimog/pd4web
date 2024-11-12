@@ -189,11 +189,9 @@ class GetAndBuildExternals:
             if "." in functionName:
                 functionName = functionName.replace(".", "0x2e")
             self.regexSearch(patchLine, functionName, os.path.join(root, file))
-            
 
     def getObjectsSourceCode(self):
         for patchLine in self.Patch.patchLinesProcessed:
-            #print(patchLine, patchLine.isExternal)
             if patchLine.isExternal:
                 foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
                 if foundLibrary:
@@ -226,7 +224,7 @@ class GetAndBuildExternals:
                 continue
             libraryPath = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + library
             for pdobject in objects:
-                
+
                 if pdobject not in self.Pd4Web.externalsLinkLibraries:
                     self.Pd4Web.externalsLinkLibraries.append(pdobject)
                 if libraryPath + "/build" not in self.Pd4Web.externalsLinkLibrariesFolders:
@@ -459,8 +457,9 @@ class GetAndBuildExternals:
                 f.write("    </script>\n")
                 f.write("  </body>\n")
                 f.write("</html>\n")
-                
+
         if self.Pd4Web.TEMPLATE != 0:
+            print(self.Pd4Web.TEMPLATE)
             root = os.path.join(self.Pd4Web.PD4WEB_ROOT, "..", f"Templates/{self.Pd4Web.TEMPLATE}")
             if not os.path.exists(root):
                 raise Exception(f"Error: Could not find template {self.Pd4Web.TEMPLATE}")
@@ -468,7 +467,7 @@ class GetAndBuildExternals:
             # copy all files inside the template folder to self.Pd4Web.PROJECT_ROOT
             for file in files:
                 shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
-                
+
         os.chdir(cwd)
 
     def __repr__(self) -> str:
