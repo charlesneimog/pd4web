@@ -1,4 +1,4 @@
-#N canvas 0 0 450 300 10;
+#N canvas 485 23 473 1016 10;
 #X obj 20 40 else/square~;
 #X obj 20 80 else/lag~;
 #X obj 20 120 else/crackle~;
@@ -6,6 +6,6 @@
 #X obj 20 200 else/mov.rms~;
 #X obj 20 240 else/resonant2~;
 #X obj 20 280 else/mov.avg~;
-#X obj 20 320 else/slew~;
 #X obj 20 360 else/sigs~;
 #X obj 20 400 else/xgate2~;
+#X msg 19 319 else/slew~;
