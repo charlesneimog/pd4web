@@ -59,8 +59,13 @@ class Pd4WebTest(unittest.TestCase):
         def testar(localport):
             driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
             driver.get(f"http://localhost:{localport}")
-            element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
-            element.click()
+            try:
+                element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
+                element.click()
+            except:
+                time.sleep(2)
+                element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
+                element.click()
             time.sleep(2)  # run for 5 seconds
             logs = driver.get_log("browser")
             prev_msg = ""
@@ -72,6 +77,10 @@ class Pd4WebTest(unittest.TestCase):
                     raise Exception(message)
                 if "error: ... couldn't create" in message:
                     raise Exception(message + " " + prev_msg)
+
+                if "mismatch" in message:
+                    raise Exception(message)
+
                 prev_msg = message
 
             driver.quit()
@@ -164,12 +173,10 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/pmpd")
         self.libraries("Libraries/o.scofo~")
         # self.libraries("Libraries/ambi~")
-        
+
         # Issues
         self.libraries("Issues/#22-1")
         self.libraries("Issues/#22-2")
-
-        
 
 
 if __name__ == "__main__":
