@@ -26,6 +26,38 @@ function getCssVariable(variableName) {
 }
 
 // ─────────────────────────────────────
+function setSoundIcon(icon, animation){
+    let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+    if (soundSwitch) {
+        const soundOffSvg = getComputedStyle(document.documentElement)
+            .getPropertyValue(icon)
+            .trim();
+        const svgData = soundOffSvg.match(/url\("data:image\/svg\+xml;base64,(.*)"\)/)?.[1];
+        if (svgData === undefined)  {
+            window.setTimeout(() => {
+                setSoundIcon(icon, animation);
+            } , 1000);
+            return; 
+        }
+        
+        const svgDecoded = atob(svgData);
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgDecoded, "image/svg+xml");
+        const svgElement = svgDoc.querySelector("svg");
+        if (svgElement) {
+            svgElement.setAttribute("width", "24");
+            svgElement.setAttribute("height", "24");
+            svgElement.style.display = "inline-block";
+            svgElement.style.animation = animation;
+            soundSwitch.innerHTML = '';
+            soundSwitch.appendChild(svgElement);
+        }
+    } else{
+        console.error("Pd4WebAudioSwitch not found");
+    }
+}
+
+// ─────────────────────────────────────
 function GetNeededStyles() {
     Pd4Web.Style = {};
     Pd4Web.Style.Bg = getCssVariable('--bg');
@@ -744,12 +776,12 @@ function GuiTglCross1(data) {
     let cross1 = {
         points: points,
         "stroke-width": w,
-        display: data.value ? "inline" : "none",
+        stroke: getCssVariable('--fg2'),
         id: `${data.id}_cross1`,
         class: "unclickable tgl-cross",
     };
     if (!Pd4Web.AutoTheme) {
-        cross1.fill = "none";
+        //cross1.fill = "none";
     } 
     return cross1;
 }
@@ -769,7 +801,7 @@ function GuiTglCross2(data) {
     let cross2 = {
         points: points,
         "stroke-width": w,
-        display: data.value ? "inline" : "none",
+        stroke: getCssVariable('--fg2'),
         id: `${data.id}_cross1`,
         class: "unclickable tgl-cross",
     };
@@ -787,11 +819,19 @@ function GuiTglText(data) {
 
 // ─────────────────────────────────────
 function GuiTglUpdateCross(data) {
+    let colorOn;
+    let colorOff = getCssVariable('--fg2');
+    if (!Pd4Web.AutoTheme){
+        colorOn = ColFromLoad(data.fg_color);
+    } else{
+        colorOn = getCssVariable('--tgl-cross');
+    }
+
     ConfigureItem(data.cross1, {
-        display: data.value ? "inline" : "none",
+        stroke: data.value ? colorOn : colorOff,
     });
     ConfigureItem(data.cross2, {
-        display: data.value ? "inline" : "none",
+        stroke: data.value ? colorOn : colorOff,
     });
 }
 
@@ -941,7 +981,7 @@ function GuiNbxRect(data) {
         id: `${data.id}_rect`,
         fill: "transparent",
         "stroke-width": "1px",
-        class: "border clickable",
+        class: "border clickable nbx",
     };
 }
 
@@ -965,7 +1005,7 @@ function GuiNbxTriangle(data) {
         points: `${x1},${y1} ${x3},${y3} ${x2},${y2}, ${x3},${y3}`,
         "stroke-width": "1px",
         id: `${data.id}_triangle`,
-        class: "unclickable nbx-triangle",
+        class: "unclickable border",
     };
 }
 
@@ -1060,7 +1100,6 @@ function GuiNbxSetup(args, id) {
                 Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
             } else {
                 txt.style.fill = getCssVariable('--nbx-selected'); // Change fill color to black
-                console.log(txt.style.fill);
                 txt.clicked = true;
                 const svgElement = document.getElementById("Pd4WebCanvas");
                 svgElement.setAttribute("tabindex", "0"); // "0" makes it focusable
@@ -1419,10 +1458,9 @@ function GuiRadioRect(data) {
         rx: 2,
         ry: 2,
         width: width,
-        fill: "transparent",
         height: height,
         id: `${data.id}_rect`,
-        class: "border clickable",
+        class: "border clickable radio",
     };
     return radio;
 }
@@ -1624,7 +1662,7 @@ function GuiVuRect(data) {
         height: data.height,
         fill: Pd4Web.AutoTheme ? "transparent" : ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
-        class: "border unclickable vu-rect",
+        class: "border unclickable",
     };
 }
 
@@ -1638,14 +1676,14 @@ function GuiVudBRects(data) {
         const rect = CreateItem("rect", {
             x: data.x_pos + 1.5,
             y: data.y_pos + 1 + i * miniHeight,
-            cx: 2,
-            cy: 2,
             width: miniWidth,
             height: miniHeight - 0.1,
             fill: "transparent",
             active: getColor(i),
             id: `${data.id}_mini_rect_${i}`,
             class: "unclickable vu-mini-rect",
+            rx: 0.5,
+            ry: 0.5,
         });
         return rect;
     });
@@ -1762,9 +1800,8 @@ function GuiKnobRect(data) {
         ry: 2,
         width: data.size,
         height: data.size,
-        fill: ColFromLoad(data.bg_color),
         id: `${data.id}_rect`,
-        class: "border clickable knob-fill",
+        class: "border clickable knob",
     };
 }
 
@@ -1894,7 +1931,7 @@ function GuiKnobTicks(data) {
             //stroke: getCssVariable("--knob-tick"),
             "stroke-linecap": "round",
             "stroke-width": 1.5,
-            class: "unclickable knob-tick",
+            class: "unclickable border",
         });
 
         // Append tick to the knob
@@ -2006,7 +2043,7 @@ function GuiKnobSetup(args, id) {
 
     //data.something = args[15];
     //data.something = args[16];
-    data.ticks = 11; //parseInt(args[17]);
+    data.ticks = parseInt(args[17]);
     data.discrete = true;
     
     data.ag_range = parseInt(args[20]);
@@ -2498,7 +2535,10 @@ async function Pd4WebInitGui(patch) {
         console.log("Pd4Web is not defined yet, wait...");
         return;
     }
-
+    
+    // Get the element
+    setSoundIcon("--sound-off", "pulse 1s infinite");
+    
     Pd4Web.isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;

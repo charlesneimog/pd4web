@@ -12,6 +12,13 @@ Pd4WebGuiReceiverList Pd4WebGuiSenders;
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
 // ─────────────────────────────────────
+EM_JS(void, _JS_setIcon, (const char *icon, const char *animation), {
+    let jsIcon = UTF8ToString(icon);
+    let jsAnimation = UTF8ToString(animation);
+    setSoundIcon(jsIcon, jsAnimation);
+});
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_sendList, (void), {
     if (typeof Pd4Web.GuiReceivers === "undefined") {
         Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
@@ -920,6 +927,9 @@ void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 // ╰─────────────────────────────────────╯
 void Pd4Web::init() {
     LOG("Pd4Web::init");
+
+    _JS_setIcon("--sound-loading", "spin 2s linear infinite");
+
     uint32_t SR = PD4WEB_SR;
     float NInCh = PD4WEB_CHS_IN;
     float NOutCh = PD4WEB_CHS_OUT;
@@ -962,6 +972,8 @@ void Pd4Web::init() {
 
     // Bind the receivers
     bindGuiReceivers();
+
+    _JS_setIcon("--sound-on", "");
     return;
 }
 // ╭─────────────────────────────────────╮

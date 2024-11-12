@@ -26,6 +26,38 @@ function getCssVariable(variableName) {
 }
 
 // ─────────────────────────────────────
+function setSoundIcon(icon, animation){
+    let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+    if (soundSwitch) {
+        const soundOffSvg = getComputedStyle(document.documentElement)
+            .getPropertyValue(icon)
+            .trim();
+        const svgData = soundOffSvg.match(/url\("data:image\/svg\+xml;base64,(.*)"\)/)?.[1];
+        if (svgData === undefined)  {
+            window.setTimeout(() => {
+                setSoundIcon(icon, animation);
+            } , 1000);
+            return; 
+        }
+        
+        const svgDecoded = atob(svgData);
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgDecoded, "image/svg+xml");
+        const svgElement = svgDoc.querySelector("svg");
+        if (svgElement) {
+            svgElement.setAttribute("width", "24");
+            svgElement.setAttribute("height", "24");
+            svgElement.style.display = "inline-block";
+            svgElement.style.animation = animation;
+            soundSwitch.innerHTML = '';
+            soundSwitch.appendChild(svgElement);
+        }
+    } else{
+        console.error("Pd4WebAudioSwitch not found");
+    }
+}
+
+// ─────────────────────────────────────
 function GetNeededStyles() {
     Pd4Web.Style = {};
     Pd4Web.Style.Bg = getCssVariable('--bg');
@@ -2011,7 +2043,7 @@ function GuiKnobSetup(args, id) {
 
     //data.something = args[15];
     //data.something = args[16];
-    data.ticks = 11; //parseInt(args[17]);
+    data.ticks = parseInt(args[17]);
     data.discrete = true;
     
     data.ag_range = parseInt(args[20]);
@@ -2503,7 +2535,10 @@ async function Pd4WebInitGui(patch) {
         console.log("Pd4Web is not defined yet, wait...");
         return;
     }
-
+    
+    // Get the element
+    setSoundIcon("--sound-off", "pulse 1s infinite");
+    
     Pd4Web.isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;

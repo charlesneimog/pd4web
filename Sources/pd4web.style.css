@@ -7,7 +7,9 @@
     :root {
         --bg: rgb(255, 255, 255);
         --fg: rgb(0, 0, 0, 0.9);
+        --fg2: rgba(228, 228, 228, 0.6);
         --selected: rgb(255, 0, 0);
+        --border: rgb(60, 60, 60);
 
         /* Objects: Bng */
         --bng-circle: rgb(0, 0, 0);
@@ -45,6 +47,7 @@
         /* Objects: Knob */
         --knob-tick: rgb(0, 0, 0);
         --knob-selected: rgb(255, 0, 0);
+        --knob-fill: rgb(255, 255, 255);
         --knob-pointer: rgb(0, 0, 0);
 
         /* Objects: Keyboard */
@@ -54,6 +57,12 @@
 
         /* Objects: Comment */
         --comment: rgb(0, 0, 0);
+
+        /* Sound Off Icon */
+        --sound-off: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYgOS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42LTkuNCAzMy45IDB6Ii8+PC9zdmc+");
+        --sound-loading: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTMwNCA0OGE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwem0wIDQxNmE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwek00OCAzMDRhNDggNDggMCAxIDAgMC05NiA0OCA0OCAwIDEgMCAwIDk2em00NjQtNDhhNDggNDggMCAxIDAgLTk2IDAgNDggNDggMCAxIDAgOTYgMHpNMTQyLjkgNDM3QTQ4IDQ4IDAgMSAwIDc1IDM2OS4xIDQ4IDQ4IDAgMSAwIDE0Mi45IDQzN3ptMC0yOTQuMkE0OCA0OCAwIDEgMCA3NSA3NWE0OCA0OCAwIDEgMCA2Ny45IDY3Ljl6TTM2OS4xIDQzN0E0OCA0OCAwIDEgMCA0MzcgMzY5LjEgNDggNDggMCAxIDAgMzY5LjEgNDM3eiIvPjwvc3ZnPg==");
+        --sound-on: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEuNSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDNDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIzLjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDggMjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4=");
+        
     }   
 }
 
@@ -66,37 +75,39 @@
     :root {
         --bg: rgb(48, 48, 48);
         --fg: rgb(255, 255, 255, 0.9);
-        --selected: rgb(0, 255, 255);
+        --fg2: rgba(53, 53, 53, 0.6);
+        --selected: rgb(255, 0,0);
+        --border: rgb(125, 125,125);
 
         /* Objects: Bng */
         --bng-circle: rgb(255, 255, 255);
-        --bng-fill: rgb(48, 48, 48);
+        --bng-fill: rgb(35, 35, 35);
         --bng-border: rgb(255, 255, 255);
 
         /* Objects: Tgl */
         --tgl-cross: rgb(255, 255, 255);
-        --tgl-fill: rgb(48, 48, 48);
+        --tgl-fill: rgb(35, 35, 35);
         --tgl-border: rgb(255, 255, 255);
 
         /* Objects: Nbx */
         --nbx-string: rgb(255, 255, 255);
-        --nbx-fill: rgb(48, 48, 48);
+        --nbx-fill: rgb(35, 35, 35);
         --nbx-selected: rgb(255, 0, 0);
         --nbx-text: rgb(255, 255, 255);
         --nbx-border: rgb(255, 255, 255);
 
         /* Objects: Sliders */
         --slider-indicator: rgb(255, 255, 255);
-        --slider-fill: rgb(48, 48, 48);
+        --slider-fill: rgb(35, 35, 35);
 
         /* Objects: Radio Button */
         --radio-buttom: rgb(255, 255, 255);
-        --radio-fill: rgb(48, 48, 48);
+        --radio-fill: rgb(35, 35, 35);
 
         /* Objects: Vu */
         --vu-rect: rgb(48, 48, 48);
         --vu-fill: rgb(48, 48, 48);
-        --vu-active: rgb(90, 90, 90, 0.8);
+        --vu-active: rgba(35, 35, 35, 0.95);
 
         /* Objects: Cnv */
         --cnv-fill: rgb(48, 48, 48);
@@ -104,6 +115,7 @@
         /* Objects: Knob */
         --knob-tick: rgb(255, 255, 255);
         --knob-selected: rgb(255, 0, 0);
+        --knob-fill: rgb(35, 35, 35);
         --knob-pointer: rgb(255, 255, 255);
 
         /* Objects: Keyboard */
@@ -113,51 +125,32 @@
 
         /* Objects: Comment */
         --comment: rgb(255, 255, 255);
+
+        /* Sound Off Icon */
+        --sound-off: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYgOS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42LTkuNCAzMy45IDB6Ii8+PC9zdmc+");
+        --sound-loading: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTMwNCA0OGE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwem0wIDQxNmE0OCA0OCAwIDEgMCAtOTYgMCA0OCA0OCAwIDEgMCA5NiAwek00OCAzMDRhNDggNDggMCAxIDAgMC05NiA0OCA0OCAwIDEgMCAwIDk2em00NjQtNDhhNDggNDggMCAxIDAgLTk2IDAgNDggNDggMCAxIDAgOTYgMHpNMTQyLjkgNDM3QTQ4IDQ4IDAgMSAwIDc1IDM2OS4xIDQ4IDQ4IDAgMSAwIDE0Mi45IDQzN3ptMC0yOTQuMkE0OCA0OCAwIDEgMCA3NSA3NWE0OCA0OCAwIDEgMCA2Ny45IDY3Ljl6TTM2OS4xIDQzN0E0OCA0OCAwIDEgMCA0MzcgMzY5LjEgNDggNDggMCAxIDAgMzY5LjEgNDM3eiIvPjwvc3ZnPg==");
+        --sound-on: url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZvbnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vuc2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJbmMuLS0+PHBhdGggZmlsbD0iI2ZmZmZmZiIgZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEuNSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDNDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIzLjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDggMjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMuNS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4=");
     }
 }
 
 
-/* Don't change if you dont know what you are doing */
-
-body {
-    overflow: hidden;
-    font-family: "DejaVu Sans Mono", "monospace";
-    font-size: 10px;
-    touch-action: pan-x pan-y; /* Allow touch scroll for horizontal and vertical */
-    background-color: var(--bg);
-}
-
-.clickable {
-    pointer-events: auto;
-}
-
-.unclickable {
-    pointer-events: none;
-}
-
-.Pd4WebCanvas {
-    outline: none;
-    box-shadow: none;
-}
+/* Don't change if you don't know what you are doing */
 
  /* Obj Border */
  .border {
-    stroke: var(--fg);
+    stroke: var(--border);
     stroke-width: 0.8;
 }
 
 /* Knob */
 .knob {
-    fill: var(--bg);
+    fill: var(--knob-fill);
 }
 
 .knov-tick {
     stroke: var(--knob-tick);
 }
 
-.knob-fill {
-    fill: var(--bg);
-}
 .knob-pointer {
     fill: var(--fg);
     stroke: var(--fg);
@@ -191,14 +184,14 @@ body {
 }
 
 .slider-fill {
-    fill: var(--bg);
+    fill: var(--slider-fill);
 }
 
 /*
 * ──────────────── Nbx ────────────────
 */
-.nbx-rect {
-    fill: var(--bg);
+.nbx {
+    fill: var(--nbx-fill);
 }
 .nbx-triangle {
     stroke: var(--fg);
@@ -210,19 +203,23 @@ body {
 
 /* Tgl Cross */
 .tgl-rect {
-    fill: var(--bg);
+    fill: var(--tgl-fill);
 }
 
 .tgl-cross {
-    stroke: var(--fg);
+    stroke-width: 3;
+    stroke-linecap: round;
 }
 
 /* Bng Circle */
 .bng-rect {
-    fill: var(--bg);
+    fill: var(--bng-fill);
 }
 
 /* Radio Button */
+.radio {
+    fill: var(--radio-fill);
+}
 
 .radio-buttom {
     fill: var(--fg);
@@ -239,6 +236,30 @@ body {
     fill: var(--vu-active);
 }
 
+/* Cnv */
+body {
+    font-family: "DejaVu Sans Mono", "monospace";
+    font-size: 10px;
+    touch-action: pan-x pan-y; /* Allow touch scroll for horizontal and vertical */
+    background-color: var(--bg);
+}
+
+#Pd4WebPatchDiv{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 10px;
+    margin-top: 1%;
+    box-shadow:
+      rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+      rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+}
+
+#Pd4WebCanvas {
+    outline: none;
+    box-shadow: none;
+}
+
 #Pd4WebCanvas:focus {
     outline: none;
     border-radius: 10px;
@@ -247,11 +268,54 @@ body {
       rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
 }
 
+.clickable {
+    pointer-events: auto;
+}
+
+.unclickable {
+    pointer-events: none;
+}
+
+.pd4web-sound-switch {
+    display: flex;
+    justify-content: center;   
+    align-items: center;       
+    width: 24px;                
+    height: 24px;              
+    margin: 0 auto;  
+    content: var(--sound-off);     
+    animation: pulse 1.0s infinite;       
+}
+
+
 svg text {
     font-smooth: antialiased;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
+
+/* Animation */
+@keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
 
 /*
  *╭─────────────────────────────────────╮
