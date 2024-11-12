@@ -993,7 +993,7 @@ void Pd4Web::guiLoop() {
                 break;
             }
             case Pd4WebGuiConnector::SYMBOL: {
-                _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Receiver.c_str());
+                _JS_receiveSymbol(GuiReceiver.Receiver.c_str(), GuiReceiver.Symbol.c_str());
                 break;
             }
             case Pd4WebGuiConnector::LIST: {
