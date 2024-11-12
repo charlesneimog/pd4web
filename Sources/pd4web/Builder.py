@@ -459,7 +459,16 @@ class GetAndBuildExternals:
                 f.write("    </script>\n")
                 f.write("  </body>\n")
                 f.write("</html>\n")
-
+                
+        if self.Pd4Web.TEMPLATE != 0:
+            root = os.path.join(self.Pd4Web.PD4WEB_ROOT, "..", f"Templates/{self.Pd4Web.TEMPLATE}")
+            if not os.path.exists(root):
+                raise Exception(f"Error: Could not find template {self.Pd4Web.TEMPLATE}")
+            files = os.listdir(root)
+            # copy all files inside the template folder to self.Pd4Web.PROJECT_ROOT
+            for file in files:
+                shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
+                
         os.chdir(cwd)
 
     def __repr__(self) -> str:

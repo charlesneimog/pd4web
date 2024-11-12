@@ -13,7 +13,7 @@ Pd4WebModule().then((Pd4WebModulePromise) => {
 After loading, you can use various functions to enable interaction between `Pd` and your website.
 
 --- 
-<div class="grid cards" markdown>
+<div class="grid cards" style="border-radius: 30px" markdown>
 -   :simple-javascript: [__Change Patch Parameters__](pd.new_object/methods.md)
 -   :simple-javascript: [__Receive Data from Pd patch__](receive.md)
 
@@ -25,6 +25,5 @@ After loading, you can use various functions to enable interaction between `Pd` 
 -   :simple-javascript: [__Gui Interface__](engine.md/#disabling-gui-interface)
 -   :simple-javascript: [__MIDI__](midi.md)
 
-</div
->
+</div>
 

@@ -71,6 +71,10 @@ nav:
       - Intro: en/patch/install.md
       - Gui Objects: en/patch/gui.md
       - Compile: en/patch/compile.md
+      - Website Templates: 
+        - Intro: en/patch/Templates/index.md
+        - (1) Patch + Score: en/patch/Templates/score.md
+        - (2) Hand Detection: en/patch/Templates/ml5.md
       - Problems: en/patch/problems.md
   - en/libraries.md
   - Pd4Web JavaScript Module: 
