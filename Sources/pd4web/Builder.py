@@ -24,14 +24,14 @@ class GetAndBuildExternals:
             raise Exception("Error: Could not get the externals source code")
 
         # update setup funciton for
-        self.UpdateSetupFunction()
+        #self.UpdateSetupFunction()
         self.CreateCppCallsExternalFile()
 
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │
         # │  need to compile it using CMakeList  │
         # ╰──────────────────────────────────────╯
-        self.BuildExternalsObjects()
+        self.buildExternalsObjects()
 
         # Create filysystem
         self.AddFilesToWebPatch()
@@ -146,7 +146,7 @@ class GetAndBuildExternals:
                     if sameLibrary and sameObject:
                         usedObjects["SetupFunction"] = patchLine.functionName
 
-    def regexSearch(self, line: PatchLine, functionName, file):
+    def regexSearch(self, obj: dict, functionName, file):
         """
         This search for the setup function using regex.
         """
@@ -167,48 +167,52 @@ class GetAndBuildExternals:
                 matches = re.finditer(pattern, file_contents, re.DOTALL)
                 listMatches = list(matches)
                 if len(listMatches) > 0:
-                    line.objFound = True
-                    line.functionName = functionName
-                    line.setupFunction = functionName
+                    obj["SetupFunction"] = functionName
+                    pd4web_print(
+                        f"Found setup function: {functionName}",
+                        color="green",
+                        silence=self.Pd4Web.SILENCE,
+                        pd4web=self.Pd4Web.PD_EXTERNAL,
+                    )
 
-    def searchCFunction(self, patchLine: PatchLine, root, file):
+    def searchCFunction(self, obj: dict, root, file):
         """
         This function search for the setup function in the C file using different
         ways. Here you can add more ways to search for the setup function.
         """
-        functionName = patchLine.name
+        functionName = obj["Obj"]
         functionName = functionName.replace("~", "_tilde")
         functionName += "_setup"
         if "." in functionName:
             functionName = functionName.replace(".", "0x2e")  # else use . as 0x2e
-        self.regexSearch(patchLine, functionName, os.path.join(root, file))
-        if not patchLine.objFound:
-            functionName = patchLine.name
+        self.regexSearch(obj, functionName, os.path.join(root, file))
+        if obj["SetupFunction"] == "":
+            functionName = obj["Obj"]
             functionName = functionName.replace("~", "_tilde")
             functionName = "setup_" + functionName
             if "." in functionName:
                 functionName = functionName.replace(".", "0x2e")
-            self.regexSearch(patchLine, functionName, os.path.join(root, file))
+            self.regexSearch(obj, functionName, os.path.join(root, file))
 
-    def getObjectsSourceCode(self):
-        for patchLine in self.Patch.patchLinesProcessed:
-            if patchLine.isExternal:
-                foundLibrary = self.Libraries.GetLibrarySourceCode(patchLine.library)
-                if foundLibrary:
-                    for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + patchLine.library):
-                        for file in files:
-                            if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
-                                self.searchCFunction(patchLine, root, file)
-                else:
-                    raise Exception(f"Error: Could not find {patchLine.library} in the supported libraries")
+    def getObjectsSourceCode(self):    
+        print()    
+        for obj in self.Pd4Web.usedObjects:
+            libName = obj["Lib"]
+            foundLibrary = self.Libraries.GetLibrarySourceCode(libName)
+            if foundLibrary:
+                for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName):
+                    for file in files:
+                        if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
+                            self.searchCFunction(obj, root, file)
+            else:
+                raise Exception(f"Error: Could not find {obj.library} in the supported libraries")
         return True
 
-    def BuildExternalsObjects(self):
+    def buildExternalsObjects(self):
         """
         Configure the project to build the externals objects.
         """
         usedObjectsName = {}
-
         for usedObjects in self.Pd4Web.usedObjects:
             library = usedObjects["Lib"]
             if library not in usedObjectsName:
@@ -325,8 +329,8 @@ class GetAndBuildExternals:
         with open(externals, "w") as f:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()
             f.write("// This is automatically generated code from pd4web.py script\n\n")
-
             for usedObjects in self.Pd4Web.usedObjects:
+                print(usedObjects)
                 if usedObjects["SetupFunction"]:
                     f.write(f"extern \"C\" void {usedObjects['SetupFunction']}();\n")
 

@@ -85,7 +85,7 @@ class Patch:
                     silence=self.Pd4Web.SILENCE, 
                     pd4web=self.Pd4Web.PD_EXTERNAL
                 )
-                #return
+                return
             
             pd4web_print(
                 f"Processing Abstraction {patchfile}", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
@@ -118,7 +118,7 @@ class Patch:
         # if not abs:
         if isabs and patch != "" and patch not in self.Pd4Web.processedAbs:
             self.Pd4Web.processedAbs.append(patch)
-            print(f"Processed Abs: {self.Pd4Web.processedAbs}")
+            #print(f"Processed Abs: {self.Pd4Web.processedAbs}")
 
     def initVariables(self):
         self.PROJECT_ROOT = self.Pd4Web.PROJECT_ROOT
