@@ -442,9 +442,12 @@ class GetAndBuildExternals:
             shutil.copy(js_src, js_dest)
 
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html"):
+            index_page = "index.html"
+            if not self.Pd4Web.GUI:
+                index_page = "nogui.html"
             shutil.copy(
-                self.Pd4Web.PD4WEB_ROOT + "/../index.html",
-                self.Pd4Web.PROJECT_ROOT + "/WebPatch/",
+                self.Pd4Web.PD4WEB_ROOT + f"/../{index_page}",
+                self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html",
             )
 
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/index.html"):

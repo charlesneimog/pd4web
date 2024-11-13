@@ -471,7 +471,7 @@ float Pd4Web::_getItemFromListFloat(std::string r, int i) {
 }
 
 // ─────────────────────────────────────
-std::string Pd4Web::_getMessageSelector(std::string r){
+std::string Pd4Web::_getMessageSelector(std::string r) {
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Receiver == r) {
             return GuiReceiver.Selector;
@@ -928,7 +928,9 @@ void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 void Pd4Web::init() {
     LOG("Pd4Web::init");
 
-    _JS_setIcon("--sound-loading", "spin 2s linear infinite");
+    if (PD4WEB_GUI) {
+        _JS_setIcon("--sound-loading", "spin 2s linear infinite");
+    }
 
     uint32_t SR = PD4WEB_SR;
     float NInCh = PD4WEB_CHS_IN;
@@ -964,16 +966,18 @@ void Pd4Web::init() {
     m_Context = AudioContext;
 
     // After load, it defines some extra functions
-    _JS_sendList(); 
+    _JS_sendList();
     _JS_onReceived();
     if (PD4WEB_MIDI) {
-        _JS_loadMidi(); 
+        _JS_loadMidi();
     }
 
     // Bind the receivers
     bindGuiReceivers();
 
-    _JS_setIcon("--sound-on", "");
+    if (PD4WEB_GUI) {
+        _JS_setIcon("--sound-on", "");
+    }
     return;
 }
 // ╭─────────────────────────────────────╮
