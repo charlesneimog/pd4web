@@ -120,11 +120,6 @@ class Patch:
         self.patchLinesProcessed = []
         self.uiReceiversSymbol = []
         self.needExtra = False
-        self.declaredLibs = []
-
-        self.declaredPaths = []
-        self.declaredLocalPaths = []
-
         self.guiObject = 0
 
     def execute(self):
@@ -344,14 +339,14 @@ class Patch:
                             raise Exception(f"Library not supported: {path} in {self.patchFile}")
                         self.Pd4Web.Libraries.GetLibrarySourceCode(path)
                         self.Pd4Web.Objects.GetSupportedObjects(path)
-                        self.declaredLibs.append(path)
+                        self.Pd4Web.declaredLibsObjs.append(path)
 
                     elif patchLine.Tokens[2] == "-path":
-                        #print("Path")   
+                        print(patchLine.Tokens[3])
                         path = patchLine.Tokens[3]
                         if self.Pd4Web.Libraries.isSupportedLibrary(path):
                             self.Pd4Web.Libraries.GetLibrarySourceCode(path)
-                            self.declaredPaths.append(path)
+                            self.Pd4Web.declaredPaths.append(path)
                         else:
                             self.declaredLocalPaths.append(path)
                             localPath = os.path.join(self.Pd4Web.PROJECT_ROOT, patchLine.Tokens[3])
@@ -409,7 +404,6 @@ class Patch:
 
     def objInDeclaredLib(self, patchLine: PatchLine):
         """ """
-            
         declaredObjs = []
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
@@ -422,7 +416,7 @@ class Patch:
         externalsDict = json.load(file)
         file.close()
 
-        for lib in self.declaredLibs:
+        for lib in self.Pd4Web.declaredLibsObjs:
             declaredObjs.extend(externalsDict[lib]["objs"])
             if patchLine.completName in declaredObjs:
                 libName = lib
@@ -452,7 +446,7 @@ class Patch:
         libName = ""
         with open(externalsJson, "r") as file:
             externalsDict = json.load(file)
-            for lib in self.declaredPaths:
+            for lib in self.Pd4Web.declaredPaths:
                 if lib not in externalsDict.keys():
                     raise Exception(f"Library {lib} not found in {externalsJson}")
 
@@ -501,7 +495,7 @@ class Patch:
                 )
                 self.absProcessed.append(abs)
             else:
-                for lib in self.declaredPaths:
+                for lib in self.Pd4Web.declaredPaths:
                     libPath = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals", lib)
                     for root, _, files in os.walk(libPath):
                         for file in files:
@@ -519,9 +513,7 @@ class Patch:
         library = line.Tokens[4].split("/")[0]
         if self.Pd4Web.Libraries.isSupportedLibrary(library):
             self.Pd4Web.Objects.GetSupportedObjects(line.library)
-        if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):
-            
-                
+        if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):               
             # Local Abstraction
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
                 name = line.Tokens[4].split("/")[-1]
@@ -662,6 +654,13 @@ class Patch:
                 msg += f" inside {self.patchFile}"
                 raise ValueError(msg)
 
+        if self.Pd4Web.Libraries.isSupportedLibrary(line.library):
+            self.Pd4Web.Objects.GetSupportedObjects(line.library)
+            if line.library not in self.Pd4Web.declaredLibsObjs:
+                self.Pd4Web.declaredLibsObjs.append(line.library)
+            if line.library not in self.Pd4Web.declaredPaths:
+                self.Pd4Web.declaredPaths.append(line.library)
+        
         self.searchForGuiObject(line)
         self.searchForSpecialObject(line)
         self.patchLinesProcessed.append(line)
