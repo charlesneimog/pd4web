@@ -1,9 +1,0 @@
-#N canvas 6 28 951 1012 10;
-#X obj 20 40 else/ratio2cents~;
-#X obj 20 120 else/xgate.mc~;
-#X obj 20 160 else/bl.vsaw~;
-#X obj 20 200 else/pm~;
-#X obj 20 240 else/sr~;
-#X obj 20 320 else/tempo~;
-#X obj 20 360 else/ikeda~;
-#X obj 20 400 else/lop2~;

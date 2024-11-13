@@ -1,0 +1,10 @@
+#N canvas 485 23 473 1016 10;
+#X obj 20 40 else/status;
+#X obj 20 80 else/freq2midi;
+#X obj 20 120 else/impulse;
+#X obj 20 160 else/sum;
+#X obj 20 200 else/trig2bang;
+#X obj 20 240 else/slew;
+#X obj 20 280 else/pz2coeff;
+#X obj 20 360 else/drunkard;
+#X obj 20 400 else/lastvalue;

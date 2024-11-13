@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/bpm;
+#X obj 20 80 else/rec2;
+#X obj 20 120 else/pick;
+#X obj 20 160 else/lcm;
+#X obj 20 200 else/pi;
+#X obj 20 240 else/vocoder~;
+#X obj 20 280 else/compress~;
+#X obj 20 320 else/bl.osc~;
+#X obj 20 360 else/revdelay~;
+#X obj 20 400 else/bl.wavetable~;

@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/canvas.pos;
+#X obj 20 80 else/canvas.setname;
+#X obj 20 120 else/canvas.vis;
+#X obj 20 160 else/canvas.zoom;
+#X obj 20 200 else/car2pol~;
+#X obj 20 240 else/ceil;
+#X obj 20 280 else/ceil~;
+#X obj 20 320 else/cents2ratio;
+#X obj 20 360 else/cents2ratio~;
+#X obj 20 400 else/chance;

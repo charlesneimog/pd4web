@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/sendmidi;
+#X obj 20 80 else/osc.receive;
+#X obj 20 120 else/chrono;
+#X obj 20 160 else/autotune2;
+#X obj 20 200 else/interpolate;
+#X obj 20 240 else/tabgen;
+#X obj 20 280 else/scale2freq;
+#X obj 20 320 else/e;
+#X obj 20 360 else/deg2rad;
+#X obj 20 400 else/pattern;

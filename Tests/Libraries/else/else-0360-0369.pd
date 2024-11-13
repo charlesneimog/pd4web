@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/samps2ms;
+#X obj 20 80 else/stepnoise;
+#X obj 20 120 else/score2;
+#X obj 20 160 else/autotune;
+#X obj 20 200 else/schmitt;
+#X obj 20 240 else/polymetro;
+#X obj 20 280 else/avg;
+#X obj 20 320 else/count;
+#X obj 20 360 else/mov.avg;
+#X obj 20 400 else/frac2cents;

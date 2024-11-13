@@ -1,0 +1,10 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/logistic~;
+#X obj 20 80 else/loop;
+#X obj 20 120 else/lop2~;
+#X obj 20 160 else/lorenz~;
+#X obj 20 200 else/lowpass~;
+#X obj 20 240 else/lowshelf~;
+#X obj 20 280 else/match~;
+#X obj 20 320 else/median~;
+#X obj 20 360 else/merge;

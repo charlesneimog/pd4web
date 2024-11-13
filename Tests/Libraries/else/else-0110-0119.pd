@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/get~;
+#X obj 20 80 else/giga.rev~;
+#X obj 20 120 else/glide2~;
+#X obj 20 160 else/glide~;
+#X obj 20 200 else/gray~;
+#X obj 20 240 else/henon~;
+#X obj 20 280 else/highpass~;
+#X obj 20 320 else/highshelf~;
+#X obj 20 360 else/hot;
+#X obj 20 400 else/hz2rad;

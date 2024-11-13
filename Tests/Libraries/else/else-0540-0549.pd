@@ -1,0 +1,11 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/norm~;
+#X obj 20 80 else/player~;
+#X obj 20 120 else/brickwall~;
+#X obj 20 160 else/free.rev~;
+#X obj 195 126 else/out~;
+#X obj 20 240 else/grain.synth~;
+#X obj 20 280 else/chorus~;
+#X obj 160 224 else/gain2~;
+#A saved;
+#X obj 20 360 else/batch.write~;

@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/equal;
+#X obj 20 80 else/cents2frac;
+#X obj 20 120 else/iterate;
+#X obj 20 160 else/glide;
+#X obj 20 200 else/nmess;
+#X obj 20 240 else/osc.send;
+#X obj 20 280 else/unite;
+#X obj 20 320 else/midi.in;
+#X obj 20 360 else/meter;
+#X obj 20 400 else/scales;

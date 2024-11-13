@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/stepnoise~;
+#X obj 20 80 else/sum~;
+#X obj 20 120 else/susloop~;
+#X obj 20 160 else/suspedal;
+#X obj 20 200 else/svfilter~;
+#X obj 20 240 else/symbol2any;
+#X obj 20 280 else/tabplayer~;
+#X obj 20 320 else/tabreader;
+#X obj 20 360 else/tabreader~;
+#X obj 20 400 else/tabwriter~;

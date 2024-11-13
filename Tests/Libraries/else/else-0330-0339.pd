@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/stream;
+#X obj 20 80 else/pimp;
+#X obj 20 120 else/scale2cents;
+#X obj 20 160 else/bangdiv;
+#X obj 20 200 else/any2symbol;
+#X obj 20 240 else/insert;
+#X obj 20 280 else/scala;
+#X obj 20 320 else/cents2scale;
+#X obj 20 360 else/hex2dec;
+#X obj 20 400 else/gmean;

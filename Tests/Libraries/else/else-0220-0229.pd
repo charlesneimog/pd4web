@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/ramp~;
+#X obj 20 80 else/rand.f;
+#X obj 20 120 else/rand.f~;
+#X obj 20 160 else/rand.hist;
+#X obj 20 200 else/rand.i;
+#X obj 20 240 else/rand.i~;
+#X obj 20 280 else/rand.u;
+#X obj 20 320 else/randpulse2~;
+#X obj 20 360 else/randpulse~;
+#X obj 20 400 else/range~;

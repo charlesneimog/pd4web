@@ -1,0 +1,9 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 120 else/shaper~;
+#X obj 20 160 else/sh~;
+#X obj 20 200 else/sig2float~;
+#X obj 20 240 else/sigs~;
+#X obj 20 280 else/sine~;
+#X obj 20 320 else/sin~;
+#X obj 20 360 else/slew2~;
+#X obj 20 400 else/slew~;

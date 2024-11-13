@@ -1,0 +1,10 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/peak~;
+#X obj 20 80 else/pgm.in;
+#X obj 20 120 else/pgm.out;
+#X obj 20 160 else/phaseseq~;
+#X obj 20 240 else/pick~;
+#X obj 20 280 else/pimpmul~;
+#X obj 20 320 else/pimp~;
+#X obj 20 360 else/pink~;
+#X obj 20 400 else/pipe2;

@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/tempo~;
+#X obj 20 80 else/timed.gate~;
+#X obj 20 120 else/toggleff~;
+#X obj 20 160 else/touch.in;
+#X obj 20 200 else/touch.out;
+#X obj 20 240 else/trig.delay2~;
+#X obj 20 280 else/trig.delay~;
+#X obj 20 320 else/trighold~;
+#X obj 20 360 else/tri~;
+#X obj 20 400 else/trunc;

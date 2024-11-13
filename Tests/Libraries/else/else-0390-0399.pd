@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/reverse;
+#X obj 20 80 else/mag;
+#X obj 20 120 else/add;
+#X obj 20 160 else/score;
+#X obj 20 200 else/dec2frac;
+#X obj 20 240 else/notedur2ratio;
+#X obj 20 280 else/markov;
+#X obj 20 320 else/midi.clock;
+#X obj 20 360 else/scramble;
+#X obj 20 400 else/keypress;

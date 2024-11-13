@@ -1,0 +1,10 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/fontsize;
+#X obj 20 80 else/format;
+#X obj 20 120 else/freq.shift~;
+#X obj 20 200 else/function~;
+#X obj 20 240 else/gate2imp~;
+#X obj 20 280 else/gaussian~;
+#X obj 20 320 else/gbman~;
+#X obj 20 360 else/gcd;
+#X obj 20 400 else/gendyn~;

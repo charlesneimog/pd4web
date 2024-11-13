@@ -1,0 +1,8 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/ping.pong~;
+#X obj 20 80 else/damp.osc~;
+#X obj 20 120 else/vibrato~;
+#X obj 20 160 else/grain.live~;
+#X obj 20 200 else/blip~;
+#X obj 20 280 else/batch.rec~;
+#X obj 20 400 else/bpbank~;

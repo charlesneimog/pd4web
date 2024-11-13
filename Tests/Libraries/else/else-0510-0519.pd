@@ -1,0 +1,10 @@
+#N canvas 389 23 377 1016 10;
+#X obj 20 40 else/lop.bw~;
+#X obj 20 80 else/noisegate~;
+#X obj 20 120 else/send2~;
+#X obj 20 200 else/resonbank2~;
+#X obj 20 240 else/samps2ms~;
+#X obj 20 280 else/oscbank2~;
+#X obj 20 320 else/duck~;
+#X obj 20 360 else/voices~;
+#X obj 20 400 else/pvoc.live~;

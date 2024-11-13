@@ -1,9 +1,0 @@
-#N canvas 6 28 951 1012 10;
-#X obj 20 40 else/sh~;
-#X obj 20 80 else/randpulse2~;
-#X obj 20 120 else/schmitt~;
-#X obj 20 200 else/wt2d~;
-#X obj 20 240 else/tabreader~;
-#X obj 20 320 else/fbsine2~;
-#X obj 20 360 else/xselect~;
-#X obj 20 400 else/changed2~;

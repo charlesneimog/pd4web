@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/bitnormal~;
+#X obj 20 80 else/bl.imp2~;
+#X obj 20 120 else/bl.imp~;
+#X obj 20 160 else/bl.saw2~;
+#X obj 20 200 else/bl.saw~;
+#X obj 20 240 else/bl.square~;
+#X obj 20 280 else/bl.tri~;
+#X obj 20 320 else/bl.vsaw~;
+#X obj 20 360 else/blocksize~;
+#X obj 20 400 else/break;

@@ -1,0 +1,9 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/openfile;
+#X obj 20 80 else/op~;
+#X obj 20 120 else/order;
+#X obj 20 160 else/osc.format;
+#X obj 20 200 else/osc.parse;
+#X obj 20 240 else/osc.route;
+#X obj 20 280 else/pack2;
+#X obj 20 400 else/pan.mc~;

@@ -1,8 +1,0 @@
-#N canvas 963 28 951 1012 10;
-#X obj 20 40 else/routeall;
-#X obj 20 80 else/suspedal;
-#X obj 20 160 else/floor;
-#X obj 20 200 else/properties;
-#X obj 20 240 else/factor;
-#X obj 20 280 else/ctl.out;
-#X obj 20 360 else/pack2;

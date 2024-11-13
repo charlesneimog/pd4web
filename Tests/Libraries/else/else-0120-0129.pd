@@ -1,0 +1,9 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/ikeda~;
+#X obj 20 80 else/imp2~;
+#X obj 20 120 else/impseq~;
+#X obj 20 160 else/impulse2~;
+#X obj 20 200 else/impulse~;
+#X obj 20 240 else/imp~;
+#X obj 20 280 else/initmess;
+#X obj 20 360 else/keycode;

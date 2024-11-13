@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/polymetro~;
+#X obj 20 80 else/ms2samps~;
+#X obj 20 120 else/grain.sampler~;
+#X obj 20 160 else/metronome~;
+#X obj 20 200 else/flanger~;
+#X obj 20 240 else/nop~;
+#X obj 20 280 else/phaser~;
+#X obj 20 320 else/mag~;
+#X obj 20 360 else/perlin~;
+#X obj 20 400 else/expand~;

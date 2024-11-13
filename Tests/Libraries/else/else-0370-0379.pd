@@ -1,0 +1,11 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 80 else/dispatch;
+#X obj 20 120 else/note2midi;
+#X obj 20 160 else/midi.learn;
+#A saved;
+#X obj 20 200 else/retune;
+#X obj 20 240 else/ms2samps;
+#X obj 20 280 else/rand.dist;
+#X obj 20 320 else/clock;
+#X obj 20 360 else/list.inc;
+#X obj 20 400 else/replace;

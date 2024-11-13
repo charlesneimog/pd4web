@@ -1,0 +1,9 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/dust2~;
+#X obj 20 80 else/dust~;
+#X obj 20 200 else/envgen~;
+#X obj 20 240 else/eq~;
+#X obj 20 280 else/factor;
+#X obj 20 320 else/fader~;
+#X obj 20 360 else/fbdelay~;
+#X obj 20 400 else/fbsine2~;

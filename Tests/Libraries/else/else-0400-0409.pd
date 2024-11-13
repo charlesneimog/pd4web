@@ -1,0 +1,8 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/swap2;
+#X obj 20 80 else/rampnoise;
+#X obj 20 160 else/median;
+#X obj 20 200 else/lin2db;
+#X obj 20 320 else/rand.list;
+#X obj 20 360 else/midi2note;
+#X obj 20 400 else/sysrt.out;

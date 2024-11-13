@@ -1,0 +1,9 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/gatehold~;
+#X obj 20 80 else/maxpeak~;
+#X obj 20 120 else/mono~;
+#X obj 20 160 else/pvoc.freeze~;
+#X obj 20 240 else/gran.player~;
+#X obj 20 280 else/stereo.rev~;
+#X obj 20 360 else/rm~;
+#X obj 20 400 else/oscnoise~;

@@ -1,0 +1,10 @@
+#N canvas 485 23 473 1016 10;
+#X obj 20 40 else/group;
+#X obj 20 80 else/euclid;
+#X obj 20 120 else/phasor;
+#X obj 20 160 else/speed;
+#X obj 20 200 else/remove;
+#X obj 20 240 else/pulse;
+#X obj 20 280 else/coeff2pz;
+#X obj 20 320 else/rotate;
+#X obj 20 400 else/midi2freq;

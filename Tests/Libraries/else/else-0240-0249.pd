@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/rint;
+#X obj 20 80 else/rint~;
+#X obj 20 120 else/rms~;
+#X obj 20 160 else/rotate.mc~;
+#X obj 20 200 else/rotate~;
+#X obj 20 240 else/route2;
+#X obj 20 280 else/routeall;
+#X obj 20 320 else/router;
+#X obj 20 360 else/routetype;
+#X obj 20 400 else/s2f~;

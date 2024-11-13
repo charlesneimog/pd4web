@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/ptouch.in;
+#X obj 20 80 else/ptouch.out;
+#X obj 20 120 else/pulsecount~;
+#X obj 20 160 else/pulsediv~;
+#X obj 20 200 else/pulse~;
+#X obj 20 240 else/quad~;
+#X obj 20 280 else/quantizer;
+#X obj 20 320 else/quantizer~;
+#X obj 20 360 else/rad2hz;
+#X obj 20 400 else/rampnoise~;

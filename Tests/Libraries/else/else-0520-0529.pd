@@ -1,0 +1,7 @@
+#N canvas 485 23 473 1016 10;
+#X obj 20 80 else/bin.shift~;
+#X obj 20 120 else/rec.file~;
+#X obj 20 240 else/tremolo~;
+#X obj 20 280 else/trig2bang~;
+#X obj 20 320 else/plate.rev~;
+#X obj 20 360 else/morph~;

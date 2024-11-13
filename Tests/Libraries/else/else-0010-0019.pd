@@ -1,0 +1,10 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/autofade~;
+#X obj 20 80 else/balance~;
+#X obj 20 120 else/bandpass~;
+#X obj 20 160 else/bandstop~;
+#X obj 20 200 else/beat~;
+#X obj 20 240 else/bend.in;
+#X obj 20 280 else/bend.out;
+#X obj 20 360 else/bicoeff2;
+#X obj 20 400 else/biquads~;

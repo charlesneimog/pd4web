@@ -1,0 +1,10 @@
+#N canvas 485 23 473 1016 10;
+#X obj 20 40 else/car2pol;
+#X obj 20 120 else/sysrt.in;
+#X obj 20 160 else/frac.mul;
+#X obj 20 200 else/glide2;
+#X obj 20 240 else/range;
+#X obj 20 280 else/tap;
+#X obj 20 320 else/randpulse;
+#X obj 20 360 else/db2lin;
+#X obj 20 400 else/frac2dec;

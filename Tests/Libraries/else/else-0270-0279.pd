@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/slice;
+#X obj 20 80 else/slice~;
+#X obj 20 120 else/sort;
+#X obj 20 160 else/spread;
+#X obj 20 200 else/spread.mc~;
+#X obj 20 240 else/spread~;
+#X obj 20 280 else/square~;
+#X obj 20 320 else/sr~;
+#X obj 20 360 else/standard~;
+#X obj 20 400 else/status~;

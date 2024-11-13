@@ -1,0 +1,11 @@
+#N canvas 0 0 450 300 10;
+#X obj 20 40 else/ratio2cents;
+#X obj 20 80 else/ratio2cents~;
+#X obj 20 120 else/rec;
+#X obj 20 160 else/receiver;
+#X obj 20 200 else/receiver proxy;
+#X obj 20 240 else/repeat~;
+#X obj 20 280 else/rescale;
+#X obj 20 320 else/rescale~;
+#X obj 20 360 else/resonant2~;
+#X obj 20 400 else/resonant~;

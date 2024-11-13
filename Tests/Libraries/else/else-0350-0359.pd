@@ -1,0 +1,12 @@
+#N canvas 644 23 632 1016 10;
+#X obj 20 40 else/store;
+#A saved;
+#X obj 20 80 else/combine;
+#X obj 20 120 else/makenote2;
+#X obj 20 200 else/list.seq;
+#X obj 20 240 else/tempo;
+#X obj 20 280 else/above;
+#X obj 20 320 else/lfo;
+#X obj 20 360 else/histogram;
+#A saved;
+#X obj 20 400 else/morph;
