@@ -282,9 +282,7 @@ body {
     align-items: center;       
     width: 24px;                
     height: 24px;              
-    margin: 0 auto;  
-    content: var(--sound-off);     
-    animation: pulse 1.0s infinite;       
+    margin: 0 auto;        
 }
 
 

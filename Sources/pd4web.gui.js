@@ -11,7 +11,7 @@ function GetStyleRuleValue(className, stylesProb) {
     el.className = className;
     document.body.appendChild(el);
     var computedStyle = window.getComputedStyle(el);
-    for (let prob in stylesProb){
+    for (let prob in stylesProb) {
         let thisProb = stylesProb[prob];
         let value = computedStyle.getPropertyValue(thisProb);
         style[thisProb] = value;
@@ -26,20 +26,18 @@ function getCssVariable(variableName) {
 }
 
 // ─────────────────────────────────────
-function setSoundIcon(icon, animation){
+function setSoundIcon(icon, animation) {
     let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
     if (soundSwitch) {
-        const soundOffSvg = getComputedStyle(document.documentElement)
-            .getPropertyValue(icon)
-            .trim();
+        const soundOffSvg = getComputedStyle(document.documentElement).getPropertyValue(icon).trim();
         const svgData = soundOffSvg.match(/url\("data:image\/svg\+xml;base64,(.*)"\)/)?.[1];
-        if (svgData === undefined)  {
+        if (svgData === undefined) {
             window.setTimeout(() => {
                 setSoundIcon(icon, animation);
-            } , 1000);
-            return; 
+            }, 1000);
+            return;
         }
-        
+
         const svgDecoded = atob(svgData);
         const parser = new DOMParser();
         const svgDoc = parser.parseFromString(svgDecoded, "image/svg+xml");
@@ -49,10 +47,10 @@ function setSoundIcon(icon, animation){
             svgElement.setAttribute("height", "24");
             svgElement.style.display = "inline-block";
             svgElement.style.animation = animation;
-            soundSwitch.innerHTML = '';
+            soundSwitch.innerHTML = "";
             soundSwitch.appendChild(svgElement);
         }
-    } else{
+    } else {
         console.error("Pd4WebAudioSwitch not found");
     }
 }
@@ -60,31 +58,29 @@ function setSoundIcon(icon, animation){
 // ─────────────────────────────────────
 function GetNeededStyles() {
     Pd4Web.Style = {};
-    Pd4Web.Style.Bg = getCssVariable('--bg');
-    Pd4Web.Style.Fg = getCssVariable('--fg');
-    Pd4Web.Style.Sel = getCssVariable('--selected');
-    
+    Pd4Web.Style.Bg = getCssVariable("--bg");
+    Pd4Web.Style.Fg = getCssVariable("--fg");
+    Pd4Web.Style.Sel = getCssVariable("--selected");
+
     let elements = document.querySelectorAll(".nbx-text");
-    for (let element of elements){
-        element.style.fill = getCssVariable('--nbx-text');
+    for (let element of elements) {
+        element.style.fill = getCssVariable("--nbx-text");
     }
 
     elements = document.querySelectorAll(".key-black");
-    for (let element of elements){
-        element.style.fill = getCssVariable('--keyboard-black-key');
+    for (let element of elements) {
+        element.style.fill = getCssVariable("--keyboard-black-key");
     }
 
     elements = document.querySelectorAll(".key-white");
-    for (let element of elements){
-        element.style.fill = getCssVariable('--keyboard-white-key');
+    for (let element of elements) {
+        element.style.fill = getCssVariable("--keyboard-white-key");
     }
 
     elements = document.querySelectorAll(".vu-mini-rect");
-    for (let element of elements){
-        element.style.fill = getCssVariable('--vu-active');
+    for (let element of elements) {
+        element.style.fill = getCssVariable("--vu-active");
     }
-
-    
 }
 
 // ─────────────────────────────────────
@@ -249,8 +245,7 @@ function MessageListener(source, symbol, list) {
                     case "size":
                         if (list.length === 1) {
                             data.width = list[0] || 8;
-                        }
-                        else {
+                        } else {
                             data.width = list[0] || 8;
                             data.height = list[1] || 2;
                         }
@@ -409,8 +404,7 @@ function MessageListener(source, symbol, list) {
                         if (list.length === 1) {
                             data.width = list[0] || 1;
                             data.height = data.width;
-                        }
-                        else {
+                        } else {
                             data.width = list[0] || 1;
                             data.height = list[1] || 1;
                         }
@@ -568,12 +562,11 @@ function GuiRect(data) {
         id: `${data.id}_rect`,
         class: "border clickable",
     };
-    if (!Pd4Web.AutoTheme){
+    if (!Pd4Web.AutoTheme) {
         rect.fill = ColFromLoad(data.bg_color);
-    }   
+    }
     return rect;
 }
-
 
 // ─────────────────────────────────────
 function GuiText(data) {
@@ -588,10 +581,9 @@ function GuiText(data) {
         id: `${data.id}_text`,
         class: "unclickable",
     };
-    if (!Pd4Web.AutoTheme){
-        text.fill = ColFromLoad(data.label_color);     
+    if (!Pd4Web.AutoTheme) {
+        text.fill = ColFromLoad(data.label_color);
     }
-    
 }
 
 // ─────────────────────────────────────
@@ -617,9 +609,9 @@ function GuiBngRect(data) {
         id: `${data.id}_rect`,
         class: "border bng-rect clickable",
     };
-    if (!Pd4Web.AutoTheme){
+    if (!Pd4Web.AutoTheme) {
         rect.fill = ColFromLoad(data.bg_color);
-    }   
+    }
     return rect;
 }
 
@@ -636,7 +628,6 @@ function GuiBngCircle(data) {
         id: `${data.id}_circle`,
         class: "unclickable border",
     };
-    
 }
 
 // ─────────────────────────────────────
@@ -648,7 +639,7 @@ function GuiBngText(data) {
 function GuiBngUpdateCircle(data) {
     let color;
     if (Pd4Web.AutoTheme) {
-        color = ColFromLoad(getCssVariable('--bng-circle'));
+        color = ColFromLoad(getCssVariable("--bng-circle"));
     } else {
         color = data.fg_color;
     }
@@ -668,7 +659,6 @@ function GuiBngUpdateCircle(data) {
             });
         }, data.interrupt);
         data.flashed = true;
-
     } else {
         data.flashed = true;
         ConfigureItem(data.circle, {
@@ -755,9 +745,9 @@ function GuiTglRect(data) {
         id: `${data.id}_rect`,
         class: "border tgl-rect clickable",
     };
-    if (!Pd4Web.AutoTheme){
+    if (!Pd4Web.AutoTheme) {
         rect.fill = ColFromLoad(data.bg_color);
-    }   
+    }
     return rect;
 }
 
@@ -776,13 +766,13 @@ function GuiTglCross1(data) {
     let cross1 = {
         points: points,
         "stroke-width": w,
-        stroke: getCssVariable('--fg2'),
+        stroke: getCssVariable("--fg2"),
         id: `${data.id}_cross1`,
         class: "unclickable tgl-cross",
     };
     if (!Pd4Web.AutoTheme) {
         //cross1.fill = "none";
-    } 
+    }
     return cross1;
 }
 
@@ -801,15 +791,14 @@ function GuiTglCross2(data) {
     let cross2 = {
         points: points,
         "stroke-width": w,
-        stroke: getCssVariable('--fg2'),
+        stroke: getCssVariable("--fg2"),
         id: `${data.id}_cross1`,
         class: "unclickable tgl-cross",
     };
     if (!Pd4Web.AutoTheme) {
         cross2.fill = ColFromLoad(data.fg_color);
-    } 
+    }
     return cross2;
-    
 }
 
 // ─────────────────────────────────────
@@ -820,11 +809,11 @@ function GuiTglText(data) {
 // ─────────────────────────────────────
 function GuiTglUpdateCross(data) {
     let colorOn;
-    let colorOff = getCssVariable('--fg2');
-    if (!Pd4Web.AutoTheme){
+    let colorOff = getCssVariable("--fg2");
+    if (!Pd4Web.AutoTheme) {
         colorOn = ColFromLoad(data.fg_color);
-    } else{
-        colorOn = getCssVariable('--tgl-cross');
+    } else {
+        colorOn = getCssVariable("--tgl-cross");
     }
 
     ConfigureItem(data.cross1, {
@@ -920,12 +909,12 @@ function GuiNbxKeyDownListener(e) {
     } else if ((key === "+") | (key === "-")) {
     } else if (key == "Enter") {
         let textColor;
-        if (Pd4Web.AutoTheme){
-            textColor = getCssVariable('--nbx-text');
-        } else {    
+        if (Pd4Web.AutoTheme) {
+            textColor = getCssVariable("--nbx-text");
+        } else {
             textColor = ColFromLoad(data.label_color);
         }
-        txt.style.fill = textColor; 
+        txt.style.fill = textColor;
         txt.clicked = false;
         const svgElement = document.getElementById("Pd4WebCanvas");
         svgElement.removeAttribute("tabindex"); // Remove tabindex
@@ -1014,9 +1003,9 @@ function GuiNbxTriangle(data) {
 function GuiNbxText(data) {
     const start_text = data.height * 0.5; // Size of the triangle
     let textColor;
-    if (Pd4Web.AutoTheme){
+    if (Pd4Web.AutoTheme) {
         textColor = Pd4Web.Style.Text;
-    } else {    
+    } else {
         textColor = ColFromLoad(data.label_color);
     }
     return {
@@ -1080,9 +1069,9 @@ function GuiNbxSetup(args, id) {
             const txt = document.getElementById(id);
             if (txt.clicked) {
                 let textColor;
-                if (Pd4Web.AutoTheme){
-                    textColor = getCssVariable('--nbx-text-selected');
-                } else {    
+                if (Pd4Web.AutoTheme) {
+                    textColor = getCssVariable("--nbx-text-selected");
+                } else {
                     textColor = ColFromLoad(data.label_color);
                 }
                 console.log(textColor);
@@ -1099,7 +1088,7 @@ function GuiNbxSetup(args, id) {
                 }
                 Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
             } else {
-                txt.style.fill = getCssVariable('--nbx-selected'); // Change fill color to black
+                txt.style.fill = getCssVariable("--nbx-selected"); // Change fill color to black
                 txt.clicked = true;
                 const svgElement = document.getElementById("Pd4WebCanvas");
                 svgElement.setAttribute("tabindex", "0"); // "0" makes it focusable
@@ -1111,7 +1100,6 @@ function GuiNbxSetup(args, id) {
         });
     }
     BindGuiReceiver(data);
-    
 }
 
 //╭─────────────────────────────────────╮
@@ -1248,7 +1236,6 @@ function GuiSliderUpdateIndicatorRect(data) {
         y1: p.y1,
         x2: p.x2,
         y2: p.y2,
-        
     });
 }
 
@@ -1388,7 +1375,7 @@ function GuiSliderSetup(args, id) {
 
     if (data.type == "hsl") {
         data.x_pos = parseInt(args[2]) - 3 - Pd4Web.x_pos;
-    } else{
+    } else {
         data.x_pos = parseInt(args[2]) - Pd4Web.x_pos;
     }
 
@@ -1669,9 +1656,19 @@ function GuiVuRect(data) {
 // ─────────────────────────────────────
 function GuiVudBRects(data) {
     const colors = ["#f430f0", "#fc2828", "#e8e828", "#ff8001", "#00ffff"];
-    const getColor = i => (i === 39) ? colors[4] : (i >= 11 && i <= 38) ? colors[3] : (i >= 14 && i <= 22) ? colors[2] : (i >= 1 && i <= 10) ? colors[1] : colors[0];
-    
-    const miniWidth = data.width - 3, miniHeight = (data.height - 2) / 40;
+    const getColor = (i) =>
+        i === 39
+            ? colors[4]
+            : i >= 11 && i <= 38
+              ? colors[3]
+              : i >= 14 && i <= 22
+                ? colors[2]
+                : i >= 1 && i <= 10
+                  ? colors[1]
+                  : colors[0];
+
+    const miniWidth = data.width - 3,
+        miniHeight = (data.height - 2) / 40;
     data.mini_rects = Array.from({ length: 40 }, (_, i) => {
         const rect = CreateItem("rect", {
             x: data.x_pos + 1.5,
@@ -1691,14 +1688,17 @@ function GuiVudBRects(data) {
 
 // ─────────────────────────────────────
 function GuiVuUpdateGain(data) {
-    const thresholds = [-99, -100, -80, -60, -55, -50, -45, -40, -35, -30, -27, -25, -22, -20, -18, -16, -14, -12, -10, -9, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11];
-    const amount = thresholds.findIndex(t => data.value <= t) || 40;
+    const thresholds = [
+        -99, -100, -80, -60, -55, -50, -45, -40, -35, -30, -27, -25, -22, -20, -18, -16, -14, -12, -10, -9, -7, -6, -5,
+        -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11,
+    ];
+    const amount = thresholds.findIndex((t) => data.value <= t) || 40;
     if (data.value < -100) {
         return;
     }
 
     data.mini_rects.forEach((rect, i) => {
-        rect.style.fill = (41 - i < amount) ? rect.getAttribute("active") : getCssVariable('--vu-active');
+        rect.style.fill = 41 - i < amount ? rect.getAttribute("active") : getCssVariable("--vu-active");
     });
 }
 
@@ -1832,7 +1832,7 @@ function GuiKnobArc(data) {
     const angle = data.ag_range;
 
     // Calculate the half angle to center the arc around 12 o'clock
-    const halfAngle = (Math.PI * (angle / 360));
+    const halfAngle = Math.PI * (angle / 360);
     const startAngle = -Math.PI / 2 - halfAngle; // Start point adjusted based on angle
     const endAngle = -Math.PI / 2 + halfAngle; // End point adjusted to be symmetric
 
@@ -1865,7 +1865,7 @@ function GuiKnobPointer(data) {
     data.cy = data.y_pos + r + 1;
     r = r * data.radius; // Adjust pointer length relative to knob size
 
-    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const halfAngle = Math.PI * (data.ag_range / 360);
     const startAngle = -Math.PI / 2 - halfAngle; // Start point adjusted based on angle
     const x1 = data.cx + r * Math.cos(startAngle);
     const y1 = data.cy + r * Math.sin(startAngle);
@@ -1882,22 +1882,22 @@ function GuiKnobPointer(data) {
     };
 }
 // ─────────────────────────────────────
-function GuiGetTickPosition(data, i){
+function GuiGetTickPosition(data, i) {
     const cx = data.x_pos + (data.size - 2) / 2 + 1;
     const cy = data.y_pos + (data.size - 2) / 2 + 1;
-    const tickRadius = (data.size - 2) / 2 * data.radius; // Slightly smaller than pointer radius
+    const tickRadius = ((data.size - 2) / 2) * data.radius; // Slightly smaller than pointer radius
 
     // Add tick marks
-    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const halfAngle = Math.PI * (data.ag_range / 360);
     const startAngle = -Math.PI / 2 - halfAngle;
     const endAngle = -Math.PI / 2 + halfAngle;
     const tickStep = data.ticks > 1 ? (endAngle - startAngle) / (data.ticks - 1) : 0;
     const tickAngle = startAngle + i * tickStep;
-        
-        // Calculate tick position
+
+    // Calculate tick position
     const x1 = cx + tickRadius * Math.cos(tickAngle);
     const y1 = cy + tickRadius * Math.sin(tickAngle);
-    return {x1, y1};
+    return { x1, y1 };
 }
 
 // ─────────────────────────────────────
@@ -1905,17 +1905,17 @@ function GuiKnobTicks(data) {
     // Calculate center position and radius for ticks
     const cx = data.x_pos + (data.size - 2) / 2 + 1;
     const cy = data.y_pos + (data.size - 2) / 2 + 1;
-    const tickRadius = (data.size - 2) / 2 * data.radius * 1.5; // Slightly smaller than pointer radius
+    const tickRadius = ((data.size - 2) / 2) * data.radius * 1.5; // Slightly smaller than pointer radius
 
     // Add tick marks
-    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const halfAngle = Math.PI * (data.ag_range / 360);
     const startAngle = -Math.PI / 2 - halfAngle;
     const endAngle = -Math.PI / 2 + halfAngle;
     const tickStep = data.ticks > 1 ? (endAngle - startAngle) / (data.ticks - 1) : 0;
 
     for (let i = 0; i < data.ticks; i++) {
         const tickAngle = startAngle + i * tickStep;
-        
+
         // Calculate tick position
         const x1 = cx + tickRadius * Math.cos(tickAngle);
         const y1 = cy + tickRadius * Math.sin(tickAngle);
@@ -1948,7 +1948,6 @@ function GuiKnobOnMouseDown(data, e, n) {
     data.startValue = data.value || 0;
 }
 
-
 // ─────────────────────────────────────
 function GuiKnobOnMouseMove(data, e) {
     let mouseIsDown = e.buttons === 1;
@@ -1978,31 +1977,31 @@ function GuiKnobOnMouseMove(data, e) {
 
     // Update the knob value based on the initial value when dragging started
     data.value = Math.min(Math.max(data.startValue + valueChange, 0), knobRange);
-       
+
     // Calculate the half angle to center the arc around 12 o'clock
-    const halfAngle = (Math.PI * (data.ag_range / 360));
+    const halfAngle = Math.PI * (data.ag_range / 360);
     const startAngle = -Math.PI / 2 - halfAngle; // Adjusted start point
 
-    if (data.discrete){
+    if (data.discrete) {
         const tickValue = data.ag_range / (data.ticks - 1);
         let discreteAngle = 0;
         for (let i = 0; i < data.ticks; i++) {
             if (data.value >= i * tickValue && data.value <= (i + 1) * tickValue) {
                 const midPoint = i * tickValue + tickValue / 2;
-                discreteAngle = (data.value < midPoint) ? i : i + 1;
+                discreteAngle = data.value < midPoint ? i : i + 1;
                 break;
             }
         }
         let pos = GuiGetTickPosition(data, discreteAngle);
         data.pointer.setAttribute("x1", pos.x1);
         data.pointer.setAttribute("y1", pos.y1);
-        let mappedValue = (discreteAngle * tickValue / knobRange) * (data.max - data.min) + data.min;
+        let mappedValue = ((discreteAngle * tickValue) / knobRange) * (data.max - data.min) + data.min;
         if (Pd4Web) {
             Pd4Web.sendFloat(data.send, mappedValue);
         }
     } else {
         const angleRadians = startAngle + (data.value / knobRange) * (2 * halfAngle);
-        const pointerRadius = (data.size - 2) / 2 * data.radius; // Adjust pointer length relative to knob size
+        const pointerRadius = ((data.size - 2) / 2) * data.radius; // Adjust pointer length relative to knob size
         const x1 = data.cx + pointerRadius * Math.cos(angleRadians);
         const y1 = data.cy + pointerRadius * Math.sin(angleRadians);
         data.pointer.setAttribute("x1", x1);
@@ -2028,35 +2027,40 @@ function GuiKnobSetup(args, id) {
     data.x_pos = parseInt(args[2]);
     data.y_pos = parseInt(args[3]);
     data.type = args[4];
-    
+
     data.size = parseInt(args[5]);
     data.min = parseFloat(args[6]);
     data.max = parseFloat(args[7]);
     data.init_value = parseFloat(args[8]);
     data.value = data.init_value;
+    data.exp = parseFloat(args[9]);
     data.send = args[10];
     data.receive = args[11];
-
     data.bg = args[12];
     data.arc_color = args[13];
     data.fg = args[14];
 
     //data.something = args[15];
-    //data.something = args[16];
+    data.circular_drag = args[16]; // not supported
     data.ticks = parseInt(args[17]);
-    data.discrete = true;
-    
+    data.discrete = parseInt(args[18]);
+    data.show_arc = parseInt(args[19]);
+
     data.ag_range = parseInt(args[20]);
+    data.offset = parseFloat(args[21]);
+
     data.id = `${data.type}_${id++}`;
     data.radius = 0.6;
 
     // create svg
     data.rect = CreateItem("rect", GuiKnobRect(data));
     data.circle = CreateItem("circle", GuiKnobCircleCenter(data));
-    data.circleBg = CreateItem("path", GuiKnobArc(data));
+    if (data.show_arc) {
+        data.circleBg = CreateItem("path", GuiKnobArc(data));
+    }
     data.pointer = CreateItem("line", GuiKnobPointer(data));
     data.svgTicks = GuiKnobTicks(data);
-    
+
     data.rect.addEventListener("mousemove", function (e) {
         GuiKnobOnMouseMove(data, e, 0);
     });
@@ -2166,10 +2170,10 @@ function GuiKeyboardSetup(args, id) {
             }
         });
         keyElement.addEventListener("mouseup", function (e) {
-            if (e.target.getAttribute("class").includes("key-black")){
+            if (e.target.getAttribute("class").includes("key-black")) {
                 e.target.style.fill = getCssVariable("--keyboard-black-key");
             } else {
-                e.target.style.fill =  getCssVariable("--keyboard-white-key");
+                e.target.style.fill = getCssVariable("--keyboard-white-key");
             }
             let midi = e.target.getAttribute("midi");
             if (Pd4Web) {
@@ -2535,10 +2539,10 @@ async function Pd4WebInitGui(patch) {
         console.log("Pd4Web is not defined yet, wait...");
         return;
     }
-    
+
     // Get the element
     setSoundIcon("--sound-off", "pulse 1s infinite");
-    
+
     Pd4Web.isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
     Pd4Web.CanvasWidth = 450;
     Pd4Web.CanvasHeight = 300;
@@ -2603,3 +2607,4 @@ async function Pd4WebInitGui(patch) {
             });
     }
 }
+
