@@ -38,6 +38,6 @@ You can check these objects working in the [examples](../../../tests/gui) folder
     The connections between objects are not intercepted by `pd4web`. You need to use `send` and `receive` objects to connect the GUI objects.
 
 <p align="center">
-    <img src="../gui.png" alt="gui" width="100%" style="border-radius: 10px">
+    <img src="../Templates/gui.png" alt="gui" width="80%" style="border-radius: 10px">
 </p>
 
