@@ -2,13 +2,15 @@ import re
 import os
 import sys
 
+unsupportedObjs = []
+
 
 class PdObjectsInSource:
     def __init__(self):
         self.objPerPatch = 10
         self.patch = []
         self.objsFounded = []
-        if (len(sys.argv) < 2):
+        if len(sys.argv) < 2:
             print("Use python FindAllExternalsOfLib.py <libName> <libDir>")
             exit()
         self.libName = sys.argv[1]
@@ -20,7 +22,7 @@ class PdObjectsInSource:
                     completePath = os.path.join(root, file)
                     self.regexSearch(completePath)
         self.writeCompiledPatches()
-        
+
         # found all the Abstractions, Abstractions
         pd_files = []
         for root, _, files in os.walk(self.libDir):
@@ -29,10 +31,9 @@ class PdObjectsInSource:
                     pd_patch = os.path.join(root, file)
                     pd_file = os.path.basename(pd_patch)
                     pd_files.append(pd_file)
-        
+
         # loop through all the pd files and find all the .pd files that have and equivalent -help.pd file
         self.writeAbstractionPatches(pd_files)
-
 
     def regexSearch(self, file):
         with open(file, "r", encoding="utf-8") as c_file:
@@ -42,7 +43,7 @@ class PdObjectsInSource:
             for match in matches:
                 objectName = match.group(1)
                 self.objsFounded.append(objectName)
-                
+
     def writeAbstractionPatches(self, patches):
         abs_count = 0
         objPosition = 0
@@ -66,7 +67,9 @@ class PdObjectsInSource:
                 self.patch.append(f"#X obj 20 {objPatchPosition} {self.libName}/{objName};")
                 if self.objCount % self.objPerPatch == 0:
                     obj = self.objCount - self.objPerPatch
-                    patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+                    patchPath = os.path.join(
+                        self.thisFolder, self.libName, f"{self.libName}-{obj:04d}-{self.objCount - 1:04d}.pd"
+                    )
                     with open(patchPath, "w") as f:
                         for line in self.patch:
                             f.write(line + "\n")
@@ -76,7 +79,10 @@ class PdObjectsInSource:
                     self.patch.append("#N canvas 0 0 450 300 10;")
         if len(self.patch) > 1:
             obj = lastWritten + self.objPerPatch
-            patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+            patchPath = os.path.join(
+                self.thisFolder, self.libName, f"{self.libName}-{obj:04d}-{self.objCount - 1:04d}.pd"
+            )
+
             with open(patchPath, "w") as f:
                 for line in self.patch:
                     f.write(line + "\n")
@@ -101,7 +107,9 @@ class PdObjectsInSource:
                 self.patch.append(f"#X obj 20 {objPatchPosition} {self.libName}/{objName};")
                 if self.objCount % self.objPerPatch == 0:
                     obj = self.objCount - self.objPerPatch
-                    patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+                    patchPath = os.path.join(
+                        self.thisFolder, self.libName, f"{self.libName}-{obj:04d}-{self.objCount - 1:04d}.pd"
+                    )
                     with open(patchPath, "w") as f:
                         for line in self.patch:
                             f.write(line + "\n")
@@ -111,7 +119,9 @@ class PdObjectsInSource:
                     self.patch.append("#N canvas 0 0 450 300 10;")
         if len(self.patch) > 1:
             obj = lastWritten + self.objPerPatch
-            patchPath = os.path.join(self.thisFolder, self.libName, f"{self.libName}-{obj}-{self.objCount - 1}.pd")
+            patchPath = os.path.join(
+                self.thisFolder, self.libName, f"{self.libName}-{obj:04d}-{self.objCount - 1:04d}.pd"
+            )
             with open(patchPath, "w") as f:
                 for line in self.patch:
                     f.write(line + "\n")
