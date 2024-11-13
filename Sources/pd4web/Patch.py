@@ -73,18 +73,27 @@ class PatchLine:
 # │           about externals            │
 # ╰──────────────────────────────────────╯
 class Patch:
-    def __init__(self, Pd4Web: Pd4Web, abs=False, patch=None):
+    def __init__(self, Pd4Web: Pd4Web, isabs=False, patch=None):
         self.Pd4Web = Pd4Web
-        self.isAbstraction = abs
-
-        if abs:
+        self.isAbstraction = isabs        
+        if isabs:
+            patchfile = os.path.basename(patch)
+            if patch in self.Pd4Web.processedAbs:
+                pd4web_print(
+                    f"Abstraction {patchfile} already processed", 
+                    color="blue", 
+                    silence=self.Pd4Web.SILENCE, 
+                    pd4web=self.Pd4Web.PD_EXTERNAL
+                )
+                return
+            
             pd4web_print(
-                "Processing Abstraction", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+                f"Processing Abstraction {patchfile}", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
             )
         else:
             libFolder = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/pure-data/src")
             self.Pd4Web.Objects.GetLibraryObjects(libFolder, "pure-data")
-
+            
         if patch is not None:
             self.patchFile = patch
         else:
@@ -107,8 +116,9 @@ class Patch:
         self.reConfigurePatch()
 
         # if not abs:
-        for self.absProcessed in self.absProcessed:
-            self.patchLinesProcessed += self.absProcessed.patchLinesProcessed
+        if isabs and patch != "" and patch not in self.Pd4Web.processedAbs:
+            self.Pd4Web.processedAbs.append(patch)
+            #print(f"Processed Abs: {self.Pd4Web.processedAbs}")
 
     def initVariables(self):
         self.PROJECT_ROOT = self.Pd4Web.PROJECT_ROOT
@@ -120,11 +130,6 @@ class Patch:
         self.patchLinesProcessed = []
         self.uiReceiversSymbol = []
         self.needExtra = False
-        self.declaredLibs = []
-
-        self.declaredPaths = []
-        self.declaredLocalPaths = []
-
         self.guiObject = 0
 
     def execute(self):
@@ -344,16 +349,15 @@ class Patch:
                             raise Exception(f"Library not supported: {path} in {self.patchFile}")
                         self.Pd4Web.Libraries.GetLibrarySourceCode(path)
                         self.Pd4Web.Objects.GetSupportedObjects(path)
-                        self.declaredLibs.append(path)
+                        self.Pd4Web.declaredLibsObjs.append(path)
 
                     elif patchLine.Tokens[2] == "-path":
-                        #print("Path")   
                         path = patchLine.Tokens[3]
                         if self.Pd4Web.Libraries.isSupportedLibrary(path):
                             self.Pd4Web.Libraries.GetLibrarySourceCode(path)
-                            self.declaredPaths.append(path)
+                            self.Pd4Web.declaredPaths.append(path)
                         else:
-                            self.declaredLocalPaths.append(path)
+                            self.Pd4Web.declaredPaths.append(path)
                             localPath = os.path.join(self.Pd4Web.PROJECT_ROOT, patchLine.Tokens[3])
                             if os.path.exists(localPath):
                                 for _, _, files in os.walk(localPath):
@@ -409,7 +413,6 @@ class Patch:
 
     def objInDeclaredLib(self, patchLine: PatchLine):
         """ """
-            
         declaredObjs = []
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
@@ -422,7 +425,7 @@ class Patch:
         externalsDict = json.load(file)
         file.close()
 
-        for lib in self.declaredLibs:
+        for lib in self.Pd4Web.declaredLibsObjs:
             declaredObjs.extend(externalsDict[lib]["objs"])
             if patchLine.completName in declaredObjs:
                 libName = lib
@@ -452,7 +455,7 @@ class Patch:
         libName = ""
         with open(externalsJson, "r") as file:
             externalsDict = json.load(file)
-            for lib in self.declaredPaths:
+            for lib in self.Pd4Web.declaredPaths:
                 if lib not in externalsDict.keys():
                     raise Exception(f"Library {lib} not found in {externalsJson}")
 
@@ -478,13 +481,27 @@ class Patch:
         lastToken = ""
         tokens = line.Tokens[5:]
         cloneAbs = ""
+        #print(tokens)
         for token in tokens:
             if token not in args and lastToken not in ["-x", "-s"]:
+                # check if clone has / in the name
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
                     cloneAbs = token
                 elif token in self.declaredAbs:
                     cloneAbs = token
+                
+                if cloneAbs != "":
+                    break
+                
+                if "/" in token:
+                    library = token.split("/")[0]
+                    absPatch = token.split("/")[-1]
+                    if self.Pd4Web.Libraries.isSupportedLibrary(library):
+                        if absPatch in self.Pd4Web.Objects.GetSupportedObjects(library):
+                            cloneAbs = absPatch
+                            break  
             lastToken = token
+            
         if cloneAbs != "":
             if os.path.exists(self.PROJECT_ROOT + "/" + cloneAbs + ".pd"):
                 pd4web_print(
@@ -494,24 +511,30 @@ class Patch:
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
                 line.isAbstraction = True
-                abs = Patch(
+                Patch(
                     self.Pd4Web,
-                    abs=True,
+                    isabs=True,
                     patch=self.PROJECT_ROOT + "/" + cloneAbs + ".pd",
                 )
-                self.absProcessed.append(abs)
-            else:
-                for lib in self.declaredPaths:
-                    libPath = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals", lib)
-                    for root, _, files in os.walk(libPath):
-                        for file in files:
-                            if file == cloneAbs + ".pd":
-                                abs = Patch(
+                #self.Pd4Web.processedAbs.append(self.PROJECT_ROOT + "/" + cloneAbs + ".pd")
+            clonePathFound = False
+            for lib in self.Pd4Web.declaredPaths:
+                libPath = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals", lib)
+                for root, _, files in os.walk(libPath):
+                    for file in files:
+                        if file == cloneAbs + ".pd":
+                            clonePathFound = True
+                            if os.path.join(root, file) not in self.Pd4Web.processedAbs:
+                                Patch(
                                     self.Pd4Web,
-                                    abs=True,
+                                    isabs=True,
                                     patch=os.path.join(root, file),
                                 )
-                                self.absProcessed.append(abs)
+            if not clonePathFound:
+                raise Exception(f"Clone Abstraction {cloneAbs} not found in {self.patchFile}")
+        else:
+            raise Exception(f"Clone Abstraction not found in {self.patchFile}")
+                                
 
     def patchObject(self, line: PatchLine):
         """ """
@@ -519,9 +542,7 @@ class Patch:
         library = line.Tokens[4].split("/")[0]
         if self.Pd4Web.Libraries.isSupportedLibrary(library):
             self.Pd4Web.Objects.GetSupportedObjects(line.library)
-        if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):
-            
-                
+        if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):               
             # Local Abstraction
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
                 name = line.Tokens[4].split("/")[-1]
@@ -534,12 +555,12 @@ class Patch:
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
                 line.isAbstraction = True
-                abs = Patch(
+                Patch(
                     self.Pd4Web,
-                    abs=True,
+                    isabs=True,
                     patch=self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd",
                 )
-                self.absProcessed.append(abs)
+                #self.absProcessed.append(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd")
 
             # Library Abstraction
             elif self.isLibAbs(line):
@@ -554,12 +575,12 @@ class Patch:
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
-                abs = Patch(
+                Patch(
                     self.Pd4Web,
-                    abs=True,
+                    isabs=True,
                     patch=line.absPath,
                 )
-                self.absProcessed.append(abs)
+                #self.Pd4Web.processedAbs.append(line.absPath)
                 line.isAbstraction = True
                 line.isExternal = False
 
@@ -578,7 +599,7 @@ class Patch:
                 )
 
         elif line.completName in self.Pd4Web.declaredLocalAbs:
-            for possibleLocal in self.declaredLocalPaths:
+            for possibleLocal in self.Pd4Web.declaredPaths:
                 if os.path.exists(self.PROJECT_ROOT + "/" + possibleLocal + "/" + line.completName + ".pd"):
                     line.isAbstraction = True
                     line.library = possibleLocal
@@ -589,12 +610,12 @@ class Patch:
                         silence=self.Pd4Web.SILENCE,
                         pd4web=self.Pd4Web.PD_EXTERNAL,
                     )
-                    abs = Patch(
+                    Patch(
                         self.Pd4Web,
-                        abs=True,
+                        isabs=True,
                         patch=self.PROJECT_ROOT + "/" + possibleLocal + "/" + line.completName + ".pd",
                     )
-                    self.absProcessed.append(abs)
+                    #self.absProcessed.append(self.PROJECT_ROOT + "/" + possibleLocal + "/" + line.completName + ".pd")
                     line.isAbstraction = True
                     line.localAbs = True
 
@@ -662,6 +683,13 @@ class Patch:
                 msg += f" inside {self.patchFile}"
                 raise ValueError(msg)
 
+        if self.Pd4Web.Libraries.isSupportedLibrary(line.library):
+            self.Pd4Web.Objects.GetSupportedObjects(line.library)
+            if line.library not in self.Pd4Web.declaredLibsObjs:
+                self.Pd4Web.declaredLibsObjs.append(line.library)
+            if line.library not in self.Pd4Web.declaredPaths:
+                self.Pd4Web.declaredPaths.append(line.library)
+        
         self.searchForGuiObject(line)
         self.searchForSpecialObject(line)
         self.patchLinesProcessed.append(line)

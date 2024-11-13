@@ -143,5 +143,8 @@ class Objects:
             self.GetLibraryObjects(libFolder, libName)
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
-                       
-        return externalsDict[libName]["objs"]
+        
+        allObjsAndAbs = externalsDict[libName]["objs"]
+        allObjsAndAbs.extend(externalsDict[libName]["abs"])
+        
+        return allObjsAndAbs
