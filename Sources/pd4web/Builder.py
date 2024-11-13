@@ -5,7 +5,8 @@ import subprocess
 import importlib.metadata as importlib_metadata
 
 from .Helpers import pd4web_print
-from .Patch import PatchLine
+
+# from .Patch import PatchLine
 from .Pd4Web import Pd4Web
 
 
@@ -24,7 +25,7 @@ class GetAndBuildExternals:
             raise Exception("Error: Could not get the externals source code")
 
         # update setup funciton for
-        #self.UpdateSetupFunction()
+        # self.UpdateSetupFunction()
         self.CreateCppCallsExternalFile()
 
         # ╭──────────────────────────────────────╮
@@ -194,8 +195,8 @@ class GetAndBuildExternals:
                 functionName = functionName.replace(".", "0x2e")
             self.regexSearch(obj, functionName, os.path.join(root, file))
 
-    def getObjectsSourceCode(self):    
-        print()    
+    def getObjectsSourceCode(self):
+        print()
         for obj in self.Pd4Web.usedObjects:
             libName = obj["Lib"]
             foundLibrary = self.Libraries.GetLibrarySourceCode(libName)
@@ -330,7 +331,7 @@ class GetAndBuildExternals:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()
             f.write("// This is automatically generated code from pd4web.py script\n\n")
             for usedObjects in self.Pd4Web.usedObjects:
-                #print(usedObjects)
+                # print(usedObjects)
                 if usedObjects["SetupFunction"]:
                     f.write(f"extern \"C\" void {usedObjects['SetupFunction']}();\n")
 
