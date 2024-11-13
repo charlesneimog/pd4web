@@ -441,7 +441,7 @@ class GetAndBuildExternals:
         if not os.path.exists(js_dest):
             shutil.copy(js_src, js_dest)
 
-        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html"):
+        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html") and self.Pd4Web.TEMPLATE == 0:
             index_page = "index.html"
             if not self.Pd4Web.GUI:
                 index_page = "nogui.html"
@@ -462,14 +462,13 @@ class GetAndBuildExternals:
                 f.write("</html>\n")
 
         if self.Pd4Web.TEMPLATE != 0:
-            print(self.Pd4Web.TEMPLATE)
             root = os.path.join(self.Pd4Web.PD4WEB_ROOT, "..", f"Templates/{self.Pd4Web.TEMPLATE}")
             if not os.path.exists(root):
                 raise Exception(f"Error: Could not find template {self.Pd4Web.TEMPLATE}")
             files = os.listdir(root)
-            # copy all files inside the template folder to self.Pd4Web.PROJECT_ROOT
             for file in files:
-                shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
+                if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + file):
+                    shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
 
         os.chdir(cwd)
 
