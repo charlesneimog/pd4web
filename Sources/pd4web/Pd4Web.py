@@ -168,9 +168,12 @@ class Pd4Web:
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
+        
         self.declaredLocalAbs = []
         self.declaredLibsObjs = []
         self.declaredPaths = []
+        self.processedAbs = []
+        
         self.Libraries = ExternalLibraries(self)
         self.Objects: Objects = Objects(self)
 
