@@ -11,13 +11,14 @@ import time
 
 
 class Pd4WebTest(unittest.TestCase):
-    def execute_server(self, patchPath, port):
+    def execute_server(self, patchPath, port, gui=True):
         string = f"Testing {patchPath}"
         print(f"\n\n\n{'='*len(string)}\n{string}\n{'='*len(string)}")
         this_file = os.path.abspath(__file__)
         pd_file = os.path.join(os.path.dirname(this_file), patchPath)
         Pd4WebInstance = Pd4Web.Pd4Web(Patch=pd_file)
         Pd4WebInstance.verbose = True
+        Pd4WebInstance.GUI = gui
         Pd4WebInstance.Execute()
         if platform.system() == "Linux":
             patchDir = os.path.dirname(pd_file)
@@ -59,13 +60,21 @@ class Pd4WebTest(unittest.TestCase):
         def testar(localport):
             driver = webdriver.Chrome(service=chrome_service, options=chrome_options)
             driver.get(f"http://localhost:{localport}")
-            try:
-                element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
-                element.click()
-            except:
-                time.sleep(2)
-                element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
-                element.click()
+            if self.gui:
+                try:
+                    element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
+                    element.click()
+                except:
+                    time.sleep(2)
+                    element = driver.find_element(By.XPATH, '//*[@id="Pd4WebAudioSwitch"]')
+                    element.click()
+            else:
+                try:
+                    html_element = driver.find_element(By.TAG_NAME, "html")
+                    html_element.click()
+                except Exception as e:
+                    print(f"Failed to start audio context: {e}")
+
             time.sleep(2)  # run for 5 seconds
             logs = driver.get_log("browser")
             prev_msg = ""
@@ -77,10 +86,8 @@ class Pd4WebTest(unittest.TestCase):
                     raise Exception(message)
                 if "error: ... couldn't create" in message:
                     raise Exception(message + " " + prev_msg)
-
                 if "mismatch" in message:
                     raise Exception(message)
-
                 prev_msg = message
 
             driver.quit()
@@ -129,7 +136,8 @@ class Pd4WebTest(unittest.TestCase):
         except:
             pass
 
-    def libraries(self, directory):
+    def libraries(self, directory, gui=True):
+        self.gui = gui
         temp_file = directory.split("/")[-1]
         lib = os.path.join(os.path.dirname(__file__), directory)
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), directory))
@@ -146,9 +154,9 @@ class Pd4WebTest(unittest.TestCase):
             shutil.copytree(src_dir, dst_dir, ignore=shutil.ignore_patterns("*.git", ".git"))
             newpatch = f"{lib}/{temp_file}/{filename}"
             try:
-                self.execute_server(newpatch, 5000)
+                self.execute_server(newpatch, 5000, gui)
                 shutil.rmtree(f"{lib}/{temp_file}")
-            except Exception as e:
+            except:
                 shutil.rmtree(f"{lib}/{temp_file}")
                 raise Exception(f"Please check {newpatch} for errors")
         try:
@@ -159,13 +167,15 @@ class Pd4WebTest(unittest.TestCase):
     def test_libraries(self):
         # Errors
         self.errors("Basic/errors")
-
-        # Basic
+        #
+        # # Basic
         self.libraries("Basic/abs")
         self.libraries("Basic/audio")
         self.libraries("Basic/declare")
         self.libraries("Basic/file")
         self.libraries("Basic/gui")
+
+        # Compilation Options
 
         # Libraries
         self.libraries("Libraries/cyclone")
@@ -174,9 +184,10 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/o.scofo~")
         # self.libraries("Libraries/ambi~")
 
-        # Issues
+        # # Issues
         self.libraries("Issues/#22-1")
         self.libraries("Issues/#22-2")
+        self.libraries("Issues/#23", gui=False)
 
 
 if __name__ == "__main__":
