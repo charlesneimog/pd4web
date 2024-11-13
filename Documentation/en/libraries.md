@@ -39,15 +39,6 @@ List of Pd externals supported by <code>pd4web</code>.
         </tr>
     </tbody>
     <tbody>
-      <tr>
-        <td><a href="https://github.com/pd-externals/earplug/">earplug</a></td>
-        <td>For binaural spacialization.</td>
-        <td>1</td>
-        <td>0</td>
-        <td>Dan Wilcox</th>
-      </tr>
-    </tbody>
-    <tbody>
         <tr>
             <td><a href="https://github.com/wbrent/timbreIDLib/">timbreIDLib</a></td>
             <td>Music Analisys and MIR in general.</td>

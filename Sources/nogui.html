@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <meta charset="UTF-8" />
+        <!-- pd4web.threads.js can help if you can't active Cross-Origin Resource Sharing (CORS) from server side -->
+        <script src="./pd4web.threads.js"></script>
+        <script src="./pd4web.js"></script>
+    </head>
+    <body>
+        <script>
+            var Pd4Web = null; // Pd4Web object must be declared in the global scope
+            Pd4WebModule().then((Pd4WebModulePromise) => {
+                Pd4Web = new Pd4WebModulePromise.Pd4Web();
+            });
+
+            // If you are using the "-nogui" option, you need to manually call Pd4Web.init()
+            // after a user interaction to enable audio (case you use audio input, from mic). In this example, Pd4Web.init() is
+            // triggered by the first click anywhere on the page.
+            document.addEventListener(
+                "click",
+                async () => {
+                    Pd4Web.init();
+                },
+                { once: true }, // Ensures this only runs once
+            );
+        </script>
+    </body>
+</html>

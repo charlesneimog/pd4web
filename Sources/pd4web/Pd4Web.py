@@ -20,10 +20,10 @@ class Pd4Web:
     # Paths
     PD4WEB_LIBRARIES: str = ""
     PD_EXTERNAL: bool = False
-    
+
     # User
     TEMPLATE: int = 0
-    
+
     # Dev
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
@@ -239,8 +239,8 @@ class Pd4Web:
         if parser.clear:
             shutil.rmtree(os.path.join(self.PROJECT_ROOT, "build"), ignore_errors=True)
             shutil.rmtree(os.path.join(self.PROJECT_ROOT, "Pd4Web"), ignore_errors=True)
-            #shutil.rmtree(os.path.join(self.PROJECT_ROOT, "WebPatch"), ignore_errors=True)
-            
+            # shutil.rmtree(os.path.join(self.PROJECT_ROOT, "WebPatch"), ignore_errors=True)
+
         if parser.add_lib_cmake:
             newLibCmake = parser.add_lib_cmake
             if not os.path.exists(newLibCmake):
@@ -270,7 +270,7 @@ class Pd4Web:
             default=False,
             help="Use Emscripten to run the Browser",
         )
-        
+
         parser.add_argument(
             "--add-lib-cmake",
             required=False,
@@ -342,12 +342,12 @@ class Pd4Web:
             action="store_true",
             help="If is it pd4web external",
         )
-        
+
         ## User
         parser.add_argument(
             "--template",
             required=False,
-            default=1,
+            default=0,
             type=int,
             help="Number of the template to use, check https://charlesneimog.github.io/pd4web/en/patch/templates",
         )
