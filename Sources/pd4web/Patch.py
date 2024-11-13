@@ -357,7 +357,7 @@ class Patch:
                             self.Pd4Web.Libraries.GetLibrarySourceCode(path)
                             self.Pd4Web.declaredPaths.append(path)
                         else:
-                            self.declaredLocalPaths.append(path)
+                            self.Pd4Web.declaredPaths.append(path)
                             localPath = os.path.join(self.Pd4Web.PROJECT_ROOT, patchLine.Tokens[3])
                             if os.path.exists(localPath):
                                 for _, _, files in os.walk(localPath):
@@ -599,7 +599,7 @@ class Patch:
                 )
 
         elif line.completName in self.Pd4Web.declaredLocalAbs:
-            for possibleLocal in self.declaredLocalPaths:
+            for possibleLocal in self.Pd4Web.declaredPaths:
                 if os.path.exists(self.PROJECT_ROOT + "/" + possibleLocal + "/" + line.completName + ".pd"):
                     line.isAbstraction = True
                     line.library = possibleLocal
