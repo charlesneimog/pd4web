@@ -16,6 +16,7 @@
 
 #include "./cpp-httplib/httplib.h"
 
+static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
 // ─────────────────────────────────────
@@ -510,8 +511,13 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->Out = outlet_new(&x->obj, &s_anything);
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
-    post("[pd4web] Checking pd4web...");
-    std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
+    if (global_pd4web_check) {
+        x->isReady = true;
+    } else {
+        post("[pd4web] Checking pd4web...");
+        std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
+        global_pd4web_check = true;
+    }
 
     // default variables
     x->verbose = false;
