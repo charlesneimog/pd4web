@@ -1,11 +1,16 @@
 #include <algorithm>
 #include <array>
 #include <filesystem>
-#include <m_pd.h>
 #include <string>
 #include <thread>
 
+#include <m_pd.h>
 #include <m_imp.h>
+
+#if defined(_WIN32) || defined(_WIN64)
+#include <windows.h>
+#include <iostream>
+#endif
 
 #include "./cpp-httplib/httplib.h"
 
@@ -52,26 +57,84 @@ static void pd4web_version(Pd4Web *x);
 static int pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool sucessMsg=false) {
     x->running = true;
     
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32) 
+
+std::thread t([x, cmd, sucessMsg]() {
+    std::array<char, 256> Buf;
+    std::string Result;
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
-
+    SECURITY_ATTRIBUTES sa;
+    HANDLE hRead, hWrite;
+    
     ZeroMemory(&si, sizeof(si));
     si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_HIDE; // Hide the window
+    si.dwFlags |= STARTF_USESTDHANDLES;
 
     ZeroMemory(&pi, sizeof(pi));
 
-    // Create the process
-    if (CreateProcess(NULL, const_cast<char *>(cmd), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        return 0;
-    } else {
-        return -1;
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = TRUE;
+    sa.lpSecurityDescriptor = NULL;
+
+    if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
+        pd_error(nullptr, "[pd4web] CreatePipe failed");
+        x->running = false;
+        return;
     }
+
+    si.hStdOutput = hWrite;
+    si.hStdError = hWrite;
+
+    if (!CreateProcess(NULL, &cmd[0], NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
+        pd_error(nullptr, "[pd4web] CreateProcess failed");
+        x->running = false;
+        CloseHandle(hWrite);
+        CloseHandle(hRead);
+        return;
+    }
+
+    CloseHandle(hWrite);
+
+    std::string LastLine = "";
+    DWORD bytesRead;
+    while (ReadFile(hRead, Buf.data(), Buf.size(), &bytesRead, NULL) && bytesRead > 0) {
+        std::string Line = "[pd4web] ";
+        Line.append(Buf.data(), bytesRead);
+        Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+        if (Line != "[pd4web] ") {
+            LastLine = Line;
+        }
+    }
+
+    post(LastLine.c_str());
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD exitCode;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+
+    CloseHandle(hRead);
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    if (exitCode != 0) {
+        x->running = false;
+        pd_error(nullptr,
+                 "[pd4web] Command failed, please run '%s' in the terminal to check more details",
+                    cmd.c_str());
+    } else {
+        x->running = false;
+        if (sucessMsg) {
+            pd_error(x, "[pd4web] Done!");
+        }
+    }
+});
+
+if (detached) {
+    t.detach();
+} else {
+    t.join();
+}
 #endif
     std::thread t([x, cmd, sucessMsg]() {
         std::array<char, 256> Buf;
@@ -476,7 +539,6 @@ extern "C" void pd4web_setup(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME,0);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME,0);
     class_addmethod(pd4web_class, (t_method)pd4web_version, gensym("version"), A_NULL);
-        class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
-
+    class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }
