@@ -258,11 +258,7 @@ class Pd4Web:
 
         if parser.version:
             pd4web_version = importlib_metadata.version("pd4web")
-            numbers = pd4web_version.split(".")
-            major = numbers[0]
-            minor = numbers[1]
-            patch = numbers[2]
-            print(f"pd4web version {major}.{minor}.{patch}")
+            print(f"pd4web version {pd4web_version}")
             exit()
 
     def action_flags(self, parser):
