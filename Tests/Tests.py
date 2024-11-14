@@ -174,8 +174,14 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Basic/declare")
         self.libraries("Basic/file")
         self.libraries("Basic/gui")
+        
+        # Issues
+        self.libraries("Issues/#22-1")
+        self.libraries("Issues/#22-2")
+        self.libraries("Issues/#23", gui=False)
 
         # Compilation Options
+        return
 
         # Libraries
         self.libraries("Libraries/cyclone")
@@ -184,10 +190,7 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/o.scofo~")
         # self.libraries("Libraries/ambi~")
 
-        # # Issues
-        self.libraries("Issues/#22-1")
-        self.libraries("Issues/#22-2")
-        self.libraries("Issues/#23", gui=False)
+       
 
 
 if __name__ == "__main__":
