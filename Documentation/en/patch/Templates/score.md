@@ -1,24 +1,32 @@
 ---
 hide:
- - navigation
  - toc
 ---
+<style>
+  .md-typeset h1,
+  .md-content__button {
+    display: none;
+  }
+</style>
+
+<h2 align="center">Template <code>1</code>: Patch + Score</h2>
 
 In this template you have access to a patch that receives image files (from scores) and renders it side by side with your patch. The result will be something like this:
 
 <p align="center">
-  <img src="../score.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+  <img src="../assets/score.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
 </p>
 
 <p align="center" markdown>
-    :octicons-download-16: [Download Patch example](../template-1.pd)
+    :octicons-download-16: [Download Patch Template](../patches/template-1.pd)
 </p>
 
 !!! info "Compile using the template mode `1`"
 
 ---
 
-### Score Files
+<h3 align="center">Score Files</h3>
+
 
 You make your patch and the score file can be set using the object `[s pd4web-score]`. I recomend to use svg files, but you can use any image file (.png, .jpeg). 
 
@@ -28,9 +36,10 @@ You make your patch and the score file can be set using the object `[s pd4web-sc
 
 ---
     
-### About Description
+<h3 align="center">Add infos in the website</h3>
 
-After compile the patch, you will see that, inside the folder WebPatch, will have a file called `bula.md`. Inside this file, you can write some description about your piece. The file uses markdown to render, you can check the complet syntax in https://www.markdownguide.org/basic-syntax/. Below the example of main command:
+
+After compile the patch, you will see that, inside the folder `WebPatch`, will have a file called `bula.md`. Inside this file, you can write some description about your piece. The file uses markdown to render, you can check the complet syntax in https://www.markdownguide.org/basic-syntax/. Below the example of main command:
 
 ``` md
 # Title 1

@@ -69,9 +69,16 @@ nav:
   - Home: en/index.md
   - Compile your patch:
       - Intro: en/patch/install.md
-      - Gui Objects: en/patch/gui.md
-      - Compile: en/patch/compile.md
-      - Website Templates: en/patch/Templates/index.md
+      - Gui: en/patch/gui.md
+        
+      - Compilation: 
+        - en/patch/compile.md
+      - Website Templates: 
+        - en/patch/Templates/index.md
+        - Templates: 
+          - en/patch/Templates/score.md
+          - en/patch/Templates/hands.md
+
       - Problems: en/patch/problems.md
   - en/libraries.md
   - Pd4Web JavaScript Module: 

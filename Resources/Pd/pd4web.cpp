@@ -40,6 +40,10 @@ class Pd4Web {
     t_outlet *Out;
 };
 
+//
+static void pd4web_version(Pd4Web *x);
+
+
 // ─────────────────────────────────────
 static int pd4web_winterminal(const char *cmd) {
 #if defined(_WIN32) || defined(_WIN64)
@@ -75,7 +79,8 @@ static bool pd4web_check(Pd4Web *x) {
         "\"" + x->objRoot + "/.venv/Scripts/python.exe\" -c \"import pd4web\"";
     result = pd4web_winterminal(check_installation.c_str());
     if (result == 0) {
-        post("[pd4web] pd4web is ready!");
+        pd4web_version(x);
+        //post("[pd4web] pd4web is ready!");
         return true;
     }
 
@@ -101,7 +106,8 @@ static bool pd4web_check(Pd4Web *x) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
-    post("[pd4web] pd4web is ready!");
+    pd4web_version(x);
+    //post("[pd4web] pd4web is ready!");
     return true;
 #else
     // check if python3 is installed
@@ -123,7 +129,9 @@ static bool pd4web_check(Pd4Web *x) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
-    post("[pd4web] pd4web is ready!");
+    pd4web_version(x);
+
+    //post("[pd4web] pd4web is ready!");
     return true;
 #endif
 }
@@ -163,6 +171,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         return;
     } else if (config == "gui") {
         bool gui = atom_getintarg(1, argc, argv);
+        if (x->gui == gui){ return ;}
         x->gui = gui;
         if (x->gui) {
             post("[pd4web] Gui set to true");
@@ -171,6 +180,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
     } else if (config == "zoom") {
         float zoom = atom_getfloatarg(1, argc, argv);
+        if (x->zoom == zoom){ return ;}
         x->zoom = zoom;
         post("[pd4web] Zoom set to %.2f", x->zoom);
     } else if (config == "patch") {
@@ -183,15 +193,16 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             newpatch += atom_getsymbolarg(i, argc, argv)->s_name;
             newpatch += " ";
         }
-
         x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
         x->patch = newpatch;
     } else if ("template" == config) {
         int tpl = atom_getintarg(1, argc, argv);
+        if (x->tpl == tpl){ return ;}
         x->tpl = tpl;
         post("[pd4web] Template set to %d", x->tpl);
     } else if ("debug" == config) {
         int debug = atom_getintarg(1, argc, argv);
+        if (x->debug == debug){ return ;}
         x->debug = debug;
         if (debug){
             post("[pd4web] Debug set to true");
@@ -200,6 +211,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
     } else if ("clear" == config) {
         int clear = atom_getintarg(1, argc, argv);
+        if (x->clear == clear){ return ;}
         if (clear){
             x->clear = true;
             post("[pd4web] Clear set to true");
@@ -208,7 +220,6 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             post("[pd4web] Clear set to false");
         }
     }
-
     else{
         pd_error(x, "[pd4web] Invalid configuration");
     }
@@ -218,7 +229,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
-    if (x->running) {
+    if (x->running && f == 1) {
         pd_error(x, "[pd4web] pd4web is running, please wait it to finish before open the browser");
         return;
     }
@@ -255,10 +266,6 @@ static void pd4web_browser(Pd4Web *x, float f) {
 
 // ─────────────────────────────────────
 static void pd4web_version(Pd4Web *x){
-    if (!x->isReady) {
-        pd_error(x, "[pd4web] pd4web is not ready");
-        return;
-    }
     post("");
 
     #if defined(_WIN32) || defined(_WIN64)
@@ -507,10 +514,10 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
 
     // default variables
-    x->verbose = true;
+    x->verbose = false;
     x->memory = 32;
     x->gui = true;
-    x->zoom = 1;
+    x->zoom = 2;
 
     x->server = new httplib::Server();
     return x;

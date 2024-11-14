@@ -1,9 +1,9 @@
-#N canvas 121 80 1282 686 10;
+#N canvas 121 80 476 163 10;
 #X obj 3 3 tgl 45 0 s-tgl1 r-tgl1 empty 0 -8 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 153 2 tgl 45 0 s-tgl2 r-tgl2 empty 0 -8 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 153 90 tgl 45 0 s-tgl4 r-tgl4 empty 0 -8 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 3 90 tgl 45 0 s-tgl3 r-tgl3 empty 0 -8 0 10 #fcfcfc #000000 #000000 0 1;
-#X obj 208 4 r R-8;
+#X obj 235 23 r R-8;
 #N canvas 266 303 622 364 tgl2 0;
 #X obj 2 33 unpack f f;
 #X obj 2 74 change;
@@ -15,7 +15,7 @@
 #X connect 1 0 2 0;
 #X connect 3 0 1 0;
 #X connect 4 0 0 0;
-#X restore 257 94 pd tgl2;
+#X restore 284 113 pd tgl2;
 #N canvas 266 303 622 364 tgl1 0;
 #X obj 2 4 inlet;
 #X obj 1 25 unpack f f;
@@ -27,7 +27,7 @@
 #X connect 1 1 2 1;
 #X connect 2 0 4 0;
 #X connect 4 0 3 0;
-#X restore 209 94 pd tgl1;
+#X restore 236 113 pd tgl1;
 #N canvas 266 303 622 364 tgl3 0;
 #X obj 2 33 unpack f f;
 #X obj 2 74 change;
@@ -39,7 +39,7 @@
 #X connect 1 0 4 0;
 #X connect 2 0 0 0;
 #X connect 3 0 1 0;
-#X restore 306 94 pd tgl3;
+#X restore 333 113 pd tgl3;
 #N canvas 266 303 622 364 tgl4 0;
 #X obj 2 33 unpack f f;
 #X obj 2 74 change;
@@ -51,8 +51,7 @@
 #X connect 1 0 4 0;
 #X connect 2 0 0 0;
 #X connect 3 0 1 0;
-#X restore 355 94 pd tgl4;
-#X text 38 57 Use your right hand!;
+#X restore 382 113 pd tgl4;
 #X connect 4 0 5 0;
 #X connect 4 0 6 0;
 #X connect 4 0 7 0;

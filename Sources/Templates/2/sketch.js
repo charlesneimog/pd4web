@@ -8,10 +8,6 @@ function preload() {
   handPose = ml5.handPose({ flipped: true });
 }
 
-function mousePressed() {
-  console.log(hands);
-}
-
 function gotHands(results) {
   hands = results;
 }
@@ -38,17 +34,22 @@ function draw() {
     let hand = hands[i];
     for (let j = 0; j < hand.keypoints.length; j++) {
       let keypoint = hand.keypoints[j];
-      let whichHand = hand.handedness;
+      let handLorR = hand.handedness;
       fill(255, 0, 0);
       noStroke();
       circle(keypoint.x, keypoint.y, 5);
-      if (Pd4Web){
+      if (Pd4Web && Pd4Web.sendList && hand.confidence > 0.95) {
         let x = keypoint.x / width;
         let y = keypoint.y / height;
-        // check if sendList is available
-        if (Pd4Web.sendList){
-          Pd4Web.sendList(whichHand[0] + "-" + j, [x, y]);
-        } 
+        if (handLorR == "Left"){
+          let r = "L-" + j;
+          Pd4Web.sendList(r, [x, y]);
+          //console.log(handLorR + "-" + j + " : " + x + ", " + y);
+        } else if (handLorR == "Right"){
+          let r = "R-" + j;
+          Pd4Web.sendList(r, [x, y]);
+          //console.log(handLorR + "-" + j + " : " + x + ", " + y);
+        }
       }
     }
   }
