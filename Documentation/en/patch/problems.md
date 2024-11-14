@@ -9,10 +9,10 @@ You need to define the size of memory of your patch, this is pretty simple. Big 
 If you run a big patch with a small memory size you will get one error like this:
 
 ```
-
+Aborted(Cannot enlarge memory arrays to size 134225920 bytes (OOM).
 ```
 
-This means that you need to use a higher number for memory and recompile your patch.
+If you see this, you need to increase the memory size. You can do this in the `pd4web` configuration file. 
 
 ### Compilation problems
 
