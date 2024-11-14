@@ -86,7 +86,7 @@ var ENVIRONMENT_IS_WASM_WORKER = Module['$ww'];
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpqvm6nugr.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp_vg78xgg.js
 
   if (!Module['expectedDataFileDownloads']) {
     Module['expectedDataFileDownloads'] = 0;
@@ -270,25 +270,25 @@ Module['FS_createPath']("/", "Libs", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/Libs/autotune.pd", "start": 0, "end": 2944}, {"filename": "/Libs/autotune2.pd", "start": 2944, "end": 5445}, {"filename": "/Libs/count.pd", "start": 5445, "end": 13904}, {"filename": "/Libs/grain.live.grain.pd", "start": 13904, "end": 23297}, {"filename": "/Libs/grain.live~.pd", "start": 23297, "end": 217946}, {"filename": "/Libs/grain.synth.grain.pd", "start": 217946, "end": 225738}, {"filename": "/Libs/grain.synth~.pd", "start": 225738, "end": 419466}, {"filename": "/Libs/group.pd", "start": 419466, "end": 421725}, {"filename": "/Libs/insert.pd", "start": 421725, "end": 423175}, {"filename": "/Libs/iterate.pd", "start": 423175, "end": 425194}, {"filename": "/Libs/rotate.pd", "start": 425194, "end": 426475}, {"filename": "/index.pd", "start": 426475, "end": 426592}], "remote_package_size": 426592});
+    loadPackage({"files": [{"filename": "/Libs/autotune.pd", "start": 0, "end": 2944}, {"filename": "/Libs/autotune2.pd", "start": 2944, "end": 5445}, {"filename": "/Libs/count.pd", "start": 5445, "end": 13904}, {"filename": "/Libs/grain.live.grain.pd", "start": 13904, "end": 23297}, {"filename": "/Libs/grain.live~.pd", "start": 23297, "end": 217940}, {"filename": "/Libs/grain.synth.grain.pd", "start": 217940, "end": 225732}, {"filename": "/Libs/grain.synth~.pd", "start": 225732, "end": 419455}, {"filename": "/Libs/group.pd", "start": 419455, "end": 421714}, {"filename": "/Libs/insert.pd", "start": 421714, "end": 423164}, {"filename": "/Libs/iterate.pd", "start": 423164, "end": 425183}, {"filename": "/Libs/rotate.pd", "start": 425183, "end": 426464}, {"filename": "/index.pd", "start": 426464, "end": 466554}], "remote_package_size": 466554});
 
   })();
 
-// end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpqvm6nugr.js
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp8gqpvbff.js
+// end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp_vg78xgg.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp5r_b3_07.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp8gqpvbff.js
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpa3oug1dp.js
+  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp5r_b3_07.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp98lxywnb.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpa3oug1dp.js
+  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp98lxywnb.js
 
 
 // Sometimes an existing Module object exists with properties
@@ -825,7 +825,7 @@ if (!ENVIRONMENT_IS_PTHREAD) {
     wasmMemory = Module['wasmMemory'];
   } else
   {
-    var INITIAL_MEMORY = Module['INITIAL_MEMORY'] || 134217728;legacyModuleProp('INITIAL_MEMORY', 'INITIAL_MEMORY');
+    var INITIAL_MEMORY = Module['INITIAL_MEMORY'] || 536870912;legacyModuleProp('INITIAL_MEMORY', 'INITIAL_MEMORY');
 
     assert(INITIAL_MEMORY >= 65536, 'INITIAL_MEMORY should be larger than STACK_SIZE, was ' + INITIAL_MEMORY + '! (STACK_SIZE=' + 65536 + ')');
     wasmMemory = new WebAssembly.Memory({
