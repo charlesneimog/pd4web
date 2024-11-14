@@ -157,8 +157,11 @@ class Pd4WebTest(unittest.TestCase):
                 self.execute_server(newpatch, 5000, gui)
                 shutil.rmtree(f"{lib}/{temp_file}")
             except:
-                shutil.rmtree(f"{lib}/{temp_file}")
-                raise Exception(f"Please check {newpatch} for errors")
+                try:
+                    shutil.rmtree(f"{lib}/{temp_file}")
+                    raise Exception(f"Please check {newpatch} for errors")
+                except:
+                    print("Failed to remove directory")
         try:
             shutil.rmtree(f"{lib}/{temp_file}")
         except:
