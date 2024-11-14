@@ -33,6 +33,9 @@ class Pd4Web {
     int memory;
     int gui;
     float zoom;
+    int tpl;
+    bool debug;
+    bool clear;
 
     t_outlet *Out;
 };
@@ -137,6 +140,8 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         pd_error(x, "[pd4web] Invalid argument, use [set <config_symbol> <value>]");
         return;
     }
+
+
     std::string config = atom_getsymbol(argv)->s_name;
     if (config == "memory") {
         int memory = atom_getintarg(1, argc, argv);
@@ -167,7 +172,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     } else if (config == "zoom") {
         float zoom = atom_getfloatarg(1, argc, argv);
         x->zoom = zoom;
-        post("[pd4web] Zoom set to %f", x->zoom);
+        post("[pd4web] Zoom set to %.2f", x->zoom);
     } else if (config == "patch") {
         std::string newpatch;
         for (int i = 1; i < argc; i++) {
@@ -181,7 +186,33 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 
         x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
         x->patch = newpatch;
+    } else if ("template" == config) {
+        int tpl = atom_getintarg(1, argc, argv);
+        x->tpl = tpl;
+        post("[pd4web] Template set to %d", x->tpl);
+    } else if ("debug" == config) {
+        int debug = atom_getintarg(1, argc, argv);
+        x->debug = debug;
+        if (debug){
+            post("[pd4web] Debug set to true");
+        } else {
+            post("[pd4web] Debug set to false");
+        }
+    } else if ("clear" == config) {
+        int clear = atom_getintarg(1, argc, argv);
+        if (clear){
+            x->clear = true;
+            post("[pd4web] Clear set to true");
+        } else {
+            x->clear = false;
+            post("[pd4web] Clear set to false");
+        }
     }
+
+    else{
+        pd_error(x, "[pd4web] Invalid configuration");
+    }
+
     return;
 }
 
@@ -223,12 +254,98 @@ static void pd4web_browser(Pd4Web *x, float f) {
 }
 
 // ─────────────────────────────────────
-static void pd4web_update(Pd4Web *x) {
-    // pd4web bin
+static void pd4web_version(Pd4Web *x){
+    if (!x->isReady) {
+        pd_error(x, "[pd4web] pd4web is not ready");
+        return;
+    }
+    post("");
+
+    #if defined(_WIN32) || defined(_WIN64)
+        pd_error(x, "[pd4web] Not implemented on Windows");
+        return;
+    #else
+        std::string cmd = x->objRoot + "/.venv/bin/pd4web --version";
+        std::array<char, 256> Buf;
+        std::string Result;
+        FILE *Pipe = popen(cmd.c_str(), "r");
+
+        if (!Pipe) {
+            pd_error(nullptr, "[pd4web] popen failed");
+            x->running = false;
+            return;
+        }
+
+        while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+            std::string Line = "[pd4web] ";
+            Line += Buf.data();
+            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
+            if (Line != "[pd4web] ") {
+                post(Line.c_str());
+            }
+        }
+
+        int exitCode = pclose(Pipe);
+        if (exitCode != 0) {
+            x->running = false;
+            pd_error(nullptr,
+                     "[pd4web] Command failed, if this is the first time you are running "
+                     "pd4web, please run '%s' in the terminal",
+                     cmd.c_str());
+
+        } else {
+            x->running = false;
+            //pd_error(x, "[pd4web] Done!");
+        }
+    #endif
+
+}
+
+// ─────────────────────────────────────
+static void pd4web_clear_install(Pd4Web *x){
+    post("[pd4web] Uninstalling pd4web...");
 #if defined(_WIN32) || defined(_WIN64)
-    std::string cmd = "\"" + x->objRoot + "/.venv/Scripts/pip.exe\" install pd4web --upgrade";
+    std::string cmd = "\"" + x->objRoot + "/.venv/Scripts/pip.exe\" uninstall pd4web -y";
 #else
-    std::string cmd = x->objRoot + "/.venv/bin/pip install pd4web --upgrade";
+    std::string cmd = x->objRoot + "/.venv/bin/pip uninstall pd4web -y";
+#endif
+    std::thread t([x, cmd]() {
+        int result = system(cmd.c_str());
+        if (result != 0) {
+            pd_error(nullptr,
+                     "[pd4web] Uninstall failed, please report this issue to the pd4web repository");
+            x->running = false;
+            return;
+        } else {
+            x->running = false;
+            post("[pd4web] Done! Please restart Pd to complete the uninstallation.");
+        }
+    });
+    t.detach();
+    return;
+}
+
+// ─────────────────────────────────────
+static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
+    std::string method = atom_getsymbol(argv)->s_name;
+    std::string mod;
+   if (method == "git") {
+        mod = "--pre pd4web --force-reinstall ";
+    } else {
+        mod = "pd4web --force-reinstall ";
+    }
+
+    // check if git is installed
+    int result = std::system("git --version > /dev/null 2>&1");
+    if (result != 0) {
+        pd_error(nullptr, "[pd4web] Git is not installed. Please install Git first to use the git version.");
+        return;
+    }
+
+#if defined(_WIN32) || defined(_WIN64)
+    std::string cmd = "\"" + x->objRoot + "/.venv/Scripts/pip.exe\" install " + mod  + " --upgrade";
+#else
+    std::string cmd = x->objRoot + "/.venv/bin/pip install " + mod + " --upgrade";
 #endif
 #if defined(_WIN32) || defined(_WIN64)
     std::thread t([x, cmd]() {
@@ -315,6 +432,9 @@ static void pd4web_compile(Pd4Web *x) {
     }
     if (x->patch != "") {
         cmd += x->patch;
+    }
+    if (x->clear){
+        cmd += " --clear ";
     }
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -407,6 +527,10 @@ extern "C" void pd4web_setup(void) {
 
     class_addmethod(pd4web_class, (t_method)pd4web_setconfig, gensym("set"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
-    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME,0);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME,0);
+    class_addmethod(pd4web_class, (t_method)pd4web_version, gensym("version"), A_NULL);
+        class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
+
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }
