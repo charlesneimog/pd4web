@@ -1,6 +1,6 @@
-#N canvas 663 74 330 417 12;
-#N canvas 573 398 649 418 patch 1;
-#X obj 10 112 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 32 256;
+#N canvas 663 74 332 419 12;
+#N canvas 573 398 649 418 patch 0;
+#X obj 10 112 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 256 256;
 #X obj 52 193 bng 25 250 50 0 s-compile r-compile empty -15 -10 0 12 #ffc7c6 #ff0400 #000000;
 #X obj 149 49 bng 25 250 50 0 s-pd4web-patch r-pd4web-patch empty 0 -10 0 12 #c6ffc7 #0f4710 #000000;
 #X obj 93 7 cnv 15 133 25 empty empty Pd4Web\ Compiler 20 12 0 12 #dfdfdf #000000 0;
@@ -9,7 +9,7 @@
 #X obj 7 94 cnv 5 310 10 empty empty 2)\ Configurations 2 5 0 8 #ffe3c6 #000000 0;
 #X obj 59 115 cnv 5 240 10 empty empty Memory\ (Mb)\ -\ Big\ patches\ require\ more\ memory. 2 5 0 8 #feffc6 #000000 0;
 #X obj 374 34 cnv 5 240 10 empty empty More\ Info\ if\ something\ go\ wrong. 2 5 0 8 #feffc6 #000000 0;
-#X obj 326 32 tgl 15 1 s-verbose r-verbose empty 0 -10 0 12 #fcfcfc #000000 #000000 0 1;
+#X obj 326 32 tgl 15 1 s-verbose r-verbose empty 0 -10 0 12 #fcfcfc #000000 #000000 1 1;
 #X obj 326 9 tgl 15 1 s-gui r-gui empty 0 -10 0 12 #fcfcfc #000000 #000000 1 1;
 #X obj 374 11 cnv 5 240 10 empty empty On/Off\ -\ Render\ the\ Gui. 2 5 0 8 #feffc6 #000000 0;
 #N canvas 963 554 474 486 (subpatch) 0;
@@ -32,10 +32,10 @@
 #X obj 251 377 bng 25 250 50 0 s-pd4web-git r-pd4web-git empty 0 -10 0 12 #e3c6ff #0f4710 #000000;
 #X obj 7 275 cnv 5 310 10 empty empty 5)\ Extra\ Options 2 5 0 8 #bbbbbb #000000 0;
 #X obj 324 62 bng 25 250 50 0 s-pd4web-git r-pd4web-git empty -15 -10 0 12 #bbbbbb #ff0400 #000000;
-#X obj 130 290 nbx 2 17 0 2 0 1 s-template1 r-template1 empty 0 -10 0 12 #fcfcfc #000000 #000000 0 256;
+#X obj 8 290 nbx 2 17 0 2 0 1 s-template1 r-template1 empty 0 -10 0 12 #fcfcfc #000000 #000000 2 256;
 #X obj 351 129 cnv 5 30 10 empty empty Clear 2 5 0 8 #ffffff #000000 0;
 #X obj 352 69 cnv 5 30 10 empty empty Install\ dev\ version. 2 5 0 8 #ffffff #000000 0;
-#X obj 164 294 cnv 5 30 10 empty empty Template\ Number 2 5 0 8 #ffffff #000000 0;
+#X obj 42 294 cnv 5 30 10 empty empty Template\ Number 2 5 0 8 #ffffff #000000 0;
 #X obj 8 382 tgl 19 0 s-debug1 r-debug1 empty 0 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 29 386 cnv 5 30 10 empty empty Debug 2 5 0 8 #ffffff #000000 0;
 #N canvas 95 111 1155 671 pd4web-core 0;

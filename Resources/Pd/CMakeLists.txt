@@ -34,7 +34,14 @@ endif()
 
 # Add data files associated with the pd4web target
 pd_add_datafile(pd4web pd4web-help.pd)
-pd_add_datafile(pd4web Projects/Project1.pd)
+
+file(GLOB PROJECT_FILES "Projects/*.pd")
+
+foreach(file ${PROJECT_FILES})
+  get_filename_component(file_name ${file} NAME)
+  pd_add_datafile(pd4web "Projects/${file_name}")
+endforeach(file ${PROJECT_FILES})
+  
 pd_add_datafile(pd4web README.deken.pd)
 
 set_target_properties(
