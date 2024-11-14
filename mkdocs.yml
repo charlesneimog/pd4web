@@ -70,7 +70,6 @@ nav:
   - Compile your patch:
       - Intro: patch/install.md
       - Gui: patch/gui.md
-        
       - Compilation: 
         - patch/compile.md
       - Website Templates: 

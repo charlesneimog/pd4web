@@ -14,7 +14,7 @@ After loading, you can use various functions to enable interaction between `Pd` 
 
 --- 
 <div class="grid cards" style="border-radius: 30px" markdown>
--   :simple-javascript: [__Change Patch Parameters__](pd.new_object/methods.md)
+-   :simple-javascript: [__Change Patch Parameters__](send.md)
 -   :simple-javascript: [__Receive Data from Pd patch__](receive.md)
 
 </div>
