@@ -1,4 +1,4 @@
-#N canvas 0 0 450 300 10;
+#N canvas 0 37 450 489 10;
 #X obj 20 40 else/slew2;
 #X obj 20 80 else/stack;
 #X obj 20 120 else/amean;
@@ -6,6 +6,5 @@
 #X obj 20 200 else/sequencer;
 #X obj 20 240 else/midi.out;
 #X obj 20 280 else/dec2hex;
-#X obj 20 320 else/keymap;
 #X obj 20 360 else/eqdiv;
 #X obj 20 400 else/op;

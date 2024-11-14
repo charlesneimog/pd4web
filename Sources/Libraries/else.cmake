@@ -229,12 +229,14 @@ pd_add_external(toggleff~ "${LIB_DIR}/Source/Audio/toggleff~.c")
 pd_add_external(trighold~ "${LIB_DIR}/Source/Audio/trighold~.c")
 pd_add_external(unmerge~ "${LIB_DIR}/Source/Audio/unmerge~.c")
 pd_add_external(vu~ "${LIB_DIR}/Source/Audio/vu~.c")
-# pd_add_external(vcf2~ "${LIB_DIR}/Source/Audio/vcf2~.c")
+pd_add_external(vcf2~ "${LIB_DIR}/Source/Audio/vcf2~.c")
 pd_add_external(xmod~ "${LIB_DIR}/Source/Audio/xmod~.c")
 pd_add_external(xmod2~ "${LIB_DIR}/Source/Audio/xmod2~.c")
 pd_add_external(wrap2 "${LIB_DIR}/Source/Control/wrap2.c")
 pd_add_external(wrap2~ "${LIB_DIR}/Source/Audio/wrap2~.c")
 pd_add_external(zerocross~ "${LIB_DIR}/Source/Audio/zerocross~.c")
+
+
 
 # ╭──────────────────────────────────────╮
 # │                AUBIO                 │
@@ -338,6 +340,7 @@ pd_add_external(gendyn~ "${LIB_DIR}/Source/Audio/gendyn~.c;${randbuf}")
 list(APPEND randmagic ${MAGIC_CODE})
 list(APPEND randmagic "${LIB_DIR}/Source/Shared/random.c")
 pd_add_external(brown~ "${LIB_DIR}/Source/Audio/brown~.c;${randmagic}")
+pd_add_external(velvet~ "${LIB_DIR}/Source/Audio/velvet~.c;${randmagic}")
 
 # ╭──────────────────────────────────────╮
 # │                 RAND                 │
@@ -507,3 +510,8 @@ if(WIN32)
 endif()
 
 add_definitions(-DHAVE_STRUCT_TIMESPEC)
+
+
+#add_subdirectory("${LIB_DIR}/Source/Shared/ffmpeg")
+#pd_add_external(play.file~ "${LIB_DIR}/Source/Audio/play.file~.c")
+#target_link_libraries(play.file_tilde PUBLIC ffmpeg)

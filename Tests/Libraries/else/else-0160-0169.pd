@@ -1,4 +1,4 @@
-#N canvas 644 23 632 1016 10;
+#N canvas 644 37 632 891 10;
 #X obj 20 40 else/mtx.mc~;
 #X obj 20 80 else/mtx~;
 #X obj 20 120 else/nchs~;
@@ -6,4 +6,3 @@
 #X obj 20 240 else/note.out;
 #X obj 20 280 else/noteinfo;
 #X obj 20 360 else/nyquist~;
-#X obj 20 400 else/openfile;

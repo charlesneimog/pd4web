@@ -1,4 +1,4 @@
-#N canvas 0 0 450 300 10;
+#N canvas 0 37 450 300 10;
 #X obj 20 40 else/chance~;
 #X obj 20 80 else/changed;
 #X obj 20 120 else/changed proxy;
@@ -6,6 +6,5 @@
 #X obj 20 200 else/changed~;
 #X obj 20 240 else/circuit~;
 #X obj 20 280 else/click;
-#X obj 20 320 else/colors;
 #X obj 20 360 else/comb.filt~;
 #X obj 20 400 else/comb.rev~;

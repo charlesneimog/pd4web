@@ -1,8 +1,7 @@
-#N canvas 644 23 632 1016 10;
+#N canvas 644 37 632 891 10;
 #X obj 20 40 else/brown~;
 #X obj 20 80 else/buffer;
 #X obj 20 120 else/buffer proxy;
-#X obj 20 200 else/canvas.active;
 #X obj 20 240 else/canvas.bounds;
 #X obj 20 280 else/canvas.edit;
 #X obj 20 320 else/canvas.gop;

@@ -45,7 +45,10 @@ function draw() {
       if (Pd4Web){
         let x = keypoint.x / width;
         let y = keypoint.y / height;
-        Pd4Web.sendList(whichHand[0] + "-" + j, [x, y]);
+        // check if sendList is available
+        if (Pd4Web.sendList){
+          Pd4Web.sendList(whichHand[0] + "-" + j, [x, y]);
+        } 
       }
     }
   }

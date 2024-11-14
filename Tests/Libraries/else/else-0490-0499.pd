@@ -1,8 +1,7 @@
-#N canvas 644 23 632 1016 10;
+#N canvas 644 37 632 891 10;
 #X obj 20 40 else/hann~;
 #X obj 20 80 else/pitch.shift~;
 #X obj 20 120 else/stretch.shift~;
 #X obj 20 200 else/resonbank~;
-#X obj 20 240 else/freeze~;
 #X obj 20 320 else/hip.bw~;
 #X obj 20 400 else/sample~;

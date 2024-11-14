@@ -28,7 +28,7 @@ var readyPromise = new Promise((resolve, reject) => {
   readyPromiseResolve = resolve;
   readyPromiseReject = reject;
 });
-["___indirect_function_table","__JS_post2","__JS_sendList","__JS_onReceived","__JS_loadGui","__JS_loadStyle","__JS_setTitle","__JS_alert","__JS_addAlertOnError","__JS_post","__JS_getMicAccess","__JS_suspendAudioWorkLet","__JS_loadMidi","__JS_receiveBang","__JS_receiveFloat","__JS_receiveSymbol","__JS_receiveList","__JS_receiveMessage","_main","onRuntimeInitialized"].forEach((prop) => {
+["___indirect_function_table","__JS_post2","__JS_setIcon","__JS_sendList","__JS_onReceived","__JS_loadGui","__JS_loadStyle","__JS_setTitle","__JS_alert","__JS_addAlertOnError","__JS_post","__JS_getMicAccess","__JS_suspendAudioWorkLet","__JS_loadMidi","__JS_receiveBang","__JS_receiveFloat","__JS_receiveSymbol","__JS_receiveList","__JS_receiveMessage","_main","onRuntimeInitialized"].forEach((prop) => {
   if (!Object.getOwnPropertyDescriptor(readyPromise, prop)) {
     Object.defineProperty(readyPromise, prop, {
       get: () => abort('You are getting ' + prop + ' on the Promise object, instead of the instance. Use .then() to get called back with the instance, see the MODULARIZE docs in src/settings.js'),
@@ -86,7 +86,7 @@ var ENVIRONMENT_IS_WASM_WORKER = Module['$ww'];
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpo1i9b78y.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpqvm6nugr.js
 
   if (!Module['expectedDataFileDownloads']) {
     Module['expectedDataFileDownloads'] = 0;
@@ -270,25 +270,25 @@ Module['FS_createPath']("/", "Libs", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/Libs/plaits.pd", "start": 0, "end": 542}, {"filename": "/index.pd", "start": 542, "end": 1725}], "remote_package_size": 1725});
+    loadPackage({"files": [{"filename": "/Libs/autotune.pd", "start": 0, "end": 2944}, {"filename": "/Libs/autotune2.pd", "start": 2944, "end": 5445}, {"filename": "/Libs/count.pd", "start": 5445, "end": 13904}, {"filename": "/Libs/grain.live.grain.pd", "start": 13904, "end": 23297}, {"filename": "/Libs/grain.live~.pd", "start": 23297, "end": 217946}, {"filename": "/Libs/grain.synth.grain.pd", "start": 217946, "end": 225738}, {"filename": "/Libs/grain.synth~.pd", "start": 225738, "end": 419466}, {"filename": "/Libs/group.pd", "start": 419466, "end": 421725}, {"filename": "/Libs/insert.pd", "start": 421725, "end": 423175}, {"filename": "/Libs/iterate.pd", "start": 423175, "end": 425194}, {"filename": "/Libs/rotate.pd", "start": 425194, "end": 426475}, {"filename": "/index.pd", "start": 426475, "end": 426592}], "remote_package_size": 426592});
 
   })();
 
-// end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpo1i9b78y.js
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpyhjx9kdd.js
+// end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpqvm6nugr.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp8gqpvbff.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpyhjx9kdd.js
-// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpd4ld30m6.js
+  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmp8gqpvbff.js
+// include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpa3oug1dp.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpd4ld30m6.js
+  // end include: /var/folders/1w/tgbfzc0x7js09hcqy5tdw_lw0000gp/T/tmpa3oug1dp.js
 
 
 // Sometimes an existing Module object exists with properties
@@ -1400,6 +1400,7 @@ function dbg(...args) {
 // === Body ===
 
 function _JS_post2(msg) { console.log(UTF8ToString(msg)); }
+function _JS_setIcon(icon,animation) { let jsIcon = UTF8ToString(icon); let jsAnimation = UTF8ToString(animation); setSoundIcon(jsIcon, jsAnimation); }
 function _JS_sendList() { if (typeof Pd4Web.GuiReceivers === "undefined") { Pd4Web.GuiReceivers = {}; } Pd4Web.sendList = function (r, vec) { const vecLength = vec.length; var ok = Pd4Web._startMessage(r, vecLength); if (!ok) { console.error('Failed to start message'); return; } for (let i = 0; i < vecLength; i++) { if (typeof vec[i] === 'string') { Pd4Web._addSymbol(r, vec[i]); } else if (typeof vec[i] === 'number') { Pd4Web._addFloat(r, vec[i]); } else{ console.error('Invalid type'); } } Pd4Web._finishMessage(r); }; }
 function _JS_onReceived() { Pd4Web.onBangReceived = function(receiver, myFunc) { if (typeof Pd4Web._userBangFunc === 'undefined') { Pd4Web._userBangFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 0) { console.error('Invalid number of arguments for function, expected 0 arguments'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userBangFunc[receiver] = myFunc; }; Pd4Web.onFloatReceived = function(receiver, myFunc) { if (typeof Pd4Web._userFloatFunc === 'undefined') { Pd4Web._userFloatFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function, expected 1, just the float received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userFloatFunc[receiver] = myFunc; }; Pd4Web.onSymbolReceived = function(receiver, myFunc) { if (typeof Pd4Web._userSymbolFunc === 'undefined') { Pd4Web._userSymbolFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function. Required 1, just the symbol (aka string) received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userSymbolFunc[receiver] = myFunc; }; Pd4Web.onListReceived = function(receiver, myFunc) { if (typeof Pd4Web._userListFunc === 'undefined') { Pd4Web._userListFunc = {}; } const paramCount = myFunc.length; if (paramCount !== 1) { console.error('Invalid number of arguments for function. Required 1, just the list received'); return; } Pd4Web.bindReceiver(receiver); Pd4Web._userListFunc[receiver] = myFunc; }; }
 function _JS_loadGui(AutoTheming,Zoom) { if (document.getElementById("pd4web-gui") != null){ return; } let scripts = document.getElementsByTagName('script'); let pd4webPath = null; for (let script of scripts) { if (script.src && script.src.includes('pd4web.js')) { pd4webPath = script.src.substring(0, script.src.lastIndexOf('/') + 1); break; } } var script = document.createElement('script'); script.type = "text/javascript"; script.src = pd4webPath + "pd4web.gui.js"; script.id = "pd4web-gui"; script.onload = function() { Pd4Web.Zoom = Zoom; Pd4WebInitGui("index.pd"); }; script.onerror = function() { console.warn("GUI file not found."); }; document.head.appendChild(script); }
@@ -6394,6 +6395,8 @@ function assignWasmImports() {
     _JS_receiveSymbol,
     /** @export */
     _JS_sendList,
+    /** @export */
+    _JS_setIcon,
     /** @export */
     _JS_setTitle,
     /** @export */

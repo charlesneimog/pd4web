@@ -1,6 +1,5 @@
-#N canvas 0 0 450 300 10;
+#N canvas 0 37 450 300 10;
 #X obj 20 40 else/plaits~;
-#X obj 20 80 else/play.file~;
 #X obj 20 120 else/pluck~;
 #X obj 20 160 else/pm2~;
 #X obj 20 200 else/pm4~;
@@ -8,4 +7,3 @@
 #X obj 20 280 else/pm~;
 #X obj 20 320 else/pol2car~;
 #X obj 20 360 else/power~;
-#X obj 20 400 else/properties;

@@ -1,4 +1,4 @@
-#N canvas 644 23 632 1016 10;
+#N canvas 644 37 632 891 10;
 #X obj 20 40 else/saw2~;
 #X obj 20 80 else/saw~;
 #X obj 20 120 else/schmitt~;
@@ -7,4 +7,3 @@
 #X obj 20 280 else/sender;
 #X obj 20 320 else/separate;
 #X obj 20 360 else/sequencer~;
-#X obj 20 400 else/sfload;

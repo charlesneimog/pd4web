@@ -71,6 +71,10 @@ Libraries:
       # Need implementation
       - sfz~
       - sfont~
+      - play.file~
+      - sfload 
+
+      # Osc is not support on browsers
 
       # Pd GUI Related
       - oscope~
@@ -94,5 +98,15 @@ Libraries:
       - bl.imp2~
       - slew2~
       - bl.imp~
+
       # Incompatible with Web enviroment
       - osc.format
+      - osc.send
+      - pdlink
+      - pdlink~
+      - keymap
+      - properties
+
+      # need extra objects
+      - pvoc.freeze~
+      - freeze~ 

@@ -1,8 +1,6 @@
-#N canvas 644 23 632 1016 10;
+#N canvas 644 37 632 891 10;
 #X obj 20 40 else/pan2~;
 #X obj 20 80 else/pan4~;
 #X obj 20 120 else/panic;
 #X obj 20 160 else/pan~;
 #X obj 20 200 else/parabolic~;
-#X obj 20 240 else/pdlink;
-#X obj 20 280 else/pdlink~;

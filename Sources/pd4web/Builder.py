@@ -331,7 +331,6 @@ class GetAndBuildExternals:
             # Escrever o cabeçalho e a função Pd4WebInitExternals()
             f.write("// This is automatically generated code from pd4web.py script\n\n")
             for usedObjects in self.Pd4Web.usedObjects:
-                # print(usedObjects)
                 if usedObjects["SetupFunction"]:
                     f.write(f"extern \"C\" void {usedObjects['SetupFunction']}();\n")
 
