@@ -15,8 +15,8 @@ hide:
 <p align="center"> Welcome to the <code>pd4web</code> documentation! </p>
 
 <p align="center" markdown>
-  ![Image title](../assets/icon-light.svg#only-light){ width="80px" }
-  ![Image title](../assets/icon-dark.svg#only-dark){ width="80px" }
+  ![Image title](./assets/icon-light.svg#only-light){ width="80px" }
+  ![Image title](./assets/icon-dark.svg#only-dark){ width="80px" }
 </p>
 
 ## <h2 align="center"> **What is pd4web?** </h2>
@@ -42,8 +42,8 @@ hide:
   <div class="card">
     <h3 class="card-title">Scofo Follower</h3>
     <img
-      src="../tests/OScofo/patch.png"
-      onclick="window.open('../tests/OScofo', '_blank')"
+      src="./tests/OScofo/patch.png"
+      onclick="window.open('./tests/OScofo', '_blank')"
       class="card-img"
       style="width: 40%"
     />
@@ -56,7 +56,7 @@ hide:
   <div class="card">
     <h3 class="card-title">Didactic patches</h3>
     <img
-      src="../tests/assets/didaticos.png"
+      src="./tests/assets/didaticos.png"
       onclick="window.open('https://charlesneimog.github.io/Tese/Pages/Local-Maxima/', '_blank')"
       class="card-img"
     />
@@ -67,7 +67,7 @@ hide:
     <div class="card">
     <h3 class="card-title">VexFlow, Choir, and <code>pd4web</code></h3>
     <img
-      src="../tests/assets/patch5.jpeg"
+      src="./tests/assets/patch5.jpeg"
       onclick="window.open('https://charlesneimog.github.io/Pandemonio', '_blank')"
       class="card-img"
       style="width: 40%"
@@ -84,7 +84,7 @@ hide:
   <div class="card">
     <h3 class="card-title"><code>p5js</code> with <code>pd4web</code></h3>
     <img
-      src="../tests/assets/patch3.png"
+      src="./tests/assets/patch3.png"
       onclick="window.open('https://charlesneimog.github.io/Improviso-I/', '_blank')"
       class="card-img"
     />
@@ -94,7 +94,7 @@ hide:
   <div class="card">
     <h3 class="card-title">Physical Modelling with <code>pmpd</code></h3>
     <img
-      src="../tests/assets/patch1.png"
+      src="./tests/assets/patch1.png"
       onclick="window.open('https://charlesneimog.github.io/Algorithm-Music/Piece-I/', '_blank')"
       class="card-img"
     />
@@ -105,7 +105,7 @@ hide:
   <div class="card">
     <h3 class="card-title">cartographie <code>p5js</code> + puredata</h3>
     <img
-      src="../tests/assets/patch4.png"
+      src="./tests/assets/patch4.png"
       onclick="window.open('https://jyg.github.io/carto_p5', '_blank')"
       class="card-img"
     />
@@ -119,8 +119,8 @@ hide:
   <div class="card">
     <h3 class="card-title"><code>p5js</code>, <code>ml5</code> and <code>pd4web</code></h3>
     <img
-      src="../tests/assets/code-train.png"
-      onclick="window.open('../tests/ml5', '_blank')"
+      src="./tests/assets/code-train.png"
+      onclick="window.open('./tests/ml5', '_blank')"
       class="card-img"
     />
     <p style="width: 80%; text-align: center">Hand recognition with PureData. Stealing code from the Code-Train channel</p>
