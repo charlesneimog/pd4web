@@ -22,16 +22,12 @@ static t_class *pd4web_class;
 class Pd4Web {
   public:
     t_object obj;
-    bool python;
-    bool pip;
-    bool installed;
-    std::string bin;
+    
     bool isReady;
     bool running;
 
     // Terminal
     std::string cmd;
-    std::string result;
 
     // Server
     httplib::Server *server;
@@ -41,12 +37,14 @@ class Pd4Web {
     // config
     std::string patch;
     bool verbose;
-    int memory;
-    int gui;
-    float zoom;
-    int tpl;
+    bool gui;
     bool debug;
     bool clear;
+
+    int memory;
+    int tpl;
+
+    float zoom;
 
     t_outlet *Out;
 };
@@ -307,7 +305,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         x->tpl = tpl;
         post("[pd4web] Template set to %d", x->tpl);
     } else if ("debug" == config) {
-        int debug = atom_getintarg(1, argc, argv);
+        bool debug = (bool)atom_getintarg(1, argc, argv);
         if (x->debug == debug){ return ;}
         x->debug = debug;
         if (debug){
