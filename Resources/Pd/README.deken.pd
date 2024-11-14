@@ -1,6 +1,6 @@
-#N canvas 670 323 579 415 12;
+#N canvas 544 270 579 415 12;
 #X obj 60 157 bng 23 250 50 0 nutelaOS akdkabdk empty 0 -10 0 12 #dfdfdf #000000 #000000;
-#N canvas 4 21 1912 1020 links 1;
+#N canvas 4 21 1470 891 links 0;
 #X obj 108 378 pdcontrol;
 #X obj 133 192 r linux;
 #X msg 133 224 browse https://www.charlesneimog.com/py4pd/setup/#install-python;
