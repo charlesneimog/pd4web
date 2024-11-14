@@ -396,6 +396,11 @@ class Patch:
                     if line.Tokens[-2] == "f" and line.Tokens[-1].isdigit():
                         line.Tokens[-3] = line.Tokens[-3] + ","
                     f.write(" ".join(line.Tokens) + ";\n")
+                    
+                # check if it is a clone object
+                elif line.Tokens[0] == "#X" and line.Tokens[1] == "obj" and line.Tokens[4] == "clone":
+                    f.write(" ".join(line.Tokens) + ";\n")
+                    
                 else:
                     f.write(line.completLine)
 
@@ -482,10 +487,8 @@ class Patch:
         lastToken = ""
         tokens = line.Tokens[5:]
         cloneAbs = ""
-        # print(tokens)
         for token in tokens:
             if token not in args and lastToken not in ["-x", "-s"]:
-                # check if clone has / in the name
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
                     cloneAbs = token
                 elif token in self.declaredAbs:
@@ -500,7 +503,10 @@ class Patch:
                     if self.Pd4Web.Libraries.isSupportedLibrary(library):
                         if absPatch in self.Pd4Web.Objects.GetSupportedObjects(library):
                             cloneAbs = absPatch
+                            line.Tokens[5] = cloneAbs
+                            #print(line.Tokens)
                             break
+                            
             lastToken = token
 
         if cloneAbs != "":
