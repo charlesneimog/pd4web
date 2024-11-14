@@ -29,6 +29,7 @@ class Pd4Web:
     SILENCE: bool = False
     PD_VERSION: str = "0.55-0"
     EMSDK_VERSION: str = "3.1.68"
+    DEBUG: bool = False
 
     # Compiler
     MEMORY_SIZE: int = 256
@@ -80,6 +81,7 @@ class Pd4Web:
         self.PD_EXTERNAL = self.Parser.pd_external
         self.BYPASS_UNSUPPORTED = self.Parser.bypass_unsupported
         self.TEMPLATE = self.Parser.template
+        self.DEBUG = self.Parser.debug
 
         self.Execute()
 
@@ -326,7 +328,17 @@ class Pd4Web:
             default=1,
             help="Zoom level for the patch (must be a number)",
         )
+        
+        # Debug
+        parser.add_argument(
+            "--debug",
+            required=False,
+            action="store_true",
+            default=False,
+            help="Enable debug mode for the build",
+        )
 
+        # Pure Data
         parser.add_argument(
             "--pd-version",
             required=False,

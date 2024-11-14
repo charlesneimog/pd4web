@@ -71,7 +71,17 @@ class GetAndBuildExternals:
         )
         self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
-
+        self.cmakeFile.append("")
+        
+        # Debug option
+        self.cmakeFile.append('if(CMAKE_BUILD_TYPE STREQUAL "Debug")')
+        self.cmakeFile.append('    message(WARNING "Building in Debug mode")')
+        self.cmakeFile.append('    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")')
+        self.cmakeFile.append('    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")')
+        self.cmakeFile.append('else()')
+        self.cmakeFile.append('    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -flto -pthread -matomics -mbulk-memory -msimd128")')
+        self.cmakeFile.append('    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -pthread -matomics -mbulk-memory -msimd128")')
+        self.cmakeFile.append("endif()")
         self.cmakeFile.append("")
 
         # Pd4web executable
@@ -355,6 +365,10 @@ class GetAndBuildExternals:
         emcmake = self.Pd4Web.Compiler.EMCMAKE
         cmake = self.Pd4Web.Compiler.CMAKE
         ninja = self.Pd4Web.Compiler.NINJA
+        releaseType = "Release"
+        if self.Pd4Web.DEBUG:
+            releaseType = "Debug"
+        
         command = [
             emcmake,
             cmake,
@@ -362,6 +376,7 @@ class GetAndBuildExternals:
             "-B",
             "build",
             "-DPDCMAKE_DIR=Pd4Web/Externals/",
+            "-DCMAKE_BUILD_TYPE=" + releaseType,
             "-G",
             "Ninja",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
