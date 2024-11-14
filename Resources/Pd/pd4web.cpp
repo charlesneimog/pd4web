@@ -314,7 +314,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             post("[pd4web] Debug set to false");
         }
     } else if ("clear" == config) {
-        int clear = atom_getintarg(1, argc, argv);
+        bool clear = (bool)atom_getintarg(1, argc, argv);
         if (x->clear == clear){ return ;}
         if (clear){
             x->clear = true;
