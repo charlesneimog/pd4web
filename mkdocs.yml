@@ -66,28 +66,28 @@ repo_url: https://github.com/charlesneimog/pd4web
 extra_css: [extra/extra.css]
 extra_javascript: [js/index_slider.js]
 nav:
-  - Home: en/index.md
+  - Home: index.md
   - Compile your patch:
-      - Intro: en/patch/install.md
-      - Gui: en/patch/gui.md
+      - Intro: patch/install.md
+      - Gui: patch/gui.md
         
       - Compilation: 
-        - en/patch/compile.md
+        - patch/compile.md
       - Website Templates: 
-        - en/patch/Templates/index.md
+        - patch/Templates/index.md
         - Templates: 
-          - en/patch/Templates/score.md
-          - en/patch/Templates/hands.md
+          - patch/Templates/score.md
+          - patch/Templates/hands.md
 
-      - Problems: en/patch/problems.md
-  - en/libraries.md
+      - Problems: patch/problems.md
+  - libraries.md
   - Pd4Web JavaScript Module: 
-    - JavaScript Module: en/js/js.md
-    - en/js/requirements.md
-    - en/js/engine.md
-    - en/js/receive.md
-    - en/js/send.md
-  - en/devs.md
+    - JavaScript Module: js/js.md
+    - js/requirements.md
+    - js/engine.md
+    - js/receive.md
+    - js/send.md
+  - devs.md
  # - Examples: tests/
 plugins:
   - search
