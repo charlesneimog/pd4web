@@ -327,12 +327,14 @@ static void pd4web_clear_install(Pd4Web *x){
 
 // ─────────────────────────────────────
 static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
-    std::string method = atom_getsymbol(argv)->s_name;
+    std::string method = s->s_name;
     std::string mod;
    if (method == "git") {
+        //post("[pd4web] Updating pd4web from git...");
         mod = "--pre pd4web --force-reinstall ";
     } else {
         mod = "pd4web --force-reinstall ";
+        //post("[pd4web] Updating pd4web from pip...");
     }
 
     // check if git is installed

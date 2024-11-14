@@ -34,7 +34,7 @@
 #X obj 324 62 bng 25 250 50 0 s-pd4web-git r-pd4web-git empty -15 -10 0 12 #bbbbbb #ff0400 #000000;
 #X obj 130 290 nbx 2 17 0 2 0 1 s-template1 r-template1 empty 0 -10 0 12 #fcfcfc #000000 #000000 0 256;
 #X obj 351 129 cnv 5 30 10 empty empty Clear 2 5 0 8 #ffffff #000000 0;
-#X obj 352 69 cnv 5 30 10 empty empty Update\ from\ Git 2 5 0 8 #ffffff #000000 0;
+#X obj 352 69 cnv 5 30 10 empty empty Install\ dev\ version. 2 5 0 8 #ffffff #000000 0;
 #X obj 164 294 cnv 5 30 10 empty empty Template\ Number 2 5 0 8 #ffffff #000000 0;
 #X obj 8 382 tgl 19 0 s-debug1 r-debug1 empty 0 -10 0 12 #fcfcfc #000000 #000000 0 1;
 #X obj 29 386 cnv 5 30 10 empty empty Debug 2 5 0 8 #ffffff #000000 0;
