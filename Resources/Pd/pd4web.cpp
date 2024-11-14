@@ -7,11 +7,10 @@
 #include <m_pd.h>
 #include <m_imp.h>
 
-#if defined(_WIN32) || defined(_WIN64)
-#define WIN32_LEAN_AND_MEAN
-#include <winsock2.h>
+#ifdef _WIN32
 #include <windows.h>
-#include <iostream>
+#define popen _popen
+#define pclose _pclose
 #endif
 
 #include "./cpp-httplib/httplib.h"
@@ -57,85 +56,6 @@ static void pd4web_version(Pd4Web *x);
 // ─────────────────────────────────────
 static int pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool sucessMsg=false) {
     x->running = true;
-    
-#if defined(_WIN32) 
-    std::thread t([x, cmd, sucessMsg]() {
-        std::array<char, 256> Buf;
-        std::string Result;
-        STARTUPINFO si;
-        PROCESS_INFORMATION pi;
-        SECURITY_ATTRIBUTES sa;
-        HANDLE hRead, hWrite;
-        
-        ZeroMemory(&si, sizeof(si));
-        si.cb = sizeof(si);
-        si.dwFlags |= STARTF_USESTDHANDLES;
-
-        ZeroMemory(&pi, sizeof(pi));
-
-        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-        sa.bInheritHandle = TRUE;
-        sa.lpSecurityDescriptor = NULL;
-
-        if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
-            pd_error(nullptr, "[pd4web] CreatePipe failed");
-            x->running = false;
-            return;
-        }
-
-        si.hStdOutput = hWrite;
-        si.hStdError = hWrite;
-
-        if (!CreateProcess(NULL, const_cast<char*>(cmd.c_str()), NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi)) {
-            pd_error(nullptr, "[pd4web] CreateProcess failed");
-            x->running = false;
-            CloseHandle(hWrite);
-            CloseHandle(hRead);
-            return;
-        }
-
-        CloseHandle(hWrite);
-
-        std::string LastLine = "";
-        DWORD bytesRead;
-        while (ReadFile(hRead, Buf.data(), Buf.size(), &bytesRead, NULL) && bytesRead > 0) {
-            std::string Line = "[pd4web] ";
-            Line.append(Buf.data(), bytesRead);
-            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
-            if (Line != "[pd4web] ") {
-                LastLine = Line;
-            }
-        }
-
-        post(LastLine.c_str());
-
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        DWORD exitCode;
-        GetExitCodeProcess(pi.hProcess, &exitCode);
-
-        CloseHandle(hRead);
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-
-        if (exitCode != 0) {
-            x->running = false;
-            pd_error(nullptr,
-                    "[pd4web] Command failed, please run '%s' in the terminal to check more details",
-                        cmd.c_str());
-        } else {
-            x->running = false;
-            if (sucessMsg) {
-                pd_error(x, "[pd4web] Done!");
-            }
-        }
-    });
-    if (detached) {
-        t.detach();
-    } else {
-        t.join();
-    }
-
-#else
     std::thread t([x, cmd, sucessMsg]() {
         std::array<char, 256> Buf;
         std::string Result;
@@ -174,7 +94,6 @@ static int pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool
     } else {
         t.join();
     }
-#endif
     return 0;
 }
 
