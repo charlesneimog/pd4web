@@ -42,7 +42,7 @@ Abstractions files must be inside `Libs` folder and be called as `Libs/myabs`. F
 To compile your `patch` using Pd you need to use the `pd4web` object and its help patch. To access it you can create a new patch, create the `pd4web` object, click with the right click on it, and click on help.
 
 <p align="center" style="border-radius: 10px;">
-        <img src="../../../assets/pd-pd4web.png" width="40%" loading="lazy"  style="border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);">
+        <img src="../../assets/pd-pd4web.png" width="40%" loading="lazy"  style="border-radius: 10px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);">
 </p>
 
 ### Options
