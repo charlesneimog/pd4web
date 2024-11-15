@@ -5,6 +5,7 @@
 #include <thread>
 
 #include <m_pd.h>
+
 #include <m_imp.h>
 
 #ifdef _WIN32
@@ -21,7 +22,8 @@ static t_class *pd4web_class;
 class Pd4Web {
   public:
     t_object obj;
-    
+
+    // constructor
     bool isReady;
     bool running;
     bool result;
@@ -57,9 +59,9 @@ class Pd4Web {
 //
 static void pd4web_version(Pd4Web *x);
 
-
 // ─────────────────────────────────────
-static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool sucessMsg=false, bool showMessage=false){
+static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
+                            bool sucessMsg = false, bool showMessage = false) {
     x->running = true;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -82,22 +84,21 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
         si.hStdOutput = hWrite;
         si.hStdError = hWrite;
 
-        BOOL result = CreateProcessA(
-            NULL,                    // Application name (NULL to use the command line)
-            (LPSTR)cmd.c_str(),      // Command line
-            NULL,                    // Process security attributes
-            NULL,                    // Thread security attributes
-            TRUE,                    // Inherit handles (so we can read output)
-            CREATE_NO_WINDOW,        // Hide the window
-            NULL,                    // Use the parent environment
-            NULL,                    // Current directory
-            &si,                     // Startup info
-            &pi                      // Process info
+        BOOL result = CreateProcessA(NULL, // Application name (NULL to use the command line)
+                                     (LPSTR)cmd.c_str(), // Command line
+                                     NULL,               // Process security attributes
+                                     NULL,               // Thread security attributes
+                                     TRUE,               // Inherit handles (so we can read output)
+                                     CREATE_NO_WINDOW,   // Hide the window
+                                     NULL,               // Use the parent environment
+                                     NULL,               // Current directory
+                                     &si,                // Startup info
+                                     &pi                 // Process info
         );
 
         if (result == 0) {
             DWORD error = GetLastError();
-            //pd_error(x, "[pd4web] CreateProcess failed with error code %lu", error);
+            // pd_error(x, "[pd4web] CreateProcess failed with error code %lu", error);
             x->running = false;
             x->result = false;
             return;
@@ -118,16 +119,17 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
                     if (isprint(c) || c == '\n' || c == '\r') {
                         cleanOutput.push_back(c);
                     } else {
-                        cleanOutput.push_back('.');  
+                        cleanOutput.push_back('.');
                     }
                 }
                 if (showMessage) {
-                    //cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\n'), cleanOutput.end());
-                    //cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\r'), cleanOutput.end());
+                    // cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\n'),
+                    // cleanOutput.end()); cleanOutput.erase(std::remove(cleanOutput.begin(),
+                    // cleanOutput.end(), '\r'), cleanOutput.end());
                     if (cleanOutput == "") {
                         continue;
                     }
-                    if (showMessage){
+                    if (showMessage) {
                         post("%s", cleanOutput.c_str());
                     }
                 }
@@ -137,14 +139,14 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
             GetExitCodeProcess(pi.hProcess, &exitCode);
             if (exitCode != STILL_ACTIVE && bytesRead == 0) {
                 break;
-            } 
+            }
             // check if command was successful
             if (exitCode != 0) {
                 x->running = false;
                 x->result = false;
                 return;
             }
-            Sleep(1); 
+            Sleep(1);
         }
         if (sucessMsg) {
             post("[pd4web] Command executed successfully.");
@@ -175,7 +177,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
                 LastLine = Line;
             }
         }
-        if (showMessage){
+        if (showMessage) {
             post(LastLine.c_str());
         }
 
@@ -190,7 +192,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
             }
             x->result = true;
         }
-    });    
+    });
 #endif
     if (detached) {
         x->result = true;
@@ -257,7 +259,7 @@ static bool pd4web_check(Pd4Web *x) {
     }
     pd4web_version(x);
 
-    //post("[pd4web] pd4web is ready!");
+    // post("[pd4web] pd4web is ready!");
     return true;
 #endif
 }
@@ -289,7 +291,9 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
     } else if ("gui" == config) {
         bool gui = atom_getintarg(1, argc, argv);
-        if (x->gui == gui){ return ;}
+        if (x->gui == gui) {
+            return;
+        }
         x->gui = gui;
         if (x->gui) {
             post("[pd4web] Gui set to true");
@@ -298,7 +302,9 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
     } else if ("zoom" == config) {
         float zoom = atom_getfloatarg(1, argc, argv);
-        if (x->zoom == zoom){ return ;}
+        if (x->zoom == zoom) {
+            return;
+        }
         x->zoom = zoom;
         post("[pd4web] Zoom set to %.2f", x->zoom);
     } else if ("patch" == config) {
@@ -315,30 +321,35 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         x->patch = newpatch;
     } else if ("template" == config) {
         int tpl = atom_getintarg(1, argc, argv);
-        if (x->tpl == tpl){return;}
+        if (x->tpl == tpl) {
+            return;
+        }
         x->tpl = tpl;
         post("[pd4web] Template set to %d", x->tpl);
     } else if ("debug" == config) {
         bool debug = (bool)atom_getintarg(1, argc, argv);
-        if (x->debug == debug){ return ;}
+        if (x->debug == debug) {
+            return;
+        }
         x->debug = debug;
-        if (debug){
+        if (debug) {
             post("[pd4web] Debug set to true");
         } else {
             post("[pd4web] Debug set to false");
         }
     } else if ("clear" == config) {
         bool clear = (bool)atom_getintarg(1, argc, argv);
-        if (x->clear == clear){ return ;}
-        if (clear){
+        if (x->clear == clear) {
+            return;
+        }
+        if (clear) {
             x->clear = true;
             post("[pd4web] Clear set to true");
         } else {
             x->clear = false;
             post("[pd4web] Clear set to false");
         }
-    }
-    else{
+    } else {
         pd_error(x, "[pd4web] Invalid configuration");
     }
 
@@ -381,13 +392,13 @@ static void pd4web_browser(Pd4Web *x, float f) {
 }
 
 // ─────────────────────────────────────
-static void pd4web_version(Pd4Web *x){
+static void pd4web_version(Pd4Web *x) {
     std::string cmd = x->pd4web + " --version";
     pd4web_terminal(x, cmd.c_str(), true, false, true);
 }
 
 // ─────────────────────────────────────
-static void pd4web_clear_install(Pd4Web *x){
+static void pd4web_clear_install(Pd4Web *x) {
     post("[pd4web] Uninstalling pd4web...");
     std::string cmd = x->pip + " uninstall pd4web -y";
     pd4web_terminal(x, cmd.c_str(), true);
@@ -398,7 +409,7 @@ static void pd4web_clear_install(Pd4Web *x){
 static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     std::string method = s->s_name;
     std::string mod;
-   if (method == "git") {
+    if (method == "git") {
         mod = "--pre pd4web --force-reinstall ";
     } else {
         mod = "pd4web --force-reinstall ";
@@ -430,13 +441,13 @@ static void pd4web_compile(Pd4Web *x) {
     if (x->zoom != 1) {
         cmd += " --patch-zoom " + std::to_string(x->zoom) + " ";
     }
-    if (x->clear){
+    if (x->clear) {
         cmd += " --clear ";
     }
-    if (x->debug){
+    if (x->debug) {
         cmd += " --debug ";
     }
-    if (x->tpl != 0){
+    if (x->tpl != 0) {
         cmd += " --template " + std::to_string(x->tpl) + " ";
     }
 
@@ -499,8 +510,8 @@ extern "C" void pd4web_setup(void) {
 
     class_addmethod(pd4web_class, (t_method)pd4web_setconfig, gensym("set"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
-    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME,0);
-    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME,0);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_version, gensym("version"), A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
     class_addbang(pd4web_class, (t_method)pd4web_compile);
