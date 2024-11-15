@@ -43,8 +43,13 @@ function setSoundIcon(icon, animation) {
         const svgDoc = parser.parseFromString(svgDecoded, "image/svg+xml");
         const svgElement = svgDoc.querySelector("svg");
         if (svgElement) {
-            svgElement.setAttribute("width", "24");
-            svgElement.setAttribute("height", "24");
+            if (Pd4Web.isMobile) {
+                svgElement.setAttribute("width", "48");
+                svgElement.setAttribute("height", "48");
+            } else {
+                svgElement.setAttribute("width", "24");
+                svgElement.setAttribute("height", "24");
+            }
             svgElement.style.display = "inline-block";
             svgElement.style.animation = animation;
             soundSwitch.innerHTML = "";
