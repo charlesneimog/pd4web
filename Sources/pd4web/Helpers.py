@@ -20,10 +20,13 @@ def pd4web_print(text, color=None, bright=False, silence=False, pd4web=False):
     if pd4web:
         if color == "red":
             print("ERROR: " + text)
+            sys.stdout.flush()  # Ensure immediate output
         elif color == "yellow":
             print("WARNING: " + text)
+            sys.stdout.flush()  # Ensure immediate output
         else:
             print(text)
+            sys.stdout.flush()  # Ensure immediate output
         return
     if silence:
         return
@@ -57,7 +60,6 @@ def pd4web_print(text, color=None, bright=False, silence=False, pd4web=False):
             print(tab + color_code + "🔴️ ERROR: " + text + reset_code)
         elif color == "yellow":
             print(tab + color_code + "🟡️ WARNING: " + text + reset_code)
-
         elif color == "green":
             print(tab + color_code + "🟢️ " + text + reset_code)
         elif color == "blue":
@@ -66,8 +68,10 @@ def pd4web_print(text, color=None, bright=False, silence=False, pd4web=False):
             print(tab + color_code + "🟣️ " + text + reset_code)
         else:
             print(tab + color_code + text + reset_code)
+        sys.stdout.flush()  # Ensure immediate output
     except:
         print(text)
+        sys.stdout.flush()  # Ensure immediate output
 
 
 def getPrintValue(color, bright=False):

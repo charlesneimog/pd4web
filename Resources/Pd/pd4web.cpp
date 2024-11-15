@@ -168,17 +168,13 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
             x->running = false;
             x->result = false;
         }
-        std::string LastLine = "";
         while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
-            std::string Line = "[pd4web] ";
-            Line += Buf.data();
-            Line.erase(std::remove(Line.begin(), Line.end(), '\n'), Line.end());
-            if (Line != "[pd4web] ") {
-                LastLine = Line;
+            if (showMessage) {
+                std::string line(Buf.data());
+                line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+                line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+                post("%s", line.c_str());
             }
-        }
-        if (showMessage) {
-            post(LastLine.c_str());
         }
 
         int exitCode = pclose(Pipe);
