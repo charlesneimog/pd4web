@@ -77,7 +77,8 @@ nav:
         - Templates: 
           - patch/Templates/score.md
           - patch/Templates/hands.md
-
+          - patch/Templates/choir.md
+          - patch/Templates/p5js.md
       - Problems: patch/problems.md
   - libraries.md
   - Pd4Web JavaScript Module: 
