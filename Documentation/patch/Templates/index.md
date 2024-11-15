@@ -10,6 +10,7 @@ Website templates are predefined websites that can be used to expand what you ca
 
 --- 
 <div class="grid cards" markdown>
--   :simple-p5dotjs: [__`3` - pd4web + p5js__](p5js.md)
--   :material-church: [__`4` - Choir__](choir.md)
+-   :material-church: [__`3` - Choir__](choir.md)
+-   :simple-p5dotjs: [__`4` - pd4web + p5js__](p5js.md)
+
 </div>

@@ -2,14 +2,8 @@
 hide:
  - toc
 ---
-<style>
-  .md-typeset h1,
-  .md-content__button {
-    display: none;
-  }
-</style>
 
-<h2 align="center">Template <code>1</code>: Patch + Score</h2>
+# <h1 align="center">Template <code>1</code>: Patch + Score</h1>
 
 In this template you have access to a patch that receives image files (from scores) and renders it side by side with your patch. The result will be something like this:
 
