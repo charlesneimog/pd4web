@@ -202,62 +202,41 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
 // ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
     int result;
-#if defined(_WIN32) || defined(_WIN64)
     std::string check_installation = x->python + " -c \"import pd4web\"";
-    result = pd4web_terminal(x, check_installation.c_str());
+    result = pd4web_terminal(x, check_installation, false, false, false);
     if (result) {
         pd4web_version(x);
         return true;
     }
-    result = pd4web_terminal(x, "python --version ");
-    if (!result) {
-        pd_error(nullptr, "[pd4web] Python is not installed. Please install Python first.");
-        return false;
-    }
-
-    post("[pd4web] Creating virtual environment...");
-    std::string venv_cmd = "python -m venv \"" + x->objRoot + "\\.venv\"";
-    result = pd4web_terminal(x, venv_cmd.c_str());
-    if (!result) {
-        pd_error(nullptr, "[pd4web] Failed to create virtual environment");
-        return false;
-    }
-
-    // install pd4web
-    post("[pd4web] Installing pd4web...");
-    std::string pip_cmd = x->pip + " install pd4web";
-    result = pd4web_terminal(x, pip_cmd.c_str());
-    if (!result) {
-        pd_error(nullptr, "[pd4web] Failed to install pd4web");
-        return false;
-    }
-    pd4web_version(x);
-    return true;
+#if defined(_WIN32) || defined(_WIN64)
+    std::string python_cmd = "py --version";
 #else
-    // check if python3 is installed
-    result = std::system("python3 --version > /dev/null 2>&1");
-    if (result != 0) {
+    std::string python_cmd = "python3 --version";
+#endif
+    result = pd4web_terminal(x, python_cmd, false, false, false);   
+    if (!result) {
         pd_error(nullptr, "[pd4web] Python 3 is not installed. Please install Python first.");
         return false;
     }
+#if defined(_WIN32) || defined(_WIN64)
+    std::string venv_cmd = "py -m venv \"" + x->objRoot + "\\.venv\"";
+#else
     std::string venv_cmd = "python3 -m venv \"" + x->objRoot + "/.venv\"";
-    result = std::system(venv_cmd.c_str());
-    if (result != 0) {
+#endif
+    result = pd4web_terminal(x, venv_cmd, false, false, false);
+    if (!result) {
         pd_error(nullptr, "[pd4web] Failed to create virtual environment");
         return false;
     }
     // install pd4web
-    std::string pip_cmd = "\"" + x->objRoot + "/.venv/bin/pip\" install pd4web";
-    result = std::system(pip_cmd.c_str());
-    if (result != 0) {
+    std::string pip_cmd = x->pip + " install pd4web";
+    result = pd4web_terminal(x, pip_cmd, false, false, false);
+    if (!result) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
     pd4web_version(x);
-
-    // post("[pd4web] pd4web is ready!");
     return true;
-#endif
 }
 
 // ─────────────────────────────────────
