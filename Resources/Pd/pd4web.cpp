@@ -59,12 +59,11 @@ static void pd4web_version(Pd4Web *x);
 
 
 // ─────────────────────────────────────
-static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool sucessMsg=false, bool showMessage=true){
+static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, bool sucessMsg=false, bool showMessage=false){
     x->running = true;
 
 #if defined(_WIN32) || defined(_WIN64)
     std::thread t([x, cmd, sucessMsg, showMessage]() {
-
         STARTUPINFOA si = {0};
         PROCESS_INFORMATION pi = {0};
         SECURITY_ATTRIBUTES sa = {0};
@@ -98,9 +97,10 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
 
         if (result == 0) {
             DWORD error = GetLastError();
-            pd_error(x, "[pd4web] CreateProcess failed with error code %lu", error);
+            //pd_error(x, "[pd4web] CreateProcess failed with error code %lu", error);
             x->running = false;
             x->result = false;
+            return;
         }
         CloseHandle(hWrite);
 
@@ -112,6 +112,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
             BOOL readResult = ReadFile(hRead, buffer, sizeof(buffer), &bytesRead, NULL);
             if (readResult && bytesRead > 0) {
                 output.append(buffer, bytesRead);
+                //
                 std::string cleanOutput;
                 for (char c : output) {
                     if (isprint(c) || c == '\n' || c == '\r') {
@@ -121,9 +122,14 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
                     }
                 }
                 if (showMessage) {
-                    cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\n'), cleanOutput.end());
-                    cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\r'), cleanOutput.end());
-                    post("%s", cleanOutput.c_str());
+                    //cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\n'), cleanOutput.end());
+                    //cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\r'), cleanOutput.end());
+                    if (cleanOutput == "") {
+                        continue;
+                    }
+                    if (showMessage){
+                        post("%s", cleanOutput.c_str());
+                    }
                 }
                 output.clear();
             }
@@ -132,16 +138,23 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
             if (exitCode != STILL_ACTIVE && bytesRead == 0) {
                 break;
             } 
-            Sleep(10); 
+            // check if command was successful
+            if (exitCode != 0) {
+                x->running = false;
+                x->result = false;
+                return;
+            }
+            Sleep(1); 
         }
         if (sucessMsg) {
-            pd_error(x, "[pd4web] Command executed successfully.");
+            post("[pd4web] Command executed successfully.");
         }
         CloseHandle(hRead);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         x->running = false;
         x->result = true;
+        return;
     });
 #else
     std::thread t([x, cmd, sucessMsg, showMessage]() {
@@ -173,13 +186,12 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached=false, boo
         } else {
             x->running = false;
             if (sucessMsg) {
-                pd_error(x, "[pd4web] Done!");
+                post("[pd4web] Command executed successfully.");
             }
             x->result = true;
         }
     });    
 #endif
-
     if (detached) {
         x->result = true;
         t.detach();
@@ -222,7 +234,6 @@ static bool pd4web_check(Pd4Web *x) {
         return false;
     }
     pd4web_version(x);
-    //post("[pd4web] pd4web is ready!");
     return true;
 #else
     // check if python3 is installed
@@ -372,8 +383,7 @@ static void pd4web_browser(Pd4Web *x, float f) {
 // ─────────────────────────────────────
 static void pd4web_version(Pd4Web *x){
     std::string cmd = x->pd4web + " --version";
-    pd4web_terminal(x, cmd.c_str(), true);
-    
+    pd4web_terminal(x, cmd.c_str(), true, false, true);
 }
 
 // ─────────────────────────────────────
@@ -395,7 +405,7 @@ static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     }
     std::string cmd = x->pip + " install " + mod + " --upgrade";
     pd_error(x, "[pd4web] Updating pd4web on background, please wait...");
-    pd4web_terminal(x, cmd.c_str(), true);
+    pd4web_terminal(x, cmd.c_str(), true, true, false);
     return;
 }
 
@@ -435,7 +445,7 @@ static void pd4web_compile(Pd4Web *x) {
     }
 
     pd_error(x, "[pd4web] Compiling patch on background, please wait...");
-    pd4web_terminal(x, cmd.c_str(), true, true);
+    pd4web_terminal(x, cmd.c_str(), true, true, true);
 
     return;
 }
