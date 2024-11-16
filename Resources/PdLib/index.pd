@@ -1,9 +1,0 @@
-#N canvas 6 28 951 1014 10;
-#X obj 6 36 *~ 0.1;
-#X obj 6 81 dac~;
-#X obj 6 14 osc~ 500;
-#X obj 84 14 vsl 18 153 100 600 0 0 sender receiver empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
-#X connect 0 0 1 0;
-#X connect 0 0 1 1;
-#X connect 2 0 0 0;
-#X connect 3 0 2 0;
