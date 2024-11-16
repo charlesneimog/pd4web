@@ -1,0 +1,3 @@
+#N canvas 603 83 497 634 8;
+#X obj 88 108 pd4web/graphic;
+#X coords 0 634 1 633 200 100 0;
