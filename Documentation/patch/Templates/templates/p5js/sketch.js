@@ -73,7 +73,15 @@ function draw() {
           cloneInstance = 0;
           Pd4Web.sendBang("clear");
         }
+      } else {
+        // draw in the center "Click to start to play"
+        fill(0);
+        textSize(32);
+        textAlign(CENTER, CENTER);
+        text("Click to start to play", width / 2, height / 2);
+
       }
+
     }
 
     if (clearCounter >= clearInterval) {
