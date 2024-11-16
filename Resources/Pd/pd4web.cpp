@@ -18,7 +18,6 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-
 // ─────────────────────────────────────
 class Pd4Web {
   public:
@@ -56,7 +55,8 @@ class Pd4Web {
 
 // ─────────────────────────────────────
 static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
-                            bool sucessMsg = false, bool showMessage = false, bool clearNewline = false) {
+                            bool sucessMsg = false, bool showMessage = false,
+                            bool clearNewline = false) {
     x->running = true;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -162,10 +162,9 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     if (line != "") {
                         post("%s", line.c_str());
                     }
-                } else{
+                } else {
                     post("%s", Buf.data());
                 }
-                
             }
         }
 
@@ -218,12 +217,14 @@ static bool pd4web_check(Pd4Web *x) {
 #else
     std::string venv_cmd = "python3 -m venv \"" + x->objRoot + "/.venv\"";
 #endif
+    post("[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
     if (!result) {
         pd_error(nullptr, "[pd4web] Failed to create virtual environment");
         return false;
     }
     // install pd4web
+    post("[pd4web] Installing pd4web...");
     std::string pip_cmd = x->pip + " install pd4web";
     result = pd4web_terminal(x, pip_cmd, false, false, false, false);
     if (!result) {
@@ -231,6 +232,7 @@ static bool pd4web_check(Pd4Web *x) {
         return false;
     }
     pd4web_version(x);
+    post("[pd4web] I recommend to restart Pd to finish the installation");
     return true;
 }
 
