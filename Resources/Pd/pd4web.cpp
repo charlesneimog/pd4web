@@ -42,6 +42,7 @@ class Pd4Web {
     std::string objRoot;
 
     // compilation config
+    bool cancel;
     std::string patch;
     bool verbose;
     bool gui;
@@ -65,91 +66,80 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         HANDLE hRead, hWrite;
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
         sa.bInheritHandle = TRUE;
-
+        
+        // Create the pipe
         if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
             pd_error(x, "[pd4web] Failed to create pipe!");
             x->running = false;
             x->result = false;
+            return;
         }
-
+        
+        // Set up STARTUPINFO to redirect output to the pipe
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
         si.wShowWindow = SW_HIDE;
         si.hStdOutput = hWrite;
         si.hStdError = hWrite;
-
-        BOOL result = CreateProcessA(NULL, // Application name (NULL to use the command line)
-                                     (LPSTR)cmd.c_str(), // Command line
-                                     NULL,               // Process security attributes
-                                     NULL,               // Thread security attributes
-                                     TRUE,               // Inherit handles (so we can read output)
-                                     CREATE_NO_WINDOW,   // Hide the window
-                                     NULL,               // Use the parent environment
-                                     NULL,               // Current directory
-                                     &si,                // Startup info
-                                     &pi                 // Process info
-        );
-
+        
+        // Create the process
+        BOOL result = CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
         if (result == 0) {
             DWORD error = GetLastError();
-            // pd_error(x, "[pd4web] CreateProcess failed with error code %lu", error);
             x->running = false;
             x->result = false;
             return;
         }
+        
+        // Close write handle after creating the process
         CloseHandle(hWrite);
 
         char buffer[4096];
         DWORD bytesRead;
         std::string output;
 
+        // Loop to read output from the pipe
         while (true) {
+            if (x->cancel) {
+                TerminateProcess(pi.hProcess, 0);
+                x->running = false;
+                x->result = false;
+                x->cancel = false;
+                pd_error(x, "[pd4web] Compilation canceled");
+                break;
+            }
+
+            // Read data from the pipe
             BOOL readResult = ReadFile(hRead, buffer, sizeof(buffer), &bytesRead, NULL);
             if (readResult && bytesRead > 0) {
                 output.append(buffer, bytesRead);
-                //
-                std::string cleanOutput;
-                for (char c : output) {
-                    if (isprint(c) || c == '\n' || c == '\r') {
-                        cleanOutput.push_back(c);
-                    } else {
-                        cleanOutput.push_back('.');
-                    }
+                if (showMessage && !output.empty()) {
+                    //output.erase(std::remove(output.begin(), output.end(), '\n'), output.end());
+                    output.erase(std::remove(output.begin(), output.end(), '\r'), output.end());
+                    post("%s", output.c_str());
+                    output.clear();  // Clear output after posting
                 }
-                if (showMessage) {
-                    // cleanOutput.erase(std::remove(cleanOutput.begin(), cleanOutput.end(), '\n'),
-                    // cleanOutput.end()); cleanOutput.erase(std::remove(cleanOutput.begin(),
-                    // cleanOutput.end(), '\r'), cleanOutput.end());
-                    if (cleanOutput == "") {
-                        continue;
-                    }
-                    if (showMessage) {
-                        post("%s", cleanOutput.c_str());
-                    }
-                }
-                output.clear();
             }
+
+            // Check if the process has finished
             DWORD exitCode;
             GetExitCodeProcess(pi.hProcess, &exitCode);
             if (exitCode != STILL_ACTIVE && bytesRead == 0) {
                 break;
             }
-            // check if command was successful
-            if (exitCode != 0) {
-                x->running = false;
-                x->result = false;
-                return;
-            }
-            Sleep(1);
         }
+
+        // Check if the command succeeded
         if (sucessMsg) {
             post("[pd4web] Command executed successfully.");
         }
+
+        // Close handles
         CloseHandle(hRead);
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+
         x->running = false;
         x->result = true;
-        return;
     });
 #else
     std::thread t([x, cmd, sucessMsg, showMessage]() {
@@ -162,6 +152,15 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
             x->result = false;
         }
         while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
+            if (x->cancel) {
+                pclose(Pipe);
+                x->running = false;
+                x->result = false;
+                x->cancel = false;
+                pd_error(x, "[pd4web] Compilation canceled");
+                break;
+            }
+
             if (showMessage) {
                 std::string line(Buf.data());
                 line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
@@ -321,7 +320,10 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             x->clear = false;
             post("[pd4web] Clear set to false");
         }
-    } else {
+    } else if ("cancel" == config) {
+        x->cancel = true;
+    }
+    else {
         pd_error(x, "[pd4web] Invalid configuration");
     }
 
@@ -464,6 +466,7 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
         std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
     }
 
+    x->cancel = false;
     // default variables
     x->verbose = false;
     x->memory = 32;
@@ -483,6 +486,8 @@ static void pd4web_free(Pd4Web *x) {
     httplib::Client client("http://localhost:8080");
     auto res = client.Get("/stop");
     delete x->server;
+
+    x->cancel = true;
 }
 
 // ─────────────────────────────────────
