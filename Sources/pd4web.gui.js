@@ -28,6 +28,7 @@ function getCssVariable(variableName) {
 // ─────────────────────────────────────
 function setSoundIcon(icon, animation) {
     let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+
     if (soundSwitch) {
         const soundOffSvg = getComputedStyle(document.documentElement).getPropertyValue(icon).trim();
         const svgData = soundOffSvg.match(/url\("data:image\/svg\+xml;base64,(.*)"\)/)?.[1];

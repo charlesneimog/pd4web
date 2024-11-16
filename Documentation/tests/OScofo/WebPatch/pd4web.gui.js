@@ -28,6 +28,18 @@ function getCssVariable(variableName) {
 // ─────────────────────────────────────
 function setSoundIcon(icon, animation) {
   let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+
+  // add listener to the sound switch
+    if (soundSwitch && Pd4Web) {
+        // check if soundSwitch already has an event listener
+        if (!soundSwitch.onclick) {
+            soundSwitch.addEventListener("click", function () {
+                Pd4Web.soundToggle();
+            });
+        }
+    }
+
+
   if (soundSwitch) {
       const soundOffSvg = getComputedStyle(document.documentElement).getPropertyValue(icon).trim();
       const svgData = soundOffSvg.match(/url\("data:image\/svg\+xml;base64,(.*)"\)/)?.[1];

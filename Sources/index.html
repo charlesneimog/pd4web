@@ -24,7 +24,7 @@
         .addEventListener("click", async () => {
           // Pd4Web.init(), when using audio input, must be called after a user gesture
           Pd4Web.init();
-        });
+        }, { once: true });
     </script>
   </body>
 </html>

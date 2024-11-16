@@ -56,6 +56,7 @@ class Pd4Web {
     void init();
     void suspendAudio();
     void resumeAudio();
+    void soundToggle();
     static void post(const char *message);
 
     // Audio Worklets
@@ -109,6 +110,7 @@ class Pd4Web {
     bool m_Pd4WebInit = false;
     EMSCRIPTEN_WEBAUDIO_T m_Context;
     bool m_PdInit = false;
+    bool m_audioSuspended = false;
 
     // Lib Pd
     void *m_AudioWorkletInstance;
@@ -137,7 +139,8 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         .function("init", &Pd4Web::init)
         .function("suspendAudio", &Pd4Web::suspendAudio)
         .function("resumeAudio", &Pd4Web::resumeAudio)
-
+        .function("soundToggle", &Pd4Web::soundToggle)
+        
         // senders
         .function("sendFloat", &Pd4Web::sendFloat)
         .function("sendSymbol", &Pd4Web::sendSymbol)

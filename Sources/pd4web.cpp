@@ -12,6 +12,19 @@ Pd4WebGuiReceiverList Pd4WebGuiSenders;
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
 // ─────────────────────────────────────
+EM_JS(void, _JS_addSoundToggle, (void), {
+    let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+    if (soundSwitch == null || typeof Pd4Web === "undefined") {
+        return;
+    }
+    soundSwitch.addEventListener("click", function () {
+        if (Pd4Web){
+            Pd4Web.soundToggle();
+        }
+    });
+});
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_setIcon, (const char *icon, const char *animation), {
     let jsIcon = UTF8ToString(icon);
     let jsAnimation = UTF8ToString(animation);
@@ -922,6 +935,24 @@ void Pd4Web::resumeAudio() { emscripten_resume_audio_context_sync(m_Context); }
  */
 void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 
+
+/* Sound Switch */
+void Pd4Web::soundToggle() {
+    if (m_audioSuspended) {
+        resumeAudio();
+        m_audioSuspended = false;
+        if (PD4WEB_GUI) {
+            _JS_setIcon("--sound-on", "");
+        }
+    } else {
+        suspendAudio();
+        m_audioSuspended = true;
+        if (PD4WEB_GUI) {
+            _JS_setIcon("--sound-off", "");
+        }
+    }
+}
+
 // ╭─────────────────────────────────────╮
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
@@ -977,7 +1008,10 @@ void Pd4Web::init() {
 
     if (PD4WEB_GUI) {
         _JS_setIcon("--sound-on", "");
+        _JS_addSoundToggle();
     }
+    m_audioSuspended = false;
+
     return;
 }
 // ╭─────────────────────────────────────╮

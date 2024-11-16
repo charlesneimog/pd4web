@@ -43,6 +43,12 @@ class PdObjectsInSource:
             for match in matches:
                 objectName = match.group(1)
                 self.objsFounded.append(objectName)
+                
+            pattern = r'zexy_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
+            matches = re.finditer(pattern, file_contents)
+            for match in matches:
+                objectName = match.group(1)
+                self.objsFounded.append(objectName)
 
     def writeAbstractionPatches(self, patches):
         abs_count = 0
