@@ -28,7 +28,6 @@ if(MSVC)
   # Adicionar as opções de compilação para os alvos específicos
   foreach(target pd4web)
     set_target_properties(${target} PROPERTIES COMPILE_FLAGS "/MT")
-
   endforeach()
 endif()
 

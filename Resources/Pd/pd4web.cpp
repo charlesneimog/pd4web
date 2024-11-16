@@ -41,23 +41,16 @@ class Pd4Web {
     std::string projectRoot;
     std::string objRoot;
 
-    // config
+    // compilation config
     std::string patch;
     bool verbose;
     bool gui;
     bool debug;
     bool clear;
-
     int memory;
     int tpl;
-
     float zoom;
-
-    t_outlet *Out;
 };
-
-//
-static void pd4web_version(Pd4Web *x);
 
 // ─────────────────────────────────────
 static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
@@ -199,6 +192,10 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
     return x->result;
 }
 
+
+// ─────────────────────────────────────
+static void pd4web_version(Pd4Web *x);
+
 // ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
     int result;
@@ -333,10 +330,6 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
-    if (x->running && f == 1) {
-        pd_error(x, "[pd4web] pd4web is running, please wait it to finish before open the browser");
-        return;
-    }
     if (!x->isReady) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
@@ -353,16 +346,23 @@ static void pd4web_browser(Pd4Web *x, float f) {
             x->server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });
+            x->server->Get("/stop", [&](const httplib::Request &, httplib::Response &res) {
+                post("[pd4web] Stopping server");
+                x->server->stop();
+            });
+            std::string site = "http://localhost:8080";
+            post("[pd4web] Starting server on %s", site.c_str());
+            pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
             if (!x->server->listen("0.0.0.0", 8080)) {
-                post("[pd4web] Failed to start server");
+                pd_error(x, "[pd4web] Failed to start server");
+                return;
             }
+            
         });
         t.detach();
-        post("[pd4web] Server started at http://localhost:8080");
-        pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
     } else {
-        x->server->remove_mount_point("/");
-        x->server->stop();
+        httplib::Client client("http://localhost:8080");
+        auto res = client.Get("/stop");
     }
 }
 
@@ -439,7 +439,6 @@ static void pd4web_compile(Pd4Web *x) {
 // ─────────────────────────────────────
 static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     Pd4Web *x = (Pd4Web *)pd_new(pd4web_class);
-    x->Out = outlet_new(&x->obj, &s_anything);
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
 
@@ -469,12 +468,16 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->tpl = 0;
 
     x->server = new httplib::Server();
+    if (!x->server->is_valid()){
+        pd_error(x, "[pd4web] Failed to create Server");
+    }
     return x;
 }
 
 // ─────────────────────────────────────
 static void pd4web_free(Pd4Web *x) {
-    x->server->stop();
+    httplib::Client client("http://localhost:8080");
+    auto res = client.Get("/stop");
     delete x->server;
 }
 
