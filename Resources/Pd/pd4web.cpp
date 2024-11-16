@@ -66,7 +66,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         HANDLE hRead, hWrite;
         sa.nLength = sizeof(SECURITY_ATTRIBUTES);
         sa.bInheritHandle = TRUE;
-        
+
         // Create the pipe
         if (!CreatePipe(&hRead, &hWrite, &sa, 0)) {
             pd_error(x, "[pd4web] Failed to create pipe!");
@@ -74,22 +74,23 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
             x->result = false;
             return;
         }
-        
+
         // Set up STARTUPINFO to redirect output to the pipe
         si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
         si.wShowWindow = SW_HIDE;
         si.hStdOutput = hWrite;
         si.hStdError = hWrite;
-        
+
         // Create the process
-        BOOL result = CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi);
+        BOOL result = CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, TRUE, CREATE_NO_WINDOW,
+                                     NULL, NULL, &si, &pi);
         if (result == 0) {
             DWORD error = GetLastError();
             x->running = false;
             x->result = false;
             return;
         }
-        
+
         // Close write handle after creating the process
         CloseHandle(hWrite);
 
@@ -113,10 +114,10 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
             if (readResult && bytesRead > 0) {
                 output.append(buffer, bytesRead);
                 if (showMessage && !output.empty()) {
-                    //output.erase(std::remove(output.begin(), output.end(), '\n'), output.end());
+                    // output.erase(std::remove(output.begin(), output.end(), '\n'), output.end());
                     output.erase(std::remove(output.begin(), output.end(), '\r'), output.end());
                     post("%s", output.c_str());
-                    output.clear();  // Clear output after posting
+                    output.clear(); // Clear output after posting
                 }
             }
 
@@ -153,7 +154,6 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
         while (fgets(Buf.data(), Buf.size(), Pipe) != nullptr) {
             if (x->cancel) {
-                pclose(Pipe);
                 x->running = false;
                 x->result = false;
                 x->cancel = false;
@@ -191,7 +191,6 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
     return x->result;
 }
 
-
 // ─────────────────────────────────────
 static void pd4web_version(Pd4Web *x);
 
@@ -209,7 +208,7 @@ static bool pd4web_check(Pd4Web *x) {
 #else
     std::string python_cmd = "python3 --version";
 #endif
-    result = pd4web_terminal(x, python_cmd, false, false, false);   
+    result = pd4web_terminal(x, python_cmd, false, false, false);
     if (!result) {
         pd_error(nullptr, "[pd4web] Python 3 is not installed. Please install Python first.");
         return false;
@@ -236,7 +235,22 @@ static bool pd4web_check(Pd4Web *x) {
 }
 
 // ─────────────────────────────────────
-static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
+static void pd4web_get(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
+    if (argv[0].a_type != A_SYMBOL) {
+        pd_error(x, "[pd4web] Invalid argument, use [set <config_symbol> <value>]");
+        return;
+    }
+
+    std::string config = atom_getsymbol(argv)->s_name;
+    if (config == "version") {
+        global_pd4web_check = false;
+        pd4web_version(x);
+        global_pd4web_check = true;
+    }
+}
+
+// ─────────────────────────────────────
+static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     if (argv[0].a_type != A_SYMBOL) {
         pd_error(x, "[pd4web] Invalid argument, use [set <config_symbol> <value>]");
         return;
@@ -322,8 +336,7 @@ static void pd4web_setconfig(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
     } else if ("cancel" == config) {
         x->cancel = true;
-    }
-    else {
+    } else {
         pd_error(x, "[pd4web] Invalid configuration");
     }
 
@@ -359,7 +372,6 @@ static void pd4web_browser(Pd4Web *x, float f) {
                 pd_error(x, "[pd4web] Failed to start server");
                 return;
             }
-            
         });
         t.detach();
     } else {
@@ -475,7 +487,7 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->tpl = 0;
 
     x->server = new httplib::Server();
-    if (!x->server->is_valid()){
+    if (!x->server->is_valid()) {
         pd_error(x, "[pd4web] Failed to create Server");
     }
     return x;
@@ -495,11 +507,11 @@ extern "C" void pd4web_setup(void) {
     pd4web_class = class_new(gensym("pd4web"), (t_newmethod)pd4web_new, (t_method)pd4web_free,
                              sizeof(Pd4Web), CLASS_DEFAULT, A_GIMME, A_NULL);
 
-    class_addmethod(pd4web_class, (t_method)pd4web_setconfig, gensym("set"), A_GIMME, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_get, gensym("get"), A_GIMME, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("set"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, 0);
-    class_addmethod(pd4web_class, (t_method)pd4web_version, gensym("version"), A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }
