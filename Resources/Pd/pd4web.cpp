@@ -369,7 +369,12 @@ static void pd4web_browser(Pd4Web *x, float f) {
 // ─────────────────────────────────────
 static void pd4web_version(Pd4Web *x) {
     std::string cmd = x->pd4web + " --version";
-    pd4web_terminal(x, cmd.c_str(), true, false, true);
+    if (global_pd4web_check) {
+        pd4web_terminal(x, cmd.c_str(), true, false, false);
+    } else {
+        pd4web_terminal(x, cmd.c_str(), true, false, true);
+        global_pd4web_check = true;
+    }
 }
 
 // ─────────────────────────────────────
@@ -453,11 +458,10 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
 #endif
 
     if (global_pd4web_check) {
-        x->isReady = true;
+        std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
     } else {
         post("[pd4web] Checking pd4web...");
         std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
-        global_pd4web_check = true;
     }
 
     // default variables
