@@ -6,6 +6,7 @@ pyrightconfig.json
 .cache/clangd/index
 .ipynb_checkpoints
 .DS_Store
+.vscode
 Tests/*/build
 Tests/*/Pd4Web
 Tests/*/WebPatch
