@@ -69,12 +69,12 @@ nav:
   - Home: index.md
   - Compile your patch:
       - Installation: patch/install.md
-      - Gui: patch/gui.md
+      - Gui Objects: patch/gui.md
       - Compilation: 
         - patch/compile.md
       - Website Templates: 
         - patch/Templates/index.md
-        - Templates: 
+        - Website Templates List: 
           - patch/Templates/score.md
           - patch/Templates/hands.md
           - patch/Templates/choir.md
