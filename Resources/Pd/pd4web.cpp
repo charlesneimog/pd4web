@@ -337,7 +337,11 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             post("[pd4web] Clear set to false");
         }
     } else if ("cancel" == config) {
-        x->cancel = true;
+        if (x->running) {
+            x->cancel = true;
+        } else{
+            pd_error(x, "[pd4web] No compilation running");
+        }
     } else {
         pd_error(x, "[pd4web] Invalid configuration");
     }
@@ -463,15 +467,26 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
 
+    // check if there is some python installed
+
+
 #ifdef _WIN32
+    std::string python = "py --version";
     x->pip = x->objRoot + "\\.venv\\Scripts\\pip.exe";
     x->python = x->objRoot + "\\.venv\\Scripts\\python.exe";
     x->pd4web = x->objRoot + "\\.venv\\Scripts\\pd4web.exe";
 #else
+    std::string python = "python3 --version";
     x->pip = x->objRoot + "/.venv/bin/pip";
     x->python = x->objRoot + "/.venv/bin/python";
     x->pd4web = x->objRoot + "/.venv/bin/pd4web";
 #endif
+
+    // check if there is some python installed
+    if (!pd4web_terminal(x, python, false, false, false, false)) {
+        pd_error(x, "[pd4web] Python 3 is not installed. Please install Python first.");
+        return nullptr;
+    }
 
     if (global_pd4web_check) {
         std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
