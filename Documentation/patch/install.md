@@ -2,27 +2,30 @@
 hide:
   - toc
 ---
-
-# Install pd4web
+ <style>
+  .md-typeset h1,
+  .md-content__button {
+    display: none;
+  }
+</style>
  
- To compile you first need to install `pd4web`. There is two ways to install it.
- 
- - Using the PureData Patch, if you don't use python or the command line.
- - Using the Python Package, if you know how to use a command line.
+<p align="center">
+  To compile you first need to install <code>pd4web</code> and <code>python</code>. You can use a PureData patch or a Python package.
+</p>
  
 ---
 ## <h2 align="center">PureData Patch Installation</h2>
 
 To use the `pd4web` object in PureData, follow these steps:
 
-1. Install [PureData](https://puredata.info/downloads/pure-data) and [Python](https://www.python.org/downloads/release/python-3130/).
+1. <p> Install <a href="https://puredata.info/downloads/pure-data" target="_blank">PureData</a> and 
+  <a href="https://www.python.org/downloads/release/python-3130/" target="_blank">Python</a> 
+  (bottom of the page).
+</p>
 2. Open PureData.
 3. Navigate to **Help** :material-arrow-right: **Find Externals**.
 4. Search for `pd4web`.
 5. Click the **Install** button.
-
-!!! info 
-    You will also need Python. On Linux and macOS, Python is likely pre-installed. For Windows, you'll need to install Python separately (it's as simple as installing PureData or any other program).
 
 ---
 ## <h2 align="center">Python Package</h2>

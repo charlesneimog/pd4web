@@ -68,7 +68,7 @@ extra_javascript: [js/index_slider.js]
 nav:
   - Home: index.md
   - Compile your patch:
-      - Intro: patch/install.md
+      - Installation: patch/install.md
       - Gui: patch/gui.md
       - Compilation: 
         - patch/compile.md
