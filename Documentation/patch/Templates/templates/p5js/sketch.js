@@ -60,10 +60,10 @@ function draw() {
     drawInterval = floor(random(1, flow));
     clearCounter++;
 
-    if (typeof Pd4Web !== 'undefined') {
+    if (Pd4Web !== null && typeof Pd4Web !== 'undefined') {
       if (Pd4Web.sendList) {
-        let models = [10, 11, 12, 13, 14, 15, 16];
-        let model = models[floor(random(0, 21))];
+        let models = [11, 12, 13, 14, 15];
+        let model = models[floor(random(0, models.length))];
         Pd4Web.sendFloat("s-m", model);
         Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
         Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
@@ -96,7 +96,7 @@ function draw() {
 
 // Function to draw a random shape
 function drawSomething() {
-  let form = floor(random(1, 4)); // Random shape selector
+  let form = floor(random(1, 5)); // Random shape selector
   fill(random(0, 255), random(0, 255), random(0, 255));
 
   let width = window.innerWidth;
@@ -105,11 +105,16 @@ function drawSomething() {
   let x = random(d / 2, width - d / 2);
   let y = random(d / 2, height - d / 2);
 
-  if (form === 1) {
-    ellipse(x, y, d);
-  } else if (form === 2) {
-    rect(x, y, d, d);
-  } else if (form === 3) {
-    triangle(x, y, x + d, y, x + d / 2, y + d);
+  
+  // random shape
+  beginShape();
+  let size = random(10, 100);
+  let x1 = random(0, width);
+  let y1 = random(0, height);
+  for (let i = 0; i < 10; i++) {
+    let x = random(x1, x1 + random(-size, size));
+    let y = random(y1, y1 + random(-size, size));
+    vertex(x, y);
   }
+  endShape(CLOSE);
 }
