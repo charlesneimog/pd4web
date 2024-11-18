@@ -233,7 +233,12 @@ static bool pd4web_check(Pd4Web *x) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
-    pd4web_version(x);
+    
+    // check version
+    std::string cmd = x->pd4web + " --version";
+    pd4web_terminal(x, cmd.c_str(), true, false, true, true);
+    global_pd4web_check = true;
+    
     return true;
 }
 
