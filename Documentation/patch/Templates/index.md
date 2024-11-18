@@ -17,6 +17,6 @@ Website templates are predefined websites that can be used to expand what you ca
 
 --- 
 <div class="grid cards" markdown>
--   :octicons-book-16: [__`5` - Tutorial patches__](5-choir.md)
-
+-   :octicons-book-16: [__`5` - Tutorial patches__](5-tutorial.md)
+-   :octicons-book-16: [__`5` - Tutorial patches__](5-tutorial.md)
 </div>

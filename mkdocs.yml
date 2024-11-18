@@ -81,7 +81,10 @@ nav:
           - patch/Templates/3-choir.md
           - patch/Templates/4-p5js.md
           - patch/Templates/5-tutorial.md
-      - Problems: patch/problems.md
+      - Problems: 
+        - patch/problems/memory.md
+        - patch/problems/compilation.md
+        - patch/problems/flutex.md
   - libraries.md
   - Pd4Web JavaScript Module: 
     - JavaScript Module: js/js.md
