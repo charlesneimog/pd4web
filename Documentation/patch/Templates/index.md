@@ -4,13 +4,19 @@ Website templates are predefined websites that can be used to expand what you ca
 
 --- 
 <div class="grid cards" markdown>
--   :musical_score: [__`1` - Patch + Score__](score.md)
--   :hand_splayed_tone3: [__`2` - Hand detection (AI)__](hands.md)
+-   :musical_score: [__`1` - Patch + Score__](1-score.md)
+-   :hand_splayed_tone3: [__`2` - Hand detection (AI)__](2-hands.md)
 </div>
 
 --- 
 <div class="grid cards" markdown>
--   :material-church: [__`3` - Choir__](choir.md)
--   :simple-p5dotjs: [__`4` - pd4web + p5js__](p5js.md)
+-   :material-church: [__`3` - Choir__](3-choir.md)
+-   :simple-p5dotjs: [__`4` - pd4web + p5js__](4-p5js.md)
+
+</div>
+
+--- 
+<div class="grid cards" markdown>
+-   :octicons-book-16: [__`5` - Tutorial patches__](5-choir.md)
 
 </div>

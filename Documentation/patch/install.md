@@ -44,7 +44,6 @@ hide:
 </div>
 
 
-
 ---
 ## <h2 align="center">:octicons-terminal-16: Python Package (Command Line)</h2>
 

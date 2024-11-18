@@ -13,7 +13,6 @@ This template is for the combination of p5js and pd4web. It is a simple template
 
 <p align="center">
   <img src="../assets/p5js.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);" onclick="window.open('./../templates/p5js', '_blank')">
-
 </p>
 
 <p align="center" markdown>
