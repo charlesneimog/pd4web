@@ -103,6 +103,9 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         while (true) {
             if (x->cancel) {
                 TerminateProcess(pi.hProcess, 0);
+                CloseHandle(hRead);
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
                 x->running = false;
                 x->result = false;
                 x->cancel = false;
@@ -513,7 +516,6 @@ static void pd4web_free(Pd4Web *x) {
     httplib::Client client("http://localhost:8080");
     auto res = client.Get("/stop");
     delete x->server;
-
     x->cancel = true;
 }
 

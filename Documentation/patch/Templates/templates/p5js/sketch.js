@@ -28,7 +28,7 @@ function setup() {
 
   // Initialize random intervals
   drawInterval = 0;
-  clearInterval = floor(random(5, 35)); // Clear after 5 to 35 circles
+  clearInterval = floor(random(5, 50)); // Clear after 5 to 35 circles
 }
 
 function draw() {
@@ -41,7 +41,7 @@ function draw() {
 
   // Handle the pattern breaker
   if (breakingFlow) {
-    flow = maxFlow * 2; // Force a fast flow during the break
+    flow = maxFlow * random(2, 5);
     breakCounter++;
     if (breakCounter > breakDuration) {
       breakingFlow = false;
@@ -62,7 +62,7 @@ function draw() {
 
     if (Pd4Web !== null && typeof Pd4Web !== 'undefined') {
       if (Pd4Web.sendList) {
-        let models = [11, 12, 13, 14, 15];
+        let models = [11, 12, 13];
         let model = models[floor(random(0, models.length))];
         Pd4Web.sendFloat("s-m", model);
         Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
