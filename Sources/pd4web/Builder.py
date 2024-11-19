@@ -383,7 +383,7 @@ class GetAndBuildExternals:
         ]
         if self.Pd4Web.verbose:
             pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
-        result = subprocess.run(command, capture_output=not self.Pd4Web.verbose, text=True).returncode
+        result = subprocess.run(command, env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
             raise Exception("Error: Could not configure the project")
         os.chdir(cwd)
@@ -406,7 +406,7 @@ class GetAndBuildExternals:
         if self.Pd4Web.verbose:
             pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
 
-        result = subprocess.run(command, capture_output=not self.Pd4Web.verbose, text=True).returncode
+        result = subprocess.run(command, env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True).returncode
         if result != 0:
             raise Exception("Error: Could not compile the project, run on verbose mode to see the error")
         os.chdir(cwd)
