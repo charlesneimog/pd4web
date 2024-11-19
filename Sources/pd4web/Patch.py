@@ -492,8 +492,13 @@ class Patch:
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
                     cloneAbs = token
                 elif token in self.declaredAbs:
+                    pd4web_print("Clone Abs is part of declared Abs", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
                     cloneAbs = token
-
+                for lib in self.Pd4Web.declaredPaths:
+                    if os.path.exists(self.PROJECT_ROOT + "/" + lib + "/" + token + ".pd"):
+                        cloneAbs = lib + "/" + token
+                        break
+                    
                 if cloneAbs != "":
                     break
 
@@ -508,7 +513,6 @@ class Patch:
                             break
                             
             lastToken = token
-
         if cloneAbs != "":
             if os.path.exists(self.PROJECT_ROOT + "/" + cloneAbs + ".pd"):
                 pd4web_print(
@@ -523,6 +527,7 @@ class Patch:
                     isabs=True,
                     patch=self.PROJECT_ROOT + "/" + cloneAbs + ".pd",
                 )
+                return
                 # self.Pd4Web.processedAbs.append(self.PROJECT_ROOT + "/" + cloneAbs + ".pd")
             clonePathFound = False
             for lib in self.Pd4Web.declaredPaths:

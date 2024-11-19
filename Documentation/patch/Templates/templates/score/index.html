@@ -113,7 +113,7 @@
     <script>  
       async function loadMarkdown() {
         try {
-            const response = await fetch('bula.md');
+            const response = await fetch('bula.txt');
             if (!response.ok) throw new Error('Failed to load file.md');
             const markdown = await response.text();
             const html = marked.parse(markdown);

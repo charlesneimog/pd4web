@@ -62,6 +62,10 @@ markdown_extensions:
   - pymdownx.superfences
   - footnotes
   - pymdownx.keys
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
 repo_url: https://github.com/charlesneimog/pd4web
 extra_css: [extra/extra.css]
 extra_javascript: [js/index_slider.js]
@@ -69,17 +73,22 @@ nav:
   - Home: index.md
   - Compile your patch:
       - Installation: patch/install.md
-      - Gui Objects: patch/gui.md
+      - Gui Objects: 
+        - patch/gui.md
       - Compilation: 
         - patch/compile.md
       - Website Templates: 
         - patch/Templates/index.md
         - Website Templates List: 
-          - patch/Templates/score.md
-          - patch/Templates/hands.md
-          - patch/Templates/choir.md
-          - patch/Templates/p5js.md
-      - Problems: patch/problems.md
+          - patch/Templates/1-score.md
+          - patch/Templates/2-hands.md
+          - patch/Templates/3-choir.md
+          - patch/Templates/4-p5js.md
+          - patch/Templates/5-tutorial.md
+      - Problems: 
+        - patch/problems/memory.md
+        - patch/problems/compilation.md
+        - patch/problems/flutex.md
   - libraries.md
   - Pd4Web JavaScript Module: 
     - JavaScript Module: js/js.md

@@ -13,25 +13,25 @@ The result will be something like this:
 ---
 
 <p align="center">
-  <img src="../assets/choir.jpeg" width="35%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+  <img src="../assets/choir.jpeg" width="35%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); cursor: pointer;" onclick="window.open('https://charlesneimog.github.io/Pandemonio/', '_blank');">
 </p>
 
 <p align="center" markdown>
     :octicons-download-16: [Download Patch example](../patches/template-3.pd)
 </p>
 
-<h2 align="center">How must be your patch</h2>
+## <h2 align="center">What should your patch include?</h2>
 
-In your patch, you have these options to set using **senders**:
+In your patch, you have these options to set using **senders**, for example, `[s composer`], `[s title]`, `[s duration-bar]`, `[s piece-duration-bar]`, `[s poem-phrase]` and `[s pitch-syl]`:
 
 - `composer`: The composer name;
 - `title`: Title of the piece;
-- `duration-bar`: A number between 0 and 100 for the bar line.
-- `piece-duration-bar`: A number between 0 and 100 for the bar line.
+- `duration-bar`: A number between 0 and 100 for the bar line (control the bar above the score);
+- `piece-duration-bar`: A number between 0 and 100 for the bar line (control the bar below the phrase);
 - `poem-phrase`: The complete phrase of the poem (or anything else), for example `minha frase`.
 - `pitch-syl`: A list with the pitchname and the syllable, for example `C4 fra`.
 
-In your patch, you have these options to set using **receivers**:
+In your patch, you have these options to set using **receivers**, for example, `[r naipe]`:
 
 - `naipe`. Receive the naipe choosen by the singer, 1 for Baixo, 2 for Tenor, 3 for Contralto and 4 for Soprano.
 

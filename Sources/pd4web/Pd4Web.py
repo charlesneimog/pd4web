@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import subprocess
 import pygit2
 
 import shutil
@@ -135,7 +136,7 @@ class Pd4Web:
 
         projectRoot = os.path.realpath(self.Patch)
         os.chdir(projectRoot)
-        os.system(f"{emccRun} {projectRoot}/index.html")
+        subprocess.run(f"{emccRun} {projectRoot}/index.html", shell=True, env=self.env)
 
     def get_mainPaths(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
@@ -178,6 +179,12 @@ class Pd4Web:
         
         self.Libraries = ExternalLibraries(self)
         self.Objects: Objects = Objects(self)
+        
+        self.env = os.environ.copy()
+        python_dir = os.path.dirname(sys.executable)
+        self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
+        self.env["PYTHON"] = sys.executable
+        self.env["EMSDK_QUIET"] = "1"
 
     def DownloadZip(self, url, filename, what=""):
         pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)

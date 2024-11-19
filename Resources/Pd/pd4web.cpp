@@ -103,6 +103,9 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         while (true) {
             if (x->cancel) {
                 TerminateProcess(pi.hProcess, 0);
+                CloseHandle(hRead);
+                CloseHandle(pi.hProcess);
+                CloseHandle(pi.hThread);
                 x->running = false;
                 x->result = false;
                 x->cancel = false;
@@ -231,8 +234,12 @@ static bool pd4web_check(Pd4Web *x) {
         pd_error(nullptr, "[pd4web] Failed to install pd4web");
         return false;
     }
-    pd4web_version(x);
-    post("[pd4web] I recommend to restart Pd to finish the installation");
+
+    // check version
+    std::string cmd = x->pd4web + " --version";
+    pd4web_terminal(x, cmd.c_str(), true, false, true, true);
+    global_pd4web_check = true;
+
     return true;
 }
 
@@ -339,7 +346,7 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     } else if ("cancel" == config) {
         if (x->running) {
             x->cancel = true;
-        } else{
+        } else {
             pd_error(x, "[pd4web] No compilation running");
         }
     } else {
@@ -469,7 +476,6 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
 
     // check if there is some python installed
 
-
 #ifdef _WIN32
     std::string python = "py --version";
     x->pip = x->objRoot + "\\.venv\\Scripts\\pip.exe";
@@ -515,7 +521,6 @@ static void pd4web_free(Pd4Web *x) {
     httplib::Client client("http://localhost:8080");
     auto res = client.Get("/stop");
     delete x->server;
-
     x->cancel = true;
 }
 

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Pd4Web</title>
+    <meta charset="UTF-8" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
+    <script src="./pd4web.threads.js"></script>
+    <script src="./pd4web.js"></script>
+    <script src="./sketch.js"></script>
+    <style>
+      /* Style for the p5.js canvas */
+      canvas {
+        border-radius: 20px;
+      }
+    
+    </style>
+  </head>
+
+    <body>
+      <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+      <div id="p5js"></div>
+      <script>
+        // ╭─────────────────────────────────────╮
+        // │        Gui Bottoms Interface        │
+        // ╰─────────────────────────────────────╯
+        var Pd4Web = null;
+
+        // add window click event to start video
+        Pd4WebModule().then((Pd4WebModulePromise) => {
+          Pd4Web = new Pd4WebModulePromise.Pd4Web();
+          // as we are not using audio input, we can start the video right away
+          Pd4Web.init();
+        });
+      </script>
+  </body>
+</html>

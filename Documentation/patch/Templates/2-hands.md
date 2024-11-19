@@ -13,14 +13,14 @@ The result will be something like this:
 ---
 
 <p align="center">
-  <img src="../assets/ml5.png" width="50%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+  <img src="../assets/ml5.png" width="50%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); cursor: pointer;" onclick="window.open('../templates/ml5', '_blank');">
 </p>
 
 <p align="center" markdown>
     :octicons-download-16: [Download Patch example](../patches/template-2.pd)
 </p>
     
-<h2 align="center">How must be your patch</h2>
+## <h2 align="center">What should your patch include?</h2>
 
 You patch must have some receivers using the `L-` and `R-` preffixes to receive the data from the hands followed by the number of the position you want, following the image below:
 
@@ -38,13 +38,10 @@ For example, to receive the data from where is the `INDEX_FINGER_TIP` for the `L
 
 From these receivers, you will get two numbers, `x` and `y`, inside a list. These numbers represent the position of your hand relative to your real-time video.
 
-- The `x` value indicates the vertical position: 
-  - Close to `0` means your hand is near the top of the image.
-  - Close to `1` means your hand is near the bottom of the image.
-
-- The `y` value indicates the horizontal position:
-  - Close to `0` means your hand is near the left side of the image.
-  - Close to `1` means your hand is near the right side of the image. 
+<div class="grid cards" markdown>
+  - __X Position__: `0` is the top and `1` is the bottom.
+  - __Y Position__: `0` is the left and `1` is the right.
+</div>
 
 In summary, `[x, y]` defines the hand's position within a coordinate system where `(0,0)` is the top-left corner and `(1,1)` is the bottom-right corner of the image.
 

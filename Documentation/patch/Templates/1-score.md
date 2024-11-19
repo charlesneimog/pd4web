@@ -7,8 +7,10 @@ hide:
 
 In this template you have access to a patch that receives image files (from scores) and renders it side by side with your patch. The result will be something like this:
 
+!!! tip "Click in the image to open the example in a new tab" 
+
 <p align="center">
-  <img src="../assets/score.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+  <img src="../assets/score.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); cursor: pointer;" onclick="window.open('../templates/score', '_blank');">
 </p>
 
 <p align="center" markdown>
@@ -19,7 +21,7 @@ In this template you have access to a patch that receives image files (from scor
 
 ---
 
-<h3 align="center">Score Files</h3>
+## <h2 align="center">What should your patch include?</h2>
 
 
 You make your patch and the score file can be set using the object `[s pd4web-score]`. I recomend to use svg files, but you can use any image file (.png, .jpeg). 
@@ -30,7 +32,7 @@ You make your patch and the score file can be set using the object `[s pd4web-sc
 
 ---
     
-<h3 align="center">Add infos in the website</h3>
+## <h3 align="center">Extra options</h3>
 
 
 After compile the patch, you will see that, inside the folder `WebPatch`, will have a file called `bula.md`. Inside this file, you can write some description about your piece. The file uses markdown to render, you can check the complet syntax in https://www.markdownguide.org/basic-syntax/. Below the example of main command:
