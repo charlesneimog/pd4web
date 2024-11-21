@@ -1,9 +1,7 @@
 # Adding Externals Support (Devs)
 
-!!! warning "Content Intended for C/C++ Developers"
-    This section is intended for developers who want to interact with the `pd4web` project using JavaScript. If you are not a developer, you can skip this section.
-
-<p align="center"> Page to document the details of how you can contribute with <code>pd4web</code>. </p>
+!!! warning "For Developers of Pd Objects"
+    This section is intended for those developing Pd objects and looking to add the object to `pd4web`. If this doesn't apply to you, feel free to skip this section.
 
 ## <h2 align="center"> **pd4web**: Adding Support to Externals </h2>
 

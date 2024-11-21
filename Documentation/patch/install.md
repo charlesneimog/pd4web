@@ -10,8 +10,10 @@ hide:
 </style>
  
 <p align="center">
-  To compile you first need to install <code>pd4web</code> and <code>python</code>. You can use a PureData patch or a Python package.
+  To compile you first patch, first you need to install <code>pd4web</code> and <code>python</code>. You can use a PureData patch or a Python package.
 </p>
+
+
  
 ---
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>

@@ -1,5 +1,5 @@
-!!! tip "Content Intended for Developers"
-    This section is intended for developers who want to interact with the `pd4web` project using JavaScript. If you are not a developer, you can skip this section.
+!!! warning "For Those Familiar with JavaScript" 
+    This section is for anyone with JavaScript knowledge who wants to explore interactions with the `pd4web` project. If you're not comfortable with JavaScript, you can skip this section.
 
 The `pd4web` project includes a WebAssembly module named `Pd4Web`. In the `index.html` file inside the `WebPatch` directory, `Pd4Web` is always loaded as follows:
 
