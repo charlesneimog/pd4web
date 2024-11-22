@@ -41,11 +41,11 @@ function draw() {
       if (Pd4Web && Pd4Web.sendList && hand.confidence > 0.95) {
         let x = keypoint.x / width;
         let y = keypoint.y / height;
-        if (handLorR == "Left"){
+        if (handLorR == "Left") {
           let r = "L-" + j;
           Pd4Web.sendList(r, [x, y]);
           //console.log(handLorR + "-" + j + " : " + x + ", " + y);
-        } else if (handLorR == "Right"){
+        } else if (handLorR == "Right") {
           let r = "R-" + j;
           Pd4Web.sendList(r, [x, y]);
           //console.log(handLorR + "-" + j + " : " + x + ", " + y);
