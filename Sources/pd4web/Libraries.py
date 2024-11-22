@@ -7,7 +7,6 @@ import pygit2
 import shutil
 
 from .Pd4Web import Pd4Web
-from .Helpers import DownloadZipFile, pd4web_print
 
 # ╭──────────────────────────────────────╮
 # │    In this file we have all code     │
@@ -71,7 +70,7 @@ class ExternalLibraries:
                 if "DirectLink" in LibraryData:
                     self.directLink = LibraryData["DirectLink"]
                 else:
-                    raise Exception("Error: {self.name} doesn't have a download source")
+                    self.Pd4Web.exception("Error: {self.name} doesn't have a download source")
 
             self.GetLinkForDownload()
 
@@ -109,7 +108,7 @@ class ExternalLibraries:
                     self.downloadLink = self.downloadSources[self.source]
                     return self.downloadLink.format(self.dev, self.repo)
                 else:
-                    raise Exception(f"Error: {self.name} doesn't have a download source")
+                    self.Pd4Web.exception(f"Error: {self.name} doesn't have a download source")
             else:
                 return self.directLink
 
@@ -159,7 +158,7 @@ class ExternalLibraries:
             curr_commit: pygit2.Commit = libRepo.head.peel()
             lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
             if curr_commit.id == lib_commit.id:
-                # pd4web_print(f"Library {libData.repo} is in the right commit", color="green")
+                # print(f"Library {libData.repo} is in the right commit", color="green")
                 return  # library up-to-date
             libRepo.set_head(lib_commit.id)
             libRepo.checkout_tree(lib_commit)
@@ -168,10 +167,10 @@ class ExternalLibraries:
 
         libLink = f"https://github.com/{libData.dev}/{libData.repo}"
         try:
-            pd4web_print(f"Cloning library {libData.repo}... This will take some time!", color="green")
+            self.Pd4Web.print(f"Cloning library {libData.repo}... This will take some time!", color="green")
             pygit2.clone_repository(libLink, libPath)
         except Exception as e:
-            raise Exception(f"Failed to clone repository: {str(e)}")
+            self.Pd4Web.exception(f"Failed to clone repository: {str(e)}")
 
         libRepo: pygit2.Repository = pygit2.Repository(libPath)
         tagName = libData.version
@@ -179,15 +178,15 @@ class ExternalLibraries:
         libRepo.set_head(commit.id)
         libRepo.checkout_tree(commit)
         libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-        pd4web_print(f"Library {libData.repo} cloned successfully!", color="green")
-        pd4web_print(f"Using commit {commit.id}", color="green")
+        self.Pd4Web.print(f"Library {libData.repo} cloned successfully!", color="green")
+        self.Pd4Web.print(f"Using commit {commit.id}", color="green")
         try:
-            pd4web_print(f"Initializing submodules of {libData.repo}...", color="green")
+            self.Pd4Web.print(f"Initializing submodules of {libData.repo}...", color="green")
             submodule_collection = pygit2.submodules.SubmoduleCollection(pygit2.Repository(libPath))
             submodule_collection.init()
             submodule_collection.update()
         except:
-            raise Exception("Failed to initialize submodules.")
+            self.Pd4Web.exception("Failed to initialize submodules.")
 
         # TODO: Try to merge commits from submodules
         # try:
@@ -195,7 +194,7 @@ class ExternalLibraries:
         #     submodule_repo = pygit2.Repository(libPath)
         #
         # except Exception as e:
-        #     raise Exception(f"Failed to merge submodule commits: {str(e)}")
+        #     self.Pd4Web.exception(f"Failed to merge submodule commits: {str(e)}")
 
     def GetLibrarySourceCode(
         self,
@@ -215,7 +214,7 @@ class ExternalLibraries:
         libFolder = self.Pd4Web.APPDATA + f"/Externals/{libData.name}"
         self.CloneLibrary(libFolder, libData)
         if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
-            pd4web_print(
+            self.Pd4Web.print(
                 f"Copying {libData.name} to Pd4Web/Externals...",
                 color="blue",
                 silence=self.Pd4Web.SILENCE,
@@ -244,7 +243,7 @@ class ExternalLibraries:
                     ignore_dangling_symlinks=True,
                 )
             self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
-            externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
+            # externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         return True
 
     def AddUsedLibraries(self, LibraryName):

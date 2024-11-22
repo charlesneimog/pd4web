@@ -14,9 +14,6 @@ import certifi
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
 
-from .Helpers import pd4web_print
-
-
 class Pd4Web:
     # Paths
     PD4WEB_LIBRARIES: str = ""
@@ -71,7 +68,7 @@ class Pd4Web:
         self.Parser = parser
         self.Patch = os.path.abspath(self.Parser.patch_file)
         if not os.path.isfile(self.Patch):
-            raise Exception("\n\nError: Patch file not found")
+            self.exception("\n\nError: Patch file not found")
 
         # default values
         self.verbose = self.Parser.verbose
@@ -92,7 +89,7 @@ class Pd4Web:
         from .Patch import Patch
 
         if self.Patch == "":
-            raise Exception("You must set a patch file")
+            self.exception("You must set a patch file")
 
         self.get_mainPaths()
         self.InitVariables()
@@ -128,11 +125,11 @@ class Pd4Web:
         elif sys.platform == "linux":
             self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
         else:
-            raise RuntimeError("Unsupported platform")
+            self.exception("Unsupported platform")
         emccRun = self.APPDATA + "/emsdk/upstream/emscripten/emrun"
         # check if emrun exists
         if not os.path.exists(emccRun):
-            raise Exception("emrun not found. Please install Emscripten")
+            self.exception("emrun not found. Please install Emscripten")
 
         projectRoot = os.path.realpath(self.Patch)
         os.chdir(projectRoot)
@@ -154,7 +151,7 @@ class Pd4Web:
         elif sys.platform == "linux":
             self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
         else:
-            raise RuntimeError("Unsupported platform")
+            self.exception("Unsupported platform")
 
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
@@ -171,15 +168,15 @@ class Pd4Web:
         self.externalsLinkLibraries = []
         self.externalsLinkLibrariesFolders = []
         self.externalsSetupFunctions = []
-        
+
         self.declaredLocalAbs = []
         self.declaredLibsObjs = []
         self.declaredPaths = []
         self.processedAbs = []
-        
+
         self.Libraries = ExternalLibraries(self)
         self.Objects: Objects = Objects(self)
-        
+
         self.env = os.environ.copy()
         python_dir = os.path.dirname(sys.executable)
         self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
@@ -187,10 +184,10 @@ class Pd4Web:
         self.env["EMSDK_QUIET"] = "1"
 
     def DownloadZip(self, url, filename, what=""):
-        pd4web_print(f"Downloading {what}...", color="green", silence=self.SILENCE)
+        self.print(f"Downloading {what}...", color="green", silence=self.SILENCE)
         response = requests.get(url, stream=True)
         if response.status_code != 200:
-            raise Exception(f"Error: {response.status_code}")
+            self.exception(f"Error: {response.status_code}")
         total_size = response.headers.get("content-length")
         total_size = int(total_size) if total_size is not None else None
         chunk_size = 1024
@@ -215,18 +212,20 @@ class Pd4Web:
 
     def GetPdSourceCode(self):
         if not os.path.exists(self.APPDATA + "/Pd"):
-            pd4web_print("Cloning Pd", color="yellow")
+            self.print("Cloning Pd", color="yellow")
             pd_path = self.APPDATA + "/Pd"
             pd_git = "https://github.com/pure-data/pure-data"
             ok = pygit2.clone_repository(pd_git, pd_path)
             if not ok:
-                raise Exception("Failed to clone emsdk")
+                self.exception("Failed to clone emsdk")
 
             libRepo: pygit2.Repository = pygit2.Repository(pd_path)
             tag_name = Pd4Web.PD_VERSION
 
             # commit
             tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
+            if tag_ref is None:
+                self.exception("Tag ref is None")
             if isinstance(tag_ref.peel(), pygit2.Tag):
                 commit = tag_ref.peel().target
             else:
@@ -256,12 +255,12 @@ class Pd4Web:
         if parser.add_lib_cmake:
             newLibCmake = parser.add_lib_cmake
             if not os.path.exists(newLibCmake):
-                raise Exception("Library not found")
+                self.exception("Library not found")
             if not newLibCmake.endswith(".cmake"):
-                raise Exception("Library must end with .cmake")
+                self.exception("Library must end with .cmake")
 
             libName = os.path.basename(newLibCmake)
-            pd4web_print(f"{libName} added to pd4web supported libraries", color="green")
+            self.print(f"{libName} added to pd4web supported libraries", color="green")
             shutil.copy(newLibCmake, self.PD4WEB_LIBRARIES)
             exit()
 
@@ -335,7 +334,7 @@ class Pd4Web:
             default=1,
             help="Zoom level for the patch (must be a number)",
         )
-        
+
         # Debug
         parser.add_argument(
             "--debug",
@@ -379,3 +378,68 @@ class Pd4Web:
             action="store_true",
             help="Bypass unsupported objects in libraries",
         )
+
+    def print(self, text, color=None, bright=False, silence=False, pd4web=False):
+        tab = " " * 4
+        if pd4web:
+            if color == "red":
+                print("ERROR: " + text)
+                sys.stdout.flush()  # Ensure immediate output
+            elif color == "yellow":
+                print("WARNING: " + text)
+                sys.stdout.flush()  # Ensure immediate output
+            else:
+                print(text)
+                sys.stdout.flush()  # Ensure immediate output
+            return
+        if silence:
+            return
+        try:
+            if color is None:
+                color_code = ""
+            else:
+                color_code = {
+                    "red": "\033[91;1m" if bright else "\033[91m",
+                    "green": "\033[92;1m" if bright else "\033[92m",
+                    "yellow": "\033[93;1m" if bright else "\033[93m",
+                    "blue": "\033[94;1m" if bright else "\033[94m",
+                    "magenta": "\033[95;1m" if bright else "\033[95m",
+                    "cyan": "\033[96;1m" if bright else "\033[96m",
+                    "lightgray": "\033[97;1m" if bright else "\033[97m",
+                    "darkgray": "\033[90;1m" if bright else "\033[90m",
+                    "lightred": "\033[91;1m" if bright else "\033[91m",
+                    "lightgreen": "\033[92;1m" if bright else "\033[92m",
+                    "lightyellow": "\033[93;1m" if bright else "\033[93m",
+                    "lightblue": "\033[94;1m" if bright else "\033[94m",
+                    "lightmagenta": "\033[95;1m" if bright else "\033[95m",
+                    "lightcyan": "\033[96;1m" if bright else "\033[96m",
+                    "white": "\033[97;1m" if bright else "\033[97m",
+                    "blackbold": "\033[1m",
+                    "blackunderline": "\033[4m",
+                    "dark_grey": "\033[90m",
+                }.get(color.lower(), "")
+            reset_code = "\033[0m"
+
+            if color == "red":
+                print(tab + color_code + "🔴️ ERROR: " + text + reset_code)
+            elif color == "yellow":
+                print(tab + color_code + "🟡️ WARNING: " + text + reset_code)
+            elif color == "green":
+                print(tab + color_code + "🟢️ " + text + reset_code)
+            elif color == "blue":
+                print(tab + color_code + "🔵️ " + text + reset_code)
+            elif color == "magenta":
+                print(tab + color_code + "🟣️ " + text + reset_code)
+            else:
+                print(tab + color_code + text + reset_code)
+            sys.stdout.flush()  # Ensure immediate output
+        except:
+            print(text)
+            sys.stdout.flush()  # Ensure immediate output
+
+    def exception(self, text):
+        if self.PD_EXTERNAL:
+            self.print(text, color="red", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
+            exit(-1)
+        else:
+            raise Exception(text)

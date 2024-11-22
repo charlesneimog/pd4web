@@ -1,7 +1,7 @@
 import os
 import json
 
-from .Helpers import pd4web_print
+# from .Helpers import self.Pd4Web.print
 from .Pd4Web import Pd4Web
 
 
@@ -79,7 +79,7 @@ class Patch:
         if isabs:
             patchfile = os.path.basename(patch)
             if patch in self.Pd4Web.processedAbs:
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Abstraction {patchfile} already processed",
                     color="blue",
                     silence=self.Pd4Web.SILENCE,
@@ -87,7 +87,7 @@ class Patch:
                 )
                 return
 
-            pd4web_print(
+            self.Pd4Web.print(
                 f"Processing Abstraction {patchfile}",
                 color="blue",
                 silence=self.Pd4Web.SILENCE,
@@ -103,7 +103,7 @@ class Patch:
             if os.path.exists(Pd4Web.Patch):
                 self.patchFile = Pd4Web.Patch
             else:
-                raise ValueError("Patch not found")
+                self.Pd4Web.exception("Patch not found")
 
         # Read Line by Line
         with open(self.patchFile, "r") as file:
@@ -212,7 +212,7 @@ class Patch:
         if self.Pd4Web.Libraries.isSupportedLibrary(line.library):
             externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
             if not os.path.exists(externalsJson):
-                raise Exception("Externals Json not found!")
+                self.Pd4Web.exception("Externals Json not found!")
             libAbs = []
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
@@ -226,12 +226,12 @@ class Patch:
                 if line.library in externalsDict:
                     libAbs = externalsDict[line.library]["abs"]
                 else:
-                    raise Exception(f"Library {line.library} not found in {externalsJson}")
+                    self.Pd4Web.exception(f"Library {line.library} not found in {externalsJson}")
 
             if line.name in libAbs:
                 externalSpace = 25 - len(line.name)
                 absName = line.name + (" " * externalSpace)
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Found Abs: {absName}  | Lib: {line.library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
@@ -281,7 +281,7 @@ class Patch:
                 self.Pd4Web.INCHS_COUNT = highChCount
 
         if self.isMidiObj(PatchLine):
-            pd4web_print(
+            self.Pd4Web.print(
                 "Enable MIDI support", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
             )
             self.Pd4Web.MIDI = True
@@ -348,7 +348,7 @@ class Patch:
                     if patchLine.Tokens[2] == "-lib":
                         path = patchLine.Tokens[3]
                         if not self.Pd4Web.Libraries.isSupportedLibrary(path):
-                            raise Exception(f"Library not supported: {path} in {self.patchFile}")
+                            self.Pd4Web.exception(f"Library not supported: {path} in {self.patchFile}")
                         self.Pd4Web.Libraries.GetLibrarySourceCode(path)
                         self.Pd4Web.Objects.GetSupportedObjects(path)
                         self.Pd4Web.declaredLibsObjs.append(path)
@@ -440,7 +440,7 @@ class Patch:
 
         if librariesCount > 0:
             if librariesCount > 1:
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Object {patchLine.completName} is in more than one library, using the first declared.",
                     color="yellow",
                     silence=self.Pd4Web.SILENCE,
@@ -472,7 +472,7 @@ class Patch:
 
         if librariesCount > 0:
             if librariesCount > 1:
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Abstraction {patchLine.completName} is in more than one library, using the first declared.",
                     color="yellow",
                     silence=self.Pd4Web.SILENCE,
@@ -492,7 +492,7 @@ class Patch:
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
                     cloneAbs = token
                 elif token in self.declaredAbs:
-                    pd4web_print(
+                    self.Pd4Web.print(
                         "Clone Abs is part of declared Abs",
                         color="blue",
                         silence=self.Pd4Web.SILENCE,
@@ -520,7 +520,7 @@ class Patch:
             lastToken = token
         if cloneAbs != "":
             if os.path.exists(self.PROJECT_ROOT + "/" + cloneAbs + ".pd"):
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Found Clone Abstraction: {cloneAbs}",
                     color="blue",
                     silence=self.Pd4Web.SILENCE,
@@ -548,9 +548,9 @@ class Patch:
                                     patch=os.path.join(root, file),
                                 )
             if not clonePathFound:
-                raise Exception(f"Clone Abstraction {cloneAbs} not found in {self.patchFile}")
+                self.Pd4Web.exception(f"Clone Abstraction {cloneAbs} not found in {self.patchFile}")
         else:
-            raise Exception(f"Clone Abstraction not found in {self.patchFile}")
+            self.Pd4Web.exception(f"Clone Abstraction not found in {self.patchFile}")
 
     def patchObject(self, line: PatchLine):
         """ """
@@ -565,7 +565,7 @@ class Patch:
                 name = line.Tokens[4].split("/")[-1]
                 externalSpace = 19 - len(name)
                 name = name + (" " * externalSpace)
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Found Local Abs: {name}  | Path: {library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
@@ -584,7 +584,7 @@ class Patch:
                 externalSpace = 16 - len(name)
 
                 name = name + (" " * externalSpace)
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Found External Abs: {name}  | Path: {library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
@@ -606,14 +606,14 @@ class Patch:
                 line.name = line.completName.split("/")[-1]
                 externalSpace = 20 - len(line.name)
                 objName = line.name + (" " * externalSpace)
-                pd4web_print(
+                self.Pd4Web.print(
                     f"Found External: {objName}  | Lib: {line.library}",
                     color="green",
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
             else:
-                raise Exception(f"Object {line.completName} not found in {self.patchFile}")
+                self.Pd4Web.exception(f"Object {line.completName} not found in {self.patchFile}")
 
         elif line.completName in self.Pd4Web.declaredLocalAbs:
             for possibleLocal in self.Pd4Web.declaredPaths:
@@ -621,7 +621,7 @@ class Patch:
                     line.isAbstraction = True
                     line.library = possibleLocal
                     line.name = line.completName
-                    pd4web_print(
+                    self.Pd4Web.print(
                         f"Found Local Abstraction: {line.name}  | Path: {line.library}",
                         color="green",
                         silence=self.Pd4Web.SILENCE,
@@ -665,7 +665,7 @@ class Patch:
                 line.isExternal = False
             elif line.completName in self.localAbstractions:
                 line.name = line.completName
-                pd4web_print(
+                self.Pd4Web.print(
                     "Local Abstraction: " + line.name,
                     color="green",
                     silence=self.Pd4Web.SILENCE,
@@ -676,7 +676,7 @@ class Patch:
                 tokens = line.Tokens[4:]
                 msg += " ".join(tokens) + "]"
                 msg += f" inside {self.patchFile}"
-                raise ValueError(msg)
+                self.Pd4Web.exception(msg)
 
         # Finally
         if (line.isExternal or line.isAbstraction) and (line.library != "pure-data" and not line.localAbs):
@@ -684,20 +684,22 @@ class Patch:
             if libClass.valid:
                 if line.name in libClass.unsupported:
                     if self.Pd4Web.BYPASS_UNSUPPORTED:
-                        pd4web_print(
+                        self.Pd4Web.print(
                             f"Unsupported object: {line.name}",
                             color="yellow",
                             silence=self.Pd4Web.SILENCE,
                             pd4web=self.Pd4Web.PD_EXTERNAL,
                         )
                     else:
-                        raise ValueError(f"The object {line.name} from {line.library} is not supported by Pd4Web yet.")
+                        self.Pd4Web.exception(
+                            f"The object {line.name} from {line.library} is not supported by Pd4Web yet."
+                        )
             else:
                 msg = f"Library or Object can't be processed, please report: ["
                 tokens = line.Tokens[4:]
                 msg += " ".join(tokens) + "]"
                 msg += f" inside {self.patchFile}"
-                raise ValueError(msg)
+                self.Pd4Web.exception(msg)
 
         if self.Pd4Web.Libraries.isSupportedLibrary(line.library):
             self.Pd4Web.Objects.GetSupportedObjects(line.library)

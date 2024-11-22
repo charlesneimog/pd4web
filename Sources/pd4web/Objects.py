@@ -1,5 +1,4 @@
 from .Pd4Web import Pd4Web
-from .Helpers import pd4web_print
 
 import os
 import re
@@ -71,7 +70,7 @@ class Objects:
         """
         Recursively enumerate all external and abstractions and save the JSON file.
         """
-        pd4web_print(
+        self.Pd4Web.print(
             f"Listing all external supported by {libName}, this may take a while...",
             color="blue",
             silence=self.Pd4Web.SILENCE,
@@ -128,23 +127,23 @@ class Objects:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)
         else:
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Libraries", libName)
-            
+
         if self.Pd4Web.Libraries.isSupportedLibrary(libName):
-            self.Pd4Web.Libraries.GetLibrarySourceCode(libName) 
+            self.Pd4Web.Libraries.GetLibrarySourceCode(libName)
 
         externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         if not os.path.exists(externalsJson):
             self.GetLibraryObjects(libFolder, libName)
-                        
+
         with open(externalsJson, "r") as file:
             externalsDict = json.load(file)
-            
+
         if libName not in externalsDict:
             self.GetLibraryObjects(libFolder, libName)
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
-        
+
         allObjsAndAbs = externalsDict[libName]["objs"]
         allObjsAndAbs.extend(externalsDict[libName]["abs"])
-        
+
         return allObjsAndAbs
