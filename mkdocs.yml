@@ -96,6 +96,7 @@ nav:
     - js/engine.md
     - js/receive.md
     - js/send.md
+    - js/midi.md
   - devs.md
  # - Examples: tests/
 plugins:
