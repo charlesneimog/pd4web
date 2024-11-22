@@ -109,7 +109,7 @@ class Pd4WebTest(unittest.TestCase):
         all_files = os.listdir(os.path.join(os.path.dirname(__file__), directory))
         pd_files = sorted([obj for obj in all_files if obj.endswith(".pd")])
         error_dict = {
-            "objnotfound": "Library or Object can't be processed, please report",
+            "objnotfound": "Library or Object can't be found:",
         }
 
         for i in range(len(pd_files)):
