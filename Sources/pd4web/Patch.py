@@ -396,11 +396,11 @@ class Patch:
                     if line.Tokens[-2] == "f" and line.Tokens[-1].isdigit():
                         line.Tokens[-3] = line.Tokens[-3] + ","
                     f.write(" ".join(line.Tokens) + ";\n")
-                    
+
                 # check if it is a clone object
                 elif line.Tokens[0] == "#X" and line.Tokens[1] == "obj" and line.Tokens[4] == "clone":
                     f.write(" ".join(line.Tokens) + ";\n")
-                    
+
                 else:
                     f.write(line.completLine)
 
@@ -492,13 +492,18 @@ class Patch:
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
                     cloneAbs = token
                 elif token in self.declaredAbs:
-                    pd4web_print("Clone Abs is part of declared Abs", color="blue", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+                    pd4web_print(
+                        "Clone Abs is part of declared Abs",
+                        color="blue",
+                        silence=self.Pd4Web.SILENCE,
+                        pd4web=self.Pd4Web.PD_EXTERNAL,
+                    )
                     cloneAbs = token
                 for lib in self.Pd4Web.declaredPaths:
                     if os.path.exists(self.PROJECT_ROOT + "/" + lib + "/" + token + ".pd"):
                         cloneAbs = lib + "/" + token
                         break
-                    
+
                 if cloneAbs != "":
                     break
 
@@ -509,9 +514,9 @@ class Patch:
                         if absPatch in self.Pd4Web.Objects.GetSupportedObjects(library):
                             cloneAbs = absPatch
                             line.Tokens[5] = cloneAbs
-                            #print(line.Tokens)
+                            # print(line.Tokens)
                             break
-                            
+
             lastToken = token
         if cloneAbs != "":
             if os.path.exists(self.PROJECT_ROOT + "/" + cloneAbs + ".pd"):
@@ -553,8 +558,9 @@ class Patch:
         library = line.Tokens[4].split("/")[0]
         if self.Pd4Web.Libraries.isSupportedLibrary(library):
             self.Pd4Web.Objects.GetSupportedObjects(line.library)
+
         if self.checkIfIsLibObj(line) and self.checkIfIsSlashObj(line):
-            # Local Abstraction
+            name = line.Tokens[4].split("/")[-1]
             if os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd"):
                 name = line.Tokens[4].split("/")[-1]
                 externalSpace = 19 - len(name)
@@ -575,8 +581,6 @@ class Patch:
 
             # Library Abstraction
             elif self.isLibAbs(line):
-                name = line.Tokens[4].split("/")[-1]
-                library = line.Tokens[4].split("/")[0]
                 externalSpace = 16 - len(name)
 
                 name = name + (" " * externalSpace)
@@ -596,9 +600,9 @@ class Patch:
                 line.isExternal = False
 
             # External Object
-            else:
+            elif name in self.Pd4Web.Objects.GetSupportedObjects(library):
                 line.isExternal = True
-                line.library = line.Tokens[4].split("/")[0]
+                line.library = library
                 line.name = line.completName.split("/")[-1]
                 externalSpace = 20 - len(line.name)
                 objName = line.name + (" " * externalSpace)
@@ -608,6 +612,8 @@ class Patch:
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
+            else:
+                raise Exception(f"Object {line.completName} not found in {self.patchFile}")
 
         elif line.completName in self.Pd4Web.declaredLocalAbs:
             for possibleLocal in self.Pd4Web.declaredPaths:
@@ -634,7 +640,6 @@ class Patch:
             line.isExternal = True
             line.library = line.completName
             line.name = line.completName
-            line.objGenSym = 'class_new(gensym("' + line.name + '")'
 
         elif self.objInDeclaredLib(line):
             line.isExternal = True
@@ -667,7 +672,7 @@ class Patch:
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
             else:
-                msg = f"Library or Object can't be processed, please report: ["
+                msg = f"Library or Object can't be found: ["
                 tokens = line.Tokens[4:]
                 msg += " ".join(tokens) + "]"
                 msg += f" inside {self.patchFile}"
