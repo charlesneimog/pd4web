@@ -163,10 +163,18 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
-                        post("%s", line.c_str());
+                        if (line.find("ERROR:") != std::string::npos) {
+                            pd_error(nullptr, "%s", line.c_str());
+                        } else {
+                            post("%s", line.c_str());
+                        }
                     }
                 } else {
-                    post("%s", Buf.data());
+                    if (line.find("ERROR:") != std::string::npos) {
+                        pd_error(nullptr, "%s", line.c_str());
+                    } else {
+                        post("%s", line.c_str());
+                    }
                 }
             }
         }
