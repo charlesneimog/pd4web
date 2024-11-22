@@ -100,6 +100,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         std::string output;
 
         // Loop to read output from the pipe
+        DWORD exitCode;
         while (true) {
             if (x->cancel) {
                 TerminateProcess(pi.hProcess, 0);
@@ -119,17 +120,20 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                 output.append(buffer, bytesRead);
                 if (showMessage && !output.empty()) {
                     output.erase(std::remove(output.begin(), output.end(), '\r'), output.end());
-                    post("%s", output.c_str());
+                    if (output.find("ERROR:") != std::string::npos) {
+                        pd_error(nullptr, "%s", output.c_str());
+                    } else {
+                        post("%s", output.c_str());
+                    }
                     output.clear();
                 }
             }
-            DWORD exitCode;
             GetExitCodeProcess(pi.hProcess, &exitCode);
             if (exitCode != STILL_ACTIVE && bytesRead == 0) {
                 break;
             }
         }
-        if (sucessMsg) {
+        if (sucessMsg && exitCode == 0) {
             post("[pd4web] Command executed successfully.");
         }
         CloseHandle(hRead);
