@@ -4,8 +4,6 @@ import shutil
 import subprocess
 import importlib.metadata as importlib_metadata
 
-from .Helpers import pd4web_print
-
 # from .Patch import PatchLine
 from .Pd4Web import Pd4Web
 
@@ -22,7 +20,7 @@ class GetAndBuildExternals:
 
         OK = self.getObjectsSourceCode()  # I need to know what is the _setup function name
         if not OK:
-            raise Exception("Error: Could not get the externals source code")
+            self.Pd4Web.exception("Error: Could not get the externals source code")
 
         # update setup funciton for
         # self.UpdateSetupFunction()
@@ -72,15 +70,19 @@ class GetAndBuildExternals:
         self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
         self.cmakeFile.append("")
-        
+
         # Debug option
         self.cmakeFile.append('if(CMAKE_BUILD_TYPE STREQUAL "Debug")')
         self.cmakeFile.append('    message(WARNING "Building in Debug mode")')
         self.cmakeFile.append('    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")')
         self.cmakeFile.append('    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")')
-        self.cmakeFile.append('else()')
-        self.cmakeFile.append('    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -flto -pthread -matomics -mbulk-memory -msimd128")')
-        self.cmakeFile.append('    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -pthread -matomics -mbulk-memory -msimd128")')
+        self.cmakeFile.append("else()")
+        self.cmakeFile.append(
+            '    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}  -O3 -flto -pthread -matomics -mbulk-memory -msimd128")'
+        )
+        self.cmakeFile.append(
+            '    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -pthread -matomics -mbulk-memory -msimd128")'
+        )
         self.cmakeFile.append("endif()")
         self.cmakeFile.append("")
 
@@ -130,7 +132,7 @@ class GetAndBuildExternals:
             os.mkdir(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")
         else:
             if not os.path.isdir(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
-                raise Exception("Error: Pd4Web/Externals is not a folder")
+                self.Pd4Web.exception("Error: Pd4Web/Externals is not a folder")
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.cpp",
             self.Pd4Web.PROJECT_ROOT + "/Pd4Web/",
@@ -170,7 +172,7 @@ class GetAndBuildExternals:
             try:
                 file_contents = c_file.read()
             except:
-                raise Exception(f"Could not read file: {file} using utf-8")
+                self.Pd4Web.exception(f"Could not read file: {file} using utf-8")
 
             patterns = [r"void\s*{}\s*\(\s*void\s*\)", r"void\s+{}\s*\(\s*\)"]
             for pattern in patterns:
@@ -179,7 +181,7 @@ class GetAndBuildExternals:
                 listMatches = list(matches)
                 if len(listMatches) > 0:
                     obj["SetupFunction"] = functionName
-                    pd4web_print(
+                    self.Pd4Web.print(
                         f"Found setup function: {functionName}",
                         color="green",
                         silence=self.Pd4Web.SILENCE,
@@ -216,7 +218,7 @@ class GetAndBuildExternals:
                         if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
                             self.searchCFunction(obj, root, file)
             else:
-                raise Exception(f"Error: Could not find {obj.library} in the supported libraries")
+                self.Pd4Web.exception(f"Error: Could not find {obj.library} in the supported libraries")
         return True
 
     def buildExternalsObjects(self):
@@ -368,7 +370,7 @@ class GetAndBuildExternals:
         releaseType = "Release"
         if self.Pd4Web.DEBUG:
             releaseType = "Debug"
-        
+
         command = [
             emcmake,
             cmake,
@@ -382,10 +384,14 @@ class GetAndBuildExternals:
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
         ]
         if self.Pd4Web.verbose:
-            pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
-        result = subprocess.run(command, capture_output=not self.Pd4Web.verbose, text=True).returncode
+            self.Pd4Web.print(
+                " ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+            )
+        result = subprocess.run(
+            command, env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True
+        ).returncode
         if result != 0:
-            raise Exception("Error: Could not configure the project")
+            self.Pd4Web.exception("Error: Could not configure the project")
         os.chdir(cwd)
 
     def CompileProject(self):
@@ -396,7 +402,7 @@ class GetAndBuildExternals:
         command.append(f"-j{cpu_count}")
         command.append("--target")
         command.append("pd4web")
-        pd4web_print(
+        self.Pd4Web.print(
             f"Compiling project... This may take a while\n",
             color="green",
             silence=self.Pd4Web.SILENCE,
@@ -404,11 +410,15 @@ class GetAndBuildExternals:
         )
 
         if self.Pd4Web.verbose:
-            pd4web_print(" ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+            self.Pd4Web.print(
+                " ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+            )
 
-        result = subprocess.run(command, capture_output=not self.Pd4Web.verbose, text=True).returncode
+        result = subprocess.run(
+            command, env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True
+        ).returncode
         if result != 0:
-            raise Exception("Error: Could not compile the project, run on verbose mode to see the error")
+            self.Pd4Web.exception("Error: Could not compile the project, run on verbose mode to see the error")
         os.chdir(cwd)
 
     def CopyExtraJsFiles(self):
@@ -483,7 +493,7 @@ class GetAndBuildExternals:
         if self.Pd4Web.TEMPLATE != 0:
             root = os.path.join(self.Pd4Web.PD4WEB_ROOT, "..", f"Templates/{self.Pd4Web.TEMPLATE}")
             if not os.path.exists(root):
-                raise Exception(f"Error: Could not find template {self.Pd4Web.TEMPLATE}")
+                self.Pd4Web.exception(f"Error: Could not find template {self.Pd4Web.TEMPLATE}")
             files = os.listdir(root)
             for file in files:
                 if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + file):

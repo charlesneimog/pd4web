@@ -13,16 +13,24 @@ function gotHands(results) {
 }
 
 function setup() {
-  canvas = createCanvas(640, 480);
-  canvas.parent("p5js");
   noLoop();
 }
 
-function startVideo() {
-  video = createCapture(VIDEO, { flipped: true });
-  video.hide();
-  handPose.detectStart(video, gotHands);
-  loop(); // Restart draw loop to start rendering video frames
+async function startVideo() {
+  const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+  const videoElement = document.createElement("video");
+  videoElement.srcObject = stream;
+  videoElement.onloadedmetadata = () => {
+    const webcamWidth = videoElement.videoWidth;
+    const webcamHeight = videoElement.videoHeight;
+    canvas = createCanvas(webcamWidth, webcamHeight);
+    canvas.parent("p5js");
+    video = createCapture(VIDEO, { flipped: true });
+    video.hide();
+    handPose.detectStart(video, gotHands);
+    videoElement.remove();
+    loop();
+  };
 }
 
 function draw() {
@@ -41,11 +49,11 @@ function draw() {
       if (Pd4Web && Pd4Web.sendList && hand.confidence > 0.95) {
         let x = keypoint.x / width;
         let y = keypoint.y / height;
-        if (handLorR == "Left"){
+        if (handLorR == "Left") {
           let r = "L-" + j;
           Pd4Web.sendList(r, [x, y]);
           //console.log(handLorR + "-" + j + " : " + x + ", " + y);
-        } else if (handLorR == "Right"){
+        } else if (handLorR == "Right") {
           let r = "R-" + j;
           Pd4Web.sendList(r, [x, y]);
           //console.log(handLorR + "-" + j + " : " + x + ", " + y);
