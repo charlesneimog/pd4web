@@ -8,13 +8,13 @@ This problems are seem from browser console. To see the console you need to open
 
 <h2 align="center">Memory problems</h2>
 
-You need to define the size of memory of your patch, this is pretty simple. Big patches needs more memory, small patches needs less memory.
+You always need to define the size of memory of your patch, this is pretty simple. Big patches needs more memory, small patches needs less memory.
 
 If you run a big patch with a small memory size you will get one error like this:
 
 !!! danger "Aborted(Cannot enlarge memory arrays to size 134225920 bytes (OOM)."
 
-If you see this, you need to increase the memory size. You can do this in the `pd4web` configuration, using the memory input on Pd patch or the `--memory` flag in the command line.
+To solve this issue, you need to increase the memory size. You can do this in the `pd4web` configuration, using the memory value on Pd patch or the `--memory` flag in the command line.
 
 ---
 
@@ -45,11 +45,11 @@ Common problems:
     <tbody>
         <tr>
           <td class="problem">Object not found</td>
-          <td><em>Remove the object not found. If it is in a library report!</em></td> 
+          <td><em>Remove the object not found. If it is in a library that should be supported, then report!</em></td> 
         </tr>
         <tr>
           <td class="problem">Pd4web can not process some object</td>
-          <td><em>You must report the problem and the object.</em></td>
+          <td><em>You must report the problem and the name and library of the object.</em></td>
         </tr>
         <tr>
           <td class="problem">Cmake configuration problems</td>

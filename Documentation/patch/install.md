@@ -16,6 +16,9 @@ hide:
 ---
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
 
+Simple Gui Interface to use `pd4web`.
+
+
 <div class="grid cards" markdown>
 
 -   :material-gesture-double-tap:{ .lg .middle } __How to Install?__
@@ -47,6 +50,9 @@ hide:
 ---
 ## <h2 align="center">:octicons-terminal-16: Python Package (Command Line)</h2>
 
+!!! tip "Prefer the Command Line? Here's How"  
+    If you're comfortable with the command line, you can use the `pd4web` package to compile your patches efficiently.
+
 <div class="grid cards" markdown>
 
 -   :material-clock-fast:{ .lg .middle } __Set up in 10 seconds__
@@ -67,6 +73,21 @@ hide:
     usage: pd4web.py <PureData Patch>
 
     ```
+</div>
+
+--- 
+
+Run the command `pd4web <PureData Patch>` to compile your patch. The options are:
+
+- `--template <TEMPLATE_NUMBER>` : Specify the template number.
+- `--memory <MEMORY_SIZE>` : Specify the memory size in megabytes (MB).
+- `--clean` : Clean the output directory before compiling. 
+- `--verbose` or `-v` : Show verbose output.
+- `--nogui` : Do not show the GUI.
+- `--patch-zoom <ZOOM>` : Specify the patch zoom level.
+- `--debug` : Compile the website with debugging information.
+- `--run-browser` : Run browser (this will not compile the patch).
+
+
 
     
-</div>

@@ -10,7 +10,7 @@
 If you have problems to compile, the easiear way to solve is to report what is the problem using the GitHub issues. 
 
 !!! bug "How to report?"
-    You must report the problem using the GitHub issues. You can report the problem in the [pd4web repository](https://github.com/charlesneimog/pd4web/issues).
+    <p style="font-size: 18px">Create a new issue on [Github](https://github.com/charlesneimog/pd4web/issues) or use [Google Forms](https://forms.gle/qS7YX4QzrUKNXGkU7).</p>
 
 --- 
 <div class="grid cards" markdown>

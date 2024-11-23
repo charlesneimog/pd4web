@@ -5,6 +5,9 @@
   }
 </style>
 
+!!! bug "How to report?"
+    <p style="font-size: 18px">Create a new issue on [Github](https://github.com/charlesneimog/pd4web/issues) or use [Google Forms](https://forms.gle/qS7YX4QzrUKNXGkU7).</p>
+
 <h2 align="center">Memory problems</h2>
 
 You need to define the size of memory of your patch, this is pretty simple. Big patches needs more memory, small patches needs less memory.
