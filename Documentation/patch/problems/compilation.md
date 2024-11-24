@@ -24,7 +24,7 @@ If you have problems to compile, the easiear way to solve is to report what is t
 -   :construction: __`pd4web` can not process some object__:
     -   __Solution:__ You must report the problem and the object. I probably never used this object.
 -   :construction: __Cmake configuration problems__:
-    -   __Solution:__ Try to delete the `Pd4Web`, `build` and `Webpatch`, then compile it again, on errors, report the issue.
+    -   __Solution:__ Try to delete the `Pd4Web`, `build` and `Webpatch`, then compile it again, on errors, report the issue. 
 </div>
 
 <div class="grid cards" markdown>
