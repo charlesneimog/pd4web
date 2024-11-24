@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/Publish.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/Publish.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/Release.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/Release.yml/badge.svg" alt="Tests"></a>
 </p>
 
 `pd4web` lets you run PureData patches directly in web browsers. It stands out from alternatives like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), thanks to the work of [claudeha](https://github.com/claudeha). With `pd4web`, you can compile any PureData Vanilla patch, along with a list of more than 800 externals and abstractions.
