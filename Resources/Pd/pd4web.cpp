@@ -1,3 +1,9 @@
+#include <algorithm>
+#include <array>
+#include <filesystem>
+#include <string>
+#include <thread>
+
 #include <m_pd.h>
 #include <m_imp.h>
 
