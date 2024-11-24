@@ -18,6 +18,8 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
+#define PD4WEB_EXTERNAL_VERSION "2.2.1"
+
 // ─────────────────────────────────────
 class Pd4Web {
   public:
@@ -44,6 +46,7 @@ class Pd4Web {
     // compilation config
     bool cancel;
     std::string patch;
+    std::string version;
     bool verbose;
     bool gui;
     bool debug;
@@ -57,6 +60,13 @@ class Pd4Web {
 static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                             bool sucessMsg = false, bool showMessage = false,
                             bool clearNewline = false) {
+
+    post("[pd4web] Running command: %s", cmd.c_str());
+    
+    if (x->running) {
+        pd_error(x, "[pd4web] Another command is running.");
+        return false;
+    }
     x->running = true;
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -135,6 +145,10 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
         if (sucessMsg && exitCode == 0) {
             post("[pd4web] Command executed successfully.");
+        } else if (exitCode != 0) {
+            x->running = false;
+            x->result = false;
+            pd_error(nullptr, "[pd4web] Command failed with exit code %d", exitCode);
         }
         CloseHandle(hRead);
         CloseHandle(pi.hProcess);
@@ -191,6 +205,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         if (exitCode != 0) {
             x->running = false;
             x->result = false;
+            pd_error(nullptr, "[pd4web] Command failed with exit code %d", exitCode);
         } else {
             x->running = false;
             if (sucessMsg) {
@@ -445,13 +460,16 @@ static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 
 // ─────────────────────────────────────
 static void pd4web_compile(Pd4Web *x) {
-    x->running = true;
-    if (!x->isReady) {
-        pd_error(x, "[pd4web] pd4web is not ready");
-        x->running = false;
+    if (x->running) {
+        pd_error(x, "[pd4web] Compilation already running");
         return;
     }
-    std::string cmd = x->pd4web + " --pd-external ";
+    if (!x->isReady) {
+        pd_error(x, "[pd4web] pd4web is not ready");
+        return;
+    }
+    std::string cmd = x->pd4web + " --pd-external";
+    cmd += " --pd-external-version \"" + x->version + "\" ";
     if (x->verbose) {
         cmd += " --verbose ";
     }
@@ -478,9 +496,12 @@ static void pd4web_compile(Pd4Web *x) {
         cmd += x->patch;
     }
 
+    if (x->running) {
+        pd_error(x, "[pd4web] Compilation already running");
+        return;
+    }
     pd_error(x, "[pd4web] Compiling patch on background, please wait...");
     pd4web_terminal(x, cmd.c_str(), true, true, true, false);
-
     return;
 }
 
@@ -524,6 +545,7 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->gui = true;
     x->zoom = 2;
     x->tpl = 0;
+    x->version = PD4WEB_EXTERNAL_VERSION;
 
     x->server = new httplib::Server();
     if (!x->server->is_valid()) {

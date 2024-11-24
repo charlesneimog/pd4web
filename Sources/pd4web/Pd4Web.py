@@ -362,12 +362,22 @@ class Pd4Web:
             type=str,
             help="Pure Data version to use",
         )
+        
+        # Pd Object
         parser.add_argument(
             "--pd-external",
             required=False,
             default=False,
             action="store_true",
             help="If is it pd4web external",
+        )
+        
+        parser.add_argument(
+            "--pd-external-version",
+            required=False,
+            default=importlib_metadata.version("pd4web"),
+            type=str,
+            help="Version of the pd4web external being used",
         )
 
         ## User
