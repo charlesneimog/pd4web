@@ -59,6 +59,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/tags/*'
     strategy:
       matrix:
         python-version: ['3.11']  # just need one version (py3-none)
