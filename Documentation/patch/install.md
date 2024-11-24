@@ -44,7 +44,7 @@ Simple Gui Interface to use `pd4web`.
 
     ---
     <p align="center">
-      <img src="../../assets/pd-pd4web.png" alt="pd4web" width="60%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);">
+      <img src="../../assets/pd-pd4web.png" alt="pd4web" width="60%" style="border-radius: 2px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);">
     </p>
 </div>
 
