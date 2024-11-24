@@ -1,11 +1,4 @@
-#include <algorithm>
-#include <array>
-#include <filesystem>
-#include <string>
-#include <thread>
-
 #include <m_pd.h>
-
 #include <m_imp.h>
 
 #ifdef _WIN32
@@ -13,7 +6,7 @@
 #include <windows.h>
 #endif
 
-#include "./cpp-httplib/httplib.h"
+#include <httplib.h>
 
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;

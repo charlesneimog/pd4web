@@ -11,6 +11,7 @@ add_subdirectory(cpp-httplib EXCLUDE_FROM_ALL)
 
 # Define the main target
 pd_add_external(pd4web pd4web.cpp LINK_LIBRARIES httplib)
+target_include_directories(pd4web PRIVATE cpp-httplib)
 set_target_properties(
   pd4web
   PROPERTIES CXX_STANDARD 20
