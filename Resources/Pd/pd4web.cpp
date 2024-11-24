@@ -168,16 +168,20 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
                         if (line.find("ERROR:") != std::string::npos) {
-                            pd_error(nullptr, "%s", line.c_str());
+                            pd_error(nullptr, "[pd4web] %s", line.c_str());
                         } else {
-                            post("%s", line.c_str());
+                            post("[pd4web] %s", line.c_str());
                         }
                     }
                 } else {
-                    if (line.find("ERROR:") != std::string::npos) {
-                        pd_error(nullptr, "%s", line.c_str());
-                    } else {
-                        post("%s", line.c_str());
+                    line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
+                    line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+                    if (line != "") {
+                        if (line.find("ERROR:") != std::string::npos) {
+                            pd_error(nullptr, "[pd4web] %s", line.c_str());
+                        } else {
+                            post("[pd4web] %s", line.c_str());
+                        }
                     }
                 }
             }
@@ -534,6 +538,10 @@ static void pd4web_free(Pd4Web *x) {
     auto res = client.Get("/stop");
     delete x->server;
     x->cancel = true;
+    post("[pd4web] Stopping pd4web...");
+    while (x->running) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 }
 
 // ─────────────────────────────────────
