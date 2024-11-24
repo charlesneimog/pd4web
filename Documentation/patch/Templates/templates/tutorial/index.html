@@ -8,81 +8,103 @@
     <script src="./pd4web.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-      /* Style for the entire Markdown content container */
-      #Pd4WebText {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          padding: 20px;
-          border-radius: 8px;
-          text-align: center;
-      }
-  
-      /* Style for h1 tags inside #Pd4WebText */
-      #Pd4WebText h1 {
-          font-size: 20px;
-          color: #000000;
-          margin-bottom: 0.5em;
-          padding-bottom: 0.3em;
-          text-align: center;
-          user-select: none;
-      }
-  
-      /* Style for h2 tags inside #Pd4WebText */
-      #Pd4WebText h2 {
-          font-size: 18px;
-          color: #000000;
-          margin-top: 1em;
-          margin-bottom: 0.5em;
-          text-align: center;
-          user-select: none;
-      }
-      #Pd4WebText h3 {
-        font-size: 16px;
-        color: #000000;
-        margin-top: 1em;
-        margin-bottom: 0.5em;
-        text-align: center;
-        user-select: none;
-    }
-  
-    /* Style for paragraph tags inside #Pd4WebText */
-    #Pd4WebText p {
-        font-size: 14px;
-        color: #000000;
-        margin-bottom: 1em;
-        text-align: justify;
-        user-select: none;
-    }
+     /* Define default (light mode) styles */
+:root {
+    --text-color: black;
+    --background-color: white;
+    --header-color: #000000;
+    --sub-header-color: #000000;
+    --list-item-color: #000000;
+}
 
-    /* Style for lists */
-    #Pd4WebText ul {
-        list-style-type: disc;
-        margin-left: 20px;
-        margin-bottom: 14px;
-        text-align: left;
+/* Media query for dark mode */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-color: white;
+        --background-color: #333333;
+        --header-color: white;
+        --sub-header-color: white;
+        --list-item-color: #cccccc;
     }
+}
 
-    #Pd4WebText ol {
-        list-style-type: decimal;
-        margin-left: 1px;
-        margin-bottom: 1em;
-        font-size: 14px;
-        text-align: left;
-    }   
+/* Base styling for #Pd4WebText */
+#Pd4WebText {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    background-color: var(--background-color); /* Background color changes with theme */
+    color: var(--text-color); /* Text color changes with theme */
+}
 
-    #Pd4WebText ul {
-      list-style-type: disc; /* Use a disc (default bullet) */
-      margin-left: 2px;
-      padding-left: 0px;
-      font-size: 14px;
-    }
+/* Style for h1 tags inside #Pd4WebText */
+#Pd4WebText h1 {
+    font-size: 20px;
+    color: var(--header-color); /* Header color changes with theme */
+    margin-bottom: 0.5em;
+    padding-bottom: 0.3em;
+    text-align: center;
+    user-select: none;
+}
 
-    /* Style for each list item */
-    #Pd4WebText li {
-        font-size: 14px;
-        color: #000000; /* Dark gray color */
-        margin-bottom: 0.5em; /* Space between items */
-    }
+/* Style for h2 tags inside #Pd4WebText */
+#Pd4WebText h2 {
+    font-size: 18px;
+    color: var(--sub-header-color); /* Sub-header color changes with theme */
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    text-align: center;
+    user-select: none;
+}
+
+/* Style for h3 tags inside #Pd4WebText */
+#Pd4WebText h3 {
+    font-size: 16px;
+    color: var(--sub-header-color); /* Sub-header color changes with theme */
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    text-align: center;
+    user-select: none;
+}
+
+/* Style for paragraph tags inside #Pd4WebText */
+#Pd4WebText p {
+    font-size: 14px;
+    color: var(--text-color); /* Text color changes with theme */
+    margin-bottom: 1em;
+    text-align: justify;
+    user-select: none;
+}
+
+/* Style for unordered lists inside #Pd4WebText */
+#Pd4WebText ul {
+    list-style-type: disc;
+    margin-left: 20px;
+    margin-bottom: 14px;
+    text-align: left;
+    color: var(--list-item-color); /* List items color changes with theme */
+}
+
+/* Style for ordered lists inside #Pd4WebText */
+#Pd4WebText ol {
+    list-style-type: decimal;
+    margin-left: 1px;
+    margin-bottom: 1em;
+    font-size: 14px;
+    text-align: left;
+    color: var(--list-item-color); /* List items color changes with theme */
+}
+
+/* Style for each list item inside #Pd4WebText */
+#Pd4WebText li {
+    font-size: 14px;
+    color: var(--list-item-color); /* List item color changes with theme */
+    margin-bottom: 0.5em;
+    user-select: none;
+}
+
 
     /* Adiciona um scroll ao Pd4WebText */
     .scrollable-text {
