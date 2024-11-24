@@ -60,8 +60,6 @@ class Pd4Web {
 static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                             bool sucessMsg = false, bool showMessage = false,
                             bool clearNewline = false) {
-
-    post("[pd4web] Running command: %s", cmd.c_str());
     
     if (x->running) {
         pd_error(x, "[pd4web] Another command is running.");

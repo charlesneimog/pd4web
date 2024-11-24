@@ -1,4 +1,4 @@
-#N canvas 544 72 339 371 12;
+#N canvas 544 72 668 761 12;
 #N canvas 557 272 499 366 patch 0;
 #X obj 10 112 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 32 256;
 #X obj 52 245 bng 25 250 50 0 s-compile r-compile empty -15 -10 0 12 #ffc7c6 #ff0400 #000000;
@@ -222,7 +222,7 @@
 #X coords 0 1 100 -1 297 21 1;
 #X restore 8 158 graph;
 #X obj 35 32 cnv 5 5 5 empty empty Charles\ K.\ Neimog\ |\ charlesneimog.github.io/pd4web 0 0 0 8 #dfdfdf #000000 0;
-#N canvas 517 246 426 426 extra 1;
+#N canvas 517 246 426 426 extra 0;
 #X obj 7 76 tgl 15 1 s-gui r-gui empty 0 -10 0 12 #fcfcfc #000000 #000000 1 1;
 #X obj 55 78 cnv 5 240 10 empty empty On/Off\ -\ Render\ the\ Gui. 2 5 0 8 #feffc6 #000000 0;
 #N canvas 0 50 450 250 (subpatch) 0;
