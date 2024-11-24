@@ -78,17 +78,21 @@ nav:
       - Compilation: 
         - patch/compile.md
       - Website Templates: 
-        - patch/Templates/index.md
+        - patch/templates/index.md
         - Website Templates List: 
-          - patch/Templates/1-score.md
-          - patch/Templates/2-hands.md
-          - patch/Templates/3-choir.md
-          - patch/Templates/4-p5js.md
-          - patch/Templates/5-tutorial.md
+          - patch/templates/1-score.md
+          - patch/templates/2-hands.md
+          - patch/templates/3-choir.md
+          - patch/templates/4-p5js.md
+          - patch/templates/5-tutorial.md
       - Problems: 
         - patch/problems/memory.md
         - patch/problems/compilation.md
         - patch/problems/flutex.md
+      - Uploading your patch: 
+        - patch/upload/github.md
+        - patch/upload/cloudflare.md
+        - patch/upload/others.md
   - libraries.md
   - Pd4Web JavaScript Module: 
     - JavaScript Module: js/js.md

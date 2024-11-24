@@ -145,7 +145,7 @@ class ExternalLibraries:
             commit = libRepo.head.peel()
         return commit
 
-    def CloneLibrary(self, libsPath, libData):
+    def CloneLibrary(self, libData):
         """
         Initializes submodules in the specified repository path.
 
@@ -158,11 +158,12 @@ class ExternalLibraries:
             curr_commit: pygit2.Commit = libRepo.head.peel()
             lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
             if curr_commit.id == lib_commit.id:
-                # print(f"Library {libData.repo} is in the right commit", color="green")
-                return  # library up-to-date
+                self.Pd4Web.Version["externals"][libData.name] = str(lib_commit.id)
+                return  
             libRepo.set_head(lib_commit.id)
             libRepo.checkout_tree(lib_commit)
             libRepo.reset(lib_commit.id, pygit2.GIT_RESET_HARD)
+            self.Pd4Web.Version["externals"][libData.name] = str(lib_commit.id)
             return
 
         libLink = f"https://github.com/{libData.dev}/{libData.repo}"
@@ -187,6 +188,8 @@ class ExternalLibraries:
             submodule_collection.update()
         except:
             self.Pd4Web.exception("Failed to initialize submodules.")
+            
+        self.Pd4Web.Version["externals"][libData.name] = str(commit.id)
 
         # TODO: Try to merge commits from submodules
         # try:
@@ -212,7 +215,7 @@ class ExternalLibraries:
             os.mkdir(self.Pd4Web.APPDATA + "/Externals")
 
         libFolder = self.Pd4Web.APPDATA + f"/Externals/{libData.name}"
-        self.CloneLibrary(libFolder, libData)
+        self.CloneLibrary(libData)
         if not os.path.exists(self.PROJECT_ROOT + f"/Pd4Web/Externals/{libData.name}"):
             self.Pd4Web.print(
                 f"Copying {libData.name} to Pd4Web/Externals...",

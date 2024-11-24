@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 import importlib.metadata as importlib_metadata
+import yaml
 
 # from .Patch import PatchLine
 from .Pd4Web import Pd4Web
@@ -42,6 +43,9 @@ class GetAndBuildExternals:
         self.ConfigureProject()
         self.CompileProject()
         self.CopyExtraJsFiles()
+        
+        # Save the project versions
+        self.SaveProjectVersions()
 
     def InitVariables(self):
         self.cmakeFile = []
@@ -498,8 +502,14 @@ class GetAndBuildExternals:
             for file in files:
                 if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + file):
                     shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
-
         os.chdir(cwd)
+        
+    def SaveProjectVersions(self):
+        # check if file exists
+        if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/versions.yaml"):
+            with open(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/versions.yaml", "w") as f:
+                yaml.dump(self.Pd4Web.Version, f)
+                return       
 
     def __repr__(self) -> str:
         return f"< GetCode Object >"

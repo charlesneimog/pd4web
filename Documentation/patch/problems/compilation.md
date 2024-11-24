@@ -10,7 +10,7 @@
 If you have problems to compile, the easiear way to solve is to report what is the problem using the GitHub issues. 
 
 !!! bug "How to report?"
-    You must report the problem using the GitHub issues. You can report the problem in the [pd4web repository](https://github.com/charlesneimog/pd4web/issues).
+    <p style="font-size: 18px">Create a new issue on [Github](https://github.com/charlesneimog/pd4web/issues){target="_blank}" or use [Google Forms](https://forms.gle/qS7YX4QzrUKNXGkU7){target="_blank"}.</p>
 
 --- 
 <div class="grid cards" markdown>
@@ -24,7 +24,7 @@ If you have problems to compile, the easiear way to solve is to report what is t
 -   :construction: __`pd4web` can not process some object__:
     -   __Solution:__ You must report the problem and the object. I probably never used this object.
 -   :construction: __Cmake configuration problems__:
-    -   __Solution:__ Try to delete the `Pd4Web`, `build` and `Webpatch`, then compile it again, on errors, report the issue.
+    -   __Solution:__ Try to delete the `Pd4Web`, `build` and `Webpatch`, then compile it again, on errors, report the issue. 
 </div>
 
 <div class="grid cards" markdown>
