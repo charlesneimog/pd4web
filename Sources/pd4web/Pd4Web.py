@@ -83,6 +83,41 @@ class Pd4Web:
 
         self.Execute()
 
+    def InitVariables(self):
+        from .Objects import Objects
+        from .Libraries import ExternalLibraries
+
+        self.cpuCores = os.cpu_count()
+        self.usedObjects = []
+        self.patchLinesProcessed = []
+        self.uiReceiversSymbol = []
+        self.externalsSourceCode = []
+        self.externalsLinkLibraries = []
+        self.externalsLinkLibrariesFolders = []
+        self.externalsSetupFunctions = []
+
+        self.declaredLocalAbs = []
+        self.declaredLibsObjs = []
+        self.declaredPaths = []
+        self.processedAbs = []
+        
+        # Versions
+        self.Version = {}
+        self.Version["python"] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+        self.Version["pure-data"] = self.PD_VERSION
+        self.Version["emsdk"] = self.EMSDK_VERSION
+        self.Version["pd4web"] = importlib_metadata.version("pd4web")
+        self.Version["externals"] = {}
+
+        self.Libraries: ExternalLibraries = ExternalLibraries(self)
+        self.Objects: Objects = Objects(self)
+
+        self.env = os.environ.copy()
+        python_dir = os.path.dirname(sys.executable)
+        self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
+        self.env["PYTHON"] = sys.executable
+        self.env["EMSDK_QUIET"] = "1"
+        
     def Execute(self):
         from .Builder import GetAndBuildExternals
         from .Compilers import ExternalsCompiler
@@ -156,32 +191,7 @@ class Pd4Web:
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
-    def InitVariables(self):
-        from .Objects import Objects
-        from .Libraries import ExternalLibraries
-
-        self.cpuCores = os.cpu_count()
-        self.usedObjects = []
-        self.patchLinesProcessed = []
-        self.uiReceiversSymbol = []
-        self.externalsSourceCode = []
-        self.externalsLinkLibraries = []
-        self.externalsLinkLibrariesFolders = []
-        self.externalsSetupFunctions = []
-
-        self.declaredLocalAbs = []
-        self.declaredLibsObjs = []
-        self.declaredPaths = []
-        self.processedAbs = []
-
-        self.Libraries = ExternalLibraries(self)
-        self.Objects: Objects = Objects(self)
-
-        self.env = os.environ.copy()
-        python_dir = os.path.dirname(sys.executable)
-        self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
-        self.env["PYTHON"] = sys.executable
-        self.env["EMSDK_QUIET"] = "1"
+    
 
     def DownloadZip(self, url, filename, what=""):
         self.print(f"Downloading {what}...", color="green", silence=self.SILENCE)
