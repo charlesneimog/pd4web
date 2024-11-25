@@ -3,12 +3,30 @@ project(libpd C)
 
 set(ENABLE_TILDE_TARGET_WARNING off)
 
-if (LSP_SUPPORT)
-	set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/pure-data/src/)
+if(LSP_SUPPORT)
+    set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build/pure-data/src/)
 else()
-	set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
+    set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
 endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
+
+# ╭──────────────────────────────────────╮
+# │       Remove print of sys_vgui       │
+# ╰──────────────────────────────────────╯
+# Função para adicionar 'return;' após o comentário específico, se ainda não existir
+function(AddReturnAfterComment file start_block return_statement)
+    file(READ ${file} FILE_CONTENTS)
+    string(FIND "${FILE_CONTENTS}" "${start_block}\n    return;" POSITION)
+    if(POSITION EQUAL -1)
+        string(REPLACE "${start_block}" "${start_block}\n    return;" FILE_CONTENTS
+                       "${FILE_CONTENTS}")
+        file(WRITE ${file} "${FILE_CONTENTS}")
+    endif()
+endfunction()
+
+addreturnaftercomment(
+    ${PD_SOURCE_DIR}/s_inter.c "{       /* if there's no TK process just throw it to stderr */"
+    "             return;")
 
 # ╭──────────────────────────────────────╮
 # │           PureData Sources           │
