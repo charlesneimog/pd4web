@@ -400,6 +400,7 @@ static void pd4web_browser(Pd4Web *x, float f) {
 
     if (f == 1) {
         std::thread t([x]() {
+            post("[pd4web] Root: %s", x->projectRoot.c_str());
             x->server->set_mount_point("/", x->projectRoot.c_str());
             x->server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
@@ -514,14 +515,14 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
 
 #ifdef _WIN32
     std::string python = "py --version";
-    x->pip = x->objRoot + "\\.venv\\Scripts\\pip.exe";
-    x->python = x->objRoot + "\\.venv\\Scripts\\python.exe";
-    x->pd4web = x->objRoot + "\\.venv\\Scripts\\pd4web.exe";
+    x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
+    x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
+    x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #else
     std::string python = "python3 --version";
-    x->pip = x->objRoot + "/.venv/bin/pip";
-    x->python = x->objRoot + "/.venv/bin/python";
-    x->pd4web = x->objRoot + "/.venv/bin/pd4web";
+    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
+    x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
 #endif
 
     // check if there is some python installed
@@ -563,6 +564,7 @@ static void pd4web_free(Pd4Web *x) {
     while (x->running) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    post("[pd4web] pd4web stopped");
 }
 
 // ─────────────────────────────────────
