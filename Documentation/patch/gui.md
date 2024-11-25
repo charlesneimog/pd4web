@@ -56,6 +56,14 @@ Thanks to `libpd`, `pd4web` intercepts the messages sent by the objects and send
     The connections between objects are not intercepted by `pd4web`. You need to use `send` and `receive` objects to connect the GUI objects.
 
 <p align="center">
-    <img src="../Templates/assets/gui.png" alt="gui" width="80%" style="border-radius: 10px">
+    <img src="../templates/assets/gui.png" alt="gui" width="80%" style="border-radius: 10px">
 </p>
 
+---
+
+All `Gui` objects include options to `send` and `receive` symbols, which are essential for communication between the Pd Patch and the Website. 
+
+- **Sending messages to the Pd Patch**: Use the `send` symbol with a `receiver` or `r` object to send messages from the Website to the Pd Patch.  
+- **Sending messages to the Website**: Use the `receive` symbol with a `send` or `s` object to send messages from the Pd Patch to the Website.
+
+Note that `pd4web` does not automatically intercept connections between objects, so you must explicitly use the `send` and `receive` objects to connect the GUI objects for proper communication between the Pd Patch and the Website.

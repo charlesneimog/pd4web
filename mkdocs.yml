@@ -68,7 +68,7 @@ markdown_extensions:
 
 repo_url: https://github.com/charlesneimog/pd4web
 extra_css: [extra/extra.css]
-extra_javascript: [js/index_slider.js]
+#extra_javascript: [js/index_slider.js]
 nav:
   - Home: index.md
   - Compile your patch:
