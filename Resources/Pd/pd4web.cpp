@@ -334,15 +334,19 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     } else if ("patch" == config) {
         std::string newpatch;
         for (int i = 1; i < argc; i++) {
-            if (argv[i].a_type != A_SYMBOL) {
-                pd_error(x, "[pd4web] Invalid argument, use [set patch <patch_name>]");
-                return;
+            if (i > 1) {
+                newpatch += " ";
             }
-            newpatch += atom_getsymbolarg(i, argc, argv)->s_name;
-            newpatch += " ";
+            if (argv[i].a_type == A_SYMBOL) {
+                newpatch += atom_getsymbolarg(i, argc, argv)->s_name;
+            } else if (argv[i].a_type == A_FLOAT) {
+                newpatch += std::to_string(atom_getfloatarg(i, argc, argv));
+            } else {
+                pd_error(x, "[pd4web] Invalid argument, use [set patch <path>]");
+            }
         }
         x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
-        x->patch = newpatch;
+        x->patch = "\"" + newpatch + "\"";
     } else if ("template" == config) {
         int tpl = atom_getintarg(1, argc, argv);
         if (x->tpl == tpl) {

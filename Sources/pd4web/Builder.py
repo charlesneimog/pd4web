@@ -60,18 +60,18 @@ class GetAndBuildExternals:
         else:
             self.ProjectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
         self.cmakeFile.append("cmake_minimum_required(VERSION 3.25)")
-        self.cmakeFile.append(f"project({self.ProjectName})\n")
+        self.cmakeFile.append(f'project("{self.ProjectName}")\n')
 
         # Pd Sources
         self.cmakeFile.append("# Pd sources")
         self.cmakeFile.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")')
-        self.cmakeFile.append("include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake)")
-        self.cmakeFile.append("include(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pd.cmake)")
+        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")')
+        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pd.cmake")')
         self.cmakeFile.append('set(PDCMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" CACHE STRING "" FORCE)')
         self.cmakeFile.append(
             'set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" CACHE STRING "" FORCE)'
         )
-        self.cmakeFile.append("include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src)")
+        self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")')
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
         self.cmakeFile.append("")
 
@@ -106,7 +106,7 @@ class GetAndBuildExternals:
 
         targetProperties = [
             "set_target_properties(pd4web PROPERTIES",
-            "    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch",
+            '    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch"',
             ")",
         ]
         linkOptions = [
@@ -268,23 +268,23 @@ class GetAndBuildExternals:
 
     def AddFilesToWebPatch(self):
         self.cmakeFile.append("\n# FileSystem for the Patch")
-        string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd")'
+        #string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file \"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\"")'
+        string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file \\"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\\"")'
         self.cmakeFile.append(string)
-
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Audios"):
             self.cmakeFile.append("get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)")
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Audios@/Audios/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file \\"${CMAKE_CURRENT_SOURCE_DIR}/Audios@/Audios/\\"")'
             )
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/.tmp"):
             self.cmakeFile.append("get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)")
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/.tmp@/Libs/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file \\"${CMAKE_CURRENT_SOURCE_DIR}/.tmp@/Libs/\\"")'
             )
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Extras"):
             self.cmakeFile.append("get_target_property(EMCC_LINK_FLAGS pd4web LINK_FLAGS)")
             self.cmakeFile.append(
-                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Extras@/Extras/")'
+                'set_target_properties(pd4web PROPERTIES LINK_FLAGS "${EMCC_LINK_FLAGS} --preload-file \\"${CMAKE_CURRENT_SOURCE_DIR}/Extras@/Extras/\\"")'
             )
 
     def CreateCppCallsExternalFile(self):
