@@ -12,7 +12,7 @@
 #include <windows.h>
 #endif
 
-//#include <httplib.h>
+#include <httplib.h>
 
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
@@ -38,7 +38,7 @@ class Pd4Web {
     std::string cmd;
 
     // Server
-   // httplib::Server *server;
+    httplib::Server *server;
     std::string projectRoot;
     std::string objRoot;
 
@@ -390,7 +390,6 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     return;
 }
 
-/*
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
     if (!x->isReady) {
@@ -428,8 +427,6 @@ static void pd4web_browser(Pd4Web *x, float f) {
         auto res = client.Get("/stop");
     }
 }
-
-*/
 
 // ─────────────────────────────────────
 static void pd4web_version(Pd4Web *x) {
@@ -554,18 +551,18 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->tpl = 0;
     x->version = PD4WEB_EXTERNAL_VERSION;
 
-   // x->server = new httplib::Server();
-   // if (!x->server->is_valid()) {
-     //   pd_error(x, "[pd4web] Failed to create Server");
-   // }
+    x->server = new httplib::Server();
+    if (!x->server->is_valid()) {
+        pd_error(x, "[pd4web] Failed to create Server");
+    }
     return x;
 }
 
 // ─────────────────────────────────────
 static void pd4web_free(Pd4Web *x) {
-    //httplib::Client client("http://localhost:8080");
-    //auto res = client.Get("/stop");
-    //delete x->server;
+    httplib::Client client("http://localhost:8080");
+    auto res = client.Get("/stop");
+    delete x->server;
     x->cancel = true;
     post("[pd4web] Stopping pd4web...");
     while (x->running) {
@@ -581,7 +578,7 @@ extern "C" void pd4web_setup(void) {
 
     class_addmethod(pd4web_class, (t_method)pd4web_get, gensym("get"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("set"), A_GIMME, A_NULL);
-    //class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);

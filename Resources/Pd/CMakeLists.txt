@@ -8,6 +8,8 @@ set(PDCMAKE_DIR
 
 include(${PDCMAKE_DIR}/pd.cmake)
 add_subdirectory(cpp-httplib EXCLUDE_FROM_ALL)
+add_definitions(-DBROTLI_USE_STATIC_LIBS)
+add_definitions(-DOPENSSL_USE_STATIC_LIBS)
 
 # Define the main target
 pd_add_external(pd4web pd4web.cpp) #LINK_LIBRARIES httplib)
