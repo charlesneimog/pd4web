@@ -17,7 +17,7 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-#define PD4WEB_EXTERNAL_VERSION "2.2.1"
+#define PD4WEB_EXTERNAL_VERSION "2.2.2"
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -128,7 +128,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                 if (showMessage && !output.empty()) {
                     output.erase(std::remove(output.begin(), output.end(), '\r'), output.end());
                     if (output.find("ERROR:") != std::string::npos) {
-                        pd_error(nullptr, "%s", output.c_str());
+                        pd_error(x, "%s", output.c_str());
                     } else {
                         post("%s", output.c_str());
                     }
@@ -145,7 +145,8 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         } else if (exitCode != 0) {
             x->running = false;
             x->result = false;
-            pd_error(nullptr, "[pd4web] Command failed with exit code %d", exitCode);
+            pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
+            post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
         }
         CloseHandle(hRead);
         CloseHandle(pi.hProcess);
@@ -179,7 +180,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
                         if (line.find("ERROR:") != std::string::npos) {
-                            pd_error(nullptr, "[pd4web] %s", line.c_str());
+                            pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
                             post("[pd4web] %s", line.c_str());
                         }
@@ -189,7 +190,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
                         if (line.find("ERROR:") != std::string::npos) {
-                            pd_error(nullptr, "[pd4web] %s", line.c_str());
+                            pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
                             post("[pd4web] %s", line.c_str());
                         }
@@ -202,7 +203,8 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         if (exitCode != 0) {
             x->running = false;
             x->result = false;
-            pd_error(nullptr, "[pd4web] Command failed with exit code %d", exitCode);
+            pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
+            post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
         } else {
             x->running = false;
             if (sucessMsg) {
