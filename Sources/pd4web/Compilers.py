@@ -37,13 +37,16 @@ class ExternalsCompiler:
             libRepo.set_head(commit.id)
             libRepo.checkout_tree(commit)
             libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-            self.InstallEMCC()
+            self.Pd4Web.print(
+                f"Checking out emsdk to {tag_name}",
+                color="yellow",
+                silence=self.Pd4Web.SILENCE,
+                pd4web=self.Pd4Web.PD_EXTERNAL,
+            )
 
         # check if Cmake
         if not os.path.exists(self.EMCMAKE):
             self.InstallEMCC()
-
-        # self.InstallEMCC()
 
     def InitVariables(self):
         self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
@@ -107,9 +110,15 @@ class ExternalsCompiler:
             result = subprocess.run(
                 ["chmod", "+x", self.EMSDK], env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True
             )
+                
             if result.returncode != 0:
                 self.Pd4Web.exception("Failed to make emsdk executable")
+            else:
+                self.Pd4Web.print(
+                    "emsdk is now executable", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+                )
 
+            self.Pd4Web.print("Installing emsdk, this will take a about 5 minutes, wait!!!", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
             # ──────────────────────────────────────
             result = subprocess.run(
                 [self.EMSDK, "install", "latest"],
@@ -120,6 +129,10 @@ class ExternalsCompiler:
             if result.returncode != 0:
                 self.Pd4Web.exception(
                     f"Failed to install emsdk, result {result.returncode}, cmd: " + " ".join(result.args)
+                )
+            else:
+                self.Pd4Web.print(
+                    "emsdk installed", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
                 )
 
             # ──────────────────────────────────────

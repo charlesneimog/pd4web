@@ -168,7 +168,7 @@ class ExternalLibraries:
 
         libLink = f"https://github.com/{libData.dev}/{libData.repo}"
         try:
-            self.Pd4Web.print(f"Cloning library {libData.repo}... This will take some time!", color="green")
+            self.Pd4Web.print(f"Cloning library {libData.repo}... This will take some time!", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
             pygit2.clone_repository(libLink, libPath)
         except Exception as e:
             self.Pd4Web.exception(f"Failed to clone repository: {str(e)}")
@@ -179,10 +179,10 @@ class ExternalLibraries:
         libRepo.set_head(commit.id)
         libRepo.checkout_tree(commit)
         libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-        self.Pd4Web.print(f"Library {libData.repo} cloned successfully!", color="green")
-        self.Pd4Web.print(f"Using commit {commit.id}", color="green")
+        self.Pd4Web.print(f"Library {libData.repo} cloned successfully!", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+        self.Pd4Web.print(f"Using commit {commit.id}", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
         try:
-            self.Pd4Web.print(f"Initializing submodules of {libData.repo}...", color="green")
+            self.Pd4Web.print(f"Initializing submodules of {libData.repo}...", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
             submodule_collection = pygit2.submodules.SubmoduleCollection(pygit2.Repository(libPath))
             submodule_collection.init()
             submodule_collection.update()

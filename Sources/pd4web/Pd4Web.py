@@ -121,6 +121,10 @@ class Pd4Web:
             self.env["PATH"] = python_dir
         self.env["PYTHON"] = sys.executable
         self.env["EMSDK_QUIET"] = "1"
+        # add /bin and /usr/bin to PATH on macOS
+        if sys.platform == "darwin":
+            self.env["PATH"] += ":/bin:/usr/bin"
+            
         
     def Execute(self):
         from .Builder import GetAndBuildExternals
@@ -195,38 +199,9 @@ class Pd4Web:
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
-    
-
-    def DownloadZip(self, url, filename, what=""):
-        self.print(f"Downloading {what}...", color="green", silence=self.SILENCE)
-        response = requests.get(url, stream=True)
-        if response.status_code != 200:
-            self.exception(f"Error: {response.status_code}")
-        total_size = response.headers.get("content-length")
-        total_size = int(total_size) if total_size is not None else None
-        chunk_size = 1024
-        num_bars = 40
-        with open(filename, "wb") as file:
-            downloaded_size = 0
-            for data in response.iter_content(chunk_size):
-                file.write(data)
-                downloaded_size += len(data)
-                if total_size:
-                    progress = downloaded_size / total_size
-                    num_hashes = int(progress * num_bars)
-                    progress_bar = "#" * num_hashes + "-" * (num_bars - num_hashes)
-                    sys.stdout.write(f"\r    🟢 |{progress_bar}| {progress:.2%}")
-                else:
-                    num_hashes = int(downloaded_size / chunk_size) % num_bars
-                    progress_bar = "#" * num_hashes + "-" * (num_bars - num_hashes)
-                    sys.stdout.write(f"\r    🟢 |{progress_bar}| {downloaded_size} bytes")
-                sys.stdout.flush()
-        print()
-        return True
-
     def GetPdSourceCode(self):
         if not os.path.exists(self.APPDATA + "/Pd"):
-            self.print("Cloning Pd", color="yellow")
+            self.print("Cloning Pd", color="yellow", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
             pd_path = self.APPDATA + "/Pd"
             pd_git = "https://github.com/pure-data/pure-data"
             ok = pygit2.clone_repository(pd_git, pd_path)
