@@ -17,7 +17,7 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-#define PD4WEB_EXTERNAL_VERSION "2.2.2"
+#define PD4WEB_EXTERNAL_VERSION "2.2.3"
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -56,8 +56,42 @@ class Pd4Web {
     float zoom;
 };
 
+static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached, bool sucessMsg,
+                            bool showMessage, bool clearNewline);
+
 // ─────────────────────────────────────
-static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
+static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&std::fclose)> pipe(popen(cmd.c_str(), "r"), &std::fclose);
+    
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+    
+    // Read the output of the command
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+
+    // remove newline
+    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+
+    // get real path, by default, result is a symlink
+    std::filesystem::path path = std::filesystem::canonical(result);
+
+    // make the path executable using chmod
+    std::string chmod = "chmod +x " + path.string();
+    int res = system(chmod.c_str());
+    if (res != 0) {
+        pd_error(x, "[pd4web] Failed to make the file executable");
+    }
+
+    return path.string();
+}
+
+// ─────────────────────────────────────
+bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                             bool sucessMsg = false, bool showMessage = false,
                             bool clearNewline = false) {
     
@@ -157,7 +191,9 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
     });
 #else
     std::thread t([x, cmd, sucessMsg, showMessage, clearNewline]() {
-        std::array<char, 256> Buf;
+        //post("[pd4web] Running command: %s", cmd.c_str());
+
+        std::array<char, 512> Buf;
         std::string Result;
         FILE *Pipe = popen(cmd.c_str(), "r");
         if (!Pipe) {
@@ -235,11 +271,13 @@ static bool pd4web_check(Pd4Web *x) {
     if (result) {
         pd4web_version(x);
         return true;
+    } else{
+        pd_error(x, "[pd4web] pd4web is not installed. Installing...");
     }
     std::string python_cmd = x->pythonGlobal + " --version";
     result = pd4web_terminal(x, python_cmd, false, false, false, false);
     if (!result) {
-        pd_error(nullptr, "[pd4web] Python 3 is not installed. Please install Python first.");
+        pd_error(nullptr, "[pd4web] Python 3 is not installed. Trying to install...");
         return false;
     }
 #if defined(_WIN32) || defined(_WIN64)
@@ -264,8 +302,9 @@ static bool pd4web_check(Pd4Web *x) {
 
     // check version
     std::string cmd = x->pd4web + " --version";
-    pd4web_terminal(x, cmd.c_str(), true, false, true, true);
+    pd4web_terminal(x, cmd.c_str(), false, false, true, true);
     global_pd4web_check = true;
+    pd_error(x, "[pd4web] pd4web is ready, please restart Pd");
 
     return true;
 }
@@ -514,13 +553,15 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
 
     // check if there is some python installed
 
-#ifdef defined(_WIN32) || defined(_WIN64)
+#ifdef _WIN32
     x->pythonGlobal = "py";
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #elif defined(__APPLE__)
-    x->pythonGlobal = "/usr/bin/python3";
+    char PATHS[] = "PATH=/usr/local/bin:/usr/bin:/bin";
+    putenv(PATHS);
+    x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
@@ -534,7 +575,7 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     return nullptr;
 #endif
     std::string python = x->pythonGlobal + " --version";
-    // check if there is some python installed
+
     if (!pd4web_terminal(x, python, false, false, false, false)) {
         pd_error(x, "[pd4web] Python 3 is not installed. Please install Python first.");
         return nullptr;
