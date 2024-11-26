@@ -559,8 +559,8 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #elif defined(__APPLE__)
-    char PATHS[] = "PATH=/usr/local/bin:/usr/bin:/bin";
-    putenv(PATHS);
+    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
+    putenv((char *)PATHS.c_str());
     x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
