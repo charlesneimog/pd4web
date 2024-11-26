@@ -60,6 +60,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached, bool suce
                             bool showMessage, bool clearNewline);
 
 // ─────────────────────────────────────
+#if defined(__APPLE__)
 static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
     std::array<char, 128> buffer;
     std::string result;
@@ -89,6 +90,7 @@ static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
 
     return path.string();
 }
+#endif
 
 // ─────────────────────────────────────
 bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
