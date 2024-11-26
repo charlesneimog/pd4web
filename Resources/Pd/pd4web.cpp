@@ -559,7 +559,18 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #elif defined(__APPLE__)
-    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
+    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:";
+    std::string venv_folder = x->objRoot + "/.venv/lib/";
+    for (const auto &entry : std::filesystem::directory_iterator(venv_folder)) {
+        std::string folder = entry.path().filename().string();
+        if (folder.find("python") != std::string::npos) {
+            venv_folder += folder;
+            break;
+        }
+    }
+    post("[pd4web] venv folder: %s", venv_folder.c_str());
+    PATHS += venv_folder + "/site-packages:";
+    PATHS += "/usr/local/bin:/usr/bin:/bin";    
     putenv((char *)PATHS.c_str());
     x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
