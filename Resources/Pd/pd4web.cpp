@@ -32,6 +32,7 @@ class Pd4Web {
     // commands
     std::string pip;
     std::string python;
+    std::string pythonGlobal;
     std::string pd4web;
 
     // Terminal
@@ -235,20 +236,16 @@ static bool pd4web_check(Pd4Web *x) {
         pd4web_version(x);
         return true;
     }
-#if defined(_WIN32) || defined(_WIN64)
-    std::string python_cmd = "py --version";
-#else
-    std::string python_cmd = "python3 --version";
-#endif
+    std::string python_cmd = x->pythonGlobal + " --version";
     result = pd4web_terminal(x, python_cmd, false, false, false, false);
     if (!result) {
         pd_error(nullptr, "[pd4web] Python 3 is not installed. Please install Python first.");
         return false;
     }
 #if defined(_WIN32) || defined(_WIN64)
-    std::string venv_cmd = "py -m venv \"" + x->objRoot + "\\.venv\"";
+    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "\\.venv\"";
 #else
-    std::string venv_cmd = "python3 -m venv \"" + x->objRoot + "/.venv\"";
+    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "/.venv\"";
 #endif
     post("[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
@@ -517,18 +514,26 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
 
     // check if there is some python installed
 
-#ifdef _WIN32
-    std::string python = "py --version";
+#ifdef defined(_WIN32) || defined(_WIN64)
+    x->pythonGlobal = "py";
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
-#else
-    std::string python = "python3 --version";
+#elif defined(__APPLE__)
+    x->pythonGlobal = "/usr/bin/python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+#elif defined(__linux__)
+    x->pythonGlobal = "python3";
+    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
+    x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+#else
+    pd_error(x, "[pd4web] Unsupported platform, please report this issue");
+    return nullptr;
 #endif
-
+    std::string python = x->pythonGlobal + " --version";
     // check if there is some python installed
     if (!pd4web_terminal(x, python, false, false, false, false)) {
         pd_error(x, "[pd4web] Python 3 is not installed. Please install Python first.");
