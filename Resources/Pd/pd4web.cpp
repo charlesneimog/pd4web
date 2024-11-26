@@ -193,7 +193,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
     std::thread t([x, cmd, sucessMsg, showMessage, clearNewline]() {
         //post("[pd4web] Running command: %s", cmd.c_str());
 
-        std::array<char, 512> Buf;
+        std::array<char, 8192> Buf;
         std::string Result;
         FILE *Pipe = popen(cmd.c_str(), "r");
         if (!Pipe) {
@@ -258,6 +258,26 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         t.join();
     }
     return x->result;
+}
+
+// ─────────────────────────────────────
+static void pd4web_debug_terminal(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
+    // loop through the arguments and create the command
+    std::string cmd;
+    for (int i = 0; i < argc; i++) {
+        if (argv[i].a_type == A_SYMBOL) {
+            cmd += atom_getsymbolarg(i, argc, argv)->s_name;
+        } else if (argv[i].a_type == A_FLOAT) {
+            cmd += std::to_string(atom_getfloatarg(i, argc, argv));
+        } else {
+            pd_error(x, "[pd4web] Invalid argument");
+            return;
+        }
+        if (i < argc - 1) {
+            cmd += " ";
+        }
+    }
+    pd4web_terminal(x, cmd, false, false, true, false);
 }
 
 // ─────────────────────────────────────
@@ -534,6 +554,9 @@ static void pd4web_compile(Pd4Web *x) {
 
     if (x->patch != "") {
         cmd += x->patch;
+    } else {
+        pd_error(x, "[pd4web] No patch selected");
+        return;
     }
 
     if (x->running) {
@@ -551,27 +574,14 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
 
-    // check if there is some python installed
-
 #ifdef _WIN32
     x->pythonGlobal = "py";
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #elif defined(__APPLE__)
-    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:";
-    std::string venv_folder = x->objRoot + "/.venv/lib/";
-    for (const auto &entry : std::filesystem::directory_iterator(venv_folder)) {
-        std::string folder = entry.path().filename().string();
-        if (folder.find("python") != std::string::npos) {
-            venv_folder += folder;
-            break;
-        }
-    }
-    post("[pd4web] venv folder: %s", venv_folder.c_str());
-    PATHS += venv_folder + "/site-packages:";
-    PATHS += "/usr/local/bin:/usr/bin:/bin";    
-    putenv((char *)PATHS.c_str());
+    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
+    putenv((char * )PATHS.c_str());
     x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
@@ -586,7 +596,6 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     return nullptr;
 #endif
     std::string python = x->pythonGlobal + " --version";
-
     if (!pd4web_terminal(x, python, false, false, false, false)) {
         pd_error(x, "[pd4web] Python 3 is not installed. Please install Python first.");
         return nullptr;
@@ -639,5 +648,6 @@ extern "C" void pd4web_setup(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_debug_terminal, gensym("_run"), A_GIMME, A_NULL);
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }

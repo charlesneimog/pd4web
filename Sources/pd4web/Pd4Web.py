@@ -67,6 +67,7 @@ class Pd4Web:
 
         self.Parser = parser
         self.Patch = os.path.abspath(self.Parser.patch_file)
+            
         if not os.path.isfile(self.Patch):
             self.exception("\n\nError: Patch file not found")
 
@@ -114,7 +115,10 @@ class Pd4Web:
 
         self.env = os.environ.copy()
         python_dir = os.path.dirname(sys.executable)
-        self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
+        if "PATH" in self.env:
+            self.env["PATH"] = f"{python_dir};{self.env['PATH']}"
+        else:
+            self.env["PATH"] = python_dir
         self.env["PYTHON"] = sys.executable
         self.env["EMSDK_QUIET"] = "1"
         
@@ -325,6 +329,14 @@ class Pd4Web:
             default=128,
             type=int,
             help="Initial memory size in MB",
+        )
+        
+        parser.add_argument(
+            "--patch-file",
+            required=False,
+            default="",
+            type=str,
+            help="Patch file to compile",
         )
 
         # GUI
