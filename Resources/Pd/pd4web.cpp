@@ -17,7 +17,7 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-#define PD4WEB_EXTERNAL_VERSION "2.2.4"
+#define PD4WEB_EXTERNAL_VERSION "2.2.5"
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -102,6 +102,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         return false;
     }
     x->running = true;
+    x->result = false;
 
 #if defined(_WIN32) || defined(_WIN64)
     std::thread t([x, cmd, sucessMsg, showMessage, clearNewline]() {
@@ -179,11 +180,13 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
         if (sucessMsg && exitCode == 0) {
             post("[pd4web] Command executed successfully.");
-        } else if (exitCode != 0  && showMessage) {
+        } else if (exitCode != 0) {
             x->running = false;
             x->result = false;
-            pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
-            post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+            if (showMessage) {
+                pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
+                post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+            }
         }
         CloseHandle(hRead);
         CloseHandle(pi.hProcess);
@@ -239,11 +242,13 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
 
         int exitCode = pclose(Pipe);
-        if (exitCode != 0 && showMessage) {
+        if (exitCode != 0) {
             x->running = false;
             x->result = false;
-            pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
-            post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+            if (showMessage){
+                pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
+                post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+            }
         } else {
             x->running = false;
             if (sucessMsg) {
@@ -294,19 +299,10 @@ static bool pd4web_check(Pd4Web *x) {
         pd4web_version(x);
         return true;
     } else{
-        pd_error(x, "[pd4web] pd4web is not installed. Installing...");
+        post("[pd4web] Installing pd4web, wait...");
     }
-    std::string python_cmd = x->pythonGlobal + " --version";
-    result = pd4web_terminal(x, python_cmd, false, false, false, false);
-    if (!result) {
-        pd_error(nullptr, "[pd4web] Python 3 is not installed. Trying to install...");
-        return false;
-    }
-#if defined(_WIN32) || defined(_WIN64)
-    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "\\.venv\"";
-#else
+    
     std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "/.venv\"";
-#endif
     post("[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
     if (!result) {
@@ -314,7 +310,7 @@ static bool pd4web_check(Pd4Web *x) {
         return false;
     }
     // install pd4web
-    post("[pd4web] Installing pd4web...");
+    post("[pd4web] Downloading pd4web...");
     std::string pip_cmd = x->pip + " install pd4web";
     result = pd4web_terminal(x, pip_cmd, false, false, false, false);
     if (!result) {
@@ -326,8 +322,7 @@ static bool pd4web_check(Pd4Web *x) {
     std::string cmd = x->pd4web + " --version";
     pd4web_terminal(x, cmd.c_str(), false, false, true, true);
     global_pd4web_check = true;
-    pd_error(x, "[pd4web] pd4web is ready, please restart Pd");
-
+    post("[pd4web] pd4web is ready, please restart Pd!");
     return true;
 }
 
