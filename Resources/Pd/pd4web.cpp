@@ -179,7 +179,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
         if (sucessMsg && exitCode == 0) {
             post("[pd4web] Command executed successfully.");
-        } else if (exitCode != 0) {
+        } else if (exitCode != 0  && showMessage) {
             x->running = false;
             x->result = false;
             pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
@@ -239,7 +239,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
         }
 
         int exitCode = pclose(Pipe);
-        if (exitCode != 0) {
+        if (exitCode != 0 && showMessage) {
             x->running = false;
             x->result = false;
             pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
@@ -576,20 +576,40 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
 
+    x->pythonGlobal = "";
+    std::string py_global = "python3 --version"; 
+    bool result = pd4web_terminal(x, py_global, false, false, false, false);
+    if (result) {
+        x->pythonGlobal = "python3";
+    } else {
+        result = pd4web_terminal(x, "py --version", false, false, false, false);
+        if (result) {
+            x->pythonGlobal = "py";
+        } else{
+            #ifdef _WIN32
+            result = pd4web_terminal(x, "python --version", false, false, false, false);
+            if (result) {
+                x->pythonGlobal = "python";
+            } 
+            #endif
+        }
+    }
+    if (x->pythonGlobal == "") {
+        pd_error(x, "[pd4web] Python 3 seems not installed. Please install Python 3, if installed please report on https://github.com/charlesneimog/pd4web/issues");
+        return nullptr;
+    }
+
 #ifdef _WIN32
-    x->pythonGlobal = "py";
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 #elif defined(__APPLE__)
     std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
     putenv((char * )PATHS.c_str());
-    x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
 #elif defined(__linux__)
-    x->pythonGlobal = "python3";
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
     x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
@@ -597,11 +617,6 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     pd_error(x, "[pd4web] Unsupported platform, please report this issue");
     return nullptr;
 #endif
-    std::string python = x->pythonGlobal + " --version";
-    if (!pd4web_terminal(x, python, false, false, false, false)) {
-        pd_error(x, "[pd4web] Python 3 is not installed. Please install Python first.");
-        return nullptr;
-    }
 
     if (global_pd4web_check) {
         std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
@@ -632,11 +647,13 @@ static void pd4web_free(Pd4Web *x) {
     auto res = client.Get("/stop");
     delete x->server;
     x->cancel = true;
-    post("[pd4web] Stopping pd4web...");
-    while (x->running) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    if (x->running) {
+        post("[pd4web] Stopping pd4web...");
+        while (x->running) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        post("[pd4web] pd4web stopped");    
     }
-    post("[pd4web] pd4web stopped");
 }
 
 // ─────────────────────────────────────
