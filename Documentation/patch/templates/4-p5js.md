@@ -21,3 +21,13 @@ This template is for the combination of `p5js` and `pd4web`. It is a simple temp
 There is no much to say about this template, it just use a personalized `index.html` and `sketch.js`, where you can code you `p5js` code. 
 
 Just download and have fun. If you have any question, please, let me know. If you have some questions about `p5js` or `pd4web` you can ask me too. I will be glad to help you.
+
+!!! warning "Always check if `Pd4Web` is defined and not `null`"
+    Always check if the `Pd4Web` object is defined before using it. This is because the `Pd4Web` object is only defined when the patch is loaded, which happens when the user click in the sound icon.
+    ``` javascript
+    if (Pd4Web !== null && typeof Pd4Web !== "undefined") {
+      Pd4Web.sendList("myList", [1, 2, 3]);
+    }
+ 
+    ```
+
