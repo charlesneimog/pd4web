@@ -26,7 +26,7 @@ Just download and have fun. If you have any question, please, let me know. If yo
     Always check if the `Pd4Web` object is defined before using it. This is because the `Pd4Web` object is only defined when the patch is loaded, which happens when the user click in the sound icon.
     ``` javascript
     if (Pd4Web !== null && typeof Pd4Web !== "undefined") {
-      Pd4Web.sendList("myList", [1, 2, 3]);
+      Pd4Web.sendList("myList ", [1, 2, 3]);
     }
  
     ```
