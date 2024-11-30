@@ -4,6 +4,8 @@
 #include <string>
 #include <thread>
 
+#include <cstdlib> // for getenv
+
 #include <m_pd.h>
 
 #include <m_imp.h>
@@ -63,8 +65,8 @@ class Pd4Web {
 static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached, bool sucessMsg,
                             bool showMessage, bool clearNewline);
 
-#if _WIN32
-std::string pd4web_pyexe(Pd4Web *x) {
+// ─────────────────────────────────────
+static std::string pd4web_pyexe(Pd4Web *x) {
     // Get the current user's home directory
     char *userProfile = getenv("USERPROFILE");
     if (!userProfile) {
@@ -72,9 +74,9 @@ std::string pd4web_pyexe(Pd4Web *x) {
         return "";
     }
 
-    // Construct the base path
-    std::filesystem::path basePath = std::string(userProfile);
-    basePath /= "AppData\\Local\\Programs\\Python";
+    // Construct the base path using std::filesystem::path
+    std::filesystem::path basePath =
+        std::string(userProfile) + "\\AppData\\Local\\Programs\\Python";
 
     // Check if the directory exists
     if (!std::filesystem::exists(basePath)) {
@@ -82,17 +84,20 @@ std::string pd4web_pyexe(Pd4Web *x) {
         return "";
     }
 
+    // Iterate through the directories in the base path
     for (const auto &entry : std::filesystem::directory_iterator(basePath)) {
         if (entry.is_directory()) {
             std::filesystem::path pythonPath = entry.path() / "python.exe";
             if (std::filesystem::exists(pythonPath)) {
+                post("[pd4web] Python executable found at %s", pythonPath.string().c_str());
                 return pythonPath.string();
             }
         }
     }
+
+    pd_error(x, "[pd4web] Python executable not found");
     return "";
 }
-#endif
 
 // ─────────────────────────────────────
 #if defined(__APPLE__)
@@ -666,6 +671,12 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
     x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
+
+    // replace all / with \\
+    std::replace(x->pip.begin(), x->pip.end(), '/', '\\');
+    std::replace(x->python.begin(), x->python.end(), '/', '\\');
+    std::replace(x->pd4web.begin(), x->pd4web.end(), '/', '\\');
+
 #elif defined(__APPLE__)
     std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
     putenv((char *)PATHS.c_str());
