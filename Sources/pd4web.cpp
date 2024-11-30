@@ -25,10 +25,28 @@ EM_JS(void, _JS_addSoundToggle, (void), {
 });
 
 // ─────────────────────────────────────
+EM_JS(void, _JS_pd4webCppClass, (void *Pd4Web), {
+    console.log("Received Pd4Web pointer:", Pd4Web);
+});
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_setIcon, (const char *icon, const char *animation), {
     let jsIcon = UTF8ToString(icon);
     let jsAnimation = UTF8ToString(animation);
-    setSoundIcon(jsIcon, jsAnimation);
+
+    function tryCallSetSoundIcon() {
+        if (typeof setSoundIcon === 'function') {
+            setSoundIcon(jsIcon, jsAnimation);
+        } else {
+            setTimeout(() => {
+                if (typeof setSoundIcon === 'function') {
+                    setSoundIcon(jsIcon, jsAnimation);
+                }
+            }, 200); // Retry after 200ms
+        }
+    }
+
+    setTimeout(() => tryCallSetSoundIcon(), 200);
 });
 
 // ─────────────────────────────────────
@@ -935,7 +953,6 @@ void Pd4Web::resumeAudio() { emscripten_resume_audio_context_sync(m_Context); }
  */
 void Pd4Web::suspendAudio() { _JS_suspendAudioWorkLet(m_Context); }
 
-
 /* Sound Switch */
 void Pd4Web::soundToggle() {
     if (m_audioSuspended) {
@@ -1011,6 +1028,8 @@ void Pd4Web::init() {
         _JS_addSoundToggle();
     }
     m_audioSuspended = false;
+
+    _JS_pd4webCppClass(this);
 
     return;
 }

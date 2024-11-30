@@ -5,9 +5,7 @@ import subprocess
 import pygit2
 
 import shutil
-import requests
 import importlib.metadata as importlib_metadata
-
 
 import certifi
 
@@ -62,12 +60,12 @@ class Pd4Web:
 
         parser = parser.parse_args()
 
-        self.get_mainPaths()
+        self.getMainPaths()
         self.do_actions(parser)
 
         self.Parser = parser
         self.Patch = os.path.abspath(self.Parser.patch_file)
-            
+
         if not os.path.isfile(self.Patch):
             self.exception("\n\nError: Patch file not found")
 
@@ -101,7 +99,7 @@ class Pd4Web:
         self.declaredLibsObjs = []
         self.declaredPaths = []
         self.processedAbs = []
-        
+
         # Versions
         self.Version = {}
         self.Version["python"] = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
@@ -124,8 +122,7 @@ class Pd4Web:
         # add /bin and /usr/bin to PATH on macOS
         if sys.platform == "darwin":
             self.env["PATH"] += ":/bin:/usr/bin"
-            
-        
+
     def Execute(self):
         from .Builder import GetAndBuildExternals
         from .Compilers import ExternalsCompiler
@@ -134,7 +131,7 @@ class Pd4Web:
         if self.Patch == "":
             self.exception("You must set a patch file")
 
-        self.get_mainPaths()
+        self.getMainPaths()
         self.InitVariables()
 
         # ╭──────────────────────────────────────╮
@@ -161,24 +158,17 @@ class Pd4Web:
 
     def RunBrowser(self):
         self.CWD = os.getcwd()
-        if sys.platform == "win32":
-            self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
-        elif sys.platform == "darwin":
-            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
-        elif sys.platform == "linux":
-            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
-        else:
-            self.exception("Unsupported platform")
+        self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
+        self.APPDATA = os.path.join(self.PD4WEB_ROOT, "data")
+
         emccRun = self.APPDATA + "/emsdk/upstream/emscripten/emrun"
-        # check if emrun exists
         if not os.path.exists(emccRun):
             self.exception("emrun not found. Please install Emscripten")
-
         projectRoot = os.path.realpath(self.Patch)
         os.chdir(projectRoot)
         subprocess.run(f"{emccRun} {projectRoot}/index.html", shell=True, env=self.env)
 
-    def get_mainPaths(self):
+    def getMainPaths(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -187,15 +177,9 @@ class Pd4Web:
             self.PD4WEB_LIBRARIES = os.path.abspath(self.PD4WEB_LIBRARIES)
 
         self.CWD = os.getcwd()
-        if sys.platform == "win32":
-            self.APPDATA = os.path.join(os.getenv("APPDATA"), "pd4web")
-        elif sys.platform == "darwin":
-            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
-        elif sys.platform == "linux":
-            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
-        else:
-            self.exception("Unsupported platform")
-
+        if not os.path.exists(os.path.join(self.PD4WEB_ROOT, "data")):
+            os.makedirs(os.path.join(self.PD4WEB_ROOT, "data"))
+        self.APPDATA = os.path.join(self.PD4WEB_ROOT, "data")
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
@@ -305,7 +289,7 @@ class Pd4Web:
             type=int,
             help="Initial memory size in MB",
         )
-        
+
         parser.add_argument(
             "--patch-file",
             required=False,
@@ -349,7 +333,7 @@ class Pd4Web:
             type=str,
             help="Pure Data version to use",
         )
-        
+
         # Pd Object
         parser.add_argument(
             "--pd-external",
@@ -358,7 +342,7 @@ class Pd4Web:
             action="store_true",
             help="If is it pd4web external",
         )
-        
+
         parser.add_argument(
             "--pd-external-version",
             required=False,
@@ -391,13 +375,13 @@ class Pd4Web:
         if pd4web:
             if color == "red":
                 print("ERROR: " + text)
-                sys.stdout.flush()  # Ensure immediate output
+                sys.stdout.flush()
             elif color == "yellow":
                 print("WARNING: " + text)
-                sys.stdout.flush()  # Ensure immediate output
+                sys.stdout.flush()
             else:
                 print(text)
-                sys.stdout.flush()  # Ensure immediate output
+                sys.stdout.flush()
             return
         if silence:
             return

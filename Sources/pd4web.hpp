@@ -140,7 +140,7 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         .function("suspendAudio", &Pd4Web::suspendAudio)
         .function("resumeAudio", &Pd4Web::resumeAudio)
         .function("soundToggle", &Pd4Web::soundToggle)
-        
+
         // senders
         .function("sendFloat", &Pd4Web::sendFloat)
         .function("sendSymbol", &Pd4Web::sendSymbol)

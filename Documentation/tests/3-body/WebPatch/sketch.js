@@ -11,11 +11,11 @@ function setup() {
   createCanvas(w, h, WEBGL);
 
   // Initialize the masses
-  mass1 = new Mass(-w / 2, 0, 8, 0.1, 0.1, color(255, 0, 0), 1);
-  mass2 = new Mass(-w / 3, 0, 10, -0.02, -0.01, color(0, 255, 0), 2);
-  mass3 = new Mass(w / 3, 0, 9, 0, 0, color(0, 150, 255), 3);
-  mass4 = new Mass(0, 0, 5, 0, 0, color(150, 255, 255), 4);
-  mass5 = new Mass(0, h / 4, 7, 0, 0, color(155, 255, 0), 5);
+  mass1 = new Mass(0, 0, 40, -0.02, -0.01, color(0, 255, 0), 2);
+  mass2 = new Mass(-w / 8, 0, 8, 0.1, 0.1, color(255, 0, 0), 1);
+  mass3 = new Mass(w / 8, 0, 9, 0, 0, color(0, 150, 255), 3);
+  mass4 = new Mass(0, -h / 8, 5, 0, 0, color(150, 255, 255), 4);
+  mass5 = new Mass(0, h / 8, 7, 0, 0, color(155, 255, 0), 5);
 }
 
 function draw() {
@@ -68,7 +68,7 @@ function draw() {
 function checkCollision(m1, m2) {
   let distance = dist(m1.pos.x, m1.pos.y, m2.pos.x, m2.pos.y);
   let combinedRadius = m1.radius + m2.radius;
-  let proximityThreshold = 15; // Define "very close" threshold distance
+  let proximityThreshold = 7; // Define "very close" threshold distance
 
   // Check if the objects are within the "very close" range
   if (distance <= combinedRadius + proximityThreshold) {
@@ -121,7 +121,7 @@ class Mass {
 }
 
 function applyGravity(m1, m2) {
-  let G = 1; // Gravitational constant
+  let G = 0.7; // Gravitational constant
   let r = p5.Vector.sub(m1.pos, m2.pos);
   let distanceSq = r.magSq();
   distanceSq = constrain(distanceSq, 100, 10000);

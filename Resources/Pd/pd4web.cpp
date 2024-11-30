@@ -333,7 +333,12 @@ static bool pd4web_check(Pd4Web *x) {
         post("[pd4web] Installing pd4web, wait...");
     }
 
-    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "/.venv\"";
+    // create virtual environment
+    std::string objRoot = x->objRoot;
+    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + objRoot + "/.venv\"";
+#ifdef _WIN32
+    std::replace(objRoot.begin(), objRoot.end(), '\\', '/');
+#endif
     post("[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
     if (!result) {
