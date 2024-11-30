@@ -25,6 +25,9 @@ class Pd4Web {
   public:
     t_object obj;
 
+    // obj debug
+    bool obj_debug;
+
     // constructor
     bool isReady;
     bool running;
@@ -323,6 +326,10 @@ static void pd4web_version(Pd4Web *x);
 
 // ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
+    if (!global_pd4web_check) {
+        post("[pd4web] Checking pd4web installation...");
+    }
+
     int result;
     std::string check_installation = x->python + " -c \"import pd4web\"";
     result = pd4web_terminal(x, check_installation, false, false, false, false);
@@ -331,6 +338,19 @@ static bool pd4web_check(Pd4Web *x) {
         return true;
     } else {
         post("[pd4web] Installing pd4web, wait...");
+    }
+    // check if venv is installed
+    std::string venv_installed = x->pythonGlobal + " -m venv --help";
+    result = pd4web_terminal(x, venv_installed, false, false, false, false);
+    if (!result) {
+        std::string install_venv = x->pythonGlobal + " -m pip install virtualenv";
+        post("Trying to install virtualenv...");
+        result = pd4web_terminal(x, install_venv, false, false, false, false);
+        if (!result) {
+            pd_error(nullptr, "[pd4web] Failed to install virtualenv, please report this error on "
+                              "https://github.com/charlesneimog/pd4web/issues");
+            return false;
+        }
     }
 
     // create virtual environment
@@ -607,6 +627,15 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
 
+    for (int i = 0; i < argc; i++) {
+        if (argv[i].a_type == A_SYMBOL) {
+            std::string arg = atom_getsymbolarg(i, argc, argv)->s_name;
+            if (arg == "-debug") {
+                x->obj_debug = true;
+            }
+        }
+    }
+
     x->pythonGlobal = "";
     std::string py_global = "python3 --version";
     bool result = pd4web_terminal(x, py_global, false, false, false, false);
@@ -647,24 +676,22 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     pd_error(x, "[pd4web] Unsupported platform, please report this issue");
     return nullptr;
 #endif
+    std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
 
-    if (global_pd4web_check) {
-        std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
-    } else {
-        post("[pd4web] Checking pd4web...");
-        std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
-    }
-
+    // pd4web config
     x->cancel = false;
-    // default variables
     x->verbose = false;
     x->memory = 32;
     x->gui = true;
     x->zoom = 2;
     x->tpl = 0;
     x->version = PD4WEB_EXTERNAL_VERSION;
-
     x->server = new httplib::Server();
+
+    if (x->obj_debug) {
+        post("[pd4web] Python executable: %s", x->python.c_str());
+    }
+
     if (!x->server->is_valid()) {
         pd_error(x, "[pd4web] Failed to create Server");
     }
