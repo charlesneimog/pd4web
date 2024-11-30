@@ -20,7 +20,7 @@
 static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-#define PD4WEB_EXTERNAL_VERSION "2.2.5"
+#define PD4WEB_EXTERNAL_VERSION "2.2.6"
 
 // ─────────────────────────────────────
 class Pd4Web {
@@ -37,8 +37,8 @@ class Pd4Web {
 
     // commands
     std::string pip;
-    std::string python;
-    std::string pythonGlobal;
+    std::string python_env;
+    std::string python_global;
     std::string pd4web;
 
     // Terminal
@@ -66,37 +66,47 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached, bool suce
                             bool showMessage, bool clearNewline);
 
 // ─────────────────────────────────────
-static std::string pd4web_pyexe(Pd4Web *x) {
-    // Get the current user's home directory
+static bool pd4web_pyexe(Pd4Web *x) {
+#if defined(__APPLE__) || defined(__linux__)
+    if (pd4web_terminal(x, "python3 --version", false, false, false, false)) {
+        x->python_global = "python3";
+        return true;
+    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
+        x->python_global = "python";
+        post("[pd4web] py found: %s", x->python_global.c_str());
+        return true;
+    } else {
+        pd_error(x, "[pd4web] Python 3 not found, please install Python 3");
+        return false;
+    }
+#else
+    std::string py_global;
+    if (pd4web_terminal(x, "py --version", false, false, false, false)) {
+        py_global = "py";
+        x->python_global = py_global;
+        return true;
+    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
+        py_global = "python";
+        x->python_global = py_global;
+        return true;
+    }
+
+    post("[pd4web] Searching for Python Launcher...");
     char *userProfile = getenv("USERPROFILE");
     if (!userProfile) {
         pd_error(x, "[pd4web] Unable to get USERPROFILE environment variable.");
-        return "";
+        return false;
     }
-
-    // Construct the base path using std::filesystem::path
-    std::filesystem::path basePath =
-        std::string(userProfile) + "\\AppData\\Local\\Programs\\Python";
-
-    // Check if the directory exists
-    if (!std::filesystem::exists(basePath)) {
-        pd_error(x, "[pd4web] Python directory not found at %s", basePath.string().c_str());
-        return "";
+    std::string py_exe =
+        std::string(userProfile) + "\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe";
+    if (std::filesystem::exists(py_exe)) {
+        x->python_global = py_exe;
+        return true;
+    } else {
+        pd_error(x, "[pd4web] Python Launcher not found, please install Python 3");
+        return false;
     }
-
-    // Iterate through the directories in the base path
-    for (const auto &entry : std::filesystem::directory_iterator(basePath)) {
-        if (entry.is_directory()) {
-            std::filesystem::path pythonPath = entry.path() / "python.exe";
-            if (std::filesystem::exists(pythonPath)) {
-                post("[pd4web] Python executable found at %s", pythonPath.string().c_str());
-                return pythonPath.string();
-            }
-        }
-    }
-
-    pd_error(x, "[pd4web] Python executable not found");
-    return "";
+#endif
 }
 
 // ─────────────────────────────────────
@@ -340,7 +350,7 @@ static bool pd4web_check(Pd4Web *x) {
     }
 
     int result;
-    std::string check_installation = x->python + " -c \"import pd4web\"";
+    std::string check_installation = x->python_env + " -c \"import pd4web\"";
     result = pd4web_terminal(x, check_installation, false, false, false, false);
     if (result) {
         pd4web_version(x);
@@ -349,11 +359,11 @@ static bool pd4web_check(Pd4Web *x) {
         post("[pd4web] Installing pd4web, wait...");
     }
     // check if venv is installed
-    std::string venv_installed = x->pythonGlobal + " -m venv --help";
+    std::string venv_installed = x->python_global + " -m venv --help";
     result = pd4web_terminal(x, venv_installed, false, false, false, false);
     if (!result) {
-        std::string install_venv = x->pythonGlobal + " -m pip install virtualenv";
-        post("Trying to install virtualenv...");
+        std::string install_venv = x->python_global + " -m pip install virtualenv";
+        post("[pd4web] Trying to install virtualenv...");
         result = pd4web_terminal(x, install_venv, false, false, false, false);
         if (!result) {
             pd_error(nullptr, "[pd4web] Failed to install virtualenv, please report this error on "
@@ -364,7 +374,7 @@ static bool pd4web_check(Pd4Web *x) {
 
     // create virtual environment
     std::string objRoot = x->objRoot;
-    std::string venv_cmd = x->pythonGlobal + " -m venv \"" + objRoot + "/.venv\"";
+    std::string venv_cmd = x->python_global + " -m venv \"" + objRoot + "/.venv\"";
 #ifdef _WIN32
     std::replace(objRoot.begin(), objRoot.end(), '\\', '/');
 #endif
@@ -633,9 +643,12 @@ static void pd4web_compile(Pd4Web *x) {
 // ─────────────────────────────────────
 static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     Pd4Web *x = (Pd4Web *)pd_new(pd4web_class);
+    if (!x) {
+        pd_error(x, "[pd4web] Could not create object");
+        return nullptr;
+    }
     x->objRoot = pd4web_class->c_externdir->s_name;
     x->running = false;
-
     for (int i = 0; i < argc; i++) {
         if (argv[i].a_type == A_SYMBOL) {
             std::string arg = atom_getsymbolarg(i, argc, argv)->s_name;
@@ -645,52 +658,45 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
         }
     }
 
-    x->pythonGlobal = "";
-    std::string py_global = "python3 --version";
-    bool result = pd4web_terminal(x, py_global, false, false, false, false);
-    if (result) {
-        x->pythonGlobal = "python3";
-    } else {
-        result = pd4web_terminal(x, "py --version", false, false, false, false);
-        if (result) {
-            x->pythonGlobal = "py";
-        }
-#ifdef _WIN32
-        else {
-            x->pythonGlobal = pd4web_pyexe(x);
-        }
-#endif
-    }
-    if (x->pythonGlobal == "") {
-        pd_error(x, "[pd4web] Could not find Python 3. Please install Python 3, if installed "
-                    "please report on https://github.com/charlesneimog/pd4web/issues");
-        return nullptr;
-    }
+    x->python_global = "not found";
 
 #ifdef _WIN32
     x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
-    x->python = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
+    x->python_env = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
     x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
 
-    // replace all / with \\
+    // replace \ on windows
     std::replace(x->pip.begin(), x->pip.end(), '/', '\\');
-    std::replace(x->python.begin(), x->python.end(), '/', '\\');
+    std::replace(x->python_env.begin(), x->python_env.end(), '/', '\\');
     std::replace(x->pd4web.begin(), x->pd4web.end(), '/', '\\');
 
 #elif defined(__APPLE__)
     std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
     putenv((char *)PATHS.c_str());
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
+    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
 #elif defined(__linux__)
     x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python = "\"" + x->objRoot + "/.venv/bin/python\"";
+    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
     x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
 #else
     pd_error(x, "[pd4web] Unsupported platform, please report this issue");
     return nullptr;
 #endif
+    bool ok = pd4web_pyexe(x);
+    if (!ok) {
+        pd_error(x, "[pd4web] Could not find Python 3. Please install Python 3, if installed "
+                    "please report on https://github.com/charlesneimog/pd4web/issues");
+        return nullptr;
+    }
+
+    if (x->python_global == "not found") {
+        pd_error(x, "[pd4web] Could not find Python 3. Please install Python 3, if installed "
+                    "please report on https://github.com/charlesneimog/pd4web/issues");
+        return nullptr;
+    }
+
     std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
 
     // pd4web config
@@ -704,8 +710,8 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->server = new httplib::Server();
 
     if (x->obj_debug) {
-        post("[pd4web] Python Venv Executable: %s", x->python.c_str());
-        post("[pd4web] Python Global Executable: %s", x->pythonGlobal.c_str());
+        post("[pd4web] Python Venv Executable: %s", x->python_env.c_str());
+        post("[pd4web] Python Global Executable: %s", x->python_global.c_str());
         post("[pd4web] Pip Executable: %s", x->pip.c_str());
         post("[pd4web] pd4web Executable: %s", x->pd4web.c_str());
     }
