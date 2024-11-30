@@ -303,6 +303,7 @@ static bool pd4web_check(Pd4Web *x) {
     }
     
     std::string venv_cmd = x->pythonGlobal + " -m venv \"" + x->objRoot + "/.venv\"";
+    post("[pd4web] cmd: %s", venv_cmd.c_str());
     post("[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
     if (!result) {
