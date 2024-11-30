@@ -131,6 +131,10 @@ static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
 bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool sucessMsg = false,
                      bool showMessage = false, bool clearNewline = false) {
 
+    if (x->obj_debug) {
+        post("[pd4web] Running command: %s", cmd.c_str());
+    }
+
     if (x->running) {
         pd_error(x, "[pd4web] Another command is running.");
         return false;
@@ -689,7 +693,10 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->server = new httplib::Server();
 
     if (x->obj_debug) {
-        post("[pd4web] Python executable: %s", x->python.c_str());
+        post("[pd4web] Python Venv Executable: %s", x->python.c_str());
+        post("[pd4web] Python Global Executable: %s", x->pythonGlobal.c_str());
+        post("[pd4web] Pip Executable: %s", x->pip.c_str());
+        post("[pd4web] pd4web Executable: %s", x->pd4web.c_str());
     }
 
     if (!x->server->is_valid()) {
