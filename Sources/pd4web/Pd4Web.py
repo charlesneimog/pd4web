@@ -362,7 +362,7 @@ class Pd4Web:
 
     def get_publicPath(self):
         if sys.platform == "win32":
-            public_path = os.getenv("PUBLIC")
+            public_path = os.getenv("PROGRAMDATA")
             public_path = os.path.join(public_path, "pd4web")
             if not os.path.exists(public_path):
                 os.makedirs(public_path)
