@@ -4,22 +4,20 @@
 #include <string>
 #include <thread>
 
-#include <cstdlib> // for getenv
-
-#include <m_pd.h>
-
-#include <m_imp.h>
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cstdlib> // for getenv
 #endif
+
+#include <m_pd.h>
+#include <m_imp.h>
 
 #include <httplib.h>
 
-static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
+static bool global_pd4web_check = false; // just need to check once
 #define PD4WEB_EXTERNAL_VERSION "2.3.0"
 
 // ─────────────────────────────────────
@@ -28,34 +26,34 @@ class Pd4Web {
     t_object obj;
 
     // constructor
-    bool isReady;
+    bool is_ready;
     bool running;
     bool result;
 
-    // commands
+    // executables
     std::string pip;
     std::string python_env;
     std::string python_global;
     std::string pd4web;
 
-    // Terminal
-    std::string cmd;
-
-    // Server
+    // server
     httplib::Server *server;
-    std::string projectRoot;
-    std::string objRoot;
+    std::string project_root;
+    std::string object_root;
 
     // compilation config
-    bool cancel;
+    std::string cmd;
     std::string patch;
     std::string version;
+
     bool verbose;
     bool gui;
     bool debug;
     bool clear;
+    bool cancel;
+
     int memory;
-    int tpl;
+    int patch_template;
     float zoom;
 };
 
@@ -153,7 +151,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, b
             x->result = false;
             if (showMessage) {
                 pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
-                logpost(x, 2, "Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+                logpost(x, 3, "Try to run the command '%s' in the terminal to see the error", cmd.c_str());
             }
         }
         CloseHandle(hRead);
@@ -350,10 +348,10 @@ static bool pd4web_check(Pd4Web *x) {
     }
 
     // create virtual environment
-    std::string objRoot = x->objRoot;
-    std::string venv_cmd = x->python_global + " -m venv \"" + objRoot + "/.venv\"";
+    std::string object_root = x->object_root;
+    std::string venv_cmd = x->python_global + " -m venv \"" + object_root + "/.venv\"";
 #ifdef _WIN32
-    std::replace(objRoot.begin(), objRoot.end(), '\\', '/');
+    std::replace(object_root.begin(), object_root.end(), '\\', '/');
 #endif
     logpost(x, 2, "[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
@@ -450,15 +448,15 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
                 pd_error(x, "[pd4web] Invalid argument, use [set patch <path>]");
             }
         }
-        x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
+        x->project_root = std::filesystem::path(newpatch).parent_path().string();
         x->patch = "\"" + newpatch + "\"";
     } else if ("template" == config) {
-        int tpl = atom_getintarg(1, argc, argv);
-        if (x->tpl == tpl) {
+        int patch_template = atom_getintarg(1, argc, argv);
+        if (x->patch_template == patch_template) {
             return;
         }
-        x->tpl = tpl;
-        logpost(x, 2, "[pd4web] Template set to %d", x->tpl);
+        x->patch_template = patch_template;
+        logpost(x, 2, "[pd4web] Template set to %d", x->patch_template);
     } else if ("debug" == config) {
         bool debug = (bool)atom_getintarg(1, argc, argv);
         if (x->debug == debug) {
@@ -496,7 +494,7 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
 
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
-    if (!x->isReady) {
+    if (!x->is_ready) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
     }
@@ -508,8 +506,8 @@ static void pd4web_browser(Pd4Web *x, float f) {
 
     if (f == 1) {
         std::thread t([x]() {
-            logpost(x, 3, "[pd4web] Root: %s", x->projectRoot.c_str());
-            x->server->set_mount_point("/", x->projectRoot.c_str());
+            logpost(x, 3, "[pd4web] Root: %s", x->project_root.c_str());
+            x->server->set_mount_point("/", x->project_root.c_str());
             x->server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });
@@ -561,7 +559,7 @@ static void pd4web_compile(Pd4Web *x) {
         pd_error(x, "[pd4web] Compilation already running");
         return;
     }
-    if (!x->isReady) {
+    if (!x->is_ready) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
     }
@@ -585,8 +583,8 @@ static void pd4web_compile(Pd4Web *x) {
     if (x->debug) {
         cmd += " --debug ";
     }
-    if (x->tpl != 0) {
-        cmd += " --template " + std::to_string(x->tpl) + " ";
+    if (x->patch_template != 0) {
+        cmd += " --template " + std::to_string(x->patch_template) + " ";
     }
 
     if (x->patch != "") {
@@ -612,29 +610,29 @@ static void *pd4web_new() {
         pd_error(x, "[pd4web] Could not create object, memory allocation failed");
         return nullptr;
     }
-    x->objRoot = pd4web_class->c_externdir->s_name;
+    x->object_root = pd4web_class->c_externdir->s_name;
     x->running = false;
     x->python_global = "not found";
 
 #ifdef _WIN32
-    x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
-    x->python_env = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
-    x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
+    x->pip = "\"" + x->object_root + "\\.venv\\Scripts\\pip.exe\"";
+    x->python_env = "\"" + x->object_root + "\\.venv\\Scripts\\python.exe\"";
+    x->pd4web = "\"" + x->object_root + "\\.venv\\Scripts\\pd4web.exe\"";
     std::replace(x->pip.begin(), x->pip.end(), '/', '\\');
     std::replace(x->python_env.begin(), x->python_env.end(), '/', '\\');
     std::replace(x->pd4web.begin(), x->pd4web.end(), '/', '\\');
 
 #elif defined(__APPLE__)
-    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
+    std::string PATHS = "PATH=" + x->object_root + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
     putenv((char *)PATHS.c_str());
-    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
-    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+    x->pip = "\"" + x->object_root + "/.venv/bin/pip\"";
+    x->python_env = "\"" + x->object_root + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->object_root + "/.venv/bin/pd4web\"";
 
 #elif defined(__linux__)
-    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
-    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+    x->pip = "\"" + x->object_root + "/.venv/bin/pip\"";
+    x->python_env = "\"" + x->object_root + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->object_root + "/.venv/bin/pd4web\"";
 
 #else
     pd_error(x, "[pd4web] Unsupported platform, please report this issue");
@@ -648,7 +646,7 @@ static void *pd4web_new() {
         return nullptr;
     }
 
-    std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
+    std::thread([x]() { x->is_ready = pd4web_check(x); }).detach();
 
     // pd4web config
     x->cancel = false;
@@ -656,11 +654,11 @@ static void *pd4web_new() {
     x->memory = 32;
     x->gui = true;
     x->zoom = 2;
-    x->tpl = 0;
+    x->patch_template = 0;
     x->version = PD4WEB_EXTERNAL_VERSION;
     x->server = new httplib::Server();
 
-    logpost(x, 3, "[pd4web] python global executable: %s", x->python_global.c_str());
+    logpost(x, 3, "[pd4web] python: %s", x->python_global.c_str());
     logpost(x, 3, "[pd4web] python venv executable: %s", x->python_env.c_str());
     logpost(x, 3, "[pd4web] pip executable: %s", x->pip.c_str());
     logpost(x, 3, "[pd4web] pd4web executable: %s", x->pd4web.c_str());
