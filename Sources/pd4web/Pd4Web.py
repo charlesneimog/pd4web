@@ -159,7 +159,19 @@ class Pd4Web:
     def RunBrowser(self):
         self.CWD = os.getcwd()
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
-        self.APPDATA = os.path.join(self.PD4WEB_ROOT, "data")
+        
+        if sys.platform == "win32":
+            program_data_path = os.getenv("PROGRAMDATA")
+            app_data_subfolder = os.path.join(program_data_path, "pd4web")
+            if not os.path.exists(app_data_subfolder):
+                os.makedirs(app_data_subfolder)
+            self.APPDATA = app_data_subfolder
+        elif sys.platform == "darwin":
+            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
+        elif sys.platform == "linux":
+            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
+        else:
+            self.exception("Unsupported platform")
 
         emccRun = self.APPDATA + "/emsdk/upstream/emscripten/emrun"
         if not os.path.exists(emccRun):
@@ -179,7 +191,18 @@ class Pd4Web:
         self.CWD = os.getcwd()
         if not os.path.exists(os.path.join(self.PD4WEB_ROOT, "data")):
             os.makedirs(os.path.join(self.PD4WEB_ROOT, "data"))
-        self.APPDATA = os.path.join(self.PD4WEB_ROOT, "data")
+        if sys.platform == "win32":
+            program_data_path = os.getenv("PROGRAMDATA")
+            app_data_subfolder = os.path.join(program_data_path, "pd4web")
+            if not os.path.exists(app_data_subfolder):
+                os.makedirs(app_data_subfolder)
+            self.APPDATA = app_data_subfolder
+        elif sys.platform == "darwin":
+            self.APPDATA = os.path.join(os.path.expanduser("~/Library/"), "pd4web")
+        elif sys.platform == "linux":
+            self.APPDATA = os.path.join(os.path.expanduser("~/.local/share"), "pd4web")
+        else:
+            self.exception("Unsupported platform")
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
