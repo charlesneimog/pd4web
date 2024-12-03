@@ -4,156 +4,69 @@
 #include <string>
 #include <thread>
 
-#include <cstdlib> // for getenv
-
-#include <m_pd.h>
-
-#include <m_imp.h>
-
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <cstdlib> // for getenv
 #endif
+
+#include <m_pd.h>
+#include <m_imp.h>
 
 #include <httplib.h>
 
-static bool global_pd4web_check = false;
 static t_class *pd4web_class;
 
-#define PD4WEB_EXTERNAL_VERSION "2.2.6"
+static bool global_pd4web_check = false; // just need to check once
+#define PD4WEB_EXTERNAL_VERSION "2.3.0"
 
 // ─────────────────────────────────────
 class Pd4Web {
   public:
     t_object obj;
 
-    // obj debug
-    bool obj_debug;
-
     // constructor
-    bool isReady;
+    bool is_ready;
     bool running;
     bool result;
 
-    // commands
+    // executables
     std::string pip;
     std::string python_env;
     std::string python_global;
     std::string pd4web;
 
-    // Terminal
-    std::string cmd;
-
-    // Server
+    // server
     httplib::Server *server;
-    std::string projectRoot;
-    std::string objRoot;
+    std::string project_root;
+    std::string object_root;
 
     // compilation config
-    bool cancel;
+    std::string cmd;
     std::string patch;
     std::string version;
+
     bool verbose;
     bool gui;
     bool debug;
     bool clear;
+    bool cancel;
+
     int memory;
-    int tpl;
+    int patch_template;
     float zoom;
 };
 
-static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached, bool sucessMsg,
-                            bool showMessage, bool clearNewline);
-
 // ─────────────────────────────────────
-static bool pd4web_pyexe(Pd4Web *x) {
-#if defined(__APPLE__) || defined(__linux__)
-    if (pd4web_terminal(x, "python3 --version", false, false, false, false)) {
-        x->python_global = "python3";
-        return true;
-    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
-        x->python_global = "python";
-        post("[pd4web] py found: %s", x->python_global.c_str());
-        return true;
-    } else {
-        pd_error(x, "[pd4web] Python 3 not found, please install Python 3");
-        return false;
-    }
-#else
-    std::string py_global;
-    if (pd4web_terminal(x, "py --version", false, false, false, false)) {
-        py_global = "py";
-        x->python_global = py_global;
-        return true;
-    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
-        py_global = "python";
-        x->python_global = py_global;
-        return true;
-    }
-
-    post("[pd4web] Searching for Python Launcher...");
-    char *userProfile = getenv("USERPROFILE");
-    if (!userProfile) {
-        pd_error(x, "[pd4web] Unable to get USERPROFILE environment variable.");
-        return false;
-    }
-    std::string py_exe =
-        std::string(userProfile) + "\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe";
-    if (std::filesystem::exists(py_exe)) {
-        x->python_global = py_exe;
-        return true;
-    } else {
-        pd_error(x, "[pd4web] Python Launcher not found, please install Python 3");
-        return false;
-    }
-#endif
-}
-
-// ─────────────────────────────────────
-#if defined(__APPLE__)
-static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&std::fclose)> pipe(popen(cmd.c_str(), "r"), &std::fclose);
-
-    if (!pipe) {
-        throw std::runtime_error("popen() failed!");
-    }
-
-    // Read the output of the command
-    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
-        result += buffer.data();
-    }
-
-    // remove newline
-    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
-
-    // get real path, by default, result is a symlink
-    std::filesystem::path path = std::filesystem::canonical(result);
-
-    // make the path executable using chmod
-    std::string chmod = "chmod +x " + path.string();
-    int res = system(chmod.c_str());
-    if (res != 0) {
-        pd_error(x, "[pd4web] Failed to make the file executable");
-    }
-
-    return path.string();
-}
-#endif
-
-// ─────────────────────────────────────
-bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool sucessMsg = false,
+static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool sucessMsg = false,
                      bool showMessage = false, bool clearNewline = false) {
 
-    if (x->obj_debug) {
-        post("[pd4web] Running command: %s", cmd.c_str());
-    }
-
+    logpost(x, 3, "[pd4web] Running command: %s", cmd.c_str());
     if (x->running) {
-        pd_error(x, "[pd4web] Another command is running.");
+        pd_error(x, "[pd4web] Another command is running, please wait.");
         return false;
     }
+    
     x->running = true;
     x->result = false;
 
@@ -221,7 +134,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
                     if (output.find("ERROR:") != std::string::npos) {
                         pd_error(x, "%s", output.c_str());
                     } else {
-                        post("%s", output.c_str());
+                        logpost(x, 2, "%s", output.c_str());
                     }
                     output.clear();
                 }
@@ -232,13 +145,13 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
             }
         }
         if (sucessMsg && exitCode == 0) {
-            post("[pd4web] Command executed successfully.");
+            logpost(x, 2, "[pd4web] Command executed successfully.");
         } else if (exitCode != 0) {
             x->running = false;
             x->result = false;
             if (showMessage) {
                 pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
-                post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+                logpost(x, 3, "Try to run the command '%s' in the terminal to see the error", cmd.c_str());
             }
         }
         CloseHandle(hRead);
@@ -249,13 +162,11 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
     });
 #else
     std::thread t([x, cmd, sucessMsg, showMessage, clearNewline]() {
-        // post("[pd4web] Running command: %s", cmd.c_str());
-
         std::array<char, 8192> Buf;
         std::string Result;
         FILE *Pipe = popen(cmd.c_str(), "r");
         if (!Pipe) {
-            pd_error(nullptr, "[pd4web] popen failed");
+            pd_error(x, "[pd4web] popen failed");
             x->running = false;
             x->result = false;
         }
@@ -277,7 +188,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
                         if (line.find("ERROR:") != std::string::npos) {
                             pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
-                            post("[pd4web] %s", line.c_str());
+                            logpost(x, 2, "[pd4web] %s", line.c_str());
                         }
                     }
                 } else {
@@ -287,7 +198,7 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
                         if (line.find("ERROR:") != std::string::npos) {
                             pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
-                            post("[pd4web] %s", line.c_str());
+                            logpost(x, 2, "[pd4web] %s", line.c_str());
                         }
                     }
                 }
@@ -300,12 +211,12 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
             x->result = false;
             if (showMessage) {
                 pd_error(x, "[pd4web] Command failed with exit code %d", exitCode);
-                post("Try to run the command '%s' in the terminal to see the error", cmd.c_str());
+                logpost(x, 3, "Try to run the command '%s' in the terminal to see the error", cmd.c_str());
             }
         } else {
             x->running = false;
             if (sucessMsg) {
-                post("[pd4web] Command executed successfully.");
+                logpost(x, 2, "[pd4web] Command executed successfully.");
             }
             x->result = true;
         }
@@ -319,77 +230,141 @@ bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false, bool suc
     }
     return x->result;
 }
-
 // ─────────────────────────────────────
-static void pd4web_debug_terminal(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
-    // loop through the arguments and create the command
-    std::string cmd;
-    for (int i = 0; i < argc; i++) {
-        if (argv[i].a_type == A_SYMBOL) {
-            cmd += atom_getsymbolarg(i, argc, argv)->s_name;
-        } else if (argv[i].a_type == A_FLOAT) {
-            cmd += std::to_string(atom_getfloatarg(i, argc, argv));
-        } else {
-            pd_error(x, "[pd4web] Invalid argument");
-            return;
-        }
-        if (i < argc - 1) {
-            cmd += " ";
-        }
+static void pd4web_version(Pd4Web *x) {
+    std::string cmd = x->pd4web + " --version";
+    if (global_pd4web_check) {
+        pd4web_terminal(x, cmd.c_str(), true, false, false, true);
+    } else {
+        pd4web_terminal(x, cmd.c_str(), true, false, true, true);
+        global_pd4web_check = true;
     }
-    pd4web_terminal(x, cmd, false, false, true, false);
 }
 
 // ─────────────────────────────────────
-static void pd4web_version(Pd4Web *x);
+static bool pd4web_pyexe(Pd4Web *x) {
+#if defined(__APPLE__) || defined(__linux__)
+    if (pd4web_terminal(x, "python3 --version", false, false, false, false)) {
+        x->python_global = "python3";
+        logpost(x, 3, "[pd4web] python3 found");
+        return true;
+    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
+        x->python_global = "python";
+        logpost(x, 3, "[pd4web] py found");
+        return true;
+    } else {
+        pd_error(x, "[pd4web] Python 3 not found, please install Python 3");
+        return false;
+    }
+#else
+    if (pd4web_terminal(x, "py --version", false, false, false, false)) {
+        x->python_global = "py";
+        logpost(x, 3, "[pd4web] py found");
+        return true;
+    } else if (pd4web_terminal(x, "python --version", false, false, false, false)) {
+        x->python_global = "python";
+        return true;
+    }
+
+    post("[pd4web] Searching for Python Launcher...");
+    char *userProfile = getenv("USERPROFILE");
+    if (!userProfile) {
+        pd_error(x, "[pd4web] Unable to get USERPROFILE environment variable.");
+        return false;
+    }
+    std::string py_exe = std::string(userProfile) + "\\AppData\\Local\\Programs\\Python\\Launcher\\py.exe";
+    if (std::filesystem::exists(py_exe)) {
+        x->python_global = py_exe;
+        return true;
+    } else {
+        pd_error(x, "[pd4web] Python Launcher not found, please install Python 3, if you have Python 3 installed, "
+                    "please report using https://github.com/charlesneimog/pd4web/issues/new");
+        return false;
+    }
+#endif
+}
+
+// ─────────────────────────────────────
+#if defined(__APPLE__)
+static std::string pd4web_terminal_info(Pd4Web *x, std::string cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::unique_ptr<FILE, decltype(&std::fclose)> pipe(popen(cmd.c_str(), "r"), &std::fclose);
+
+    if (!pipe) {
+        throw std::runtime_error("popen() failed!");
+    }
+
+    // Read the output of the command
+    while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
+        result += buffer.data();
+    }
+
+    // remove newline
+    result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+
+    // get real path, by default, result is a symlink
+    std::filesystem::path path = std::filesystem::canonical(result);
+
+    // make the path executable using chmod
+    std::string chmod = "chmod +x " + path.string();
+    int res = system(chmod.c_str());
+    if (res != 0) {
+        pd_error(x, "[pd4web] Failed to make the file executable");
+    }
+
+    return path.string();
+}
+#endif
 
 // ─────────────────────────────────────
 static bool pd4web_check(Pd4Web *x) {
     if (!global_pd4web_check) {
-        post("[pd4web] Checking pd4web installation...");
+        logpost(x, 2, "[pd4web] Checking pd4web installation...");
     }
 
     int result;
     std::string check_installation = x->python_env + " -c \"import pd4web\"";
     result = pd4web_terminal(x, check_installation, false, false, false, false);
     if (result) {
-        pd4web_version(x);
+        std::string cmd = x->pd4web + " --version";
+        pd4web_terminal(x, cmd.c_str(), false, false, true, true);
         return true;
     } else {
-        post("[pd4web] Installing pd4web, wait...");
+        logpost(x, 2, "[pd4web] Installing pd4web, wait...");
     }
     // check if venv is installed
     std::string venv_installed = x->python_global + " -m venv --help";
     result = pd4web_terminal(x, venv_installed, false, false, false, false);
     if (!result) {
         std::string install_venv = x->python_global + " -m pip install virtualenv";
-        post("[pd4web] Trying to install virtualenv...");
+        logpost(x, 2, "[pd4web] Trying to install virtualenv...");
         result = pd4web_terminal(x, install_venv, false, false, false, false);
         if (!result) {
-            pd_error(nullptr, "[pd4web] Failed to install virtualenv, please report this error on "
+            pd_error(x, "[pd4web] Failed to install virtualenv, please report this error on "
                               "https://github.com/charlesneimog/pd4web/issues");
             return false;
         }
     }
 
     // create virtual environment
-    std::string objRoot = x->objRoot;
-    std::string venv_cmd = x->python_global + " -m venv \"" + objRoot + "/.venv\"";
+    std::string object_root = x->object_root;
+    std::string venv_cmd = x->python_global + " -m venv \"" + object_root + "/.venv\"";
 #ifdef _WIN32
-    std::replace(objRoot.begin(), objRoot.end(), '\\', '/');
+    std::replace(object_root.begin(), object_root.end(), '\\', '/');
 #endif
-    post("[pd4web] Creating virtual environment...");
+    logpost(x, 2, "[pd4web] Creating virtual environment...");
     result = pd4web_terminal(x, venv_cmd, false, false, false, false);
     if (!result) {
-        pd_error(nullptr, "[pd4web] Failed to create virtual environment");
+        pd_error(x, "[pd4web] Failed to create virtual environment");
         return false;
     }
     // install pd4web
-    post("[pd4web] Downloading pd4web...");
+    logpost(x, 2, "[pd4web] Downloading pd4web...");
     std::string pip_cmd = x->pip + " install pd4web";
     result = pd4web_terminal(x, pip_cmd, false, false, false, false);
     if (!result) {
-        pd_error(nullptr, "[pd4web] Failed to install pd4web");
+        pd_error(x, "[pd4web] Failed to install pd4web");
         return false;
     }
 
@@ -397,7 +372,7 @@ static bool pd4web_check(Pd4Web *x) {
     std::string cmd = x->pd4web + " --version";
     pd4web_terminal(x, cmd.c_str(), false, false, true, true);
     global_pd4web_check = true;
-    post("[pd4web] pd4web is ready, please restart Pd!");
+    logpost(x, 2, "[pd4web] pd4web is ready, please restart Pd!");
     return true;
 }
 
@@ -428,7 +403,7 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         int memory = atom_getintarg(1, argc, argv);
         if (memory != x->memory) {
             x->memory = memory;
-            post("[pd4web] Initial memory set to %dMB", x->memory);
+            logpost(x, 2, "[pd4web] Initial memory set to %dMB", x->memory);
         }
         return;
     } else if ("verbose" == config) {
@@ -436,9 +411,9 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         if (verbose != x->verbose) {
             x->verbose = verbose;
             if (x->verbose) {
-                post("[pd4web] Verbose set to true");
+                logpost(x, 2, "[pd4web] Verbose set to true");
             } else {
-                post("[pd4web] Verbose set to false");
+                logpost(x, 2, "[pd4web] Verbose set to false");
             }
         }
     } else if ("gui" == config) {
@@ -448,9 +423,9 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
         x->gui = gui;
         if (x->gui) {
-            post("[pd4web] Gui set to true");
+            logpost(x, 2, "[pd4web] Gui set to true");
         } else {
-            post("[pd4web] Gui set to false");
+            logpost(x, 2, "[pd4web] Gui set to false");
         }
     } else if ("zoom" == config) {
         float zoom = atom_getfloatarg(1, argc, argv);
@@ -458,7 +433,7 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
             return;
         }
         x->zoom = zoom;
-        post("[pd4web] Zoom set to %.2f", x->zoom);
+        logpost(x, 2, "[pd4web] Zoom set to %.2f", x->zoom);
     } else if ("patch" == config) {
         std::string newpatch;
         for (int i = 1; i < argc; i++) {
@@ -473,15 +448,15 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
                 pd_error(x, "[pd4web] Invalid argument, use [set patch <path>]");
             }
         }
-        x->projectRoot = std::filesystem::path(newpatch).parent_path().string();
+        x->project_root = std::filesystem::path(newpatch).parent_path().string();
         x->patch = "\"" + newpatch + "\"";
     } else if ("template" == config) {
-        int tpl = atom_getintarg(1, argc, argv);
-        if (x->tpl == tpl) {
+        int patch_template = atom_getintarg(1, argc, argv);
+        if (x->patch_template == patch_template) {
             return;
         }
-        x->tpl = tpl;
-        post("[pd4web] Template set to %d", x->tpl);
+        x->patch_template = patch_template;
+        logpost(x, 2, "[pd4web] Template set to %d", x->patch_template);
     } else if ("debug" == config) {
         bool debug = (bool)atom_getintarg(1, argc, argv);
         if (x->debug == debug) {
@@ -489,9 +464,9 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
         x->debug = debug;
         if (debug) {
-            post("[pd4web] Debug set to true");
+            logpost(x, 2, "[pd4web] Debug set to true");
         } else {
-            post("[pd4web] Debug set to false");
+            logpost(x, 2, "[pd4web] Debug set to false");
         }
     } else if ("clear" == config) {
         bool clear = (bool)atom_getintarg(1, argc, argv);
@@ -500,10 +475,10 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         }
         if (clear) {
             x->clear = true;
-            post("[pd4web] Clear set to true");
+            logpost(x, 2, "[pd4web] Clear set to true");
         } else {
             x->clear = false;
-            post("[pd4web] Clear set to false");
+            logpost(x, 2, "[pd4web] Clear set to false");
         }
     } else if ("cancel" == config) {
         if (x->running) {
@@ -514,13 +489,12 @@ static void pd4web_set(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
     } else {
         pd_error(x, "[pd4web] Invalid configuration");
     }
-
     return;
 }
 
 // ─────────────────────────────────────
 static void pd4web_browser(Pd4Web *x, float f) {
-    if (!x->isReady) {
+    if (!x->is_ready) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
     }
@@ -532,17 +506,17 @@ static void pd4web_browser(Pd4Web *x, float f) {
 
     if (f == 1) {
         std::thread t([x]() {
-            post("[pd4web] Root: %s", x->projectRoot.c_str());
-            x->server->set_mount_point("/", x->projectRoot.c_str());
+            logpost(x, 3, "[pd4web] Root: %s", x->project_root.c_str());
+            x->server->set_mount_point("/", x->project_root.c_str());
             x->server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });
             x->server->Get("/stop", [&](const httplib::Request &, httplib::Response &res) {
-                post("[pd4web] Stopping server");
+                logpost(x, 2, "[pd4web] Stopping server");
                 x->server->stop();
             });
             std::string site = "http://localhost:8080";
-            post("[pd4web] Starting server on %s", site.c_str());
+            logpost(x, 2, "[pd4web] Starting server on %s", site.c_str());
             pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
             if (!x->server->listen("0.0.0.0", 8080)) {
                 pd_error(x, "[pd4web] Failed to start server");
@@ -557,21 +531,10 @@ static void pd4web_browser(Pd4Web *x, float f) {
 }
 
 // ─────────────────────────────────────
-static void pd4web_version(Pd4Web *x) {
-    std::string cmd = x->pd4web + " --version";
-    if (global_pd4web_check) {
-        pd4web_terminal(x, cmd.c_str(), true, false, false, true);
-    } else {
-        pd4web_terminal(x, cmd.c_str(), true, false, true, true);
-        global_pd4web_check = true;
-    }
-}
-
-// ─────────────────────────────────────
 static void pd4web_clear_install(Pd4Web *x) {
-    post("[pd4web] Uninstalling pd4web...");
+    logpost(x, 2, "[pd4web] Uninstalling pd4web...");
     std::string cmd = x->pip + " uninstall pd4web -y";
-    pd4web_terminal(x, cmd.c_str(), true);
+    pd4web_terminal(x, cmd.c_str(), true, true, true, true);
     return;
 }
 
@@ -585,7 +548,7 @@ static void pd4web_update(Pd4Web *x, t_symbol *s, int argc, t_atom *argv) {
         mod = "pd4web --force-reinstall ";
     }
     std::string cmd = x->pip + " install " + mod + " --upgrade";
-    pd_error(x, "[pd4web] Updating pd4web on background, please wait...");
+    logpost(x, 2, "[pd4web] Updating pd4web on background, please wait...");
     pd4web_terminal(x, cmd.c_str(), true, true, false, true);
     return;
 }
@@ -596,7 +559,7 @@ static void pd4web_compile(Pd4Web *x) {
         pd_error(x, "[pd4web] Compilation already running");
         return;
     }
-    if (!x->isReady) {
+    if (!x->is_ready) {
         pd_error(x, "[pd4web] pd4web is not ready");
         return;
     }
@@ -620,8 +583,8 @@ static void pd4web_compile(Pd4Web *x) {
     if (x->debug) {
         cmd += " --debug ";
     }
-    if (x->tpl != 0) {
-        cmd += " --template " + std::to_string(x->tpl) + " ";
+    if (x->patch_template != 0) {
+        cmd += " --template " + std::to_string(x->patch_template) + " ";
     }
 
     if (x->patch != "") {
@@ -635,69 +598,55 @@ static void pd4web_compile(Pd4Web *x) {
         pd_error(x, "[pd4web] Compilation already running");
         return;
     }
-    pd_error(x, "[pd4web] Compiling patch on background, please wait...");
+    logpost(x, 2, "[pd4web] Compiling patch on background, please wait...");
     pd4web_terminal(x, cmd.c_str(), true, true, true, false);
     return;
 }
 
 // ─────────────────────────────────────
-static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
+static void *pd4web_new() {
     Pd4Web *x = (Pd4Web *)pd_new(pd4web_class);
     if (!x) {
-        pd_error(x, "[pd4web] Could not create object");
+        pd_error(x, "[pd4web] Could not create object, memory allocation failed");
         return nullptr;
     }
-    x->objRoot = pd4web_class->c_externdir->s_name;
+    x->object_root = pd4web_class->c_externdir->s_name;
     x->running = false;
-    for (int i = 0; i < argc; i++) {
-        if (argv[i].a_type == A_SYMBOL) {
-            std::string arg = atom_getsymbolarg(i, argc, argv)->s_name;
-            if (arg == "-debug") {
-                x->obj_debug = true;
-            }
-        }
-    }
-
     x->python_global = "not found";
 
 #ifdef _WIN32
-    x->pip = "\"" + x->objRoot + "\\.venv\\Scripts\\pip.exe\"";
-    x->python_env = "\"" + x->objRoot + "\\.venv\\Scripts\\python.exe\"";
-    x->pd4web = "\"" + x->objRoot + "\\.venv\\Scripts\\pd4web.exe\"";
-
-    // replace \ on windows
+    x->pip = "\"" + x->object_root + "\\.venv\\Scripts\\pip.exe\"";
+    x->python_env = "\"" + x->object_root + "\\.venv\\Scripts\\python.exe\"";
+    x->pd4web = "\"" + x->object_root + "\\.venv\\Scripts\\pd4web.exe\"";
     std::replace(x->pip.begin(), x->pip.end(), '/', '\\');
     std::replace(x->python_env.begin(), x->python_env.end(), '/', '\\');
     std::replace(x->pd4web.begin(), x->pd4web.end(), '/', '\\');
 
 #elif defined(__APPLE__)
-    std::string PATHS = "PATH=" + x->objRoot + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
+    std::string PATHS = "PATH=" + x->object_root + "/.venv/bin:/usr/local/bin:/usr/bin:/bin";
     putenv((char *)PATHS.c_str());
-    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
-    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+    x->pip = "\"" + x->object_root + "/.venv/bin/pip\"";
+    x->python_env = "\"" + x->object_root + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->object_root + "/.venv/bin/pd4web\"";
+
 #elif defined(__linux__)
-    x->pip = "\"" + x->objRoot + "/.venv/bin/pip\"";
-    x->python_env = "\"" + x->objRoot + "/.venv/bin/python\"";
-    x->pd4web = "\"" + x->objRoot + "/.venv/bin/pd4web\"";
+    x->pip = "\"" + x->object_root + "/.venv/bin/pip\"";
+    x->python_env = "\"" + x->object_root + "/.venv/bin/python\"";
+    x->pd4web = "\"" + x->object_root + "/.venv/bin/pd4web\"";
+
 #else
     pd_error(x, "[pd4web] Unsupported platform, please report this issue");
     return nullptr;
+
 #endif
     bool ok = pd4web_pyexe(x);
-    if (!ok) {
+    if (!ok && x->python_env == "not found") {
         pd_error(x, "[pd4web] Could not find Python 3. Please install Python 3, if installed "
                     "please report on https://github.com/charlesneimog/pd4web/issues");
         return nullptr;
     }
 
-    if (x->python_global == "not found") {
-        pd_error(x, "[pd4web] Could not find Python 3. Please install Python 3, if installed "
-                    "please report on https://github.com/charlesneimog/pd4web/issues");
-        return nullptr;
-    }
-
-    std::thread([x]() { x->isReady = pd4web_check(x); }).detach();
+    std::thread([x]() { x->is_ready = pd4web_check(x); }).detach();
 
     // pd4web config
     x->cancel = false;
@@ -705,16 +654,14 @@ static void *pd4web_new(t_symbol *s, int argc, t_atom *argv) {
     x->memory = 32;
     x->gui = true;
     x->zoom = 2;
-    x->tpl = 0;
+    x->patch_template = 0;
     x->version = PD4WEB_EXTERNAL_VERSION;
     x->server = new httplib::Server();
 
-    if (x->obj_debug) {
-        post("[pd4web] Python Venv Executable: %s", x->python_env.c_str());
-        post("[pd4web] Python Global Executable: %s", x->python_global.c_str());
-        post("[pd4web] Pip Executable: %s", x->pip.c_str());
-        post("[pd4web] pd4web Executable: %s", x->pd4web.c_str());
-    }
+    logpost(x, 3, "[pd4web] python: %s", x->python_global.c_str());
+    logpost(x, 3, "[pd4web] python venv executable: %s", x->python_env.c_str());
+    logpost(x, 3, "[pd4web] pip executable: %s", x->pip.c_str());
+    logpost(x, 3, "[pd4web] pd4web executable: %s", x->pd4web.c_str());
 
     if (!x->server->is_valid()) {
         pd_error(x, "[pd4web] Failed to create Server");
@@ -729,25 +676,27 @@ static void pd4web_free(Pd4Web *x) {
     delete x->server;
     x->cancel = true;
     if (x->running) {
-        post("[pd4web] Stopping pd4web...");
+        logpost(x, 2, "[pd4web] Stopping pd4web...");
         while (x->running) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        post("[pd4web] pd4web stopped");
+        logpost(x, 2, "[pd4web] pd4web stopped");
     }
 }
 
 // ─────────────────────────────────────
 extern "C" void pd4web_setup(void) {
     pd4web_class = class_new(gensym("pd4web"), (t_newmethod)pd4web_new, (t_method)pd4web_free,
-                             sizeof(Pd4Web), CLASS_DEFAULT, A_GIMME, A_NULL);
+                             sizeof(Pd4Web), CLASS_DEFAULT, A_NULL);
 
     class_addmethod(pd4web_class, (t_method)pd4web_get, gensym("get"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("set"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_browser, gensym("browser"), A_FLOAT, A_NULL);
-    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, 0);
-    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("update"), A_GIMME, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("git"), A_GIMME, A_NULL);
+    class_addmethod(pd4web_class, (t_method)pd4web_update, gensym("dev"), A_GIMME, A_NULL);
     class_addmethod(pd4web_class, (t_method)pd4web_clear_install, gensym("uninstall"), A_NULL);
-    class_addmethod(pd4web_class, (t_method)pd4web_debug_terminal, gensym("_run"), A_GIMME, A_NULL);
+    //class_addmethod(pd4web_class, (t_method)pd4web_debug_terminal, gensym("_run"), A_GIMME, A_NULL);
+
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }
