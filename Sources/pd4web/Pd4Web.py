@@ -3,6 +3,7 @@ import os
 import sys
 import subprocess
 import pygit2
+import requests
 
 import shutil
 import importlib.metadata as importlib_metadata
@@ -238,7 +239,28 @@ class Pd4Web:
             exit()
 
         if parser.version:
+
+            package = "pd4web"
+            response = requests.get(f"https://pypi.org/pypi/{package}/json")
+            data = response.json()
+            latest_version = data["info"]["version"]
             pd4web_version = importlib_metadata.version("pd4web")
+            # check if the latest version is different from the installed version
+            this_major, this_minor, this_bug = (
+                pd4web_version.split(".")[0],
+                pd4web_version.split(".")[1],
+                pd4web_version.split(".")[2],
+            )
+            pip_major, pip_minor, pip_bug = (
+                latest_version.split(".")[0],
+                latest_version.split(".")[1],
+                latest_version.split(".")[2],
+            )
+            if this_major < pip_major or this_minor < pip_minor or this_bug < pip_bug:
+                self.print(
+                    f"pd4web version {pd4web_version} is outdated. The latest version is {latest_version}, please update",
+                    color="yellow",
+                )
             print(f"pd4web version {pd4web_version}")
             exit()
 
