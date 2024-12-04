@@ -65,42 +65,40 @@ markdown_extensions:
   - def_list
   - pymdownx.tasklist:
       custom_checkbox: true
-
 repo_url: https://github.com/charlesneimog/pd4web
 extra_css: [extra/extra.css]
-#extra_javascript: [js/index_slider.js]
+# extra_javascript: [js/index_slider.js]
 nav:
   - Home: index.md
   - Compile your patch:
       - Installation: patch/install.md
-      - Gui Objects: 
-        - patch/gui.md
-      - Compilation: 
-        - patch/compile.md
-      - Website Templates: 
-        - patch/templates/index.md
-        - Website Templates List: 
-          - patch/templates/1-score.md
-          - patch/templates/2-hands.md
-          - patch/templates/3-choir.md
-          - patch/templates/4-p5js.md
-          - patch/templates/5-tutorial.md
-      - Problems: 
-        - patch/problems/memory.md
-        - patch/problems/compilation.md
-        - patch/problems/flutex.md
-      - Uploading your patch: 
-        - patch/upload/github.md
-        - patch/upload/cloudflare.md
-        - patch/upload/others.md
+      - Gui Objects: [patch/gui.md]
+      - Compilation: [patch/compile.md]
+      - Website Templates:
+          - patch/templates/index.md
+          - Website Templates List:
+              - patch/templates/1-score.md
+              - patch/templates/2-hands.md
+              - patch/templates/3-choir.md
+              - patch/templates/4-p5js.md
+              - patch/templates/5-tutorial.md
+      - Problems:
+          - patch/problems/where-they-live.md
+          - patch/problems/memory.md
+          - patch/problems/compilation.md
+          - patch/problems/flutex.md
+      - Uploading your patch:
+          - patch/upload/github.md
+          - patch/upload/cloudflare.md
+          - patch/upload/others.md
   - libraries.md
-  - Pd4Web JavaScript Module: 
-    - JavaScript Module: js/js.md
-    - js/requirements.md
-    - js/engine.md
-    - js/receive.md
-    - js/send.md
-    - js/midi.md
+  - Pd4Web JavaScript Module:
+      - JavaScript Module: js/js.md
+      - js/requirements.md
+      - js/engine.md
+      - js/receive.md
+      - js/send.md
+      - js/midi.md
   - devs.md
  # - Examples: tests/
 plugins:
@@ -108,7 +106,7 @@ plugins:
   - exclude:
       glob: [tests/**/Pd4Web/**]
 extra:
-  #alternate:
+  # alternate:
   #  - name: English
   #    link: /en
   #    lang: en

@@ -1,7 +1,10 @@
 <p align="center">
 Here we list all the objects that are supported by the GUI module and how to use them inside your web patch.
+ 
 </p>
 
+!!! danger "Set Senders and Receivers for GUI Objects"
+    Again, to use **any** GUI object (except for `vu`), you **must** configure senders and receivers. This ensures all objects function properly and saves you from spending excessive time debugging your patch.
 <div class="grid cards" markdown>
 
 -   :material-gesture-double-tap:{ .lg .middle } __With `plaits~` from else__    
@@ -67,3 +70,6 @@ All `Gui` objects include options to `send` and `receive` symbols, which are ess
 - **Sending messages to the Website**: Use the `receive` symbol with a `send` or `s` object to send messages from the Pd Patch to the Website.
 
 Note that `pd4web` does not automatically intercept connections between objects, so you must explicitly use the `send` and `receive` objects to connect the GUI objects for proper communication between the Pd Patch and the Website.
+
+!!! danger "Set Senders and Receivers for GUI Objects"
+    Again, to use **any** GUI object (except for `vu`), you **must** configure senders and receivers. This ensures all objects function properly and saves you from spending excessive time debugging your patch.
