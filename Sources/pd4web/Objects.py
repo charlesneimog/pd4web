@@ -85,8 +85,10 @@ class Objects:
         if os.path.exists(externalsJson):
             with open(externalsJson, "r") as file:
                 externalsDict = json.load(file)
+
         else:
             externalsDict = {}
+
         extObjs = []
         absObjs = []
         externalsDict[libName] = {}
@@ -94,7 +96,13 @@ class Objects:
             for file in files:
                 if file.endswith(".c") or file.endswith(".cpp"):
                     with open(os.path.join(root, file), "r", encoding="utf-8") as c_file:
-                        file_contents = c_file.read()
+                        try:
+                            file_contents = c_file.read()
+                        except:
+                            self.Pd4Web.print(
+                                f"Impossible to read file {file}", color="yellow", pd4web=self.Pd4Web.PD_EXTERNAL
+                            )
+                            continue
                         pattern = r'class_new\s*\(\s*gensym\s*\(\s*\"([^"]*)\"\s*\)'
                         matches = re.finditer(pattern, file_contents)
                         for match in matches:
@@ -126,7 +134,7 @@ class Objects:
         if libName == "pure-data":
             libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/", libName)
         else:
-            libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Libraries", libName)
+            libFolder = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals", libName)
 
         if self.Pd4Web.Libraries.isSupportedLibrary(libName):
             self.Pd4Web.Libraries.GetLibrarySourceCode(libName)

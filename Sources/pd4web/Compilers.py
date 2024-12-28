@@ -58,9 +58,13 @@ class ExternalsCompiler:
         self.CMAKE = self.GetCmake()
         self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
         self.NINJA = ninja.BIN_DIR + "/ninja"
+        self.CONFIGURE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emconfigure"
+        self.MAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emmake"
         if platform.system() == "Windows":
             self.NINJA += ".exe"
             self.EMCC += ".bat"
+            self.CONFIGURE += ".bat"
+            self.MAKE += ".bat"
 
     def GetCmake(self):
         cmake_dir = cmake.CMAKE_BIN_DIR
@@ -110,15 +114,23 @@ class ExternalsCompiler:
             result = subprocess.run(
                 ["chmod", "+x", self.EMSDK], env=self.Pd4Web.env, capture_output=not self.Pd4Web.verbose, text=True
             )
-                
+
             if result.returncode != 0:
                 self.Pd4Web.exception("Failed to make emsdk executable")
             else:
                 self.Pd4Web.print(
-                    "emsdk is now executable", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+                    "emsdk is now executable",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
 
-            self.Pd4Web.print("Installing emsdk, this will take a about 5 minutes, wait!!!", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+            self.Pd4Web.print(
+                "Installing emsdk, this will take a about 5 minutes, wait!!!",
+                color="yellow",
+                silence=self.Pd4Web.SILENCE,
+                pd4web=self.Pd4Web.PD_EXTERNAL,
+            )
             # ──────────────────────────────────────
             result = subprocess.run(
                 [self.EMSDK, "install", "latest"],

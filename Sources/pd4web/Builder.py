@@ -19,7 +19,8 @@ class GetAndBuildExternals:
         self.Patch = Pd4Web.ProcessedPatch
         self.Libraries = Pd4Web.Libraries
 
-        OK = self.getObjectsSourceCode()  # I need to know what is the _setup function name
+        # I need to know what is the _setup function name
+        OK = self.getObjectsSourceCode()
         if not OK:
             self.Pd4Web.exception("Error: Could not get the externals source code")
 
@@ -43,7 +44,7 @@ class GetAndBuildExternals:
         self.ConfigureProject()
         self.CompileProject()
         self.CopyExtraJsFiles()
-        
+
         # Save the project versions
         self.SaveProjectVersions()
 
@@ -268,7 +269,7 @@ class GetAndBuildExternals:
 
     def AddFilesToWebPatch(self):
         self.cmakeFile.append("\n# FileSystem for the Patch")
-        #string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file \"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\"")'
+        # string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file \"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\"")'
         string = 'set_target_properties(pd4web PROPERTIES LINK_FLAGS "--preload-file \\"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\\"")'
         self.cmakeFile.append(string)
         if os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Audios"):
@@ -371,6 +372,8 @@ class GetAndBuildExternals:
         emcmake = self.Pd4Web.Compiler.EMCMAKE
         cmake = self.Pd4Web.Compiler.CMAKE
         ninja = self.Pd4Web.Compiler.NINJA
+        configure = self.Pd4Web.Compiler.CONFIGURE
+        make = self.Pd4Web.Compiler.MAKE
         releaseType = "Release"
         if self.Pd4Web.DEBUG:
             releaseType = "Debug"
@@ -385,6 +388,8 @@ class GetAndBuildExternals:
             "-DCMAKE_BUILD_TYPE=" + releaseType,
             "-G",
             "Ninja",
+            "-DEMCONFIGURE=" + configure,
+            "-DEMMAKE=" + make,
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
         ]
         if self.Pd4Web.verbose:
@@ -503,13 +508,13 @@ class GetAndBuildExternals:
                 if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/" + file):
                     shutil.copy(os.path.join(root, file), self.Pd4Web.PROJECT_ROOT + "/WebPatch/")
         os.chdir(cwd)
-        
+
     def SaveProjectVersions(self):
         # check if file exists
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/versions.yaml"):
             with open(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/versions.yaml", "w") as f:
                 yaml.dump(self.Pd4Web.Version, f)
-                return       
+                return
 
     def __repr__(self) -> str:
         return f"< GetCode Object >"

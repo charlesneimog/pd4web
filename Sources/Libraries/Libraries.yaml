@@ -9,6 +9,13 @@ Sources:
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
+# ───────────── partialtrack ─────────────
+  - Name: partialtrack
+    Source: GITHUB
+    Developer: charlesneimog
+    Repository: pd-partialtrack
+    Version: 3025eef5e8978d7b4152a6b4f575c4ee3057f944
+
 # ───────────────── pmpd ─────────────────
   - Name: pmpd
     Source: GITHUB
@@ -72,7 +79,7 @@ Libraries:
       - sfz~
       - sfont~
       - play.file~
-      - sfload 
+      - sfload
 
       # Osc is not support on browsers
 
@@ -109,4 +116,4 @@ Libraries:
 
       # need extra objects
       - pvoc.freeze~
-      - freeze~ 
+      - freeze~
