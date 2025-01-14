@@ -10,11 +10,11 @@ Sources:
 #╰──────────────────────────────────────╯
 Libraries:
 # ───────────── partialtrack ─────────────
-  - Name: partialtrack
+  - Name: partialtrack~
     Source: GITHUB
     Developer: charlesneimog
     Repository: pd-partialtrack
-    Version: 3025eef5e8978d7b4152a6b4f575c4ee3057f944
+    Version: 84dd38fc4d936d2e88b4598df3c794d8e786aaf1
 
 # ───────────────── pmpd ─────────────────
   - Name: pmpd
