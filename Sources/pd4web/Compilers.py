@@ -51,10 +51,7 @@ class ExternalsCompiler:
     def InitVariables(self):
         self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
         self.EMSDK_PY = self.Pd4Web.APPDATA + "/emsdk/emsdk.py"
-        if platform.system() == "Windows":
-            self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake.bat"
-        else:
-            self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
+        self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
         self.CMAKE = self.GetCmake()
         self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
         self.NINJA = ninja.BIN_DIR + "/ninja"
@@ -64,6 +61,7 @@ class ExternalsCompiler:
             self.NINJA += ".exe"
             self.EMCC += ".bat"
             self.CONFIGURE += ".bat"
+            self.EMCMAKE += ".bat"
             self.MAKE += ".bat"
 
     def GetCmake(self):
