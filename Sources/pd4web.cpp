@@ -1016,9 +1016,6 @@ void Pd4Web::init() {
     // After load, it defines some extra functions
     _JS_sendList();
     _JS_onReceived();
-    if (PD4WEB_MIDI) {
-        _JS_loadMidi();
-    }
 
     // Bind the receivers
     bindGuiReceivers();
@@ -1077,6 +1074,11 @@ int main() {
         _JS_setTitle(PD4WEB_PROJECT_NAME);
     }
     _JS_addAlertOnError();
+
+    if (PD4WEB_MIDI) {
+        _JS_post("Loading Midi");
+        _JS_loadMidi();
+    }
 
     printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
            PD4WEB_VERSION_PATCH);
