@@ -329,6 +329,27 @@ class Patch:
         else:
             return False
 
+    def isExtraObj(self, line: PatchLine):
+        extraObjs = ["bob~", "bonk~", "fiddle~", "sigmund~", "loop~", "lrshift~", "pique", "stdout"]
+        extraAbs = [
+            "rev3~",
+            "rev2~",
+            "rev1~",
+            "output~",
+            "hilbert~",
+            "complex-mod~",
+        ]
+
+        if line.completName in extraObjs:
+            raise Exception(f"Extra Object: {line.completName}, not supported yet")
+
+        if line.completName in extraAbs:
+            path = os.path.join(self.Pd4Web.APPDATA, "Pd/extra", line.completName + ".pd")
+            Patch(self.Pd4Web, isabs=True, patch=path)
+            return True
+
+        return False
+
     def processPatch(self):
         """
         This function will find all externals objects in the patch.
@@ -649,6 +670,10 @@ class Patch:
             line.name = line.completName
 
         elif self.tokenIsFloat(line.Tokens[4]) != float("inf"):
+            line.name = line.completName
+            line.isExternal = False
+
+        elif self.isExtraObj(line):
             line.name = line.completName
             line.isExternal = False
 

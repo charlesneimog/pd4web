@@ -1,5 +1,4 @@
 import os
-import zipfile
 
 import requests
 import yaml
@@ -159,7 +158,7 @@ class ExternalLibraries:
             lib_commit: pygit2.Commit = self.getLibCommitVersion(libRepo, libData.version)
             if curr_commit.id == lib_commit.id:
                 self.Pd4Web.Version["externals"][libData.name] = str(lib_commit.id)
-                return  
+                return
             libRepo.set_head(lib_commit.id)
             libRepo.checkout_tree(lib_commit)
             libRepo.reset(lib_commit.id, pygit2.GIT_RESET_HARD)
@@ -168,7 +167,12 @@ class ExternalLibraries:
 
         libLink = f"https://github.com/{libData.dev}/{libData.repo}"
         try:
-            self.Pd4Web.print(f"Cloning library {libData.repo}... This will take some time!", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+            self.Pd4Web.print(
+                f"Cloning library {libData.repo}... This will take some time!",
+                color="green",
+                silence=self.Pd4Web.SILENCE,
+                pd4web=self.Pd4Web.PD_EXTERNAL,
+            )
             pygit2.clone_repository(libLink, libPath)
         except Exception as e:
             self.Pd4Web.exception(f"Failed to clone repository: {str(e)}")
@@ -179,16 +183,28 @@ class ExternalLibraries:
         libRepo.set_head(commit.id)
         libRepo.checkout_tree(commit)
         libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-        self.Pd4Web.print(f"Library {libData.repo} cloned successfully!", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
-        self.Pd4Web.print(f"Using commit {commit.id}", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+        self.Pd4Web.print(
+            f"Library {libData.repo} cloned successfully!",
+            color="green",
+            silence=self.Pd4Web.SILENCE,
+            pd4web=self.Pd4Web.PD_EXTERNAL,
+        )
+        self.Pd4Web.print(
+            f"Using commit {commit.id}", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
+        )
         try:
-            self.Pd4Web.print(f"Initializing submodules of {libData.repo}...", color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL)
+            self.Pd4Web.print(
+                f"Initializing submodules of {libData.repo}...",
+                color="green",
+                silence=self.Pd4Web.SILENCE,
+                pd4web=self.Pd4Web.PD_EXTERNAL,
+            )
             submodule_collection = pygit2.submodules.SubmoduleCollection(pygit2.Repository(libPath))
             submodule_collection.init()
             submodule_collection.update()
         except:
             self.Pd4Web.exception("Failed to initialize submodules.")
-            
+
         self.Pd4Web.Version["externals"][libData.name] = str(commit.id)
 
         # TODO: Try to merge commits from submodules
@@ -246,7 +262,6 @@ class ExternalLibraries:
                     ignore_dangling_symlinks=True,
                 )
             self.Pd4Web.Objects.GetLibraryObjects(libFolder, libName)
-            # externalsJson = os.path.join(self.PROJECT_ROOT, "Pd4Web/Externals/Objects.json")
         return True
 
     def AddUsedLibraries(self, LibraryName):
