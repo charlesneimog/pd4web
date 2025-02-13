@@ -1,0 +1,27 @@
+name: Check Library Updates
+
+on:
+  schedule:
+    - cron: '0 12 1 */3 *'
+  workflow_dispatch:  
+
+jobs:
+  check-updates:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: ${{ secrets.MY_GITHUB_TOKEN }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests PyYAML
+
+      - name: Check for updates
+        run: python ./Resources/Scripts/check-updates.py
+

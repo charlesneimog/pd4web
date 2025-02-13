@@ -19,7 +19,7 @@ class Pd4WebTest(unittest.TestCase):
         Pd4WebInstance = Pd4Web.Pd4Web(Patch=pd_file)
         Pd4WebInstance.verbose = True
         Pd4WebInstance.GUI = gui
-        Pd4WebInstance.Execute()
+        Pd4WebInstance.execute()
         if platform.system() == "Linux":
             patchDir = os.path.dirname(pd_file)
             self.execute_chrome(patchDir, port)
@@ -170,14 +170,14 @@ class Pd4WebTest(unittest.TestCase):
     def test_libraries(self):
         # Errors
         self.errors("Basic/errors")
-        
+
         # # Basic
         self.libraries("Basic/abs")
         self.libraries("Basic/audio")
         self.libraries("Basic/declare")
         self.libraries("Basic/file")
         self.libraries("Basic/gui")
-        
+
         # Issues
         self.libraries("Issues/#22-1")
         self.libraries("Issues/#22-2")
@@ -192,8 +192,6 @@ class Pd4WebTest(unittest.TestCase):
         self.libraries("Libraries/pmpd")
         self.libraries("Libraries/o.scofo~")
         # self.libraries("Libraries/ambi~")
-
-       
 
 
 if __name__ == "__main__":

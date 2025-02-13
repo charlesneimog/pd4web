@@ -14,7 +14,7 @@ from .Pd4Web import Pd4Web
 class ExternalsCompiler:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
-        self.InitVariables()
+        self.init_vars()
         if not os.path.exists(Pd4Web.APPDATA + "/emsdk"):
 
             self.Pd4Web.print(
@@ -46,13 +46,13 @@ class ExternalsCompiler:
 
         # check if Cmake
         if not os.path.exists(self.EMCMAKE):
-            self.InstallEMCC()
+            self.install_emcc()
 
-    def InitVariables(self):
+    def init_vars(self):
         self.EMSDK = self.Pd4Web.APPDATA + "/emsdk/emsdk"
         self.EMSDK_PY = self.Pd4Web.APPDATA + "/emsdk/emsdk.py"
         self.EMCMAKE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcmake"
-        self.CMAKE = self.GetCmake()
+        self.CMAKE = self.get_cmake()
         self.EMCC = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emcc"
         self.NINJA = ninja.BIN_DIR + "/ninja"
         self.CONFIGURE = self.Pd4Web.APPDATA + "/emsdk/upstream/emscripten/emconfigure"
@@ -64,7 +64,7 @@ class ExternalsCompiler:
             self.EMCMAKE += ".bat"
             self.MAKE += ".bat"
 
-    def GetCmake(self):
+    def get_cmake(self):
         cmake_dir = cmake.CMAKE_BIN_DIR
         cmake_bin = os.path.join(cmake_dir, "cmake")
         if platform.system() == "Windows":
@@ -73,9 +73,8 @@ class ExternalsCompiler:
             self.Pd4Web.exception("Cmake (module) is not installed. Please install it.")
         return cmake_bin
 
-    def InstallEMCC(self):
+    def install_emcc(self):
         if platform.system() == "Windows":
-            python_path = sys.executable
             command = f"{self.EMSDK}.bat install latest"
             self.Pd4Web.print(
                 "Installing emsdk on Windows",
@@ -85,11 +84,7 @@ class ExternalsCompiler:
             )
             result = subprocess.run(command, shell=True, env=self.Pd4Web.env).returncode
             if result != 0:
-                self.Pd4Web.print(
-                    "Failed to install emsdk", color="red", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
-                )
                 self.Pd4Web.exception("Failed to install emsdk")
-
             command = f"{self.EMSDK}.bat activate latest"
             self.Pd4Web.print(
                 "Activating emsdk on Windows",
@@ -99,12 +94,7 @@ class ExternalsCompiler:
             )
             result = subprocess.run(command, shell=True, env=self.Pd4Web.env).returncode
             if result != 0:
-                self.Pd4Web.print(
-                    "Failed to activate emsdk", color="red", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
-                )
                 self.Pd4Web.exception("Failed to activate emsdk")
-
-            return
         else:
             self.Pd4Web.print(
                 "Installing emsdk", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
@@ -147,11 +137,19 @@ class ExternalsCompiler:
 
             # ──────────────────────────────────────
             result = subprocess.run(
+                [self.EMSDK, "update"],
+                env=self.Pd4Web.env,
+                capture_output=not self.Pd4Web.verbose,
+                text=True,
+            )
+
+            result = subprocess.run(
                 [self.EMSDK, "activate", self.Pd4Web.EMSDK_VERSION],
                 env=self.Pd4Web.env,
                 capture_output=not self.Pd4Web.verbose,
                 text=True,
             )
+
             if result.returncode != 0:
                 self.Pd4Web.exception(
                     f"Failed to install emsdk, result {result.returncode}, cmd: " + " ".join(result.args)

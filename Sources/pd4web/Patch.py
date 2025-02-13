@@ -7,9 +7,9 @@ from .Pd4Web import Pd4Web
 
 class PatchLine:
     def __init__(self):
-        self.InitVariables()
+        self.init_vars()
 
-    def InitVariables(self):
+    def init_vars(self):
         self.isExternal = False
         self.isAbstraction = False
         self.isLocalAbstraction = False

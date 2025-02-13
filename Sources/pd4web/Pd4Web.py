@@ -3,11 +3,10 @@ import os
 import sys
 import subprocess
 import pygit2
+from pygit2 import Repository
 import requests
-
 import shutil
 import importlib.metadata as importlib_metadata
-
 import certifi
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
@@ -24,8 +23,8 @@ class Pd4Web:
     # Dev
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
-    PD_VERSION: str = "0.55-0"
-    EMSDK_VERSION: str = "3.1.68"
+    PD_VERSION: str = "0.55-2"
+    EMSDK_VERSION: str = "4.0.3"
     DEBUG: bool = False
 
     # Compiler
@@ -61,7 +60,7 @@ class Pd4Web:
 
         parser = parser.parse_args()
 
-        self.getMainPaths()
+        self.get_paths()
         self.do_actions(parser)
 
         self.Parser = parser
@@ -81,9 +80,9 @@ class Pd4Web:
         self.TEMPLATE = self.Parser.template
         self.DEBUG = self.Parser.debug
 
-        self.Execute()
+        self.execute()
 
-    def InitVariables(self):
+    def init_vars(self):
         from .Objects import Objects
         from .Libraries import ExternalLibraries
 
@@ -120,11 +119,10 @@ class Pd4Web:
             self.env["PATH"] = python_dir
         self.env["PYTHON"] = sys.executable
         self.env["EMSDK_QUIET"] = "1"
-        # add /bin and /usr/bin to PATH on macOS
         if sys.platform == "darwin":
             self.env["PATH"] += ":/bin:/usr/bin"
 
-    def Execute(self):
+    def execute(self):
         from .Builder import GetAndBuildExternals
         from .Compilers import ExternalsCompiler
         from .Patch import Patch
@@ -132,8 +130,8 @@ class Pd4Web:
         if self.Patch == "":
             self.exception("You must set a patch file")
 
-        self.getMainPaths()
-        self.InitVariables()
+        self.get_paths()
+        self.init_vars()
 
         # ╭──────────────────────────────────────╮
         # │    NOTE: Sobre a recursivade para    │
@@ -143,7 +141,7 @@ class Pd4Web:
         # ╰──────────────────────────────────────╯
 
         # ───────────── Init Classes ─────────────
-        self.GetPdSourceCode()
+        self.get_pd_sourcecode()
         self.Compiler = ExternalsCompiler(self)
 
         # ──────────── Process Patch ──────────
@@ -152,12 +150,7 @@ class Pd4Web:
         # ──────────── Build Externals ──────────
         self.ExternalsBuilder = GetAndBuildExternals(self)
 
-        # try:
-        #     self.PROJECT_GIT = pygit2.Repository(self.PROJECT_ROOT)
-        # except pygit2.GitError:
-        #     self.PROJECT_GIT = pygit2.init_repository(self.PROJECT_ROOT, bare=False)
-
-    def RunBrowser(self):
+    def run_browser(self):
         self.CWD = os.getcwd()
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
         self.get_publicPath()
@@ -169,7 +162,7 @@ class Pd4Web:
         os.chdir(projectRoot)
         subprocess.run(f"{emccRun} {projectRoot}/index.html", shell=True, env=self.env)
 
-    def getMainPaths(self):
+    def get_paths(self):
         self.PROJECT_ROOT = os.path.dirname(os.path.realpath(self.Patch))
         self.PROJECT_PATCH = os.path.basename(self.Patch)
         self.PD4WEB_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -184,19 +177,16 @@ class Pd4Web:
         if not os.path.exists(self.APPDATA):
             os.makedirs(self.APPDATA)
 
-    def GetPdSourceCode(self):
-        if not os.path.exists(self.APPDATA + "/Pd"):
-            self.print("Cloning Pd", color="yellow", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
-            pd_path = self.APPDATA + "/Pd"
+    # pd_path = self.APPDATA + "/Pd"
+
+    def get_sourcecode(self, url, path, tag_name):
+        if not os.path.exists(path):
+            self.print(f"Cloning {path}", color="yellow", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
             pd_git = "https://github.com/pure-data/pure-data"
-            ok = pygit2.clone_repository(pd_git, pd_path)
+            ok = pygit2.clone_repository(pd_git, path)
             if not ok:
-                self.exception("Failed to clone emsdk")
-
-            libRepo: pygit2.Repository = pygit2.Repository(pd_path)
-            tag_name = Pd4Web.PD_VERSION
-
-            # commit
+                self.exception(f"Failed to clone {path}")
+            libRepo: Repository = Repository(path)
             tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
             if tag_ref is None:
                 self.exception("Tag ref is None")
@@ -208,18 +198,37 @@ class Pd4Web:
             libRepo.checkout_tree(commit)
             libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
 
-        if not os.path.exists(self.PROJECT_ROOT + "/Pd4Web/pure-data"):
-            shutil.copytree(self.APPDATA + "/Pd/src", self.PROJECT_ROOT + "/Pd4Web/pure-data/src")
-            # copy README and LICENSE
-            shutil.copy(self.APPDATA + "/Pd/README.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/README.txt")
-            shutil.copy(self.APPDATA + "/Pd/LICENSE.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/LICENSE.txt")
+        # check if actual tag match the desired tag
+        libRepo: Repository = Repository(path)
+        libRepo.remotes["origin"].fetch()
+        tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
+        if tag_ref is None:
+            self.exception(f"Version {tag_name} for {path} not found")
 
-    def Silence(self):
+        target_commit = tag_ref.peel()
+        if target_commit is None:
+            self.exception(f"Tag {Pd4Web.PD_VERSION} has no associated commit")
+        else:
+            libRepo.set_head(target_commit.id)
+
+    def get_emsdk_sourcecode(self) -> None:
+        emsdk = "https://github.com/emscripten-core/emsdk"
+        self.get_sourcecode(emsdk, self.APPDATA + "/emsdk", Pd4Web.EMSDK_VERSION)
+
+    def get_pd_sourcecode(self) -> None:
+        pd = "https://github.com/pure-data/pure-data"
+        self.get_sourcecode(pd, self.APPDATA + "/pure-data", Pd4Web.PD_VERSION)
+        if not os.path.exists(self.PROJECT_ROOT + "/Pd4Web/pure-data"):
+            shutil.copytree(self.APPDATA + "/pure-data/src", self.PROJECT_ROOT + "/Pd4Web/pure-data/src")
+            shutil.copy(self.APPDATA + "/pure-data/README.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/README.md")
+            shutil.copy(self.APPDATA + "/pure-data/LICENSE.txt", self.PROJECT_ROOT + "/Pd4Web/pure-data/LICENSE.txt")
+
+    def silence(self):
         self.SILENCE = True
 
     def do_actions(self, parser):
         if parser.run_browser:
-            self.RunBrowser()
+            self.run_browser()
             exit()
         if parser.clear:
             shutil.rmtree(os.path.join(self.PROJECT_ROOT, "build"), ignore_errors=True)
