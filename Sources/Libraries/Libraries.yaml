@@ -9,6 +9,12 @@ Sources:
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
+# ─────────────── earplug~ ───────────────
+  - Name: earplug~
+    Source: GITHUB
+    Developer: pd-externals
+    Repository: earplug
+    Version: d7c9bb8528c7fc583fb0d2e9181aa510af87f165
 # ───────────── partialtrack ─────────────
   - Name: partialtrack~
     Source: GITHUB
