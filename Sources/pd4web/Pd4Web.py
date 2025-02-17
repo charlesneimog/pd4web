@@ -3,11 +3,13 @@ import os
 import sys
 import subprocess
 import pygit2
-from pygit2 import Repository
+from pygit2 import Repository, GIT_RESET_HARD
 import requests
 import shutil
 import importlib.metadata as importlib_metadata
 import certifi
+import platform
+import yaml
 
 os.environ["SSL_CERT_FILE"] = certifi.where()
 
@@ -47,7 +49,7 @@ class Pd4Web:
         self.Patch = Patch
         self.verbose = False
 
-    def argParse(self):
+    def arg_parse(self):
         print()
         parser = argparse.ArgumentParser(
             description="Compile Pure Data externals for the web.",
@@ -133,6 +135,12 @@ class Pd4Web:
         self.get_paths()
         self.init_vars()
 
+        if os.path.exists(os.path.join(self.PROJECT_ROOT, "Pd4Web/versions.yaml")):
+            yaml_file = yaml.safe_load(open(os.path.join(self.PROJECT_ROOT, "Pd4Web/versions.yaml"), "r"))
+            self.EMSDK_VERSION = yaml_file["emsdk"]
+            self.PD_VERSION = yaml_file["pure-data"]
+            print(self.EMSDK_VERSION, self.PD_VERSION)
+
         # ╭──────────────────────────────────────╮
         # │    NOTE: Sobre a recursivade para    │
         # │      patch, talvez não chamar o      │
@@ -141,6 +149,7 @@ class Pd4Web:
         # ╰──────────────────────────────────────╯
 
         # ───────────── Init Classes ─────────────
+        self.get_emsdk_sourcecode()
         self.get_pd_sourcecode()
         self.Compiler = ExternalsCompiler(self)
 
@@ -182,8 +191,7 @@ class Pd4Web:
     def get_sourcecode(self, url, path, tag_name):
         if not os.path.exists(path):
             self.print(f"Cloning {path}", color="yellow", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
-            pd_git = "https://github.com/pure-data/pure-data"
-            ok = pygit2.clone_repository(pd_git, path)
+            ok = pygit2.clone_repository(url, path)
             if not ok:
                 self.exception(f"Failed to clone {path}")
             libRepo: Repository = Repository(path)
@@ -196,24 +204,46 @@ class Pd4Web:
                 commit = tag_ref.peel()
             libRepo.set_head(commit.id)
             libRepo.checkout_tree(commit)
-            libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
+            libRepo.reset(commit.id, GIT_RESET_HARD)
 
         # check if actual tag match the desired tag
         libRepo: Repository = Repository(path)
         libRepo.remotes["origin"].fetch()
         tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
-        if tag_ref is None:
-            self.exception(f"Version {tag_name} for {path} not found")
-
         target_commit = tag_ref.peel()
-        if target_commit is None:
-            self.exception(f"Tag {Pd4Web.PD_VERSION} has no associated commit")
-        else:
-            libRepo.set_head(target_commit.id)
+        libRepo.reset(target_commit.id, pygit2.GIT_RESET_HARD)
+        libRepo.checkout_tree(target_commit.tree, strategy=pygit2.GIT_CHECKOUT_FORCE)
+        libRepo.set_head(target_commit.id)
 
     def get_emsdk_sourcecode(self) -> None:
+        self.EMSDK = self.APPDATA + "/emsdk/emsdk"
+        path = self.APPDATA + "/emsdk"
         emsdk = "https://github.com/emscripten-core/emsdk"
-        self.get_sourcecode(emsdk, self.APPDATA + "/emsdk", Pd4Web.EMSDK_VERSION)
+
+        if not os.path.exists(path):
+            self.get_sourcecode(emsdk, path, Pd4Web.EMSDK_VERSION)
+
+        repo = Repository(path)
+        previous_tag = repo.head.peel().name
+        print(previous_tag)
+
+        if platform.system() == "Windows":
+            self.EMSDK += ".bat"
+        else:
+            result = subprocess.run(
+                ["chmod", "+x", self.EMSDK], env=self.env, capture_output=not self.verbose, text=True
+            )
+            if result.returncode != 0:
+                self.exception("Failed to make emsdk executable")
+
+        command = f"{self.EMSDK} install {self.EMSDK_VERSION}"
+        result = subprocess.run(command, shell=True, env=self.env).returncode
+        if result != 0:
+            self.exception("Failed to activate emsdk")
+        command = f"{self.EMSDK} activate {self.EMSDK_VERSION}"
+        result = subprocess.run(command, shell=True, env=self.env).returncode
+        if result != 0:
+            self.exception("Failed to activate emsdk")
 
     def get_pd_sourcecode(self) -> None:
         pd = "https://github.com/pure-data/pure-data"
@@ -478,4 +508,5 @@ class Pd4Web:
             self.print(text, color="red", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
             exit(-1)
         else:
+            # sys.tracebacklimit = 0
             raise Exception(text)

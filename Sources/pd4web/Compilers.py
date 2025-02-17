@@ -1,12 +1,8 @@
 import os
-import sys
 import platform
 import cmake
 import ninja
 import subprocess
-import tarfile
-
-import pygit2
 
 from .Pd4Web import Pd4Web
 
@@ -15,36 +11,6 @@ class ExternalsCompiler:
     def __init__(self, Pd4Web: Pd4Web):
         self.Pd4Web = Pd4Web
         self.init_vars()
-        if not os.path.exists(Pd4Web.APPDATA + "/emsdk"):
-
-            self.Pd4Web.print(
-                "Cloning emsdk", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
-            )
-            emsdk_path = Pd4Web.APPDATA + "/emsdk"
-            emsdk_git = "https://github.com/emscripten-core/emsdk"
-            ok = pygit2.clone_repository(emsdk_git, emsdk_path)
-            if not ok:
-                self.Pd4Web.exception("Failed to clone emsdk")
-            libRepo: pygit2.Repository = pygit2.Repository(emsdk_path)
-            tag_name = Pd4Web.EMSDK_VERSION
-
-            # commit
-            tag_ref = libRepo.references.get(f"refs/tags/{tag_name}")
-            if isinstance(tag_ref.peel(), pygit2.Tag):
-                commit = tag_ref.peel().target
-            else:
-                commit = tag_ref.peel()
-            libRepo.set_head(commit.id)
-            libRepo.checkout_tree(commit)
-            libRepo.reset(commit.id, pygit2.GIT_RESET_HARD)
-            self.Pd4Web.print(
-                f"Checking out emsdk to {tag_name}",
-                color="yellow",
-                silence=self.Pd4Web.SILENCE,
-                pd4web=self.Pd4Web.PD_EXTERNAL,
-            )
-
-        # check if Cmake
         if not os.path.exists(self.EMCMAKE):
             self.install_emcc()
 
@@ -95,6 +61,7 @@ class ExternalsCompiler:
             result = subprocess.run(command, shell=True, env=self.Pd4Web.env).returncode
             if result != 0:
                 self.Pd4Web.exception("Failed to activate emsdk")
+
         else:
             self.Pd4Web.print(
                 "Installing emsdk", color="yellow", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
