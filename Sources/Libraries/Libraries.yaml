@@ -15,12 +15,19 @@ Libraries:
     Developer: pd-externals
     Repository: earplug
     Version: d7c9bb8528c7fc583fb0d2e9181aa510af87f165
+# ───────────── pdlua ─────────────
+  - Name: pdlua
+    Source: GITHUB
+    Developer: agraef
+    Repository: pd-lua
+    Version: 4301f744a9023ea77b6fe0ba35918ad18e19276f
+
 # ───────────── partialtrack ─────────────
   - Name: partialtrack~
     Source: GITHUB
     Developer: charlesneimog
     Repository: pd-partialtrack
-    Version: 84dd38fc4d936d2e88b4598df3c794d8e786aaf1
+    Version: 5b7abde223adc94db7f70ba122a4c613f20b7509
 
 # ───────────────── pmpd ─────────────────
   - Name: pmpd
@@ -122,4 +129,4 @@ Libraries:
 
       # need extra objects
       - pvoc.freeze~
-      - freeze~
+      # - freeze~

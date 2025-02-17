@@ -221,6 +221,8 @@ class ExternalLibraries:
     ):
         if not self.isSupportedLibrary(libName):
             return False
+        if libName == "extra":
+            return True
 
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals"):
             os.makedirs(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals")

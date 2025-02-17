@@ -216,14 +216,21 @@ class GetAndBuildExternals:
         print()
         for obj in self.Pd4Web.usedObjects:
             libName = obj["Lib"]
-            foundLibrary = self.Libraries.GetLibrarySourceCode(libName)
-            if foundLibrary:
-                for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName):
+            if libName == "extra":
+                for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/pure-data/" + libName):
                     for file in files:
                         if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
                             self.searchCFunction(obj, root, file)
+                continue
             else:
-                self.Pd4Web.exception(f"Error: Could not find {obj.library} in the supported libraries")
+                foundLibrary = self.Libraries.GetLibrarySourceCode(libName)
+                if foundLibrary:
+                    for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + libName):
+                        for file in files:
+                            if file.endswith(".c") or file.endswith(".cpp") or file.endswith(".C"):
+                                self.searchCFunction(obj, root, file)
+                else:
+                    self.Pd4Web.exception(f"Error: Could not find {obj.library} in the supported libraries")
         return True
 
     def buildExternalsObjects(self):

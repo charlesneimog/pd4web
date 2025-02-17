@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 
 # from .Helpers import self.Pd4Web.print
 from .Pd4Web import Pd4Web
@@ -341,11 +342,22 @@ class Patch:
         ]
 
         if line.completName in extraObjs:
-            raise Exception(f"Extra Object: {line.completName}, not supported yet")
+            app_extra = os.path.join(self.Pd4Web.APPDATA, "pure-data/extra")
+            project_extra = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/pure-data/extra")
+            os.makedirs(project_extra, exist_ok=True)
+            shutil.copytree(
+                os.path.join(app_extra, line.completName),
+                os.path.join(project_extra, line.completName),
+                dirs_exist_ok=True,
+            )
+            line.isExternal = True
+            line.library = "extra"
+            return True
 
         if line.completName in extraAbs:
-            path = os.path.join(self.Pd4Web.APPDATA, "Pd/extra", line.completName + ".pd")
+            path = os.path.join(self.Pd4Web.APPDATA, "pure-data/extra", line.completName + ".pd")
             Patch(self.Pd4Web, isabs=True, patch=path)
+            line.isExternal = False
             return True
 
         return False
@@ -507,6 +519,7 @@ class Patch:
         lastToken = ""
         tokens = line.Tokens[5:]
         cloneAbs = ""
+        token_index = 5
         for token in tokens:
             if token not in args and lastToken not in ["-x", "-s"]:
                 if os.path.exists(self.PROJECT_ROOT + "/" + token + ".pd"):
@@ -522,10 +535,10 @@ class Patch:
                 for lib in self.Pd4Web.declaredPaths:
                     if os.path.exists(self.PROJECT_ROOT + "/" + lib + "/" + token + ".pd"):
                         cloneAbs = lib + "/" + token
-                        break
+                        continue
 
                 if cloneAbs != "":
-                    break
+                    continue
 
                 if "/" in token:
                     library = token.split("/")[0]
@@ -533,11 +546,11 @@ class Patch:
                     if self.Pd4Web.Libraries.isSupportedLibrary(library):
                         if absPatch in self.Pd4Web.Objects.GetSupportedObjects(library):
                             cloneAbs = absPatch
-                            line.Tokens[5] = cloneAbs
-                            # print(line.Tokens)
-                            break
-
+                            line.Tokens[token_index] = absPatch
+                            continue
             lastToken = token
+            token_index += 1
+
         if cloneAbs != "":
             if os.path.exists(self.PROJECT_ROOT + "/" + cloneAbs + ".pd"):
                 self.Pd4Web.print(
@@ -675,7 +688,6 @@ class Patch:
 
         elif self.isExtraObj(line):
             line.name = line.completName
-            line.isExternal = False
 
         elif line.completName == "clone":
             self.processClone(line)
@@ -703,7 +715,9 @@ class Patch:
                 self.Pd4Web.exception(msg)
 
         # Finally
-        if (line.isExternal or line.isAbstraction) and (line.library != "pure-data" and not line.localAbs):
+        if (line.isExternal or line.isAbstraction) and (
+            line.library != "pure-data" and line.library != "extra" and not line.localAbs
+        ):
             libClass = self.Pd4Web.Libraries.GetLibraryData(line.library)
             if libClass.valid:
                 if line.name in libClass.unsupported:
