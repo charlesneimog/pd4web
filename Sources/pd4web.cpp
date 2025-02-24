@@ -333,6 +333,10 @@ EM_JS(void, _JS_receiveBang, (const char *r),{
             }
         }
     } else{
+        if (typeof Pd4Web._userBangFunc === 'undefined'){
+          alert("Turn audio on first");
+          return;
+        }
         let bangFunc = Pd4Web._userBangFunc[source];
         if (typeof bangFunc === 'function') {
             bangFunc();
@@ -374,6 +378,10 @@ EM_JS(void, _JS_receiveFloat, (const char *r, float f),{
             }
         }
     } else{
+        if (typeof Pd4Web._userFloatFunc === 'undefined'){
+          alert("Turn audio on first");
+          return;
+        }
         let floatFunc = Pd4Web._userFloatFunc[source];
         if (typeof floatFunc === 'function') {
             floatFunc(f);
@@ -394,6 +402,10 @@ EM_JS(void, _JS_receiveSymbol, (const char *r, const char *s),{
             }
         }
     } else{
+        if (typeof Pd4Web._userSymbolFunc === 'undefined'){
+          alert("Turn audio on first");
+          return;
+        }
         let symbolFunc = Pd4Web._userSymbolFunc[source];
         if (typeof symbolFunc === 'function') {
             symbolFunc(symbol);
@@ -407,6 +419,10 @@ EM_JS(void, _JS_receiveList, (const char *r),{
     if (source in Pd4Web.GuiReceivers) {
         return;
     } else{
+        if (typeof Pd4Web._userListFunc === 'undefined'){
+          alert("Turn audio on first");
+          return;
+        }
         let listFunc = Pd4Web._userListFunc[source];
         const listSize = Pd4Web._getReceivedListSize(source);
         var pdList = [];
@@ -429,6 +445,10 @@ EM_JS(void, _JS_receiveList, (const char *r),{
 // ─────────────────────────────────────
 EM_JS(void, _JS_receiveMessage, (const char *r),{
     var source = UTF8ToString(r);
+    if (typeof Pd4Web._getReceivedListSize === 'undefined'){
+          alert("Turn audio on first");
+          return;
+    }
     const listSize = Pd4Web._getReceivedListSize(source);
     var pdList = [];
     for (let i = 0; i < listSize; i++) {
@@ -1025,9 +1045,6 @@ void Pd4Web::init() {
         _JS_addSoundToggle();
     }
     m_audioSuspended = false;
-
-    _JS_pd4webCppClass(this);
-
     return;
 }
 // ╭─────────────────────────────────────╮
