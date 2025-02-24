@@ -9,6 +9,12 @@ Sources:
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
+# ─────────────── soundtouch~ ───────────────
+  - Name: soundtouch~
+    Source: GITHUB
+    Developer: charlesneimog
+    Repository: pd-soundtouch
+    Version: 35bee0ca34bd4e24c0df28831aed56442968ad35
 # ─────────────── earplug~ ───────────────
   - Name: earplug~
     Source: GITHUB
