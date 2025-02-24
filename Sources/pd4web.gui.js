@@ -20,6 +20,8 @@ function GetStyleRuleValue(className, stylesProb) {
     return style;
 }
 
+// TODO: Fazer pd4web em uma class
+
 // ─────────────────────────────────────
 function getCssVariable(variableName) {
     return getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
@@ -887,18 +889,17 @@ function GuiTglSetup(args, id) {
 //╰─────────────────────────────────────╯
 function GuiNbxUpdateNumber(data, f) {
     const txt = document.getElementById(`${data.id}_text`); // Find the associated text element
-    var text = f;
-    txt.numberCotent = f;
+    var text = f.toString();
+    var isFloat = text.includes(".");
     if (text.length >= data.width) {
-        // remove olds > and add new one
-        for (var i = 0; i < data.width; i++) {
-            if (text[i] == ">") {
-                text = text.slice(0, i) + text.slice(i + 1);
-                break;
-            }
+        if (isFloat) {
+            text = text.slice(0, data.width);
+            txt.textContent = text;
+        } else {
+            text = text.slice(0, data.width - 1);
+            text += ">";
+            txt.textContent = text;
         }
-        text = text.slice(-data.width + 1) + ">";
-        txt.textContent = text;
     } else {
         txt.textContent = text;
     }
@@ -928,12 +929,12 @@ function GuiNbxKeyDownListener(e) {
         svgElement.removeAttribute("tabindex"); // Remove tabindex
         Pd4Web.NbxSelected = null;
         svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
-        if (txt.numberCotent.length > data.width) {
+        if (txt.numberContent.length > data.width) {
             txt.textContent = "+";
         } else {
-            txt.textContent = txt.numberCotent;
+            txt.textContent = txt.numberContent;
         }
-        Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
+        Pd4Web.sendFloat(data.send, parseFloat(txt.numberContent));
         return;
     } else {
         return;
@@ -942,10 +943,10 @@ function GuiNbxKeyDownListener(e) {
     if (txt) {
         if (data.inputCnt == 0) {
             txt.textContent = key; // Update the text content of the SVG text element
-            txt.numberCotent = key;
+            txt.numberContent = key;
         } else {
             var text = txt.textContent + key;
-            txt.numberCotent += key;
+            txt.numberContent += key;
             if (text.length >= data.width) {
                 // remove olds > and add new one
                 for (var i = 0; i < data.width; i++) {
@@ -1084,6 +1085,9 @@ function GuiNbxSetup(args, id) {
         data.rect.addEventListener("click", function (_) {
             const id = data.id + "_text";
             const txt = document.getElementById(id);
+            if (typeof txt.numberContent === "undefined") {
+                txt.numberContent = txt.textContent;
+            }
             if (txt.clicked) {
                 let textColor;
                 if (Pd4Web.AutoTheme) {
@@ -1091,19 +1095,18 @@ function GuiNbxSetup(args, id) {
                 } else {
                     textColor = ColFromLoad(data.label_color);
                 }
-                console.log(textColor);
                 txt.style.fill = textColor; // Change fill color to black
                 txt.clicked = false;
                 const svgElement = document.getElementById("Pd4WebCanvas");
                 svgElement.removeAttribute("tabindex"); // Remove tabindex
                 Pd4Web.NbxSelected = null;
                 svgElement.removeEventListener("keypress", GuiNbxKeyDownListener);
-                if (txt.numberCotent.length > data.width) {
+                if (txt.numberContent.length > data.width) {
                     txt.textContent = "+";
                 } else {
-                    txt.textContent = txt.numberCotent;
+                    txt.textContent = txt.numberContent;
                 }
-                Pd4Web.sendFloat(data.send, parseFloat(txt.numberCotent));
+                Pd4Web.sendFloat(data.send, parseFloat(txt.numberContent));
             } else {
                 txt.style.fill = getCssVariable("--nbx-selected"); // Change fill color to black
                 txt.clicked = true;
@@ -2637,5 +2640,298 @@ async function Pd4WebInitGui(patch) {
             .catch((error) => {
                 console.error("There has been a problem with your fetch operation:", error);
             });
+    }
+}
+
+//╭─────────────────────────────────────╮
+//│                                     │
+//╰─────────────────────────────────────╯
+class Pd4WebClass {
+    constructor(patch = "index.pd") {
+        this.patch = patch;
+    }
+
+    async init() {
+        this.Pd4Web = null; // Pd4Web object must be declared in the global scope
+        Pd4WebModule().then((Pd4WebModulePromise) => {
+            this.Pd4Web = new Pd4WebModulePromise.Pd4Web();
+            this.Pd4Web.init();
+        });
+    }
+
+    OpenPatch(content) {
+        content = content.replace(/\r/g, "");
+        let canvasLevel = 0;
+        let id = 0;
+
+        if (this.Pd4Web.Canvas) {
+            while (this.Pd4Web.Canvas.lastChild) {
+                this.Pd4Web.Canvas.removeChild(this.Pd4Web.Canvas.lastChild);
+            }
+        }
+
+        UpdatePatchDivSize(content, this.Pd4Web.Zoom);
+
+        const lines = content.split(";\n");
+        this.Pd4Web.x_pos = 0;
+        this.Pd4Web.y_pos = 0;
+        let canvasLevelLocal = 0;
+        for (let line of lines) {
+            line = line.replace(/[\r\n]+/g, " ").trim();
+            const args = line.split(" ");
+            const type = args.slice(0, 2).join(" ");
+            switch (type) {
+                case "#N canvas":
+                    canvasLevelLocal++;
+                    if (canvasLevelLocal == 1) {
+                        this.Pd4Web.width = parseInt(args[4]);
+                        this.Pd4Web.height = parseInt(args[5]);
+                    }
+                    break;
+                case "#X restore":
+                    canvasLevelLocal--;
+                    break;
+                case "#X coords":
+                    if (canvasLevelLocal == 1) {
+                        if (args.length == 11) {
+                            this.Pd4Web.width = parseInt(args[6]);
+                            this.Pd4Web.height = parseInt(args[7]);
+                            this.Pd4Web.x_pos = parseInt(args[9]);
+                            this.Pd4Web.y_pos = parseInt(args[10]);
+                            UpdatePatchDivSizeCoords(this.Pd4Web.width, this.Pd4Web.height, this.Pd4Web.Zoom);
+                        }
+                    }
+                    break;
+            }
+        }
+
+        for (let line of lines) {
+            line = line.replace(/[\r\n]+/g, " ").trim(); // remove newlines & carriage returns
+            id++;
+            const args = line.split(" ");
+            const type = args.slice(0, 2).join(" ");
+            switch (type) {
+                case "#N canvas":
+                    canvasLevel++;
+                    if (canvasLevel === 1 && args.length === 7) {
+                        this.Pd4Web.CanvasWidth = this.Pd4Web.width;
+                        this.Pd4Web.CanvasHeight = this.Pd4Web.height;
+                        this.Pd4Web.FontSize = parseInt(args[6]);
+                        this.Pd4Web.Canvas.setAttributeNS(
+                            null,
+                            "viewBox",
+                            `0 0 ${this.Pd4Web.CanvasWidth} ${this.Pd4Web.CanvasHeight}`,
+                        );
+                    }
+                    break;
+                case "#X restore":
+                    canvasLevel--;
+                    break;
+                case "#X obj":
+                    if (args.length > 4) {
+                        switch (args[4]) {
+                            case "bng":
+                                if (
+                                    canvasLevel === 1 &&
+                                    args.length === 19 &&
+                                    args[9] !== "empty" &&
+                                    args[10] !== "empty"
+                                ) {
+                                    GuiBngSetup(args, id);
+                                }
+                                break;
+                            case "tgl":
+                                if (
+                                    canvasLevel === 1 &&
+                                    args.length === 19 &&
+                                    args[7] !== "empty" &&
+                                    args[8] !== "empty"
+                                ) {
+                                    GuiTglSetup(args, id);
+                                }
+                                break;
+
+                            case "nbx":
+                                if (
+                                    canvasLevel === 1 &&
+                                    args.length === 23 &&
+                                    args[7] !== "empty" &&
+                                    args[8] !== "empty"
+                                ) {
+                                    GuiNbxSetup(args, id);
+                                }
+                                break;
+
+                            case "vsl":
+                            case "hsl":
+                                if (
+                                    canvasLevel === 1 &&
+                                    args.length === 23 &&
+                                    args[11] !== "empty" &&
+                                    args[12] !== "empty"
+                                ) {
+                                    GuiSliderSetup(args, id);
+                                }
+                                break;
+                            case "vradio":
+                            case "hradio":
+                                if (
+                                    canvasLevel === 1 &&
+                                    args.length === 20 &&
+                                    args[9] !== "empty" &&
+                                    args[10] !== "empty"
+                                ) {
+                                    GuiRadioSetup(args, id);
+                                }
+                                break;
+                            case "vu":
+                                if (canvasLevel === 1 && args.length === 17 && args[7] !== "empty") {
+                                    GuiVuSetup(args, id);
+                                }
+                                break;
+                            case "cnv":
+                                if (canvasLevel === 1 && args.length === 18) {
+                                    GuiCnvSetup(args, id);
+                                }
+                                break;
+
+                            //╭─────────────────────────────────────╮
+                            //│        External Gui Objects         │
+                            //╰─────────────────────────────────────╯
+                            case "knob": // ELSE/KNOB
+                                if (canvasLevel === 1) {
+                                    GuiKnobSetup(args, id);
+                                }
+                                break;
+                            case "keyboard": // ELSE/KEYBOARD
+                                if (canvasLevel === 1) {
+                                    GuiKeyboardSetup(args, id);
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "#X text":
+                    if (args.length > 4 && canvasLevel === 1) {
+                        const data = {};
+                        data.type = args[1];
+                        data.x_pos = parseInt(args[2]) - this.Pd4Web.x_pos;
+                        data.y_pos = parseInt(args[3]) - this.Pd4Web.y_pos;
+                        data.comment = [];
+                        const lines = args
+                            .slice(4)
+                            .join(" ")
+                            .replace(/ \\,/g, ",")
+                            .replace(/\\; /g, ";\n")
+                            .replace(/ ;/g, ";")
+                            .split("\n");
+
+                        const regex = /, f (\d+)$/;
+                        const match = lines[lines.length - 1].match(regex);
+                        let width = 60;
+                        if (match) {
+                            width = parseInt(match[1], 10); // Extract the number and convert to an integer
+                            lines[lines.length - 1] = lines[lines.length - 1].replace(match[0], "").trim();
+                        }
+
+                        for (const line of lines) {
+                            const dynamicRegex = new RegExp(`.{1,${width}}(\\s|$)`, "g");
+                            const parts = line.match(dynamicRegex);
+                            if (parts) {
+                                for (const part of parts) {
+                                    data.comment.push(part.trim());
+                                }
+                            }
+                        }
+
+                        data.id = `${data.type}_${id}`;
+                        data.texts = [];
+                        for (let i = 0; i < data.comment.length; i++) {
+                            const text = CreateItem("text", GuiTextText(data, i));
+                            text.textContent = data.comment[i];
+                            data.texts.push(text);
+                        }
+                    }
+                    break;
+            }
+        }
+        if (!canvasLevel) {
+            alert("The main canvas not found in the pd file.");
+            return;
+        }
+    }
+
+    async Pd4WebInitGui() {
+        if (this.Pd4Web === undefined) {
+            setTimeout(this.Pd4WebInitGui, 150);
+            return;
+        }
+
+        // Get the element
+        setSoundIcon("--sound-off", "pulse 1s infinite");
+
+        this.Pd4Web.isMobile = /Mobi|Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+        this.Pd4Web.CanvasWidth = 450;
+        this.Pd4Web.CanvasHeight = 300;
+        this.Pd4Web.FontSize = 12;
+        if (typeof this.Pd4Web.GuiReceivers === "undefined") {
+            this.Pd4Web.GuiReceivers = {}; // defined in pd4web.cpp Pd4WebJsHelpers
+        }
+        this.Canvas = document.getElementById("Pd4WebCanvas");
+        this.Touches = {};
+        this.FontEngineSanity = false;
+        this.AutoTheme = true;
+
+        if (this.isMobile) {
+            window.addEventListener("touchmove", function (e) {
+                for (const touch of e.changedTouches) {
+                    GuiSliderOnMouseMove(touch, touch.identifier);
+                }
+            });
+            window.addEventListener("touchend", function (e) {
+                for (const touch of e.changedTouches) {
+                    GuiSliderOnMouseUp(touch.identifier);
+                }
+            });
+            window.addEventListener("touchcancel", function (e) {
+                for (const touch of e.changedTouches) {
+                    GuiSliderOnMouseUp(touch.identifier);
+                }
+            });
+        } else {
+            window.addEventListener("mousemove", function (e) {
+                GuiSliderOnMouseMove(e, 0);
+            });
+            window.addEventListener("mouseup", function (_) {
+                GuiSliderOnMouseUp(0);
+            });
+            window.addEventListener("mouseleave", function (_) {
+                GuiSliderOnMouseUp(0);
+            });
+        }
+        SetFontEngineSanity();
+
+        // Auto Theming
+        GetNeededStyles();
+        const darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+        darkModeMediaQuery.addEventListener("change", ThemeListener);
+
+        // Open Patch
+        if (this.Canvas) {
+            var File = patch;
+            fetch(File)
+                .then((response) => {
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+                    return response.text();
+                })
+                .then((textContent) => {
+                    OpenPatch(textContent);
+                })
+                .catch((error) => {
+                    console.error("There has been a problem with your fetch operation:", error);
+                });
+        }
     }
 }
