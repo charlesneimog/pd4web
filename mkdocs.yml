@@ -117,6 +117,8 @@ extra:
     provider: google
     property: G-E81RWT6R4V
   social:
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/qzu5zHew
     - icon: fontawesome/brands/instagram
       link: https://www.instagram.com/charlesneimog/
     - icon: fontawesome/brands/github
