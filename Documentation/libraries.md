@@ -71,6 +71,42 @@ List of Pd externals supported by <code>pd4web</code>.
             <td>Charles K. Neimog</td>
         </tr>
     </tbody>
+    <tbody>
+        <tr>
+            <td><a href="https://github.com/charlesneimog/pd-ambi">ambi~</a></td>
+            <td>Ambisonics object for PureData using libspatialaudio (from VLC).</td>
+            <td>1</td>
+            <td>0</td>
+            <td>Charles K. Neimog</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td><a href="https://github.com/charlesneimog/pd-ambi">pd-soundtouch</a></td>
+            <td><code>[soundtouch~]</code> is a transposition object for Pd</td>
+            <td>1</td>
+            <td>0</td>
+            <td>Katja Vetter</td>
+        </tr>
+    </tbody>
+    <tbody>
+        <tr>
+            <td><a href="https://github.com/charlesneimog/pd-partialtrack">pd-partialtrack</a></td>
+            <td>Library for Partial Tracking</td>
+            <td>1</td>
+            <td>0</td>
+            <td>Charles K. Neimog</td>
+        </tr>
+    </tbody>
+     <tbody>
+        <tr>
+            <td><a href="https://github.com/charlesneimog/pd-fftease">pd-fftease</a></td>
+            <td>FFTease is a collection of objects designed to facilitate spectral sound processing in Max and Pd.</td>
+            <td>37</td>
+            <td>0</td>
+            <td>Eric Lyon and Christopher Penrose</td>
+        </tr>
+    </tbody>
  </table>
 
 ----------------------------------

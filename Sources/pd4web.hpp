@@ -37,9 +37,8 @@ struct Pd4WebGuiConnector {
     t_atom *Atoms;
 };
 
-struct SharedData {
-    int vec;
-    bool wait;
+struct UserData {
+    int instance;
 };
 
 using Pd4WebGuiReceiverList = std::vector<Pd4WebGuiConnector>;
@@ -68,7 +67,7 @@ class Pd4Web {
 
     // Gui
     static void guiLoop();
-    SharedData *m_SharedData;
+    UserData *m_SharedData;
     bool _busyWaiter();
 
     // Receivers

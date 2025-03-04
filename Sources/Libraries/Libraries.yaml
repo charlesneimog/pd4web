@@ -96,7 +96,7 @@ Libraries:
     Unsupported:
       # Need implementation
       - sfz~
-      - sfont~
+      # - sfont~
       - play.file~
       - sfload
 

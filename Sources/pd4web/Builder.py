@@ -397,6 +397,7 @@ class GetAndBuildExternals:
             "Ninja",
             "-DEMCONFIGURE=" + configure,
             "-DEMMAKE=" + make,
+            "-Wno-dev",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
         ]
         if self.Pd4Web.verbose:

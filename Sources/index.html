@@ -20,19 +20,6 @@
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
             });
 
-            window.addEventListener("load", function () {
-                setTimeout(function () {
-                    if (typeof SharedArrayBuffer !== "undefined") {
-                        console.log("SharedArrayBuffer is defined:", SharedArrayBuffer);
-                    } else {
-                        console.log("SharedArrayBuffer is not defined");
-                        alert(
-                            "Pd4Web could not load. Please try reloading the page. If the issue persists, contact pd4web developers.",
-                        );
-                    }
-                }, 3000);
-            });
-
             document.getElementById("Pd4WebAudioSwitch").addEventListener(
                 "click",
                 async () => {

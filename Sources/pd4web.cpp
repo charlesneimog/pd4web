@@ -1,7 +1,10 @@
 #include "pd4web.hpp"
 
+int PD4WEB_INSTANCES = 0;
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 Pd4WebGuiReceiverList Pd4WebGuiSenders;
+
+std::vector<Pd4Web *> Pd4WebInstances;
 
 // t_pdinstance *Pd4WebPdInstance;
 
@@ -820,7 +823,10 @@ void Pd4Web::unbindReceiver() {
 
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
-                        void *userData) {
+                        void *data) {
+
+    UserData *userData = (UserData *)data;
+    int instance = userData->instance;
 
     for (auto &GuiSender : Pd4WebGuiSenders) {
         if (GuiSender.Updated) {
@@ -994,6 +1000,7 @@ void Pd4Web::soundToggle() {
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
 void Pd4Web::init() {
+    PD4WEB_INSTANCES++;
     LOG("Pd4Web::init");
 
     if (PD4WEB_GUI) {
@@ -1017,6 +1024,8 @@ void Pd4Web::init() {
         _JS_alert("libpd_init() failed, please report!");
         return;
     }
+    UserData *userData = new UserData();
+    userData->instance = PD4WEB_INSTANCES;
 
     libpd_set_banghook(&Pd4Web::receivedBang);
     libpd_set_floathook(&Pd4Web::receivedFloat);
@@ -1030,7 +1039,7 @@ void Pd4Web::init() {
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
-                                                     Pd4Web::audioWorkletInit, 0);
+                                                     Pd4Web::audioWorkletInit, (void *)userData);
     m_Context = AudioContext;
 
     // After load, it defines some extra functions

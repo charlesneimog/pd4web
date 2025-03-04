@@ -2,6 +2,18 @@
 // GNU General Public License v3.0
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
+
+window.addEventListener("load", function () {
+    setTimeout(function () {
+        if (typeof SharedArrayBuffer === "undefined") {
+            console.log("SharedArrayBuffer is not defined");
+            alert(
+                "Pd4Web could not load. Please try reloading the page. If the issue persists, contact pd4web developers. (pd4web does not work on private tabs).",
+            );
+        }
+    }, 3000);
+});
+
 //╭─────────────────────────────────────╮
 //│            Auto Theming             │
 //╰─────────────────────────────────────╯
