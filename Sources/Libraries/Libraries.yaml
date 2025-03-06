@@ -10,6 +10,12 @@ Sources:
 #╰──────────────────────────────────────╯
 Libraries:
 # ─────────────── pd-fftease ───────────────
+  - Name: pdlua
+    Source: GITHUB
+    Developer: agraef
+    Repository: pd-lua
+    Version: 4301f744a9023ea77b6fe0ba35918ad18e19276f
+# ─────────────── pd-fftease ───────────────
   - Name: fftease
     Source: GITHUB
     Developer: charlesneimog
@@ -78,7 +84,7 @@ Libraries:
     Source: GITHUB
     Developer: charlesneimog
     Repository: OScofo
-    Version: cc9026c479c7659049fbdadcfc4cfed377ff81e9
+    Version: 7bfb86590ab3e53846c65341498313fd118d0949
 
 # ───────────── timbreIDLib ───────────
   - Name: timbreIDLib

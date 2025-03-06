@@ -503,6 +503,12 @@ class Pd4Web:
             print(text)
             sys.stdout.flush()  # Ensure immediate output
 
+    def warning(self, text):
+        if self.PD_EXTERNAL:
+            self.print(text, color="yellow", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)
+        else:
+            self.print(text, color="yellow", silence=self.SILENCE)
+
     def exception(self, text):
         if self.PD_EXTERNAL:
             self.print(text, color="red", silence=self.SILENCE, pd4web=self.PD_EXTERNAL)

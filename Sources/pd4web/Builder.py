@@ -72,6 +72,7 @@ class GetAndBuildExternals:
         self.cmakeFile.append(
             'set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" CACHE STRING "" FORCE)'
         )
+        self.cmakeFile.append('set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")')
         self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")')
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
         self.cmakeFile.append("")

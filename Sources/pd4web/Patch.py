@@ -321,7 +321,7 @@ class Patch:
         except:
             return float("inf")
 
-    def tokenIsDollarSign(self, token):
+    def isDollarSign(self, token):
         """Objects like $0"""
         if token[0] == "$":
             return True
@@ -361,6 +361,19 @@ class Patch:
             return True
 
         return False
+
+    def isLuaObj(self, line: PatchLine):
+        for root, dir, files in os.walk(self.Pd4Web.PROJECT_ROOT):
+            for file in files:
+                # check if file is inside Extras or Libs
+                if file.endswith(".pd_lua"):
+                    if line.completName == file.split(".pd_lua")[0]:
+                        if root.endswith("Libs") or root.endswith("Extras"):
+                            return True
+                        else:
+                            self.Pd4Web.exception("Lua objects must be inside Libs or Extras folders") 
+        return False
+
 
     def processPatch(self):
         """
@@ -689,10 +702,13 @@ class Patch:
         elif self.isExtraObj(line):
             line.name = line.completName
 
+        elif self.isLuaObj(line):
+            line.name = line.completName
+
         elif line.completName == "clone":
             self.processClone(line)
 
-        elif self.tokenIsDollarSign(line.Tokens[4]):
+        elif self.isDollarSign(line.Tokens[4]):
             line.name = line.completName
             line.isExternal = False
         else:
@@ -708,7 +724,7 @@ class Patch:
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
             else:
-                msg = f"Library or Object can't be found: ["
+                msg = "Library or Object can't be found: ["
                 tokens = line.Tokens[4:]
                 msg += " ".join(tokens) + "]"
                 msg += f" inside {self.patchFile}"

@@ -2,15 +2,14 @@ cmake_minimum_required(VERSION 3.25)
 project(pdlua)
 set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})
 
-# ╭──────────────────────────────────────╮
-# │               OBJECTS                │
-# ╰──────────────────────────────────────╯
-
-add_library(lua STATIC ${LIB_DIR}/lua/onelua.c)
-if(EMSCRIPTEN)
-  target_compile_definitions(lua PRIVATE LUA_USE_LINUX)
+if(NOT TARGET lua)
+    add_library(lua "${LIB_DIR}/lua/onelua.c")
+    target_compile_definitions(lua PUBLIC "-DMAKE_LIB")
+    target_include_directories(lua PUBLIC "${LIB_DIR}/lua")
 endif()
 
-pd_add_external(pdlua ${LIB_DIR}/pdlua.c)
-target_include_directories(pdlua PRIVATE ${LIB_DIR}/lua)
-target_link_libraries(pdlua PRIVATE lua)
+pd_add_external(pdlua "${LIB_DIR}/pdlua.c")
+target_link_libraries(pdlua PUBLIC lua)
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${LIB_DIR}/pd.lua@/pd.lua\"")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${LIB_DIR}/pdlua/tutorial/examples/pdx.lua@/pdx.lua\"")
