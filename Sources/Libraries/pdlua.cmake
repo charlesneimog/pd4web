@@ -5,7 +5,7 @@ set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})
 if(NOT TARGET lua)
     add_library(lua "${LIB_DIR}/lua/onelua.c")
     target_compile_definitions(lua PUBLIC "-DMAKE_LIB")
-    target_include_directories(lua PUBLIC "${LIB_DIR}/lua")
+    include_directories("${LIB_DIR}/lua")
 endif()
 
 pd_add_external(pdlua "${LIB_DIR}/pdlua.c")

@@ -107,6 +107,24 @@ List of Pd externals supported by <code>pd4web</code>.
             <td>Eric Lyon and Christopher Penrose</td>
         </tr>
     </tbody>
+     <tbody>
+        <tr>
+            <td><a href="https://github.com/pd-externals/earplug">earplug~</a></td>
+            <td>Binaural filter based on KEMAR impulse measurement for Pd.</td>
+            <td>1</td>
+            <td>0</td>
+            <td>Dan Wilcox and Chikashi Miyama</td>
+        </tr>
+    </tbody>
+     <tbody>
+        <tr>
+            <td><a href="https://github.com/agraef/pd-lua/">pdlua</a></td>
+            <td>Lua bindings for Pd, updated for Lua 5.3+</td>
+            <td>1</td>
+            <td>0</td>
+            <td>Claude Heiland-Allen, Martin Peach, Albert Gräf and Timothy Schoen</td>
+        </tr>
+    </tbody>
  </table>
 
 ----------------------------------
