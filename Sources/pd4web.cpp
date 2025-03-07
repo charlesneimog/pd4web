@@ -446,6 +446,33 @@ EM_JS(void, _JS_receiveList, (const char *r),{
 });
 
 // ─────────────────────────────────────
+EM_JS(void, _JS_domIsDefined, (void),{
+      console.log(Pd4Web);
+});
+
+
+// ─────────────────────────────────────
+EM_JS(void, _JS_createTgl, (float x_pos, float y_pos, float size),{
+    let rect = {
+        x: x_pos,
+        y: y_pos,
+        rx: 2,
+        ry: 2,
+        width: size,
+        height: size,
+        class: "border tgl-rect clickable",
+    };
+
+      
+
+
+    CreateItem("rect", rect);
+    // return rect;
+});
+
+
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_receiveMessage, (const char *r),{
     var source = UTF8ToString(r);
     if (typeof Pd4Web._getReceivedListSize === 'undefined'){
@@ -533,11 +560,6 @@ std::string Pd4Web::_getMessageSelector(std::string r) {
     }
     return "";
 }
-
-// ╭─────────────────────────────────────╮
-// │     Extra PureData Definitions      │
-// ╰─────────────────────────────────────╯
-extern "C" void sys_putmidibyte(int portno, int byte) { return; }
 
 // ╭─────────────────────────────────────╮
 // │       Audio Worklet Receivers       │
@@ -821,6 +843,7 @@ void Pd4Web::unbindReceiver() {
  * @return true if processing succeeded, false otherwise.
  */
 
+static int allobjects = 1;
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *data) {
@@ -882,7 +905,63 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
         }
     }
 
+    // if (allobjects) {
+    //     allobjects = 0;
+    //     t_canvas *canvas = pd_getcanvaslist();
+    //     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+    //         const t_widgetbehavior *wb = obj->g_pd->c_wb;
+    //         if (wb) {
+    //             t_clickfn w_clickfn = wb->w_clickfn;
+    //             if (w_clickfn) {
+    //                 printf("object %s has a click function\n", obj->g_pd->c_name->s_name);
+    //             } else {
+    //                 printf("object %s has no click function\n", obj->g_pd->c_name->s_name);
+    //             }
+    //         }
+    //     }
+    // }
+
     return EM_TRUE;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::initGuiInterface(void) {
+    t_canvas *canvas = pd_getcanvaslist();
+    int canvasWidth = canvas->gl_pixwidth;
+    int canvasHeight = canvas->gl_pixheight;
+
+    int objId = 0;
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        std::string obj_name = obj->g_pd->c_name->s_name;
+        if (obj_name == "tgl") {
+            t_toggle *tgl = (t_toggle *)obj;
+            _JS_createTgl(tgl->x_gui.x_obj.te_xpix, tgl->x_gui.x_obj.te_ypix, tgl->x_gui.x_w);
+            // need to do - the position of the canvas
+        } else if (obj_name == "bng") {
+            t_bng *bng = (t_bng *)obj;
+            _JS_createTgl(bng->x_gui.x_obj.te_xpix, bng->x_gui.x_obj.te_ypix, 20);
+        }
+        objId++;
+    }
+
+    // rezise canvas
+    EM_ASM(
+        {
+            var width = $0;
+            var height = $1;
+            var zoom = $2;
+
+            const patchDiv = document.getElementById("Pd4WebPatchDiv");
+            patchDiv.style.width = (width * zoom) + "px";
+            patchDiv.style.height = (height * zoom) + "px";
+            patchDiv.style.marginLeft = "auto";
+            patchDiv.style.marginRight = "auto";
+
+            const canvas = document.getElementById("Pd4WebCanvas");
+            const value = "0 0 " + width + " " + height;
+            canvas.setAttributeNS(null, "viewBox", value);
+        },
+        canvasWidth, canvasHeight, PD4WEB_PATCH_ZOOM);
 }
 
 // ─────────────────────────────────────
@@ -995,6 +1074,9 @@ void Pd4Web::soundToggle() {
         }
     }
 }
+// ╭─────────────────────────────────────╮
+// │            Lua Functions            │
+// ╰─────────────────────────────────────╯
 
 // ╭─────────────────────────────────────╮
 // │            Init Function            │
@@ -1056,11 +1138,20 @@ void Pd4Web::init() {
     m_audioSuspended = false;
     return;
 }
+
 // ╭─────────────────────────────────────╮
 // │              Main Loop              │
 // ╰─────────────────────────────────────╯
 void Pd4Web::guiLoop() {
     LOG("guiLoop");
+
+#ifdef PD4WEB_LUA
+    // lua_State *luaState = __L();
+    // if (luaState) {
+    //     _JS_post("Lua is defined and luaState is acessible\n");
+    // }
+#endif
+
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
@@ -1096,7 +1187,7 @@ int main() {
     LOG("main");
     if (PD4WEB_GUI) {
         _JS_loadStyle();
-        _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
+        // _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
         _JS_setTitle(PD4WEB_PROJECT_NAME);
     }
     _JS_addAlertOnError();
@@ -1106,9 +1197,32 @@ int main() {
         _JS_loadMidi();
     }
 
+    libpd_set_printhook(libpd_print_concatenator);
+    libpd_set_concatenated_printhook(&Pd4Web::post);
+
+    int ret = libpd_init();
+    if (ret) {
+        _JS_alert("libpd_init() failed, please report!");
+    }
+
+    Pd4WebInitExternals();
+
+    libpd_add_to_search_path("./Libs/");
+    libpd_add_to_search_path("./Extras/");
+    libpd_add_to_search_path("./Audios/");
+
+    if (!libpd_openfile("index.pd", "./")) {
+        _JS_alert("Failed to open patch | Please Report!\n");
+    }
+
+    // Init Gui interface
+    if (PD4WEB_GUI) {
+        Pd4Web::initGuiInterface();
+    }
+
     printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
            PD4WEB_VERSION_PATCH);
-    emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
 
+    emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
     return 0;
 }

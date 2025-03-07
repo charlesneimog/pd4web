@@ -113,6 +113,7 @@ class GetAndBuildExternals:
             '    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch"',
             ")",
         ]
+        guifile = self.Pd4Web.PD4WEB_ROOT + "/../pd4web.gui.js"
         linkOptions = [
             "target_link_options(pd4web PRIVATE",
             "    -sMODULARIZE=1",
@@ -124,6 +125,7 @@ class GetAndBuildExternals:
             "    -sWASM=1",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
+            f"   --pre-js {guifile}",
             ")",
         ]
 

@@ -3,6 +3,7 @@
 // For information on usage and redistribution, and for a DISCLAIMER OF ALL WARRANTIES, see the file, "LICENSE" in this distribution.
 // Code From: https://github.com/cuinjune/PdWebParty
 
+/*
 window.addEventListener("load", function () {
     setTimeout(function () {
         if (typeof SharedArrayBuffer === "undefined") {
@@ -13,6 +14,7 @@ window.addEventListener("load", function () {
         }
     }, 3000);
 });
+*/
 
 //╭─────────────────────────────────────╮
 //│            Auto Theming             │
@@ -489,7 +491,8 @@ function CreateItem(type, args) {
     if (args !== null) {
         ConfigureItem(item, args);
     }
-    Pd4Web.Canvas.appendChild(item);
+    var canvas = document.getElementById("Pd4WebCanvas");
+    canvas.appendChild(item);
     return item;
 }
 
@@ -2364,6 +2367,7 @@ function UpdatePatchDivSize(content, patch_zoom) {
         var args = lines[0].split(" ");
         const canvasHeight = parseInt(args[5]);
         const canvasWidth = parseInt(args[4]);
+        console.log(canvasWidth, canvasHeight);
         patchDiv.style.width = canvasWidth * patch_zoom + "px";
         patchDiv.style.height = canvasHeight * patch_zoom + "px";
         patchDiv.style.marginLeft = "auto";
