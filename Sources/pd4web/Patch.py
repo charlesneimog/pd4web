@@ -602,6 +602,9 @@ class Patch:
         """ """
         line.completName = line.Tokens[4]
         library = line.Tokens[4].split("/")[0]
+        if line.completName == "pdlua":
+            self.Pd4Web.PDLUA = True
+
         if self.Pd4Web.Libraries.isSupportedLibrary(library):
             self.Pd4Web.Objects.GetSupportedObjects(line.library)
 

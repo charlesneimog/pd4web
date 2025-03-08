@@ -452,24 +452,109 @@ EM_JS(void, _JS_domIsDefined, (void),{
 
 
 // ─────────────────────────────────────
-EM_JS(void, _JS_createTgl, (float x_pos, float y_pos, float size),{
-    let rect = {
+EM_JS(void, _JS_createTgl, (const char *p, float x_pos, float y_pos, float size, float zoom, int id, const char *bg), {
+    var objpointer = UTF8ToString(p);
+    var background = UTF8ToString(bg);
+
+    // Create group <g>
+    let groupProps = {
+        id: "tgl_" + id,
+        class: "border clickable"
+    };
+    var groupObj = CreateItem("g", groupProps);
+
+    // Create rectangle
+    let rectProps = {
         x: x_pos,
         y: y_pos,
         rx: 2,
         ry: 2,
         width: size,
         height: size,
-        class: "border tgl-rect clickable",
+        fill: background
     };
+    var rectObj = CreateItem("rect", rectProps);
 
-      
+    // Create lines for the cross with adjusted positions.
+    // Instead of stroke:"none", set stroke-opacity to a low value.
+    let line1Props = {
+        x1: x_pos + 2,
+        y1: y_pos + 2,
+        x2: x_pos + size - 2,
+        y2: y_pos + size - 2,
+        stroke: "black",
+        "stroke-width": 2,
+        "stroke-opacity": 0.05  // nearly invisible initially
+    };
+    var line1Obj = CreateItem("line", line1Props);
 
+    let line2Props = {
+        x1: x_pos + 2,
+        y1: y_pos + size - 2,
+        x2: x_pos + size - 2,
+        y2: y_pos + 2,
+        stroke: "black",
+        "stroke-width": 2,
+        "stroke-opacity": 0.05  // nearly invisible initially
+    };
+    var line2Obj = CreateItem("line", line2Props);
 
-    CreateItem("rect", rect);
-    // return rect;
+    // Append rect and lines to the group
+    groupObj.appendChild(rectObj);
+    groupObj.appendChild(line1Obj);
+    groupObj.appendChild(line2Obj);
+
+    // Append the group to the main <svg>
+    const svgElement = document.getElementById("Pd4WebCanvas");
+    svgElement.appendChild(groupObj);
+
+    // Track the toggle state
+    let crossVisible = false;
+
+    groupObj.addEventListener("click", function(e) {
+        // Notify Pure Data about the click event
+        const svgBox = svgElement.getBoundingClientRect();
+        const x = Math.round((e.clientX - svgBox.x) / zoom);
+        const y = Math.round((e.clientY - svgBox.y) / zoom);
+        Pd4Web._objclick(objpointer, x, y);
+
+        // Toggle the cross appearance by adjusting stroke opacity
+        crossVisible = !crossVisible;
+        if (crossVisible) {
+            // Make the cross fully visible
+            line1Obj.setAttribute("stroke-opacity", 1);
+            line2Obj.setAttribute("stroke-opacity", 1);
+        } else {
+            // Make the cross nearly invisible
+            line1Obj.setAttribute("stroke-opacity", 0.05);
+            line2Obj.setAttribute("stroke-opacity", 0.05);
+        }
+    });
 });
 
+// ─────────────────────────────────────
+EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size, int id, const char *bg),{
+    var objpointer = UTF8ToString(p);
+    var background = UTF8ToString(bg);
+    let rect = {
+        id: "bng_" + id,
+        x: x_pos,
+        y: y_pos,
+        rx: 2,
+        ry: 2,
+        width: size,
+        height: size,
+        fill: background,
+        class: "border clickable",
+    };
+
+    var guiObj = CreateItem("rect", rect);
+    guiObj.addEventListener("click", function(e) {
+        console.log("Rectangle " + objpointer + " clicked!");
+        console.log(e.clientX, e.clientY);
+        Pd4Web._objclick(objpointer, e.clientX, e.clientY);
+    });
+});
 
 
 // ─────────────────────────────────────
@@ -929,17 +1014,28 @@ void Pd4Web::initGuiInterface(void) {
     t_canvas *canvas = pd_getcanvaslist();
     int canvasWidth = canvas->gl_pixwidth;
     int canvasHeight = canvas->gl_pixheight;
+    if (canvasWidth == 0 && canvasHeight == 0) {
+        canvasWidth = canvas->gl_screenx2 - canvas->gl_screenx1;
+        canvasHeight = canvas->gl_screeny2 - canvas->gl_screeny1;
+    }
 
     int objId = 0;
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
         std::string obj_name = obj->g_pd->c_name->s_name;
         if (obj_name == "tgl") {
             t_toggle *tgl = (t_toggle *)obj;
-            _JS_createTgl(tgl->x_gui.x_obj.te_xpix, tgl->x_gui.x_obj.te_ypix, tgl->x_gui.x_w);
-            // need to do - the position of the canvas
+            int color = tgl->x_gui.x_bcol;
+            std::string hexcolor = std::format("#{:06x}", color);
+            std::string pointer = std::format("{}", static_cast<void *>(obj));
+            _JS_createTgl(pointer.c_str(), tgl->x_gui.x_obj.te_xpix, tgl->x_gui.x_obj.te_ypix,
+                          tgl->x_gui.x_w, PD4WEB_PATCH_ZOOM, objId, hexcolor.c_str());
         } else if (obj_name == "bng") {
             t_bng *bng = (t_bng *)obj;
-            _JS_createTgl(bng->x_gui.x_obj.te_xpix, bng->x_gui.x_obj.te_ypix, 20);
+            int color = bng->x_gui.x_bcol;
+            std::string hexcolor = std::format("#{:06x}", color);
+            std::string pointer = std::format("{}", static_cast<void *>(obj));
+            _JS_createBng(pointer.c_str(), bng->x_gui.x_obj.te_xpix, bng->x_gui.x_obj.te_ypix,
+                          bng->x_gui.x_w, objId, hexcolor.c_str());
         }
         objId++;
     }
@@ -1077,6 +1173,21 @@ void Pd4Web::soundToggle() {
 // ╭─────────────────────────────────────╮
 // │            Lua Functions            │
 // ╰─────────────────────────────────────╯
+void Pd4Web::click(std::string p, int xpix, int ypix) {
+    t_canvas *canvas = pd_getcanvaslist();
+    int objId = 0;
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        std::string obj_p = std::format("{}", static_cast<void *>(obj));
+        if (obj_p == p) {
+            const struct _widgetbehavior *c_wb; // Confirmed as const
+            c_wb = obj->g_pd->c_wb;
+            t_clickfn w_clickfn = c_wb->w_clickfn;
+            if (w_clickfn) {
+                w_clickfn(obj, canvas->gl_owner, xpix, ypix, 0, 0, 0, 1);
+            }
+        }
+    }
+}
 
 // ╭─────────────────────────────────────╮
 // │            Init Function            │
@@ -1203,6 +1314,7 @@ int main() {
     int ret = libpd_init();
     if (ret) {
         _JS_alert("libpd_init() failed, please report!");
+        return -1;
     }
 
     Pd4WebInitExternals();
@@ -1213,6 +1325,7 @@ int main() {
 
     if (!libpd_openfile("index.pd", "./")) {
         _JS_alert("Failed to open patch | Please Report!\n");
+        return -1;
     }
 
     // Init Gui interface

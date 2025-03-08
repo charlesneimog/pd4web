@@ -41,6 +41,7 @@ class Pd4Web:
     GUI: bool = True
     AUTO_THEME: bool = True
     PATCH_ZOOM: int = 1
+    PDLUA: bool = False
 
     # Midi
     MIDI: bool = False

@@ -1,14 +1,18 @@
 #pragma once
 
+// strings
+#include <format>
+
+// emscripten
 #include <emscripten.h>
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 #include <emscripten/webaudio.h>
 
+// libpd
 #include <z_libpd.h>
 #include <z_print_util.h>
 
-// Mainly because of pdlua
 #include <g_canvas.h>
 #include <m_imp.h>
 #include <s_stuff.h>
@@ -82,7 +86,7 @@ class Pd4Web {
     // Gui
     static void guiLoop();
     UserData *m_SharedData;
-    bool _busyWaiter();
+    void click(std::string p, int xpix, int ypix);
 
     // Receivers
     static void receivedBang(const char *r);
@@ -173,6 +177,9 @@ EMSCRIPTEN_BINDINGS(WebPd) {
 
         // Get selector
         .function("_getMessageSelector", &Pd4Web::_getMessageSelector)
+
+        // Gui
+        .function("_objclick", &Pd4Web::click)
 
         // Midi
         .function("noteOn", &Pd4Web::noteOn)

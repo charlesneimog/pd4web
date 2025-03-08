@@ -61,7 +61,10 @@ class GetAndBuildExternals:
         else:
             self.ProjectName = os.path.basename(self.Pd4Web.PROJECT_ROOT)
         self.cmakeFile.append("cmake_minimum_required(VERSION 3.25)")
-        self.cmakeFile.append(f'project("{self.ProjectName}")\n')
+        self.cmakeFile.append(f'project("{self.ProjectName}")\n\n')
+
+        self.cmakeFile.append("set(CMAKE_CXX_STANDARD 20)")
+        self.cmakeFile.append("set(CMAKE_CXX_STANDARD_REQUIRED ON)")
 
         # Pd Sources
         self.cmakeFile.append("# Pd sources")
@@ -76,7 +79,8 @@ class GetAndBuildExternals:
         self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")')
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
         self.cmakeFile.append("add_definitions(-DPD4WEB)")
-        self.cmakeFile.append("add_definitions(-DPD4WEB_LUA)")
+        if self.Pd4Web.PDLUA:
+            self.cmakeFile.append("add_definitions(-DPD4WEB_LUA)")
         self.cmakeFile.append("")
 
         # Debug option
