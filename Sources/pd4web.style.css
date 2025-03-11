@@ -248,7 +248,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 10px;
+    border-radius: 4px;
     margin-top: 1%;
     box-shadow:
       rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
