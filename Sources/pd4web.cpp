@@ -1,5 +1,10 @@
 #include "pd4web.hpp"
 
+#include <fstream>
+#include <iostream>
+#include <regex>
+#include <string>
+
 int PD4WEB_INSTANCES = 0;
 Pd4WebGuiReceiverList Pd4WebGuiReceivers;
 Pd4WebGuiReceiverList Pd4WebGuiSenders;
@@ -170,6 +175,18 @@ EM_JS(void, _JS_loadGui, (bool AutoTheming, double Zoom), {
 });
 
 // ─────────────────────────────────────
+EM_JS(void, _JS_resizeCanvas, (int x, int y, int zoom), {
+    var width = x;
+    var height = y;
+    const patchDiv = document.getElementById("Pd4WebPatchDiv");
+    patchDiv.style.width = (width * zoom) + "px";
+    patchDiv.style.height = (height * zoom) + "px";
+    patchDiv.style.marginLeft = "auto";
+    patchDiv.style.marginRight = "auto";
+
+});
+
+// ─────────────────────────────────────
 EM_JS(void, _JS_loadStyle, (void), {
     if (document.getElementById("pd4web-style") != null){
         return;
@@ -218,10 +235,21 @@ EM_JS(void, _JS_post, (const char *msg), {
     console.log(UTF8ToString(msg));
 });
     
+EM_JS(void, _JS_addMessagePort, (EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode), {
+    Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
+    Pd4WebAudioWorkletNode.port.onmessage = function(event) {
+        console.log(event);
+    };
+});
+
+
 // ─────────────────────────────────────
 EM_JS(void, _JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
+    Pd4WebAudioWorkletNode.port.onmessage = function(event) {
+        console.log("Message from worklet:", event.data);
+    };
 
     async function _GetMicAccess(stream) {
       try {
@@ -475,16 +503,14 @@ EM_JS(void, _JS_createTgl, (const char *p, float x_pos, float y_pos, float size,
     };
     var rectObj = CreateItem("rect", rectProps);
 
-    // Create lines for the cross with adjusted positions.
-    // Instead of stroke:"none", set stroke-opacity to a low value.
+    // Create lines for the cross
     let line1Props = {
         x1: x_pos + 2,
         y1: y_pos + 2,
         x2: x_pos + size - 2,
         y2: y_pos + size - 2,
-        stroke: "black",
-        "stroke-width": 2,
-        "stroke-opacity": 0.05  // nearly invisible initially
+        stroke: "none",         // Initially hidden
+        "stroke-width": 2
     };
     var line1Obj = CreateItem("line", line1Props);
 
@@ -493,13 +519,12 @@ EM_JS(void, _JS_createTgl, (const char *p, float x_pos, float y_pos, float size,
         y1: y_pos + size - 2,
         x2: x_pos + size - 2,
         y2: y_pos + 2,
-        stroke: "black",
-        "stroke-width": 2,
-        "stroke-opacity": 0.05  // nearly invisible initially
+        stroke: "none",         // Initially hidden
+        "stroke-width": 2
     };
     var line2Obj = CreateItem("line", line2Props);
 
-    // Append rect and lines to the group
+    // Append rect & lines to the group
     groupObj.appendChild(rectObj);
     groupObj.appendChild(line1Obj);
     groupObj.appendChild(line2Obj);
@@ -508,29 +533,30 @@ EM_JS(void, _JS_createTgl, (const char *p, float x_pos, float y_pos, float size,
     const svgElement = document.getElementById("Pd4WebCanvas");
     svgElement.appendChild(groupObj);
 
-    // Track the toggle state
+    // Keep track of whether the cross is visible
     let crossVisible = false;
 
+    // Add event listener for clicks
     groupObj.addEventListener("click", function(e) {
-        // Notify Pure Data about the click event
+        // 1) Let Pure Data know we clicked
         const svgBox = svgElement.getBoundingClientRect();
         const x = Math.round((e.clientX - svgBox.x) / zoom);
         const y = Math.round((e.clientY - svgBox.y) / zoom);
         Pd4Web._objclick(objpointer, x, y);
 
-        // Toggle the cross appearance by adjusting stroke opacity
+        // 2) Toggle cross visibility
         crossVisible = !crossVisible;
         if (crossVisible) {
-            // Make the cross fully visible
-            line1Obj.setAttribute("stroke-opacity", 1);
-            line2Obj.setAttribute("stroke-opacity", 1);
+            line1Obj.setAttribute("stroke", "black");
+            line2Obj.setAttribute("stroke", "black");
         } else {
-            // Make the cross nearly invisible
-            line1Obj.setAttribute("stroke-opacity", 0.05);
-            line2Obj.setAttribute("stroke-opacity", 0.05);
+            line1Obj.setAttribute("stroke", "none");
+            line2Obj.setAttribute("stroke", "none");
         }
     });
 });
+
+
 
 // ─────────────────────────────────────
 EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size, int id, const char *bg),{
@@ -928,7 +954,6 @@ void Pd4Web::unbindReceiver() {
  * @return true if processing succeeded, false otherwise.
  */
 
-static int allobjects = 1;
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *data) {
@@ -989,23 +1014,6 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
             OutI++;
         }
     }
-
-    // if (allobjects) {
-    //     allobjects = 0;
-    //     t_canvas *canvas = pd_getcanvaslist();
-    //     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
-    //         const t_widgetbehavior *wb = obj->g_pd->c_wb;
-    //         if (wb) {
-    //             t_clickfn w_clickfn = wb->w_clickfn;
-    //             if (w_clickfn) {
-    //                 printf("object %s has a click function\n", obj->g_pd->c_name->s_name);
-    //             } else {
-    //                 printf("object %s has no click function\n", obj->g_pd->c_name->s_name);
-    //             }
-    //         }
-    //     }
-    // }
-
     return EM_TRUE;
 }
 
@@ -1018,6 +1026,24 @@ void Pd4Web::initGuiInterface(void) {
         canvasWidth = canvas->gl_screenx2 - canvas->gl_screenx1;
         canvasHeight = canvas->gl_screeny2 - canvas->gl_screeny1;
     }
+
+    EM_ASM(
+        {
+            var width = $0;
+            var height = $1;
+            var zoom = $2;
+
+            const patchDiv = document.getElementById("Pd4WebPatchDiv");
+            patchDiv.style.width = (width * zoom) + "px";
+            patchDiv.style.height = (height * zoom) + "px";
+            patchDiv.style.marginLeft = "auto";
+            patchDiv.style.marginRight = "auto";
+
+            const canvas = document.getElementById("Pd4WebCanvas");
+            const value = "0 0 " + width + " " + height;
+            canvas.setAttributeNS(null, "viewBox", value);
+        },
+        canvasWidth, canvasHeight, PD4WEB_PATCH_ZOOM);
 
     int objId = 0;
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
@@ -1041,23 +1067,6 @@ void Pd4Web::initGuiInterface(void) {
     }
 
     // rezise canvas
-    EM_ASM(
-        {
-            var width = $0;
-            var height = $1;
-            var zoom = $2;
-
-            const patchDiv = document.getElementById("Pd4WebPatchDiv");
-            patchDiv.style.width = (width * zoom) + "px";
-            patchDiv.style.height = (height * zoom) + "px";
-            patchDiv.style.marginLeft = "auto";
-            patchDiv.style.marginRight = "auto";
-
-            const canvas = document.getElementById("Pd4WebCanvas");
-            const value = "0 0 " + width + " " + height;
-            canvas.setAttributeNS(null, "viewBox", value);
-        },
-        canvasWidth, canvasHeight, PD4WEB_PATCH_ZOOM);
 }
 
 // ─────────────────────────────────────
@@ -1074,7 +1083,6 @@ void Pd4Web::initGuiInterface(void) {
 void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                           void *userData) {
 
-    LOG("Pd4Web::audioWorkletProcessorCreated");
     if (!success) {
         _JS_alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
@@ -1092,17 +1100,6 @@ void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
         .outputChannelCounts = nOutChannelsArray,
     };
 
-    Pd4WebInitExternals();
-
-    libpd_add_to_search_path("./Libs/");
-    libpd_add_to_search_path("./Extras/");
-    libpd_add_to_search_path("./Audios/");
-
-    if (!libpd_openfile("index.pd", "./")) {
-        _JS_alert("Failed to open patch | Please Report!\n");
-        return;
-    }
-
     // turn audio on
     libpd_start_message(1);
     libpd_add_float(1.0f);
@@ -1112,8 +1109,6 @@ void Pd4Web::audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM
     EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
         audioContext, "pd4web", &options, &Pd4Web::process, userData);
     _JS_getMicAccess(audioContext, AudioWorkletNode, NInCh);
-
-    _JS_post("Audio Processor Created");
 }
 
 // ─────────────────────────────────────
@@ -1140,7 +1135,6 @@ void Pd4Web::audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL succes
 
     emscripten_create_wasm_audio_worklet_processor_async(
         audioContext, &opts, &Pd4Web::audioWorkletProcessorCreated, userData);
-    _JS_post("Pd4web WebAudio Worklet thread initialization done!\n");
 }
 
 // ─────────────────────────────────────
@@ -1196,10 +1190,6 @@ void Pd4Web::init() {
     PD4WEB_INSTANCES++;
     LOG("Pd4Web::init");
 
-    if (PD4WEB_GUI) {
-        _JS_setIcon("--sound-loading", "spin 2s linear infinite");
-    }
-
     uint32_t SR = PD4WEB_SR;
     float NInCh = PD4WEB_CHS_IN;
     float NOutCh = PD4WEB_CHS_OUT;
@@ -1209,24 +1199,8 @@ void Pd4Web::init() {
         .sampleRate = SR,
     };
 
-    libpd_set_printhook(libpd_print_concatenator);
-    libpd_set_concatenated_printhook(&Pd4Web::post);
-
-    int ret = libpd_init();
-    if (ret) {
-        _JS_alert("libpd_init() failed, please report!");
-        return;
-    }
     UserData *userData = new UserData();
     userData->instance = PD4WEB_INSTANCES;
-
-    libpd_set_banghook(&Pd4Web::receivedBang);
-    libpd_set_floathook(&Pd4Web::receivedFloat);
-    libpd_set_symbolhook(&Pd4Web::receivedSymbol);
-    libpd_set_listhook(&Pd4Web::receivedList);
-    libpd_set_messagehook(&Pd4Web::receivedMessage);
-
-    // TODO: add midi hooks
 
     // Start the audio context
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
@@ -1247,12 +1221,46 @@ void Pd4Web::init() {
         _JS_addSoundToggle();
     }
     m_audioSuspended = false;
+
     return;
 }
+// ╭─────────────────────────────────────╮
+// │            Lua Functions            │
+// ╰─────────────────────────────────────╯
+#ifdef PD4WEB_LUA
+static int set_size(lua_State *L) {
+    if (!lua_islightuserdata(L, 1)) {
+        return 0;
+    }
+
+    // t_pdlua *obj = (t_pdlua*)lua_touserdata(L, 1);
+    float width = luaL_checknumber(L, 2);
+    float height = luaL_checknumber(L, 3);
+    printf("setting size to %f %f\n", width, height);
+    return 0;
+}
+#endif
 
 // ╭─────────────────────────────────────╮
 // │              Main Loop              │
 // ╰─────────────────────────────────────╯
+void Pd4Web::vis(void) {
+    t_canvas *canvas = pd_getcanvaslist();
+    int canvasWidth = canvas->gl_pixwidth;
+    int canvasHeight = canvas->gl_pixheight;
+    if (canvasWidth == 0 && canvasHeight == 0) {
+        canvasWidth = canvas->gl_screenx2 - canvas->gl_screenx1;
+        canvasHeight = canvas->gl_screeny2 - canvas->gl_screeny1;
+    }
+
+    int objId = 0;
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        const t_widgetbehavior *wb = (t_widgetbehavior *)obj->g_pd->c_wb;
+        wb->w_visfn(obj, canvas, 1);
+    }
+}
+
+// ─────────────────────────────────────
 void Pd4Web::guiLoop() {
     LOG("guiLoop");
 
@@ -1289,6 +1297,10 @@ void Pd4Web::guiLoop() {
             GuiReceiver.Updated = false;
         }
     }
+
+#ifdef PD4WEB_LUA
+    pd4weblua_draw();
+#endif;
 }
 
 // ╭─────────────────────────────────────╮
@@ -1296,6 +1308,8 @@ void Pd4Web::guiLoop() {
 // ╰─────────────────────────────────────╯
 int main() {
     LOG("main");
+    _JS_setIcon("--sound-loading", "spin 2s linear infinite");
+
     if (PD4WEB_GUI) {
         _JS_loadStyle();
         // _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
@@ -1322,7 +1336,6 @@ int main() {
     libpd_add_to_search_path("./Libs/");
     libpd_add_to_search_path("./Extras/");
     libpd_add_to_search_path("./Audios/");
-
     if (!libpd_openfile("index.pd", "./")) {
         _JS_alert("Failed to open patch | Please Report!\n");
         return -1;
@@ -1335,6 +1348,10 @@ int main() {
 
     printf("pd4web version %s.%s.%s\n", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
            PD4WEB_VERSION_PATCH);
+    _JS_setIcon("--sound-off", "pulse 1s infinite");
+
+    // Need to fix this, the problem is that the lua position of the object is wrong;
+    MAIN_THREAD_ASYNC_EM_ASM({ setTimeout(function() { Pd4Web._vis(); }, 100); });
 
     emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
     return 0;

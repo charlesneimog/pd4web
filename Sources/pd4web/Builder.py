@@ -28,6 +28,17 @@ class GetAndBuildExternals:
         # self.UpdateSetupFunction()
         self.CreateCppCallsExternalFile()
 
+        if self.Pd4Web.PDLUA:
+            weblua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.h")
+            pdlua_c = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.c")
+            with open(pdlua_c, "r") as file:
+                content = file.read()
+            updated_content = re.sub(r'#include "pdlua_gfx\.h"', '#include "pd4weblua_gfx.h"', content)
+            with open(pdlua_c, "w") as file:
+                file.write(updated_content)
+
+            shutil.copy(weblua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pd4weblua_gfx.h"))
+
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │
         # │  need to compile it using CMakeList  │
