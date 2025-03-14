@@ -50,6 +50,7 @@ enum LuaGuiCommands {
 
 typedef struct {
     enum LuaGuiCommands command;
+    int drawed;
     const char current_color[64];
     const char layer_id[64];
     const char *svg_text;
@@ -88,9 +89,13 @@ static Pd4WebLuaGuiQueue *LuaGuiQueue = NULL;
 // ╰─────────────────────────────────────╯
 int pd4weblua_draw() {
 
-    for (int i = 0; i < LuaGuiQueue->i; i++) {
+    for (int i = 0; i < LuaGuiQueue->size; i++) {
         int command = LuaGuiQueue->values[i].command;
         GuiValues v = LuaGuiQueue->values[i];
+        if (v.drawed) {
+            continue;
+        }
+
         switch (command) {
         case CLEAR_CANVAS:
             MAIN_THREAD_ASYNC_EM_ASM(
@@ -108,6 +113,7 @@ int pd4weblua_draw() {
 
         case FILL_ELLIPSE:
             MAIN_THREAD_ASYNC_EM_ASM(
+                // clang-format off
                 {
                     var layer_id = UTF8ToString($0);
                     var color = UTF8ToString($1);
@@ -131,6 +137,7 @@ int pd4weblua_draw() {
                     ctx.ellipse(centerX, centerY, w / 2, h / 2, 0, 0, 2 * Math.PI);
                     ctx.fill();
                 },
+                // clang-format on
                 v.layer_id, v.current_color, v.x, v.y, v.w, v.h);
             break;
         case STROKE_ELLIPSE:
@@ -404,7 +411,7 @@ int pd4weblua_draw() {
                     ctx.closePath();
                 },
                 v.layer_id, v.current_color, v.stroke_width);
-            freebytes(v.path_coords, v.path_size * sizeof(float));
+            // freebytes(v.path_coords, v.path_size * sizeof(float));
             break;
         case FILL_PATH:
             for (int i = 0; i < v.path_size; i++) {
@@ -457,7 +464,7 @@ int pd4weblua_draw() {
                     ctx.closePath();
                 },
                 v.layer_id, v.current_color);
-            freebytes(v.path_coords, v.path_size * sizeof(float));
+            // freebytes(v.path_coords, v.path_size * sizeof(float));
             break;
         case FILL_ALL:
             MAIN_THREAD_ASYNC_EM_ASM(
@@ -479,9 +486,32 @@ int pd4weblua_draw() {
             // Código para comando desconhecido
             break;
         }
+        LuaGuiQueue->values[i].drawed = 1;
     }
-    LuaGuiQueue->i = 0;
     return 0;
+}
+
+// ─────────────────────────────────────
+static int pd4web_get_next_free_spot() {
+    int old_size = LuaGuiQueue->size;
+    for (int i = LuaGuiQueue->i; i < LuaGuiQueue->size; i++) {
+        if (LuaGuiQueue->values[i].drawed) {
+            LuaGuiQueue->values[i].drawed = 0;
+            LuaGuiQueue->i = (i + 1) % LuaGuiQueue->size;
+            return i;
+        }
+    }
+
+    int new_size = LuaGuiQueue->size * 2;
+    GuiValues *new_values = (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
+    if (new_values == NULL) {
+        MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
+        return 0;
+    }
+    LuaGuiQueue->values = new_values;
+    LuaGuiQueue->size = new_size;
+    printf("bad Found free spot at %d\n", old_size + 1);
+    return old_size + 1;
 }
 
 // ╭─────────────────────────────────────╮
@@ -708,6 +738,7 @@ static void gfx_displace(t_pdlua *x, t_glist *glist, int dx, int dy) {
 
 // ─────────────────────────────────────
 static int gfx_initialize(t_pdlua *obj) {
+    printf("mallocing memory\n");
     if (LuaGuiQueue == NULL) {
         LuaGuiQueue = (Pd4WebLuaGuiQueue *)malloc(sizeof(Pd4WebLuaGuiQueue));
         if (LuaGuiQueue == NULL) {
@@ -722,6 +753,9 @@ static int gfx_initialize(t_pdlua *obj) {
         }
         LuaGuiQueue->size = 1024;
         LuaGuiQueue->i = 0;
+        for (int i = 0; i < LuaGuiQueue->size; i++) {
+            LuaGuiQueue->values[i].drawed = 1;
+        }
     }
 
     t_pdlua_gfx *gfx = &obj->gfx;
@@ -760,6 +794,7 @@ static int start_paint(lua_State *L) {
         lua_pushnil(L);
         return 1;
     }
+    printf("start_paint\n");
 
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
     t_pdlua_gfx *gfx = &obj->gfx;
@@ -771,24 +806,12 @@ static int start_paint(lua_State *L) {
 
     int layer = luaL_checknumber(L, 2) - 1;
     if (layer > gfx->num_layers) {
-        pdlua_gfx_repaint(obj, 0);
-        if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-            int new_size = LuaGuiQueue->size * 2;
-            GuiValues *new_values =
-                (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-            if (new_values == NULL) {
-                MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-                return 0;
-            }
-            LuaGuiQueue->values = new_values;
-            LuaGuiQueue->size = new_size;
-        }
-        GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+        GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
         strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
         strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
         v->command = CLEAR_CANVAS;
-        LuaGuiQueue->i++;
-
+        v->drawed = 0;
+        pdlua_gfx_repaint(obj, 0);
         lua_pushnil(L);
         return 1;
     } else if (layer >= gfx->num_layers) {
@@ -805,6 +828,8 @@ static int start_paint(lua_State *L) {
         gfx->num_layers = new_num_layers;
         int x = text_xpix((t_object *)obj, obj->canvas);
         int y = text_ypix((t_object *)obj, obj->canvas);
+
+        // Maybe this is better to live also on main thread
         MAIN_THREAD_ASYNC_EM_ASM(
             {
                 let layer_id = UTF8ToString($0);
@@ -840,22 +865,11 @@ static int start_paint(lua_State *L) {
     }
 
     gfx->current_layer_tag = gfx->layer_tags[layer];
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = CLEAR_CANVAS;
-    LuaGuiQueue->i++;
+    v->drawed = 0;
 
     if (gfx->transforms) {
         freebytes(gfx->transforms, gfx->num_transforms * sizeof(gfx_transform));
@@ -866,8 +880,9 @@ static int start_paint(lua_State *L) {
     lua_pushlightuserdata(L, gfx);
     luaL_setmetatable(L, "GraphicsContext");
 
-    if (strlen(gfx->object_tag))
+    if (strlen(gfx->object_tag)) {
         pdlua_gfx_clear(obj, layer, 0);
+    }
 
     if (gfx->first_draw) {
         int x = text_xpix((t_object *)obj, obj->canvas);
@@ -944,19 +959,8 @@ static int set_color(lua_State *L) {
 // ─────────────────────────────────────
 static int fill_ellipse(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
 
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = FILL_ELLIPSE;
@@ -964,25 +968,15 @@ static int fill_ellipse(lua_State *L) {
     v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
     v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
     return 0;
 }
 
 // ─────────────────────────────────────
 static int stroke_ellipse(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = STROKE_ELLIPSE;
@@ -991,29 +985,19 @@ static int stroke_ellipse(lua_State *L) {
     v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
     v->line_width = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
     return 0;
 }
 
 // ─────────────────────────────────────
 static int fill_all(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = FILL_ALL;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
 
     return 0;
 }
@@ -1021,19 +1005,8 @@ static int fill_all(lua_State *L) {
 // ─────────────────────────────────────
 static int fill_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
 
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = FILL_RECT;
@@ -1041,25 +1014,16 @@ static int fill_rect(lua_State *L) {
     v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
     v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
+
     return 0;
 }
 
 // ─────────────────────────────────────
 static int stroke_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = STROKE_RECT;
@@ -1076,19 +1040,8 @@ static int stroke_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int fill_rounded_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
 
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = FILL_ROUNDED_RECT;
@@ -1103,22 +1056,8 @@ static int fill_rounded_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int stroke_rounded_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    t_pdlua *obj = gfx->object;
-    t_canvas *cnv = glist_getcanvas(obj->canvas);
 
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = STROKE_ROUNDED_RECT;
@@ -1127,7 +1066,7 @@ static int stroke_rounded_rect(lua_State *L) {
     v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
     v->radius = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
 
     return 0;
 }
@@ -1135,18 +1074,8 @@ static int stroke_rounded_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int draw_line(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = DRAW_LINE;
@@ -1155,7 +1084,7 @@ static int draw_line(lua_State *L) {
     v->x2 = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->y2 = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
     v->line_width = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
 
     return 0;
 }
@@ -1163,22 +1092,8 @@ static int draw_line(lua_State *L) {
 // ─────────────────────────────────────
 static int draw_text(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    t_pdlua *obj = gfx->object;
-    t_canvas *cnv = glist_getcanvas(obj->canvas);
 
-    const char *text = luaL_checkstring(L, 1);
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = DRAW_TEXT;
@@ -1187,7 +1102,7 @@ static int draw_text(lua_State *L) {
     v->y = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
     v->w = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
     v->font_height = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    v->drawed = 0;
 
     return 0;
 }
@@ -1338,18 +1253,7 @@ static int stroke_path(lua_State *L) {
         return 0;
     }
     int stroke_width = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = STROKE_PATH;
@@ -1357,7 +1261,6 @@ static int stroke_path(lua_State *L) {
     v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
     v->path_size = path->num_path_segments;
     v->line_width = stroke_width;
-    LuaGuiQueue->i += 1;
 
     for (int i = 0; i < path->num_path_segments; i++) {
         float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
@@ -1365,7 +1268,7 @@ static int stroke_path(lua_State *L) {
         v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
         v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
     }
-
+    v->drawed = 0;
     return 0;
 }
 
@@ -1377,25 +1280,13 @@ static int fill_path(lua_State *L) {
         return 0;
     }
 
-    if (LuaGuiQueue->i >= LuaGuiQueue->size) {
-        int new_size = LuaGuiQueue->size * 2;
-        GuiValues *new_values =
-            (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-        if (new_values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = new_values;
-        LuaGuiQueue->size = new_size;
-    }
-    GuiValues *v = &LuaGuiQueue->values[LuaGuiQueue->i];
+    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
     strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
     strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
     v->command = FILL_PATH;
     // free after complete draw in main thread
     v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
     v->path_size = path->num_path_segments;
-    LuaGuiQueue->i += 1;
 
     for (int i = 0; i < path->num_path_segments; i++) {
         float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
@@ -1403,6 +1294,7 @@ static int fill_path(lua_State *L) {
         v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
         v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
     }
+    v->drawed = 0;
 
     return 0;
 }

@@ -1,8 +1,5 @@
 #include "pd4web.hpp"
 
-#include <fstream>
-#include <iostream>
-#include <regex>
 #include <string>
 
 int PD4WEB_INSTANCES = 0;
@@ -556,12 +553,13 @@ EM_JS(void, _JS_createTgl, (const char *p, float x_pos, float y_pos, float size,
     });
 });
 
-
-
 // ─────────────────────────────────────
-EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size, int id, const char *bg),{
+EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size, int id, const char *bg), {
     var objpointer = UTF8ToString(p);
     var background = UTF8ToString(bg);
+    var circleId = "bng_circle_" + id;
+    
+    // Create rectangle
     let rect = {
         id: "bng_" + id,
         x: x_pos,
@@ -575,13 +573,37 @@ EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size,
     };
 
     var guiObj = CreateItem("rect", rect);
+
+    // Create circle
+    let circleParams = {
+        id: circleId,
+        cx: x_pos + size/2,
+        cy: y_pos + size/2,
+        r: size * 0.4,
+        stroke: "black",
+        fill: "none",
+        class: "bng-circle",
+        style: "pointer-events: none;",
+    };
+
+    var circleObj = CreateItem("circle", circleParams);
+
+    // Add click event
     guiObj.addEventListener("click", function(e) {
-        console.log("Rectangle " + objpointer + " clicked!");
-        console.log(e.clientX, e.clientY);
+        // Trigger PD callback
         Pd4Web._objclick(objpointer, e.clientX, e.clientY);
+
+        // Animate the circle
+        var circle = document.getElementById(circleId);
+        if (circle) {
+            // Flash the circle
+            circle.style.fill = "black";
+            setTimeout(() => {
+                circle.style.fill = "none";
+            }, 300);
+        }
     });
 });
-
 
 // ─────────────────────────────────────
 EM_JS(void, _JS_receiveMessage, (const char *r),{
@@ -1014,6 +1036,7 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
             OutI++;
         }
     }
+
     return EM_TRUE;
 }
 
@@ -1300,7 +1323,7 @@ void Pd4Web::guiLoop() {
 
 #ifdef PD4WEB_LUA
     pd4weblua_draw();
-#endif;
+#endif
 }
 
 // ╭─────────────────────────────────────╮
