@@ -9,7 +9,13 @@ Sources:
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
-# ─────────────── pd-fftease ───────────────
+# ─────────────── pd-saf ───────────────
+  - Name: saf
+    Source: GITHUB
+    Developer: charlesneimog
+    Repository: pd-saf
+    Version: cfb1d36ab5c39e18e10812689dc6f4bb0797a21d
+# ─────────────── pd-lua ───────────────
   - Name: pdlua
     Source: GITHUB
     Developer: agraef
