@@ -478,8 +478,7 @@ class Patch:
         file.close()
 
         for lib in self.Pd4Web.declaredLibsObjs:
-            declaredObjs.extend(externalsDict[lib]["objs"])
-            if patchLine.completName in declaredObjs:
+            if patchLine.completName in externalsDict[lib]["objs"]:
                 libName = lib
                 librariesCount += 1
 
