@@ -363,17 +363,17 @@ class Patch:
         return False
 
     def isLuaObj(self, line: PatchLine):
-        for root, dir, files in os.walk(self.Pd4Web.PROJECT_ROOT):
+        for root, _, files in os.walk(self.Pd4Web.PROJECT_ROOT):
             for file in files:
-                # check if file is inside Extras or Libs
                 if file.endswith(".pd_lua"):
                     if line.completName == file.split(".pd_lua")[0]:
                         if root.endswith("Libs") or root.endswith("Extras"):
                             return True
                         else:
-                            self.Pd4Web.exception("Lua objects must be inside Libs or Extras folders") 
+                            os.makedirs(self.Pd4Web.PROJECT_ROOT + "/.tmp/", exist_ok=True)
+                            shutil.copy(root + "/" + file, self.Pd4Web.PROJECT_ROOT + "/.tmp/" + file)
+                            return True
         return False
-
 
     def processPatch(self):
         """
@@ -397,6 +397,8 @@ class Patch:
                             self.Pd4Web.exception(f"Library not supported: {path} in {self.patchFile}")
                         self.Pd4Web.Objects.GetSupportedObjects(path)
                         self.Pd4Web.declaredLibsObjs.append(path)
+                        if path == "pdlua" or path == "lua":
+                            self.Pd4Web.PDLUA = True
 
                     elif patchLine.Tokens[2] == "-path":
                         path = patchLine.Tokens[3]
@@ -660,6 +662,19 @@ class Patch:
                     silence=self.Pd4Web.SILENCE,
                     pd4web=self.Pd4Web.PD_EXTERNAL,
                 )
+            elif os.path.exists(self.PROJECT_ROOT + "/" + line.Tokens[4] + ".pd_lua"):
+                line.isExternal = True
+                line.library = "luaexternal"
+                line.name = line.completName.split("/")[-1]
+                externalSpace = 18 - len(line.name)
+                objName = line.name + (" " * externalSpace)
+                self.Pd4Web.print(
+                    f"Found Lua Object: {objName}  | Lua External",
+                    color="green",
+                    silence=self.Pd4Web.SILENCE,
+                    pd4web=self.Pd4Web.PD_EXTERNAL,
+                )
+                self.Pd4Web.PDLUA = True
             else:
                 self.Pd4Web.exception(f"Object {line.completName} not found in {self.patchFile}")
 
@@ -734,7 +749,7 @@ class Patch:
 
         # Finally
         if (line.isExternal or line.isAbstraction) and (
-            line.library != "pure-data" and line.library != "extra" and not line.localAbs
+            line.library != "pure-data" and line.library != "luaexternal" and line.library != "extra" and not line.localAbs
         ):
             libClass = self.Pd4Web.Libraries.GetLibraryData(line.library)
             if libClass.valid:
@@ -767,7 +782,8 @@ class Patch:
         self.searchForGuiObject(line)
         self.searchForSpecialObject(line)
         self.patchLinesProcessed.append(line)
-        self.addUsedObject(line)
+        if line.library != "luaexternal":
+            self.addUsedObject(line)
 
     def addUsedObject(self, PatchLine: PatchLine):
         if (

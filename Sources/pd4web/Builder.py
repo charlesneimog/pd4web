@@ -4,9 +4,40 @@ import shutil
 import subprocess
 import importlib.metadata as importlib_metadata
 import yaml
+from bs4 import BeautifulSoup
 
 # from .Patch import PatchLine
 from .Pd4Web import Pd4Web
+
+PD4WEB_HTML_HEAD = """
+        <title>Pd4Web</title>
+        <meta charset="UTF-8" />
+"""
+
+PD4WEB_HTML_GUI = """
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+        <div id="Pd4WebPatchDiv" class="Pd4WebPatchDiv">
+            <svg id="Pd4WebCanvas"></svg>
+        </div>
+"""
+
+PD4WEB_HTML_INITIALIZER = """
+<script>
+    var Pd4Web = null; // Pd4Web object must be declared in the global scope
+    Pd4WebModule().then((Pd4WebModulePromise) => {
+        Pd4Web = new Pd4WebModulePromise.Pd4Web();
+    });
+
+    document.getElementById('Pd4WebAudioSwitch').addEventListener(
+        'click',
+        async () => {
+            // Pd4Web.init(), when using audio input, must be called after a user gesture
+            Pd4Web.init();
+        },
+        { once: true },
+    );
+</script>
+"""
 
 
 class GetAndBuildExternals:
@@ -80,18 +111,21 @@ class GetAndBuildExternals:
         # Pd Sources
         self.cmakeFile.append("# Pd sources")
         self.cmakeFile.append('set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")')
-        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")')
-        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pd.cmake")')
         self.cmakeFile.append('set(PDCMAKE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" CACHE STRING "" FORCE)')
         self.cmakeFile.append(
             'set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" CACHE STRING "" FORCE)'
         )
-        self.cmakeFile.append('set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")')
-        self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")')
+        self.cmakeFile.append('set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")\n')
+
+        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")')
+        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pd.cmake")')
+        self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")\n')
+
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
         self.cmakeFile.append("add_definitions(-DPD4WEB)")
         if self.Pd4Web.PDLUA:
             self.cmakeFile.append("add_definitions(-DPD4WEB_LUA)")
+            self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua")')
         self.cmakeFile.append("")
 
         # Debug option
@@ -138,6 +172,7 @@ class GetAndBuildExternals:
             "    -sPTHREAD_POOL_SIZE=4",
             "    -sWASMFS=1",
             "    -sWASM=1",
+            "    --closure 0",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
             f"   --pre-js {guifile}",
@@ -431,6 +466,46 @@ class GetAndBuildExternals:
             self.Pd4Web.exception("Error: Could not configure the project")
         os.chdir(cwd)
 
+    def buildWebPatchIndex(self):
+        soup = BeautifulSoup("<!DOCTYPE html><html><head></head><body></body></html>", "html.parser")
+        head_content = BeautifulSoup(PD4WEB_HTML_HEAD, "html.parser")
+        if soup.head is None:
+            raise Exception("Error: HTML head not found")
+
+        if head_content.title is None or head_content.meta is None:
+            raise Exception("Error: HTML head content not found")
+
+        soup.head.append(head_content.title)
+        soup.head.append(head_content.meta)
+        meta_tag = soup.head.find("meta")
+        if meta_tag is None:
+            raise Exception("Error: HTML meta tag not found")
+
+        # Scripts
+        pd4web_js = soup.new_tag("script", src="./pd4web.js")
+        meta_tag.insert_after(pd4web_js)
+
+        if self.Pd4Web.PDLUA:
+            pixi = soup.new_tag("script", src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.6.6/pixi.min.js")
+            meta_tag.insert_after(pixi)
+
+        threads = soup.new_tag("script", src="./pd4web.threads.js")
+        meta_tag.insert_after(threads)
+
+        if soup.body is None:
+            raise Exception("Error: HTML body not found")
+
+        if self.Pd4Web.GUI:
+            gui_fragment = BeautifulSoup(PD4WEB_HTML_GUI, "html.parser")
+            soup.body.append(gui_fragment)
+
+        # Parse and insert initializer script after GUI
+        script_fragment = BeautifulSoup(PD4WEB_HTML_INITIALIZER, "html.parser")
+        soup.body.append(script_fragment)
+
+        with open(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html", "w", encoding="utf-8") as f:
+            f.write(soup.prettify())
+
     def CompileProject(self):
         cwd = os.getcwd()
         os.chdir(self.Pd4Web.PROJECT_ROOT)
@@ -508,13 +583,7 @@ class GetAndBuildExternals:
             shutil.copy(js_src, js_dest)
 
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html") and self.Pd4Web.TEMPLATE == 0:
-            index_page = "index.html"
-            if not self.Pd4Web.GUI:
-                index_page = "nogui.html"
-            shutil.copy(
-                self.Pd4Web.PD4WEB_ROOT + f"/../{index_page}",
-                self.Pd4Web.PROJECT_ROOT + "/WebPatch/index.html",
-            )
+            self.buildWebPatchIndex()
 
         if not os.path.exists(self.Pd4Web.PROJECT_ROOT + "/index.html"):
             with open(self.Pd4Web.PROJECT_ROOT + "/index.html", "w") as f:
