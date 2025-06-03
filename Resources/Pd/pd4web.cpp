@@ -18,7 +18,7 @@
 static t_class *pd4web_class;
 
 static bool global_pd4web_check = false; // just need to check once
-#define PD4WEB_EXTERNAL_VERSION "2.3.0"
+#define PD4WEB_EXTERNAL_VERSION "2.4.0"
 
 // ─────────────────────────────────────
 class Pd4Web {
