@@ -175,9 +175,15 @@ class GetAndBuildExternals:
             "    --closure 0",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
+            "    -sMAX_WEBGL_VERSION=2",
+            "    -sMIN_WEBGL_VERSION=2",
             f"   --pre-js {guifile}",
             ")",
         ]
+
+        # TODO: Add WEBGL2 just when using PDLUA
+        # if self.Pd4Web.PDLUA:
+        # -sMAX_WEBGL_VERSION=2
 
         # Extend cmakeFile with each section
         self.cmakeFile.extend(includeDirectories)

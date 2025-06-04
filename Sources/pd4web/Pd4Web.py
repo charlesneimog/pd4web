@@ -140,7 +140,6 @@ class Pd4Web:
             yaml_file = yaml.safe_load(open(os.path.join(self.PROJECT_ROOT, "Pd4Web/versions.yaml"), "r"))
             self.EMSDK_VERSION = yaml_file["emsdk"]
             self.PD_VERSION = yaml_file["pure-data"]
-            print(self.EMSDK_VERSION, self.PD_VERSION)
 
         # ╭──────────────────────────────────────╮
         # │    NOTE: Sobre a recursivade para    │
@@ -216,6 +215,11 @@ class Pd4Web:
         libRepo.checkout_tree(target_commit.tree, strategy=pygit2.GIT_CHECKOUT_FORCE)
         libRepo.set_head(target_commit.id)
 
+    def is_emsdk_version_installed(self, emsdk_path, version, env):
+        command = f"{emsdk_path} list --installed"
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, env=env)
+        return version in result.stdout
+
     def get_emsdk_sourcecode(self) -> None:
         self.EMSDK = self.APPDATA + "/emsdk/emsdk"
         path = self.APPDATA + "/emsdk"
@@ -225,9 +229,6 @@ class Pd4Web:
             self.get_sourcecode(emsdk, path, Pd4Web.EMSDK_VERSION)
 
         repo = Repository(path)
-        previous_tag = repo.head.peel().name
-        print(previous_tag)
-
         if platform.system() == "Windows":
             self.EMSDK += ".bat"
         else:
@@ -237,14 +238,18 @@ class Pd4Web:
             if result.returncode != 0:
                 self.exception("Failed to make emsdk executable")
 
-        command = f"{self.EMSDK} install {self.EMSDK_VERSION}"
-        result = subprocess.run(command, shell=True, env=self.env).returncode
-        if result != 0:
-            self.exception("Failed to activate emsdk")
-        command = f"{self.EMSDK} activate {self.EMSDK_VERSION}"
-        result = subprocess.run(command, shell=True, env=self.env).returncode
-        if result != 0:
-            self.exception("Failed to activate emsdk")
+        if not self.is_emsdk_version_installed(self.EMSDK, self.EMSDK_VERSION, self.env):
+            # Install
+            command = f"{self.EMSDK} install {self.EMSDK_VERSION}"
+            result = subprocess.run(command, shell=True, env=self.env).returncode
+            if result != 0:
+                self.exception("Failed to activate emsdk")
+
+            # Activate
+            command = f"{self.EMSDK} activate {self.EMSDK_VERSION}"
+            result = subprocess.run(command, shell=True, env=self.env).returncode
+            if result != 0:
+                self.exception("Failed to activate emsdk")
 
     def get_pd_sourcecode(self) -> None:
         pd = "https://github.com/pure-data/pure-data"

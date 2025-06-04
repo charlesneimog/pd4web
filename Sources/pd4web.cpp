@@ -244,9 +244,6 @@ EM_JS(void, _JS_addMessagePort, (EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNod
 EM_JS(void, _JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
-    Pd4WebAudioWorkletNode.port.onmessage = function(event) {
-        console.log("Message from worklet:", event.data);
-    };
 
     async function _GetMicAccess(stream) {
       try {
@@ -579,10 +576,9 @@ EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size,
         id: circleId,
         cx: x_pos + size/2,
         cy: y_pos + size/2,
-        r: size * 0.4,
+        r: size * 0.45,
         stroke: "black",
         fill: "none",
-        class: "bng-circle",
         style: "pointer-events: none;",
     };
 
@@ -590,10 +586,6 @@ EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size,
 
     // Add click event
     guiObj.addEventListener("click", function(e) {
-        // Trigger PD callback
-        Pd4Web._objclick(objpointer, e.clientX, e.clientY);
-
-        // Animate the circle
         var circle = document.getElementById(circleId);
         if (circle) {
             // Flash the circle
@@ -602,6 +594,7 @@ EM_JS(void, _JS_createBng, (const char *p, float x_pos, float y_pos, float size,
                 circle.style.fill = "none";
             }, 300);
         }
+        Pd4Web._objclick(objpointer, e.clientX, e.clientY);
     });
 });
 
@@ -1287,13 +1280,6 @@ void Pd4Web::vis(void) {
 void Pd4Web::guiLoop() {
     LOG("guiLoop");
 
-#ifdef PD4WEB_LUA
-    // lua_State *luaState = __L();
-    // if (luaState) {
-    //     _JS_post("Lua is defined and luaState is acessible\n");
-    // }
-#endif
-
     for (auto &GuiReceiver : Pd4WebGuiReceivers) {
         if (GuiReceiver.Updated) {
             switch (GuiReceiver.Type) {
@@ -1321,7 +1307,7 @@ void Pd4Web::guiLoop() {
         }
     }
 
-#ifdef PD4WEB_LUA
+#if PD4WEB_LUA
     pd4weblua_draw();
 #endif
 }
@@ -1376,6 +1362,6 @@ int main() {
     // Need to fix this, the problem is that the lua position of the object is wrong;
     MAIN_THREAD_ASYNC_EM_ASM({ setTimeout(function() { Pd4Web._vis(); }, 100); });
 
-    emscripten_set_main_loop(Pd4Web::guiLoop, PD4WEB_FPS, 1);
+    emscripten_set_main_loop(Pd4Web::guiLoop, 0, 1);
     return 0;
 }

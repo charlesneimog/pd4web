@@ -26,6 +26,11 @@
 #include <lualib.h>
 
 #include <emscripten.h>
+#include <emscripten/html5.h>
+#include <emscripten/html5_webgl.h>
+#include <emscripten/threading.h>
+
+#include <GLES3/gl3.h>
 
 #include <config.h>
 #include <m_pd.h>
@@ -41,7 +46,7 @@ enum LuaGuiCommands {
     STROKE_ROUNDED_RECT,
     DRAW_LINE,
     DRAW_TEXT,
-    DRAW_SVG, // TODO: implement this
+    // DRAW_SVG, // TODO: implement this
     STROKE_PATH,
     FILL_PATH,
     FILL_ALL,
@@ -51,9 +56,9 @@ enum LuaGuiCommands {
 typedef struct {
     enum LuaGuiCommands command;
     int drawed;
-    const char current_color[64];
-    const char layer_id[64];
-    const char *svg_text;
+    char current_color[128];
+    char layer_id[128];
+    // char *svg_text;
     float x;
     float y;
     float scale;
@@ -67,451 +72,868 @@ typedef struct {
     float y1;
     float x2;
     float y2;
-    const char *text; // TODO: Fix this
+    char *text; // TODO: Fix this
     float font_height;
     float stroke_width;
 
+    float canvas_width;
+    float canvas_height;
+
     float *path_coords;
     int path_size;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
+    GLuint Shader;
 } GuiValues;
 
+#define PDLUA_MAX_COMMANDS 128
+static GuiValues commandQueue[PDLUA_MAX_COMMANDS];
+static int queueStart = 0;
+static int queueEnd = 0;
+
+// ╭─────────────────────────────────────╮
+// │               SHADERS               │
+// ╰─────────────────────────────────────╯
 typedef struct {
-    int size;
-    int i;
-    GuiValues *values;
-} Pd4WebLuaGuiQueue;
+    bool compiled;
+    GLuint fill_rect;
+} ShadersProgram;
 
-static Pd4WebLuaGuiQueue *LuaGuiQueue = NULL;
+ShadersProgram Pd4WebShaders;
 
+// ──────────────────────────────────────────
+GLuint compile_shader(GLenum type, const char *src) {
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, NULL);
+    glCompileShader(shader);
+    return shader;
+}
+
+// ──────────────────────────────────────────
+static GLuint shader_compile(const char *vertex_src, const char *fragment_src) {
+    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_src);
+    GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vertex_shader);
+    glAttachShader(program, fragment_shader);
+    glLinkProgram(program);
+
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        emscripten_log(EM_LOG_ERROR, "Program linking failed: %s", infoLog);
+    }
+
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+
+    return program;
+}
+
+// ──────────────────────────────────────────
+static void compile_all_shaders() {
+    const char *vertex_src = "#version 300 es\n"
+                             "layout(location = 0) in vec2 aPos;\n"
+                             "void main() {\n"
+                             "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
+                             "}\n";
+
+    const char *fragment_src = "#version 300 es\n"
+                               "precision mediump float;\n"
+                               "uniform vec3 uColor;\n"
+                               "out vec4 FragColor;\n"
+                               "void main() {\n"
+                               "    FragColor = vec4(uColor, 1.0);\n"
+                               "}\n";
+
+    Pd4WebShaders.fill_rect = shader_compile(vertex_src, fragment_src);
+}
 // ╭─────────────────────────────────────╮
 // │  This will be called from the main  │
 // │   thread inside pd4web main loop    │
 // ╰─────────────────────────────────────╯
-int pd4weblua_draw() {
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE create_webgl_context_for_layer(char *tag) {
+    EmscriptenWebGLContextAttributes attr;
+    emscripten_webgl_init_context_attributes(&attr);
+    attr.alpha = true;
+    attr.depth = false;
+    attr.stencil = false;
+    attr.antialias = true;
+    attr.premultipliedAlpha = false;
+    attr.preserveDrawingBuffer = false;
+    attr.failIfMajorPerformanceCaveat = false;
 
-    for (int i = 0; i < LuaGuiQueue->size; i++) {
-        int command = LuaGuiQueue->values[i].command;
-        GuiValues v = LuaGuiQueue->values[i];
-        if (v.drawed) {
-            continue;
-        }
+    attr.majorVersion = 2;
+    attr.minorVersion = 0;
 
-        switch (command) {
-        case CLEAR_CANVAS:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var layer_id = UTF8ToString($0);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("fill_ellipse: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.clearRect(0, 0, item.width, item.height);
-                },
-                v.layer_id);
+    attr.enableExtensionsByDefault = false;
+    attr.explicitSwapControl = false;
+    attr.renderViaOffscreenBackBuffer = false;
 
-        case FILL_ELLIPSE:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                // clang-format off
-                {
-                    var layer_id = UTF8ToString($0);
-                    var color = UTF8ToString($1);
-                    let x = $2;
-                    let y = $3;
-                    let w = $4;
-                    let h = $5;
+    char selector[128];
+    snprintf(selector, 128, "#%s", tag);
 
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("fill_ellipse: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-
-                    let centerX = x + w / 2;
-                    let centerY = y + h / 2;
-
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.ellipse(centerX, centerY, w / 2, h / 2, 0, 0, 2 * Math.PI);
-                    ctx.fill();
-                },
-                // clang-format on
-                v.layer_id, v.current_color, v.x, v.y, v.w, v.h);
-            break;
-        case STROKE_ELLIPSE:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var layer_id = UTF8ToString($0);
-                    var color = UTF8ToString($1);
-                    let x = $2;
-                    let y = $3;
-                    let w = $4;
-                    let h = $5;
-                    let line_width = $6;
-
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("stroke_ellipse: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-
-                    let centerX = x + w / 2;
-                    let centerY = y + h / 2;
-
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = line_width;
-                    ctx.beginPath();
-                    ctx.ellipse(centerX, centerY, w / 2, h / 2, 0, 0, 2 * Math.PI);
-                    ctx.stroke();
-                },
-                v.layer_id, v.current_color, v.x, v.y, v.w, v.h, v.line_width);
-            break;
-        case FILL_RECT:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("fill_rect: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.fillStyle = color;
-                    ctx.fillRect($2, $3, $4, $5);
-                },
-                v.current_color, v.layer_id, v.x, v.y, v.w, v.h);
-            break;
-        case STROKE_RECT:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("stroke_rect: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = $6;
-                    ctx.strokeRect($2, $3, $4, $5);
-                    ctx.lineJoin = "bevel";
-                },
-                v.current_color, v.layer_id, v.x, v.y, v.w, v.h, v.line_width);
-            break;
-        case FILL_ROUNDED_RECT:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("fill_rounded_rect: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.fillStyle = color;
-                    // Create rounded rectangle path
-                    ctx.beginPath();
-                    ctx.moveTo($2 + $6, $3);
-                    ctx.lineTo($2 + $4 - $6, $3);
-                    ctx.arcTo($2 + $4, $3, $2 + $4, $3 + $6, $6);
-                    ctx.lineTo($2 + $4, $3 + $5 - $6);
-                    ctx.arcTo($2 + $4, $3 + $5, $2 + $4 - $6, $3 + $5, $6);
-                    ctx.lineTo($2 + $6, $3 + $5);
-                    ctx.arcTo($2, $3 + $5, $2, $3 + $5 - $6, $6);
-                    ctx.lineTo($2, $3 + $6);
-                    ctx.arcTo($2, $3, $2 + $6, $3, $6);
-                    ctx.closePath();
-                    ctx.fill();
-                },
-                v.current_color, v.layer_id, v.x, v.y, v.w, v.h, v.radius);
-            break;
-        case STROKE_ROUNDED_RECT:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("stroke_rounded_rect: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.strokeStyle = color;
-                    // Create rounded rectangle path
-                    ctx.beginPath();
-                    ctx.moveTo($2 + $6, $3);
-                    ctx.lineTo($2 + $4 - $6, $3);
-                    ctx.arcTo($2 + $4, $3, $2 + $4, $3 + $6, $6);
-                    ctx.lineTo($2 + $4, $3 + $5 - $6);
-                    ctx.arcTo($2 + $4, $3 + $5, $2 + $4 - $6, $3 + $5, $6);
-                    ctx.lineTo($2 + $6, $3 + $5);
-                    ctx.arcTo($2, $3 + $5, $2, $3 + $5 - $6, $6);
-                    ctx.lineTo($2, $3 + $6);
-                    ctx.arcTo($2, $3, $2 + $6, $3, $6);
-                    ctx.closePath();
-                    ctx.stroke();
-                },
-                v.current_color, v.layer_id, v.x, v.y, v.w, v.h, v.radius);
-            break;
-        case DRAW_LINE:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("draw_line: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.strokeStyle = color;
-                    ctx.lineWidth = $6;
-                    ctx.lineJoin = "bevel";
-
-                    // Start drawing the line
-                    ctx.beginPath();
-                    ctx.moveTo($2, $3);
-                    ctx.lineTo($4, $5);
-                    ctx.stroke();
-                },
-                v.current_color, v.layer_id, v.x1, v.y1, v.x2, v.y2, v.line_width);
-            break;
-        case DRAW_TEXT:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    // clang-format off
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var text = UTF8ToString($2);
-                    var x = $3;
-                    var y = $4;
-                    var maxWidth = $5;
-                    var fontSize = $6;
-
-                    var item = document.getElementById(layer_id);
-                    if (!item) {
-                        console.log("draw_text: canvas not found");
-                        return;
-                    }
-
-                    const ctx = item.getContext('2d');
-                    ctx.fillStyle = color;
-                    ctx.font = fontSize + "px Arial";
-                    ctx.textAlign = "left";
-                    ctx.textBaseline = "top";
-
-                    // Pure Data-style text wrapping algorithm
-                    function pdTextWrap(context, text, x, y, maxWidth) {
-                        var lines = [];
-                        var currentLine = [];
-                        var words = text.split(' ');
-                        var lineHeight = fontSize * 1.2;
-                        var currentY = y;
-
-                        words.forEach(word => {
-                            var testLine = currentLine.concat(word).join(' ');
-                            var metrics = context.measureText(testLine);
-
-                            if (metrics.width <= maxWidth) {
-                                currentLine.push(word);
-                            } else {
-                                // Try word splitting if line is empty
-                                if (currentLine.length === 0) {
-                                    var splitPoint = 0;
-                                    for (var i = 1; i <= word.length; i++) {
-                                        if (context.measureText(word.substr(0, i)).width <=
-                                            maxWidth) {
-                                            splitPoint = i;
-                                        }
-                                    }
-                                    if (splitPoint > 0) {
-                                        currentLine.push(word.substr(0, splitPoint));
-                                        words.unshift(word.substr(splitPoint));
-                                    }
-                                }
-
-                                lines.push(currentLine.join(' '));
-                                currentLine = [word];
-                            }
-                        });
-
-                        lines.push(currentLine.join(' '));
-                        lines.forEach(line => {
-                            context.fillText(line, x, currentY);
-                            currentY += lineHeight;
-                        });
-                    }
-                    if (maxWidth > 0) {
-                        pdTextWrap(ctx, text, x, y, maxWidth);
-                    } else {
-                        ctx.fillText(text, x, y);
-                    }
-                    // clang-format on
-                },
-                v.current_color, v.layer_id, v.text, v.x, v.y, v.w, v.font_height);
-            break;
-        case DRAW_SVG:
-            // Código para desenhar SVG (ainda a ser implementado)
-            break;
-        case STROKE_PATH:
-            for (int i = 0; i < v.path_size; i++) {
-                int x = v.path_coords[i * 2];
-                int y = v.path_coords[i * 2 + 1];
-                if (i == 0) {
-                    EM_ASM(
-                        {
-                            var layer_id = UTF8ToString($0);
-                            var x = $1;
-                            var y = $2;
-                            var item = document.getElementById(layer_id);
-                            if (item == null) {
-                                console.log("stroke_path: item not found");
-                                return;
-                            }
-                            const ctx = item.getContext('2d');
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
-                        },
-                        v.layer_id, x, y);
-                } else {
-                    EM_ASM(
-                        {
-                            var layer_id = UTF8ToString($0);
-                            var x = $1;
-                            var y = $2;
-                            var item = document.getElementById(layer_id);
-                            if (item == null) {
-                                console.log("stroke_path: item not found");
-                                return;
-                            }
-                            const ctx = item.getContext('2d');
-                            ctx.lineTo(x, y); // Draw line to next point
-                        },
-                        v.layer_id, x, y);
-                }
-            }
-            EM_ASM(
-                {
-                    var layer_id = UTF8ToString($0);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("stroke_path: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.strokeStyle = UTF8ToString($1);
-                    ctx.lineWidth = $2;
-                    ctx.stroke();
-                    ctx.closePath();
-                },
-                v.layer_id, v.current_color, v.stroke_width);
-            // freebytes(v.path_coords, v.path_size * sizeof(float));
-            break;
-        case FILL_PATH:
-            for (int i = 0; i < v.path_size; i++) {
-                int x = v.path_coords[i * 2];
-                int y = v.path_coords[i * 2 + 1];
-                if (i == 0) {
-                    EM_ASM(
-                        {
-                            var layer_id = UTF8ToString($0);
-                            var x = $1;
-                            var y = $2;
-                            var item = document.getElementById(layer_id);
-                            if (item == null) {
-                                console.log("stroke_path: item not found");
-                                return;
-                            }
-                            const ctx = item.getContext('2d');
-                            ctx.beginPath();
-                            ctx.moveTo(x, y);
-                        },
-                        v.layer_id, x, y);
-                } else {
-                    EM_ASM(
-                        {
-                            var layer_id = UTF8ToString($0);
-                            var x = $1;
-                            var y = $2;
-                            var item = document.getElementById(layer_id);
-                            if (item == null) {
-                                console.log("stroke_path: item not found");
-                                return;
-                            }
-                            const ctx = item.getContext('2d');
-                            ctx.lineTo(x, y); // Draw line to next point
-                        },
-                        v.layer_id, x, y);
-                }
-            }
-            EM_ASM(
-                {
-                    var layer_id = UTF8ToString($0);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("stroke_path: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.fillStyle = UTF8ToString($1);
-                    ctx.fill();
-                    ctx.closePath();
-                },
-                v.layer_id, v.current_color);
-            // freebytes(v.path_coords, v.path_size * sizeof(float));
-            break;
-        case FILL_ALL:
-            MAIN_THREAD_ASYNC_EM_ASM(
-                {
-                    var color = UTF8ToString($0);
-                    var layer_id = UTF8ToString($1);
-                    var item = document.getElementById(layer_id);
-                    if (item == null) {
-                        console.log("fill_all: item not found");
-                        return;
-                    }
-                    const ctx = item.getContext('2d');
-                    ctx.fillStyle = color;
-                    ctx.fillRect(1, 1, item.width - 2, item.height - 2);
-                },
-                v.current_color, v.layer_id);
-            break;
-        default:
-            // Código para comando desconhecido
-            break;
-        }
-        LuaGuiQueue->values[i].drawed = 1;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context(selector, &attr);
+    if (ctx <= 0) {
+        printf("Failed to create WebGL context for canvas: %s (error: %l)\n", selector, ctx);
+        return 0;
     }
-    return 0;
+
+    if (emscripten_webgl_make_context_current(ctx) != EMSCRIPTEN_RESULT_SUCCESS) {
+        emscripten_webgl_destroy_context(ctx);
+        return 0;
+    }
+
+    return ctx;
 }
 
 // ─────────────────────────────────────
-static int pd4web_get_next_free_spot() {
-    int old_size = LuaGuiQueue->size;
-    for (int i = LuaGuiQueue->i; i < LuaGuiQueue->size; i++) {
-        if (LuaGuiQueue->values[i].drawed) {
-            LuaGuiQueue->values[i].drawed = 0;
-            LuaGuiQueue->i = (i + 1) % LuaGuiQueue->size;
-            return i;
-        }
-    }
-
-    int new_size = LuaGuiQueue->size * 2;
-    GuiValues *new_values = (GuiValues *)realloc(LuaGuiQueue->values, sizeof(GuiValues) * new_size);
-    if (new_values == NULL) {
-        MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
+int enqueue_command(GuiValues *cmd) {
+    int next = (queueEnd + 1) % PDLUA_MAX_COMMANDS;
+    if (next == queueStart) {
         return 0;
     }
-    LuaGuiQueue->values = new_values;
-    LuaGuiQueue->size = new_size;
-    printf("bad Found free spot at %d\n", old_size + 1);
-    return old_size + 1;
+    commandQueue[queueEnd] = *cmd;
+    queueEnd = next;
+    return 1; // sucesso
+}
+
+// ─────────────────────────────────────
+int dequeue_command(GuiValues *out) {
+    if (queueStart == queueEnd) {
+        return 0;
+    }
+    *out = commandQueue[queueStart];
+    queueStart = (queueStart + 1) % PDLUA_MAX_COMMANDS;
+    return 1;
+}
+
+// ─────────────────────────────────────
+static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b) {
+    if (hex[0] == '#') {
+        hex++;
+    }
+
+    char rs[3] = {hex[0], hex[1], '\0'};
+    char gs[3] = {hex[2], hex[3], '\0'};
+    char bs[3] = {hex[4], hex[5], '\0'};
+
+    int ri = (int)strtol(rs, NULL, 16);
+    int gi = (int)strtol(gs, NULL, 16);
+    int bi = (int)strtol(bs, NULL, 16);
+
+    *r = ri / 255.0f;
+    *g = gi / 255.0f;
+    *b = bi / 255.0f;
+}
+
+// ─────────────────────────────────────
+void add_quad(float *vertices, int *offset, float x0, float y0, float x1, float y1, float x2,
+              float y2, float x3, float y3) {
+    // First triangle
+    vertices[(*offset)++] = x0;
+    vertices[(*offset)++] = y0;
+    vertices[(*offset)++] = x1;
+    vertices[(*offset)++] = y1;
+    vertices[(*offset)++] = x2;
+    vertices[(*offset)++] = y2;
+    // Second triangle
+    vertices[(*offset)++] = x0;
+    vertices[(*offset)++] = y0;
+    vertices[(*offset)++] = x2;
+    vertices[(*offset)++] = y2;
+    vertices[(*offset)++] = x3;
+    vertices[(*offset)++] = y3;
+}
+
+// ─────────────────────────────────────
+void add_arc_strip(float *vertices, int *offset, float cx, float cy, float inner_radius,
+                   float outer_radius, float start_angle, float end_angle, int num_segments) {
+    float da = (end_angle - start_angle) / num_segments;
+    for (int i = 0; i < num_segments; ++i) {
+        float a0 = start_angle + i * da;
+        float a1 = start_angle + (i + 1) * da;
+        // Outer arc
+        float x0 = cx + cosf(a0) * outer_radius;
+        float y0 = cy + sinf(a0) * outer_radius;
+        float x1 = cx + cosf(a1) * outer_radius;
+        float y1 = cy + sinf(a1) * outer_radius;
+        // Inner arc
+        float ix0 = cx + cosf(a0) * inner_radius;
+        float iy0 = cy + sinf(a0) * inner_radius;
+        float ix1 = cx + cosf(a1) * inner_radius;
+        float iy1 = cy + sinf(a1) * inner_radius;
+
+        // First triangle
+        vertices[(*offset)++] = x0;
+        vertices[(*offset)++] = y0;
+        vertices[(*offset)++] = x1;
+        vertices[(*offset)++] = y1;
+        vertices[(*offset)++] = ix1;
+        vertices[(*offset)++] = iy1;
+        // Second triangle
+        vertices[(*offset)++] = x0;
+        vertices[(*offset)++] = y0;
+        vertices[(*offset)++] = ix1;
+        vertices[(*offset)++] = iy1;
+        vertices[(*offset)++] = ix0;
+        vertices[(*offset)++] = iy0;
+    }
+}
+
+#define NUM_ARC_SEGMENTS 12
+
+// ─────────────────────────────────────
+int pd4weblua_draw() {
+    GuiValues cmd;
+    while (dequeue_command(&cmd)) {
+        switch (cmd.command) {
+        case FILL_ALL: {
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                glClearColor(r, g, b, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT);
+            }
+            break;
+        }
+        case FILL_RECT: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                // 1. Configurar shaders (apenas na primeira execução)
+                GLuint program = 0;
+                GLuint vertex_buffer = 0;
+
+                // Vertex Shader
+                const char *vertex_shader_src = "attribute vec2 a_position;"
+                                                "void main() {"
+                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
+                                                "}";
+
+                // Fragment Shader
+                const char *fragment_shader_src = "precision mediump float;"
+                                                  "uniform vec4 u_color;"
+                                                  "void main() {"
+                                                  "   gl_FragColor = u_color;"
+                                                  "}";
+
+                // Compilar shaders
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                // Linkar programa
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+                glUseProgram(program);
+
+                // Criar buffer
+                glGenBuffers(1, &vertex_buffer);
+
+                // 2. Calcular coordenadas normalizadas (-1 a 1)
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+
+                float x0 = 2.0f * (x / canvas_width) - 1.0f;
+                float x1 = 2.0f * ((x + width) / canvas_width) - 1.0f;
+                float y0 = 1.0f - 2.0f * ((y + height) / canvas_height); // Top
+                float y1 = 1.0f - 2.0f * (y / canvas_height);            // Bottom
+
+                // 3. Definir vértices do retângulo (dois triângulos)
+                float vertices[] = {x0, y0,                 // Triângulo 1
+                                    x1, y0, x0, y1, x0, y1, // Triângulo 2
+                                    x1, y0, x1, y1};
+
+                // 4. Passar vértices para o buffer
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                // 5. Configurar atributo de vértice
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                // 6. Passar cor uniforme
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                glUniform4f(u_color, r, g, b, 1.0f);
+
+                // 7. Desenhar
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                break;
+            }
+        }
+        case STROKE_RECT: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float thickness = cmd.line_width; // New: desired stroke width
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                GLuint program;
+                GLuint vertex_buffer;
+
+                const char *vertex_shader_src = "attribute vec2 a_position;"
+                                                "void main() {"
+                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
+                                                "}";
+
+                const char *fragment_shader_src = "precision mediump float;"
+                                                  "uniform vec4 u_color;"
+                                                  "void main() {"
+                                                  "   gl_FragColor = u_color;"
+                                                  "}";
+
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+                glUseProgram(program);
+
+                glGenBuffers(1, &vertex_buffer);
+
+                glDisable(GL_BLEND);
+
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+
+                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
+                           canvas_height * PD4WEB_PATCH_ZOOM);
+
+                // Convert rectangle corners to NDC
+                float x0 = 2.0f * (x / canvas_width) - 1.0f;
+                float x1 = 2.0f * ((x + width) / canvas_width) - 1.0f;
+                float y0 = 1.0f - 2.0f * ((y + height) / canvas_height);
+                float y1 = 1.0f - 2.0f * (y / canvas_height);
+
+                // Thickness in NDC
+                float t_x = 2.0f * (thickness / canvas_width);
+                float t_y = 2.0f * (thickness / canvas_height);
+
+                // Vertex array for four quads (4 edges, 6 vertices per quad, 2 coords per vert)
+                float vertices[4 * 6 * 2];
+                int offset = 0;
+
+                // Top edge
+                add_quad(vertices, &offset, x0, y1, x1, y1, x1, y1 - t_y, x0, y1 - t_y);
+
+                // Bottom edge
+                add_quad(vertices, &offset, x0, y0 + t_y, x1, y0 + t_y, x1, y0, x0, y0);
+
+                // Left edge
+                add_quad(vertices, &offset, x0, y1 - t_y, x0 + t_x, y1 - t_y, x0 + t_x, y0 + t_y,
+                         x0, y0 + t_y);
+
+                // Right edge
+                add_quad(vertices, &offset, x1 - t_x, y1 - t_y, x1, y1 - t_y, x1, y0 + t_y,
+                         x1 - t_x, y0 + t_y);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                glUniform4f(u_color, r, g, b, 1.0f);
+
+                glDrawArrays(GL_TRIANGLES, 0, 4 * 6);
+
+                glDeleteProgram(program);
+                glDeleteShader(vs);
+                glDeleteShader(fs);
+                glDeleteBuffers(1, &vertex_buffer);
+            }
+            break;
+        }
+        case FILL_ELLIPSE: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                // Recompilar shaders sempre
+                GLuint program;
+                GLuint vertex_buffer;
+
+                // Vertex Shader
+                const char *vertex_shader_src = "attribute vec2 a_position;"
+                                                "void main() {"
+                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
+                                                "}";
+
+                // Fragment Shader
+                const char *fragment_shader_src = "precision mediump float;"
+                                                  "uniform vec4 u_color;"
+                                                  "void main() {"
+                                                  "   gl_FragColor = u_color;"
+                                                  "}";
+
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+                glUseProgram(program);
+
+                glGenBuffers(1, &vertex_buffer);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                double dpr = emscripten_get_device_pixel_ratio();
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
+                           canvas_height * PD4WEB_PATCH_ZOOM);
+
+                float cx = x + width / 2.0f;
+                float cy = y + height / 2.0f;
+                float rx = width / 2.0f;
+                float ry = height / 2.0f;
+
+                const int num_segments = 128;
+                float vertices[(num_segments + 2) * 2]; // center + segments + wrap
+
+                float norm_cx = 2.0f * (cx / canvas_width) - 1.0f;
+                float norm_cy = 1.0f - 2.0f * (cy / canvas_height);
+                vertices[0] = norm_cx;
+                vertices[1] = norm_cy;
+
+                for (int i = 0; i <= num_segments; ++i) {
+                    float angle = (2.0f * M_PI * i) / num_segments;
+                    float dx = rx * cosf(angle);
+                    float dy = ry * sinf(angle);
+
+                    float vx = 2.0f * ((cx + dx) / canvas_width) - 1.0f;
+                    float vy = 1.0f - 2.0f * ((cy + dy) / canvas_height);
+
+                    vertices[(i + 1) * 2 + 0] = vx;
+                    vertices[(i + 1) * 2 + 1] = vy;
+                }
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                glUniform4f(u_color, r, g, b, 1.0f);
+
+                glDrawArrays(GL_TRIANGLE_FAN, 0, num_segments + 2);
+
+                // Limpeza (opcional, mas recomendável nesse modo)
+                glDeleteProgram(program);
+                glDeleteShader(vs);
+                glDeleteShader(fs);
+                glDeleteBuffers(1, &vertex_buffer);
+            }
+            break;
+        }
+        case STROKE_ELLIPSE: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float line_width = cmd.line_width;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                GLuint program;
+                GLuint vertex_buffer;
+
+                // Vertex Shader
+                const char *vertex_shader_src = "attribute vec2 a_position;"
+                                                "void main() {"
+                                                "  gl_Position = vec4(a_position, 0.0, 1.0);"
+                                                "}";
+
+                // Fragment Shader
+                const char *fragment_shader_src = "precision mediump float;"
+                                                  "uniform vec4 u_color;"
+                                                  "void main() {"
+                                                  "  gl_FragColor = u_color;"
+                                                  "}";
+
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+                glUseProgram(program);
+
+                glGenBuffers(1, &vertex_buffer);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                double dpr = emscripten_get_device_pixel_ratio();
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
+                           canvas_height * PD4WEB_PATCH_ZOOM);
+
+                float cx = x + width / 2.0f;
+                float cy = y + height / 2.0f;
+                float rx_outer = width / 2.0f;
+                float ry_outer = height / 2.0f;
+                float rx_inner = rx_outer - line_width;
+                float ry_inner = ry_outer - line_width;
+
+                if (rx_inner < 0)
+                    rx_inner = 0;
+                if (ry_inner < 0)
+                    ry_inner = 0;
+
+                const int num_segments = 128;
+                // Cada segmento gera dois vértices: externo e interno (strip)
+                float vertices[(num_segments + 1) * 4]; // (num_segments+1)*2 pontos * 2 coords
+
+                for (int i = 0; i <= num_segments; ++i) {
+                    float angle = (2.0f * M_PI * i) / num_segments;
+                    float cos_a = cosf(angle);
+                    float sin_a = sinf(angle);
+
+                    // Outer vertex
+                    float vx_outer = 2.0f * ((cx + rx_outer * cos_a) / canvas_width) - 1.0f;
+                    float vy_outer = 1.0f - 2.0f * ((cy + ry_outer * sin_a) / canvas_height);
+
+                    // Inner vertex
+                    float vx_inner = 2.0f * ((cx + rx_inner * cos_a) / canvas_width) - 1.0f;
+                    float vy_inner = 1.0f - 2.0f * ((cy + ry_inner * sin_a) / canvas_height);
+
+                    vertices[i * 4 + 0] = vx_outer;
+                    vertices[i * 4 + 1] = vy_outer;
+                    vertices[i * 4 + 2] = vx_inner;
+                    vertices[i * 4 + 3] = vy_inner;
+                }
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                glUniform4f(u_color, r, g, b, 1.0f);
+
+                // Usar TRIANGLE_STRIP para conectar os pares de vértices interno e externo
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, (num_segments + 1) * 2);
+
+                glDeleteProgram(program);
+                glDeleteShader(vs);
+                glDeleteShader(fs);
+                glDeleteBuffers(1, &vertex_buffer);
+            }
+            break;
+        }
+
+        case STROKE_ROUNDED_RECT: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float radius = cmd.radius;
+            float line_width = cmd.line_width;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                GLuint program;
+                GLuint vertex_buffer;
+
+                // Vertex shader
+                const char *vertex_shader_src = "attribute vec2 a_position;\n"
+                                                "varying vec2 v_pos;\n"
+                                                "void main() {\n"
+                                                "  v_pos = a_position;\n"
+                                                "  gl_Position = vec4(a_position, 0.0, 1.0);\n"
+                                                "}";
+
+                // Fragment shader
+                const char *fragment_shader_src =
+                    "precision mediump float;\n"
+                    "uniform vec4 u_color;\n"
+                    "uniform vec4 u_rect;\n"
+                    "uniform float u_radius;\n"
+                    "uniform float u_line_width;\n"
+                    "varying vec2 v_pos;\n"
+                    "\n"
+                    "float udRoundBox(vec2 p, vec2 b, float r) {\n"
+                    "  return length(max(abs(p) - b, 0.0)) - r;\n"
+                    "}\n"
+                    "\n"
+                    "float opS(float d1, float d2) {\n"
+                    "  return max(-d1, d2);\n"
+                    "}\n"
+                    "\n"
+                    "float udRoundBoxBorder(vec2 p, vec2 b, float r, float line_width) {\n"
+                    "  return opS(udRoundBox(p, b - vec2(line_width), r - line_width), \n"
+                    "             udRoundBox(p, b, r));\n"
+                    "}\n"
+                    "\n"
+                    "void main() {\n"
+                    "  vec2 uv = v_pos * 0.5 + 0.5;\n"
+                    "  vec2 center = u_rect.xy + u_rect.zw * 0.5;\n"
+                    "  vec2 p = uv - center;\n"
+                    "  vec2 half_size = u_rect.zw * 0.5;\n"
+                    "\n"
+                    "  float dist = udRoundBoxBorder(p, half_size, u_radius, u_line_width);\n"
+                    "  if (dist > 0.0) discard;\n"
+                    "\n"
+                    "  gl_FragColor = u_color;\n"
+                    "}";
+
+                // Compile vertex shader
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLint compiled;
+                glGetShaderiv(vs, GL_COMPILE_STATUS, &compiled);
+                if (!compiled) {
+                    char info[512];
+                    glGetShaderInfoLog(vs, 512, NULL, info);
+                    printf("Vertex shader compile error: %s\n", info);
+                    glDeleteShader(vs);
+                    break;
+                }
+
+                // Compile fragment shader
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                glGetShaderiv(fs, GL_COMPILE_STATUS, &compiled);
+                if (!compiled) {
+                    char info[512];
+                    glGetShaderInfoLog(fs, 512, NULL, info);
+                    printf("Fragment shader compile error: %s\n", info);
+                    glDeleteShader(fs);
+                    glDeleteShader(vs);
+                    break;
+                }
+
+                // Create program and attach shaders
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+
+                GLint linked;
+                glGetProgramiv(program, GL_LINK_STATUS, &linked);
+                if (!linked) {
+                    char info[512];
+                    glGetProgramInfoLog(program, 512, NULL, info);
+                    printf("Program link error: %s\n", info);
+                    glDeleteProgram(program);
+                    glDeleteShader(vs);
+                    glDeleteShader(fs);
+                    break;
+                }
+
+                glUseProgram(program);
+                glGenBuffers(1, &vertex_buffer);
+
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
+                           canvas_height * PD4WEB_PATCH_ZOOM);
+
+                // Full screen quad
+                float vertices[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                if (a_position == -1) {
+                    printf("Error: attribute 'a_position' not found.\n");
+                    glDeleteProgram(program);
+                    glDeleteShader(vs);
+                    glDeleteShader(fs);
+                    glDeleteBuffers(1, &vertex_buffer);
+                    break;
+                }
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                GLuint u_rect = glGetUniformLocation(program, "u_rect");
+                GLuint u_radius = glGetUniformLocation(program, "u_radius");
+                GLuint u_line_width = glGetUniformLocation(program, "u_line_width");
+
+                glUniform4f(u_color, r, g, b, 1.0f);
+                glUniform4f(u_rect, x / canvas_width, y / canvas_height, width / canvas_width,
+                            height / canvas_height);
+                glUniform1f(u_radius, radius);
+                glUniform1f(u_line_width, line_width / fmin(canvas_width, canvas_height));
+
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                // Cleanup
+                glDeleteProgram(program);
+                glDeleteShader(vs);
+                glDeleteShader(fs);
+                glDeleteBuffers(1, &vertex_buffer);
+            }
+            break;
+        }
+        case DRAW_LINE: {
+            float x1 = cmd.x1;
+            float y1 = cmd.y1;
+            float x2 = cmd.x2;
+            float y2 = cmd.y2;
+            float line_width = cmd.line_width;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
+            if (ctx) {
+                GLuint program;
+                GLuint vertex_buffer;
+
+                const char *vertex_shader_src = "attribute vec2 a_position;"
+                                                "void main() {"
+                                                "  gl_Position = vec4(a_position, 0.0, 1.0);"
+                                                "}";
+
+                const char *fragment_shader_src = "precision mediump float;"
+                                                  "uniform vec4 u_color;"
+                                                  "void main() {"
+                                                  "  gl_FragColor = u_color;"
+                                                  "}";
+
+                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+                glShaderSource(vs, 1, &vertex_shader_src, NULL);
+                glCompileShader(vs);
+
+                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+                glShaderSource(fs, 1, &fragment_shader_src, NULL);
+                glCompileShader(fs);
+
+                program = glCreateProgram();
+                glAttachShader(program, vs);
+                glAttachShader(program, fs);
+                glLinkProgram(program);
+                glUseProgram(program);
+
+                glGenBuffers(1, &vertex_buffer);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+                float canvas_width = cmd.canvas_width;
+                float canvas_height = cmd.canvas_height;
+                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
+                           canvas_height * PD4WEB_PATCH_ZOOM);
+
+                // Calcula a direção perpendicular para a espessura da linha
+                float dx = x2 - x1;
+                float dy = y2 - y1;
+                float len = sqrtf(dx * dx + dy * dy);
+                if (len == 0)
+                    break; // linha degenerate
+
+                float nx = -dy / len;
+                float ny = dx / len;
+
+                float half_width = line_width / 2.0f;
+
+                // Quatro vértices do retângulo da linha
+                float verts[8];
+
+                // Ponto 1 - lado esquerdo
+                verts[0] = 2.0f * ((x1 + nx * half_width) / canvas_width) - 1.0f;
+                verts[1] = 1.0f - 2.0f * ((y1 + ny * half_width) / canvas_height);
+
+                // Ponto 1 - lado direito
+                verts[2] = 2.0f * ((x1 - nx * half_width) / canvas_width) - 1.0f;
+                verts[3] = 1.0f - 2.0f * ((y1 - ny * half_width) / canvas_height);
+
+                // Ponto 2 - lado esquerdo
+                verts[4] = 2.0f * ((x2 + nx * half_width) / canvas_width) - 1.0f;
+                verts[5] = 1.0f - 2.0f * ((y2 + ny * half_width) / canvas_height);
+
+                // Ponto 2 - lado direito
+                verts[6] = 2.0f * ((x2 - nx * half_width) / canvas_width) - 1.0f;
+                verts[7] = 1.0f - 2.0f * ((y2 - ny * half_width) / canvas_height);
+
+                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
+                glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+
+                GLuint a_position = glGetAttribLocation(program, "a_position");
+                glEnableVertexAttribArray(a_position);
+                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+                GLuint u_color = glGetUniformLocation(program, "u_color");
+                glUniform4f(u_color, r, g, b, 1.0f);
+
+                // Desenha retângulo da linha com TRIANGLE_STRIP
+                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+                glDeleteProgram(program);
+                glDeleteShader(vs);
+                glDeleteShader(fs);
+                glDeleteBuffers(1, &vertex_buffer);
+            }
+            break;
+        }
+        }
+    }
+    return 0;
 }
 
 // ╭─────────────────────────────────────╮
@@ -570,8 +992,9 @@ void pdlua_gfx_repaint(t_pdlua *o, int firsttime) {
     }
     lua_pop(__L(), 1); /* pop the global "pd" */
 
-    int x = text_xpix((t_object *)o, o->canvas);
-    int y = text_ypix((t_object *)o, o->canvas);
+    // int x = text_xpix((t_object *)o, o->canvas);
+    // int y = text_ypix((t_object *)o, o->canvas);
+
     o->gfx.first_draw = 0;
 }
 
@@ -665,6 +1088,9 @@ int pdlua_gfx_setup(lua_State *L) {
 
     luaL_newlib(L, gfx_lib);
     lua_setglobal(L, "_gfx_internal");
+
+    Pd4WebShaders.compiled = false;
+
     return 1;
 }
 
@@ -738,26 +1164,6 @@ static void gfx_displace(t_pdlua *x, t_glist *glist, int dx, int dy) {
 
 // ─────────────────────────────────────
 static int gfx_initialize(t_pdlua *obj) {
-    printf("mallocing memory\n");
-    if (LuaGuiQueue == NULL) {
-        LuaGuiQueue = (Pd4WebLuaGuiQueue *)malloc(sizeof(Pd4WebLuaGuiQueue));
-        if (LuaGuiQueue == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            return 0;
-        }
-        LuaGuiQueue->values = (GuiValues *)malloc(sizeof(GuiValues) * 1024);
-        if (LuaGuiQueue->values == NULL) {
-            MAIN_THREAD_ASYNC_EM_ASM({ alert("Failed to malloc memory"); });
-            free(LuaGuiQueue); // Liberar a memória previamente alocada
-            return 0;
-        }
-        LuaGuiQueue->size = 1024;
-        LuaGuiQueue->i = 0;
-        for (int i = 0; i < LuaGuiQueue->size; i++) {
-            LuaGuiQueue->values[i].drawed = 1;
-        }
-    }
-
     t_pdlua_gfx *gfx = &obj->gfx;
     snprintf(gfx->object_tag, 128, ".x%lx", (long)obj);
     gfx->object_tag[127] = '\0';
@@ -794,7 +1200,6 @@ static int start_paint(lua_State *L) {
         lua_pushnil(L);
         return 1;
     }
-    printf("start_paint\n");
 
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
     t_pdlua_gfx *gfx = &obj->gfx;
@@ -804,33 +1209,28 @@ static int start_paint(lua_State *L) {
         return 1;
     }
 
-    int layer = luaL_checknumber(L, 2) - 1;
+    int layer = luaL_checkinteger(L, 2) - 1;
+
     if (layer > gfx->num_layers) {
-        GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-        strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-        strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-        v->command = CLEAR_CANVAS;
-        v->drawed = 0;
         pdlua_gfx_repaint(obj, 0);
         lua_pushnil(L);
         return 1;
-    } else if (layer >= gfx->num_layers) {
-        int new_num_layers = layer + 1;
-        if (gfx->layer_tags) {
-            gfx->layer_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
-                                          sizeof(char *) * new_num_layers);
-        } else {
-            gfx->layer_tags = getbytes(sizeof(char *));
-        }
+    }
+    int new_num_layers = layer + 1;
+    if (gfx->layer_tags) {
+        gfx->layer_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
+                                      sizeof(char *) * new_num_layers);
+    } else {
+        gfx->layer_tags = getbytes(sizeof(char *));
+    }
 
+    if (gfx->first_draw) {
         gfx->layer_tags[layer] = getbytes(64);
-        snprintf(gfx->layer_tags[layer], 64, "%p_%d", obj, layer);
+        snprintf(gfx->layer_tags[layer], 64, "layer_%p_%d", obj, layer);
         gfx->num_layers = new_num_layers;
         int x = text_xpix((t_object *)obj, obj->canvas);
         int y = text_ypix((t_object *)obj, obj->canvas);
-
-        // Maybe this is better to live also on main thread
-        MAIN_THREAD_ASYNC_EM_ASM(
+        EM_ASM(
             {
                 let layer_id = UTF8ToString($0);
                 let x_pos = $1;
@@ -848,46 +1248,27 @@ static int start_paint(lua_State *L) {
                     item = document.getElementById(layer_id);
                 }
 
-                const containerX = container.getBoundingClientRect().left;
-                const containerY = container.getBoundingClientRect().top;
-
                 item.id = layer_id;
                 item.width = width * zoom;
                 item.height = height * zoom;
                 item.style.position = "absolute";
-                item.style.left = containerX + (x_pos * zoom) + "px";
-                item.style.top = containerY + (y_pos * zoom) + "px";
-
-                const ctx = item.getContext('2d');
-                ctx.strokeRect(0, 0, width * zoom, height * zoom);
+                item.style.border = "1px solid #000";
+                item.style.left = (x_pos * zoom) + "px";
+                item.style.top = (y_pos * zoom) + "px";
             },
             gfx->layer_tags[layer], x, y, gfx->width, gfx->height, PD4WEB_PATCH_ZOOM);
-    }
+        gfx->first_draw = 0;
 
+        if (!Pd4WebShaders.compiled) {
+            // printf("Compiling Pd4Web Shaders\n");
+            // create_webgl_context_for_layer(gfx->layer_tags[layer]);
+            // Pd4WebShaders.compiled = true;
+            // compile_all_shaders();
+        }
+    }
     gfx->current_layer_tag = gfx->layer_tags[layer];
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = CLEAR_CANVAS;
-    v->drawed = 0;
-
-    if (gfx->transforms) {
-        freebytes(gfx->transforms, gfx->num_transforms * sizeof(gfx_transform));
-    }
-    gfx->num_transforms = 0;
-    gfx->transforms = NULL;
-
     lua_pushlightuserdata(L, gfx);
     luaL_setmetatable(L, "GraphicsContext");
-
-    if (strlen(gfx->object_tag)) {
-        pdlua_gfx_clear(obj, layer, 0);
-    }
-
-    if (gfx->first_draw) {
-        int x = text_xpix((t_object *)obj, obj->canvas);
-        int y = text_ypix((t_object *)obj, obj->canvas);
-    }
     return 1;
 }
 
@@ -898,34 +1279,25 @@ static int end_paint(lua_State *L) {
     t_pdlua *obj = (t_pdlua *)gfx->object;
     t_canvas *cnv = glist_getcanvas(obj->canvas);
 
-    int scale = glist_getzoom(glist_getcanvas(obj->canvas));
-    int layer = luaL_checknumber(L, 1) - 1;
-
-    // Draw iolets on top
-    int xpos = text_xpix((t_object *)obj, obj->canvas);
-    int ypos = text_ypix((t_object *)obj, obj->canvas);
-
-    // TODO: I don't think we need to call drawiofor on each layer?
-    glist_drawiofor(obj->canvas, (t_object *)obj, 1, gfx->object_tag, xpos, ypos,
-                    xpos + (gfx->width * scale), ypos + (gfx->height * scale));
-
-    if (!gfx->first_draw && gfx->order_tag[0] != '\0') {
-
-        // Move everything to below the order marker, to make sure redrawn stuff isn't always on
-        // top
-        pdgui_vmess(0, "crss", cnv, "lower", gfx->object_tag, gfx->order_tag);
-
-        if (layer == 0 && gfx->num_layers > 1) {
-            if (layer < gfx->num_layers)
-                pdgui_vmess(0, "crss", cnv, "lower", gfx->current_layer_tag,
-                            gfx->layer_tags[layer + 1]);
-        } else if (layer != 0) {
-            pdgui_vmess(0, "crss", cnv, "raise", gfx->current_layer_tag,
-                        gfx->layer_tags[layer - 1]);
-        }
-    }
-
     return 0;
+}
+
+// ─────────────────────────────────────
+static void get_bounds_args(lua_State *L, t_pdlua *obj, int *x1, int *y1, int *x2, int *y2) {
+    t_canvas *cnv = glist_getcanvas(obj->canvas);
+
+    int x = luaL_checknumber(L, 1);
+    int y = luaL_checknumber(L, 2);
+    int w = luaL_checknumber(L, 3);
+    int h = luaL_checknumber(L, 4);
+
+    transform_point(&obj->gfx, &x, &y);
+    transform_size(&obj->gfx, &w, &h);
+
+    *x1 = x;
+    *y1 = y;
+    *x2 = w;
+    *y2 = h;
 }
 
 // ─────────────────────────────────────
@@ -959,80 +1331,110 @@ static int set_color(lua_State *L) {
 // ─────────────────────────────────────
 static int fill_ellipse(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = FILL_ELLIPSE;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
+    t_pdlua *obj = gfx->object;
+    GuiValues cmd = {0};
+    cmd.command = FILL_ELLIPSE;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
     return 0;
 }
 
 // ─────────────────────────────────────
 static int stroke_ellipse(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
+    GuiValues cmd = {0};
+    cmd.command = STROKE_ELLIPSE;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    cmd.line_width = luaL_checknumber(L, 5);
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = STROKE_ELLIPSE;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->line_width = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
     return 0;
 }
 
 // ─────────────────────────────────────
 static int fill_all(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    GuiValues cmd = {0};
+    cmd.command = FILL_ALL;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = FILL_ALL;
-    v->drawed = 0;
-
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
     return 0;
 }
 
 // ─────────────────────────────────────
 static int fill_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = FILL_RECT;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
+    GuiValues cmd = {0};
+    cmd.command = FILL_RECT;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
     return 0;
 }
 
 // ─────────────────────────────────────
 static int stroke_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = STROKE_RECT;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->line_width = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    GuiValues cmd = {0};
+    cmd.command = STROKE_RECT;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    cmd.line_width = luaL_checknumber(L, 5);
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
 
     return 0;
 }
@@ -1040,33 +1442,56 @@ static int stroke_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int fill_rounded_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = FILL_ROUNDED_RECT;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->radius = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    LuaGuiQueue->i += 1;
+    GuiValues cmd = {0};
+    cmd.command = FILL_ROUNDED_RECT;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    cmd.radius = luaL_checknumber(L, 5);
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
+
     return 0;
 }
+
 // ─────────────────────────────────────
 static int stroke_rounded_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = STROKE_ROUNDED_RECT;
-    v->x = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->h = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->radius = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
+    GuiValues cmd = {0};
+    cmd.command = STROKE_ROUNDED_RECT;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = width;
+    cmd.height = height;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    cmd.radius = luaL_checknumber(L, 5);
+    cmd.line_width = luaL_checknumber(L, 6);
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
+
+    return 0;
 
     return 0;
 }
@@ -1074,47 +1499,41 @@ static int stroke_rounded_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int draw_line(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = DRAW_LINE;
-    v->x1 = luaL_checknumber(L, 1) * PD4WEB_PATCH_ZOOM;
-    v->y1 = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->x2 = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->y2 = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->line_width = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
+    GuiValues cmd = {0};
+    cmd.command = DRAW_LINE;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    int x, y, width, height;
+    get_bounds_args(L, obj, &x, &y, &width, &height);
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.x2 = width;
+    cmd.y2 = height;
+    cmd.line_width = luaL_checknumber(L, 5);
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
+    return 0;
 
     return 0;
 }
 
 // ─────────────────────────────────────
-static int draw_text(lua_State *L) {
-    t_pdlua_gfx *gfx = pop_graphics_context(L);
-
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = DRAW_TEXT;
-    v->text = luaL_checkstring(L, 1); // TODO: Fix this
-    v->x = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    v->y = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-    v->w = luaL_checknumber(L, 4) * PD4WEB_PATCH_ZOOM;
-    v->font_height = luaL_checknumber(L, 5) * PD4WEB_PATCH_ZOOM;
-    v->drawed = 0;
-
-    return 0;
-}
-// clang-format on
+static int draw_text(lua_State *L) { return 0; }
 
 // ─────────────────────────────────────
 static uint64_t pdlua_image_hash(unsigned char *str) {
     uint64_t hash = 5381;
     int c;
 
-    while ((c = *str++))
+    while ((c = *str++)) {
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }
 
     return hash;
 }
@@ -1143,8 +1562,9 @@ static char *pdlua_base64_encode(const unsigned char *data, size_t input_length)
     size_t output_length = 4 * ((input_length + 2) / 3);
 
     char *encoded_data = malloc(output_length + 1);
-    if (encoded_data == NULL)
+    if (encoded_data == NULL) {
         return NULL;
+    }
 
     for (size_t i = 0, j = 0; i < input_length;) {
 
@@ -1160,117 +1580,19 @@ static char *pdlua_base64_encode(const unsigned char *data, size_t input_length)
         encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
     }
 
-    for (int i = 0; i < mod_table[input_length % 3]; i++)
+    for (int i = 0; i < mod_table[input_length % 3]; i++) {
         encoded_data[output_length - 1 - i] = '=';
+    }
 
     encoded_data[output_length] = '\0';
     return encoded_data;
 }
 
 // ─────────────────────────────────────
-static int draw_svg(lua_State *L) {
-    t_pdlua_gfx *gfx = pop_graphics_context(L);
-    t_pdlua *obj = gfx->object;
-    int canvas_zoom = PD4WEB_PATCH_ZOOM;
-
-    float scale_x = canvas_zoom, scale_y = canvas_zoom;
-    transform_size_float(gfx, &scale_x, &scale_y);
-    float scale = (scale_x + scale_y) * 0.5f;
-
-    char *svg_text = strdup(luaL_checkstring(L, 1));
-    int x = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    int y = luaL_checknumber(L, 3) * PD4WEB_PATCH_ZOOM;
-
-    MAIN_THREAD_ASYNC_EM_ASM(
-        {
-            var color = UTF8ToString($0);
-            var objpointer = UTF8ToString($1);
-            var svgText = UTF8ToString($2);
-            var x = $3;
-            var y = $4;
-            var scale = $5;
-
-            var canvas = document.getElementById(objpointer);
-            if (!canvas) {
-                console.error("draw_svg: Canvas not found");
-                return;
-            }
-
-            var ctx = canvas.getContext('2d');
-
-            // Create Blob from SVG text
-            var svgBlob = new Blob([svgText], {
-                type:
-                    'image/svg+xml;charset=utf-8'
-            });
-            var url = URL.createObjectURL(svgBlob);
-
-            var img = new Image();
-            img.onload = function() {
-                // Save context state
-                ctx.save();
-
-                // Apply Pd-style transformations
-                ctx.translate(x, y);
-                ctx.scale(scale, scale);
-
-                // Apply color tint (matches Pd's fill color behavior)
-                ctx.globalCompositeOperation = 'source-atop';
-                ctx.drawImage(img, 0, 0);
-
-                // Apply color overlay
-                ctx.fillStyle = color;
-                ctx.globalAlpha = 0.99; // Force composite
-                ctx.fillRect(0, 0, img.width, img.height);
-
-                ctx.restore();
-
-                // Cleanup
-                URL.revokeObjectURL(url);
-            };
-            img.onerror = function() {
-                console.error("Error loading SVG image");
-                URL.revokeObjectURL(url);
-            };
-            img.src = url;
-        },
-        gfx->current_color, gfx->current_layer_tag, svg_text, x, y, scale);
-
-    free(svg_text);
-    return 0;
-}
+static int draw_svg(lua_State *L) {}
 
 // ─────────────────────────────────────
-static int stroke_path(lua_State *L) {
-    // Retrieve graphics context
-    t_pdlua_gfx *gfx = pop_graphics_context(L);
-    t_pdlua *obj = gfx->object;
-    t_canvas *cnv = glist_getcanvas(obj->canvas);
-
-    // Get the path and check if it has enough segments
-    t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    if (path->num_path_segments < 3) {
-        return 0;
-    }
-    int stroke_width = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = STROKE_PATH;
-    // free after complete draw in main thread
-    v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
-    v->path_size = path->num_path_segments;
-    v->line_width = stroke_width;
-
-    for (int i = 0; i < path->num_path_segments; i++) {
-        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
-        transform_point_float(gfx, &x, &y);
-        v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
-        v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
-    }
-    v->drawed = 0;
-    return 0;
-}
+static int stroke_path(lua_State *L) {}
 
 // ─────────────────────────────────────
 static int fill_path(lua_State *L) {
@@ -1280,21 +1602,21 @@ static int fill_path(lua_State *L) {
         return 0;
     }
 
-    GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    v->command = FILL_PATH;
-    // free after complete draw in main thread
-    v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
-    v->path_size = path->num_path_segments;
-
-    for (int i = 0; i < path->num_path_segments; i++) {
-        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
-        transform_point_float(gfx, &x, &y);
-        v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
-        v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
-    }
-    v->drawed = 0;
+    // GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
+    // strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
+    // strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
+    // v->command = FILL_PATH;
+    // // free after complete draw in main thread
+    // v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
+    // v->path_size = path->num_path_segments;
+    //
+    // for (int i = 0; i < path->num_path_segments; i++) {
+    //     float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
+    //     transform_point_float(gfx, &x, &y);
+    //     v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
+    //     v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
+    // }
+    // v->drawed = 0;
 
     return 0;
 }
