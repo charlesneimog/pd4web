@@ -1331,6 +1331,7 @@ static void add_path_segment(t_path_state *path, float x, float y) {
     if (!path->num_path_segments_allocated) {
         path->path_segments = (float *)getbytes(new_size * sizeof(float));
     } else {
+        // BUG: Futex error (resize memory from the Audio Worklet)
         path->path_segments = (float *)resizebytes(path->path_segments, old_size * sizeof(float),
                                                    new_size * sizeof(float));
     }
