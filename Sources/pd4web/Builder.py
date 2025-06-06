@@ -60,15 +60,15 @@ class GetAndBuildExternals:
         self.CreateCppCallsExternalFile()
 
         if self.Pd4Web.PDLUA:
-            weblua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.h")
+            weblua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
             pdlua_c = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.c")
             with open(pdlua_c, "r") as file:
                 content = file.read()
-            updated_content = re.sub(r'#include "pdlua_gfx\.h"', '#include "pd4weblua_gfx.h"', content)
+            updated_content = re.sub(r'#include "pdlua_gfx\.h"', '#include "pd4weblua_gfx.c"', content)
             with open(pdlua_c, "w") as file:
                 file.write(updated_content)
 
-            shutil.copy(weblua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pd4weblua_gfx.h"))
+            shutil.copy(weblua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pd4weblua_gfx.c"))
 
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │

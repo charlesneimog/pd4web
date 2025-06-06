@@ -26,7 +26,7 @@ class Pd4Web:
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
     PD_VERSION: str = "0.55-2"
-    EMSDK_VERSION: str = "4.0.3"
+    EMSDK_VERSION: str = "4.0.9"
     DEBUG: bool = False
 
     # Compiler

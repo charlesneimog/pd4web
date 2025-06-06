@@ -1,7 +1,7 @@
 /** @file pdlua_gfx.h
  *  @brief pdlua_gfx -- an extension to pdlua that allows GUI rendering and interaction in pure-data
  * and plugdata
- *  @author Timothy Schoen <timschoen123@gmail.com>
+ *  @author Timothy Schoen <timschoen123@gmail.com> and Charles K. Neimog
  *  @date 2023
  *
  * Copyright (C) 2023 Timothy Schoen <timschoen123@gmail.com>
@@ -22,8 +22,13 @@
  *
  */
 
-#include <lua.h>
-#include <lualib.h>
+/*
+ * This file is copied to Pd4Web/Externals/pdlua, we also, for now, change the #include
+ * <pdlua_gfx.h> to <pd4weblua_gfx.c> inside the Builder.py file
+ */
+
+#include <math.h>
+#include <string.h>
 
 #include <emscripten.h>
 #include <emscripten/html5.h>
@@ -31,8 +36,12 @@
 #include <emscripten/threading.h>
 
 #include <GLES3/gl3.h>
+#include <nanovg.h>
+#define NANOVG_GLES3_IMPLEMENTATION
+#include <nanovg_gl.h> // or nanovg_gl3.h depending on your setup
 
 #include <config.h>
+#include <g_canvas.h>
 #include <m_pd.h>
 #include <s_stuff.h>
 
@@ -73,7 +82,7 @@ typedef struct {
     float x2;
     float y2;
     char *text; // TODO: Fix this
-    float font_height;
+    float font_size;
     float stroke_width;
 
     float canvas_width;
@@ -85,71 +94,11 @@ typedef struct {
     GLuint Shader;
 } GuiValues;
 
-#define PDLUA_MAX_COMMANDS 128
+#define PDLUA_MAX_COMMANDS 512
 static GuiValues commandQueue[PDLUA_MAX_COMMANDS];
 static int queueStart = 0;
 static int queueEnd = 0;
 
-// ╭─────────────────────────────────────╮
-// │               SHADERS               │
-// ╰─────────────────────────────────────╯
-typedef struct {
-    bool compiled;
-    GLuint fill_rect;
-} ShadersProgram;
-
-ShadersProgram Pd4WebShaders;
-
-// ──────────────────────────────────────────
-GLuint compile_shader(GLenum type, const char *src) {
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, NULL);
-    glCompileShader(shader);
-    return shader;
-}
-
-// ──────────────────────────────────────────
-static GLuint shader_compile(const char *vertex_src, const char *fragment_src) {
-    GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_src);
-    GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_src);
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-
-    GLint success;
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        char infoLog[512];
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        emscripten_log(EM_LOG_ERROR, "Program linking failed: %s", infoLog);
-    }
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-
-    return program;
-}
-
-// ──────────────────────────────────────────
-static void compile_all_shaders() {
-    const char *vertex_src = "#version 300 es\n"
-                             "layout(location = 0) in vec2 aPos;\n"
-                             "void main() {\n"
-                             "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
-                             "}\n";
-
-    const char *fragment_src = "#version 300 es\n"
-                               "precision mediump float;\n"
-                               "uniform vec3 uColor;\n"
-                               "out vec4 FragColor;\n"
-                               "void main() {\n"
-                               "    FragColor = vec4(uColor, 1.0);\n"
-                               "}\n";
-
-    Pd4WebShaders.fill_rect = shader_compile(vertex_src, fragment_src);
-}
 // ╭─────────────────────────────────────╮
 // │  This will be called from the main  │
 // │   thread inside pd4web main loop    │
@@ -159,30 +108,31 @@ EMSCRIPTEN_WEBGL_CONTEXT_HANDLE create_webgl_context_for_layer(char *tag) {
     emscripten_webgl_init_context_attributes(&attr);
     attr.alpha = true;
     attr.depth = false;
-    attr.stencil = false;
+    attr.stencil = true;
     attr.antialias = true;
-    attr.premultipliedAlpha = false;
+    attr.premultipliedAlpha = true; // Recommended
     attr.preserveDrawingBuffer = false;
     attr.failIfMajorPerformanceCaveat = false;
 
     attr.majorVersion = 2;
     attr.minorVersion = 0;
 
-    attr.enableExtensionsByDefault = false;
+    attr.enableExtensionsByDefault = true; // Enable extensions automatically
     attr.explicitSwapControl = false;
     attr.renderViaOffscreenBackBuffer = false;
 
     char selector[128];
-    snprintf(selector, 128, "#%s", tag);
+    pd_snprintf(selector, 128, "#%s", tag);
 
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context(selector, &attr);
-    if (ctx <= 0) {
-        printf("Failed to create WebGL context for canvas: %s (error: %l)\n", selector, ctx);
+    if (ctx == 0) {
+        fprintf(stderr, "Failed to create WebGL context for canvas: %s\n", selector);
         return 0;
     }
 
     if (emscripten_webgl_make_context_current(ctx) != EMSCRIPTEN_RESULT_SUCCESS) {
         emscripten_webgl_destroy_context(ctx);
+        fprintf(stderr, "Failed to make WebGL context current for canvas: %s\n", selector);
         return 0;
     }
 
@@ -229,77 +179,69 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
     *b = bi / 255.0f;
 }
 
-// ─────────────────────────────────────
-void add_quad(float *vertices, int *offset, float x0, float y0, float x1, float y1, float x2,
-              float y2, float x3, float y3) {
-    // First triangle
-    vertices[(*offset)++] = x0;
-    vertices[(*offset)++] = y0;
-    vertices[(*offset)++] = x1;
-    vertices[(*offset)++] = y1;
-    vertices[(*offset)++] = x2;
-    vertices[(*offset)++] = y2;
-    // Second triangle
-    vertices[(*offset)++] = x0;
-    vertices[(*offset)++] = y0;
-    vertices[(*offset)++] = x2;
-    vertices[(*offset)++] = y2;
-    vertices[(*offset)++] = x3;
-    vertices[(*offset)++] = y3;
-}
+// ╭─────────────────────────────────────╮
+// │         LAYERS AND CONTEXTS         │
+// ╰─────────────────────────────────────╯
+#define MAX_LAYERS 128
+
+typedef struct {
+    const char *layer_id; // apontando para string persistente
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webgl_ctx;
+    NVGcontext *vg;
+    int in_use;
+} LayerCtx;
+
+static LayerCtx layer_contexts[MAX_LAYERS];
 
 // ─────────────────────────────────────
-void add_arc_strip(float *vertices, int *offset, float cx, float cy, float inner_radius,
-                   float outer_radius, float start_angle, float end_angle, int num_segments) {
-    float da = (end_angle - start_angle) / num_segments;
-    for (int i = 0; i < num_segments; ++i) {
-        float a0 = start_angle + i * da;
-        float a1 = start_angle + (i + 1) * da;
-        // Outer arc
-        float x0 = cx + cosf(a0) * outer_radius;
-        float y0 = cy + sinf(a0) * outer_radius;
-        float x1 = cx + cosf(a1) * outer_radius;
-        float y1 = cy + sinf(a1) * outer_radius;
-        // Inner arc
-        float ix0 = cx + cosf(a0) * inner_radius;
-        float iy0 = cy + sinf(a0) * inner_radius;
-        float ix1 = cx + cosf(a1) * inner_radius;
-        float iy1 = cy + sinf(a1) * inner_radius;
-
-        // First triangle
-        vertices[(*offset)++] = x0;
-        vertices[(*offset)++] = y0;
-        vertices[(*offset)++] = x1;
-        vertices[(*offset)++] = y1;
-        vertices[(*offset)++] = ix1;
-        vertices[(*offset)++] = iy1;
-        // Second triangle
-        vertices[(*offset)++] = x0;
-        vertices[(*offset)++] = y0;
-        vertices[(*offset)++] = ix1;
-        vertices[(*offset)++] = iy1;
-        vertices[(*offset)++] = ix0;
-        vertices[(*offset)++] = iy0;
-    }
-}
-
-#define NUM_ARC_SEGMENTS 12
-
-// ─────────────────────────────────────
-int pd4weblua_draw() {
-    GuiValues cmd;
-    while (dequeue_command(&cmd)) {
-        switch (cmd.command) {
-        case FILL_ALL: {
-            float r, g, b;
-            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                glClearColor(r, g, b, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
-            }
-            break;
+LayerCtx *get_layer_ctx(const char *layer_id, float canvas_width, float canvas_height) {
+    for (int i = 0; i < MAX_LAYERS; i++) {
+        if (layer_contexts[i].in_use && strcmp(layer_contexts[i].layer_id, layer_id) == 0) {
+            emscripten_webgl_make_context_current(layer_contexts[i].webgl_ctx);
+            return &layer_contexts[i];
         }
+    }
+    for (int i = 0; i < MAX_LAYERS; i++) {
+        if (!layer_contexts[i].in_use) {
+            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer((char *)layer_id);
+            if (!ctx) {
+                fprintf(stderr, "Failed to create ctx\n");
+                return NULL;
+            }
+            emscripten_webgl_make_context_current(ctx);
+            NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+            if (!vg) {
+                fprintf(stderr, "Failed to create NVG context\n");
+                emscripten_webgl_destroy_context(ctx);
+                return NULL;
+            }
+
+            layer_contexts[i].layer_id = strdup(layer_id); // cuidado com o ciclo de vida da string
+            layer_contexts[i].webgl_ctx = ctx;
+            layer_contexts[i].vg = vg;
+            layer_contexts[i].in_use = 1;
+            int font = nvgCreateFont(vg, "sans", "dejavu.ttf");
+            if (font == -1) {
+                fprintf(stderr, "Failed to create font\n");
+                return NULL;
+            }
+            return &layer_contexts[i];
+        }
+    }
+    return NULL;
+}
+
+// ─────────────────────────────────────
+static bool isDrawing = 0;
+int pd4weblua_draw() {
+    if (isDrawing) {
+        return 0;
+    }
+    GuiValues cmd;
+    float devicePixelRatio = PD4WEB_PATCH_ZOOM * emscripten_get_device_pixel_ratio();
+    while (dequeue_command(&cmd)) {
+
+        switch (cmd.command) {
         case FILL_RECT: {
             float x = cmd.x1;
             float y = cmd.y1;
@@ -308,170 +250,45 @@ int pd4weblua_draw() {
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
 
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                // 1. Configurar shaders (apenas na primeira execução)
-                GLuint program = 0;
-                GLuint vertex_buffer = 0;
-
-                // Vertex Shader
-                const char *vertex_shader_src = "attribute vec2 a_position;"
-                                                "void main() {"
-                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
-                                                "}";
-
-                // Fragment Shader
-                const char *fragment_shader_src = "precision mediump float;"
-                                                  "uniform vec4 u_color;"
-                                                  "void main() {"
-                                                  "   gl_FragColor = u_color;"
-                                                  "}";
-
-                // Compilar shaders
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                // Linkar programa
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-                glUseProgram(program);
-
-                // Criar buffer
-                glGenBuffers(1, &vertex_buffer);
-
-                // 2. Calcular coordenadas normalizadas (-1 a 1)
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-
-                float x0 = 2.0f * (x / canvas_width) - 1.0f;
-                float x1 = 2.0f * ((x + width) / canvas_width) - 1.0f;
-                float y0 = 1.0f - 2.0f * ((y + height) / canvas_height); // Top
-                float y1 = 1.0f - 2.0f * (y / canvas_height);            // Bottom
-
-                // 3. Definir vértices do retângulo (dois triângulos)
-                float vertices[] = {x0, y0,                 // Triângulo 1
-                                    x1, y0, x0, y1, x0, y1, // Triângulo 2
-                                    x1, y0, x1, y1};
-
-                // 4. Passar vértices para o buffer
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                // 5. Configurar atributo de vértice
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                // 6. Passar cor uniforme
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                glUniform4f(u_color, r, g, b, 1.0f);
-
-                // 7. Desenhar
-                glDrawArrays(GL_TRIANGLES, 0, 6);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                printf("Failed to get layer context for layer %s\n", cmd.layer_id);
                 break;
             }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+
+            nvgBeginPath(vg);
+            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgRect(vg, x, y, width, height);
+            nvgFill(vg);
+
+            nvgEndFrame(vg);
+            break;
         }
         case STROKE_RECT: {
             float x = cmd.x1;
             float y = cmd.y1;
             float width = cmd.width;
             float height = cmd.height;
-            float thickness = cmd.line_width; // New: desired stroke width
+            float thickness = cmd.line_width;
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
 
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                GLuint program;
-                GLuint vertex_buffer;
-
-                const char *vertex_shader_src = "attribute vec2 a_position;"
-                                                "void main() {"
-                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
-                                                "}";
-
-                const char *fragment_shader_src = "precision mediump float;"
-                                                  "uniform vec4 u_color;"
-                                                  "void main() {"
-                                                  "   gl_FragColor = u_color;"
-                                                  "}";
-
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-                glUseProgram(program);
-
-                glGenBuffers(1, &vertex_buffer);
-
-                glDisable(GL_BLEND);
-
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-
-                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
-                           canvas_height * PD4WEB_PATCH_ZOOM);
-
-                // Convert rectangle corners to NDC
-                float x0 = 2.0f * (x / canvas_width) - 1.0f;
-                float x1 = 2.0f * ((x + width) / canvas_width) - 1.0f;
-                float y0 = 1.0f - 2.0f * ((y + height) / canvas_height);
-                float y1 = 1.0f - 2.0f * (y / canvas_height);
-
-                // Thickness in NDC
-                float t_x = 2.0f * (thickness / canvas_width);
-                float t_y = 2.0f * (thickness / canvas_height);
-
-                // Vertex array for four quads (4 edges, 6 vertices per quad, 2 coords per vert)
-                float vertices[4 * 6 * 2];
-                int offset = 0;
-
-                // Top edge
-                add_quad(vertices, &offset, x0, y1, x1, y1, x1, y1 - t_y, x0, y1 - t_y);
-
-                // Bottom edge
-                add_quad(vertices, &offset, x0, y0 + t_y, x1, y0 + t_y, x1, y0, x0, y0);
-
-                // Left edge
-                add_quad(vertices, &offset, x0, y1 - t_y, x0 + t_x, y1 - t_y, x0 + t_x, y0 + t_y,
-                         x0, y0 + t_y);
-
-                // Right edge
-                add_quad(vertices, &offset, x1 - t_x, y1 - t_y, x1, y1 - t_y, x1, y0 + t_y,
-                         x1 - t_x, y0 + t_y);
-
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                glUniform4f(u_color, r, g, b, 1.0f);
-
-                glDrawArrays(GL_TRIANGLES, 0, 4 * 6);
-
-                glDeleteProgram(program);
-                glDeleteShader(vs);
-                glDeleteShader(fs);
-                glDeleteBuffers(1, &vertex_buffer);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
             }
+            NVGcontext *vg = ctx->vg;
+
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+
+            nvgBeginPath(vg);
+            nvgStrokeWidth(vg, thickness);
+            nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgRect(vg, x, y, width, height);
+            nvgStroke(vg);
+            nvgEndFrame(vg);
             break;
         }
         case FILL_ELLIPSE: {
@@ -482,92 +299,21 @@ int pd4weblua_draw() {
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
 
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                // Recompilar shaders sempre
-                GLuint program;
-                GLuint vertex_buffer;
-
-                // Vertex Shader
-                const char *vertex_shader_src = "attribute vec2 a_position;"
-                                                "void main() {"
-                                                "   gl_Position = vec4(a_position, 0.0, 1.0);"
-                                                "}";
-
-                // Fragment Shader
-                const char *fragment_shader_src = "precision mediump float;"
-                                                  "uniform vec4 u_color;"
-                                                  "void main() {"
-                                                  "   gl_FragColor = u_color;"
-                                                  "}";
-
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-                glUseProgram(program);
-
-                glGenBuffers(1, &vertex_buffer);
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-                double dpr = emscripten_get_device_pixel_ratio();
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
-                           canvas_height * PD4WEB_PATCH_ZOOM);
-
-                float cx = x + width / 2.0f;
-                float cy = y + height / 2.0f;
-                float rx = width / 2.0f;
-                float ry = height / 2.0f;
-
-                const int num_segments = 128;
-                float vertices[(num_segments + 2) * 2]; // center + segments + wrap
-
-                float norm_cx = 2.0f * (cx / canvas_width) - 1.0f;
-                float norm_cy = 1.0f - 2.0f * (cy / canvas_height);
-                vertices[0] = norm_cx;
-                vertices[1] = norm_cy;
-
-                for (int i = 0; i <= num_segments; ++i) {
-                    float angle = (2.0f * M_PI * i) / num_segments;
-                    float dx = rx * cosf(angle);
-                    float dy = ry * sinf(angle);
-
-                    float vx = 2.0f * ((cx + dx) / canvas_width) - 1.0f;
-                    float vy = 1.0f - 2.0f * ((cy + dy) / canvas_height);
-
-                    vertices[(i + 1) * 2 + 0] = vx;
-                    vertices[(i + 1) * 2 + 1] = vy;
-                }
-
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                glUniform4f(u_color, r, g, b, 1.0f);
-
-                glDrawArrays(GL_TRIANGLE_FAN, 0, num_segments + 2);
-
-                // Limpeza (opcional, mas recomendável nesse modo)
-                glDeleteProgram(program);
-                glDeleteShader(vs);
-                glDeleteShader(fs);
-                glDeleteBuffers(1, &vertex_buffer);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
             }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgBeginPath(vg);
+            float cx = x + width * 0.5f;
+            float cy = y + height * 0.5f;
+            float rx = width * 0.5f;
+            float ry = height * 0.5f;
+            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgEllipse(vg, cx, cy, rx, ry);
+            nvgFill(vg);
+            nvgEndFrame(vg);
             break;
         }
         case STROKE_ELLIPSE: {
@@ -579,101 +325,49 @@ int pd4weblua_draw() {
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
 
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                GLuint program;
-                GLuint vertex_buffer;
-
-                // Vertex Shader
-                const char *vertex_shader_src = "attribute vec2 a_position;"
-                                                "void main() {"
-                                                "  gl_Position = vec4(a_position, 0.0, 1.0);"
-                                                "}";
-
-                // Fragment Shader
-                const char *fragment_shader_src = "precision mediump float;"
-                                                  "uniform vec4 u_color;"
-                                                  "void main() {"
-                                                  "  gl_FragColor = u_color;"
-                                                  "}";
-
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-                glUseProgram(program);
-
-                glGenBuffers(1, &vertex_buffer);
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-                double dpr = emscripten_get_device_pixel_ratio();
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
-                           canvas_height * PD4WEB_PATCH_ZOOM);
-
-                float cx = x + width / 2.0f;
-                float cy = y + height / 2.0f;
-                float rx_outer = width / 2.0f;
-                float ry_outer = height / 2.0f;
-                float rx_inner = rx_outer - line_width;
-                float ry_inner = ry_outer - line_width;
-
-                if (rx_inner < 0)
-                    rx_inner = 0;
-                if (ry_inner < 0)
-                    ry_inner = 0;
-
-                const int num_segments = 128;
-                // Cada segmento gera dois vértices: externo e interno (strip)
-                float vertices[(num_segments + 1) * 4]; // (num_segments+1)*2 pontos * 2 coords
-
-                for (int i = 0; i <= num_segments; ++i) {
-                    float angle = (2.0f * M_PI * i) / num_segments;
-                    float cos_a = cosf(angle);
-                    float sin_a = sinf(angle);
-
-                    // Outer vertex
-                    float vx_outer = 2.0f * ((cx + rx_outer * cos_a) / canvas_width) - 1.0f;
-                    float vy_outer = 1.0f - 2.0f * ((cy + ry_outer * sin_a) / canvas_height);
-
-                    // Inner vertex
-                    float vx_inner = 2.0f * ((cx + rx_inner * cos_a) / canvas_width) - 1.0f;
-                    float vy_inner = 1.0f - 2.0f * ((cy + ry_inner * sin_a) / canvas_height);
-
-                    vertices[i * 4 + 0] = vx_outer;
-                    vertices[i * 4 + 1] = vy_outer;
-                    vertices[i * 4 + 2] = vx_inner;
-                    vertices[i * 4 + 3] = vy_inner;
-                }
-
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                glUniform4f(u_color, r, g, b, 1.0f);
-
-                // Usar TRIANGLE_STRIP para conectar os pares de vértices interno e externo
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, (num_segments + 1) * 2);
-
-                glDeleteProgram(program);
-                glDeleteShader(vs);
-                glDeleteShader(fs);
-                glDeleteBuffers(1, &vertex_buffer);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
             }
+            NVGcontext *vg = ctx->vg;
+
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+
+            nvgBeginPath(vg);
+            float cx = x + width * 0.5f;
+            float cy = y + height * 0.5f;
+            float rx = width * 0.5f;
+            float ry = height * 0.5f;
+
+            nvgStrokeWidth(vg, line_width);
+            nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgEllipse(vg, cx, cy, rx, ry);
+            nvgStroke(vg);
+            nvgEndFrame(vg);
+            break;
+        }
+
+        case FILL_ROUNDED_RECT: {
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float width = cmd.width;
+            float height = cmd.height;
+            float radius = cmd.radius;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            float canvas_width = cmd.canvas_width;
+            float canvas_height = cmd.canvas_height;
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
+            }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgBeginPath(vg);
+            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgRoundedRect(vg, x, y, width, height, radius);
+            nvgFill(vg);
+            nvgEndFrame(vg);
             break;
         }
 
@@ -683,155 +377,27 @@ int pd4weblua_draw() {
             float width = cmd.width;
             float height = cmd.height;
             float radius = cmd.radius;
-            float line_width = cmd.line_width;
+            float thickness = cmd.line_width;
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            float canvas_width = cmd.canvas_width;
+            float canvas_height = cmd.canvas_height;
 
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                GLuint program;
-                GLuint vertex_buffer;
-
-                // Vertex shader
-                const char *vertex_shader_src = "attribute vec2 a_position;\n"
-                                                "varying vec2 v_pos;\n"
-                                                "void main() {\n"
-                                                "  v_pos = a_position;\n"
-                                                "  gl_Position = vec4(a_position, 0.0, 1.0);\n"
-                                                "}";
-
-                // Fragment shader
-                const char *fragment_shader_src =
-                    "precision mediump float;\n"
-                    "uniform vec4 u_color;\n"
-                    "uniform vec4 u_rect;\n"
-                    "uniform float u_radius;\n"
-                    "uniform float u_line_width;\n"
-                    "varying vec2 v_pos;\n"
-                    "\n"
-                    "float udRoundBox(vec2 p, vec2 b, float r) {\n"
-                    "  return length(max(abs(p) - b, 0.0)) - r;\n"
-                    "}\n"
-                    "\n"
-                    "float opS(float d1, float d2) {\n"
-                    "  return max(-d1, d2);\n"
-                    "}\n"
-                    "\n"
-                    "float udRoundBoxBorder(vec2 p, vec2 b, float r, float line_width) {\n"
-                    "  return opS(udRoundBox(p, b - vec2(line_width), r - line_width), \n"
-                    "             udRoundBox(p, b, r));\n"
-                    "}\n"
-                    "\n"
-                    "void main() {\n"
-                    "  vec2 uv = v_pos * 0.5 + 0.5;\n"
-                    "  vec2 center = u_rect.xy + u_rect.zw * 0.5;\n"
-                    "  vec2 p = uv - center;\n"
-                    "  vec2 half_size = u_rect.zw * 0.5;\n"
-                    "\n"
-                    "  float dist = udRoundBoxBorder(p, half_size, u_radius, u_line_width);\n"
-                    "  if (dist > 0.0) discard;\n"
-                    "\n"
-                    "  gl_FragColor = u_color;\n"
-                    "}";
-
-                // Compile vertex shader
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLint compiled;
-                glGetShaderiv(vs, GL_COMPILE_STATUS, &compiled);
-                if (!compiled) {
-                    char info[512];
-                    glGetShaderInfoLog(vs, 512, NULL, info);
-                    printf("Vertex shader compile error: %s\n", info);
-                    glDeleteShader(vs);
-                    break;
-                }
-
-                // Compile fragment shader
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                glGetShaderiv(fs, GL_COMPILE_STATUS, &compiled);
-                if (!compiled) {
-                    char info[512];
-                    glGetShaderInfoLog(fs, 512, NULL, info);
-                    printf("Fragment shader compile error: %s\n", info);
-                    glDeleteShader(fs);
-                    glDeleteShader(vs);
-                    break;
-                }
-
-                // Create program and attach shaders
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-
-                GLint linked;
-                glGetProgramiv(program, GL_LINK_STATUS, &linked);
-                if (!linked) {
-                    char info[512];
-                    glGetProgramInfoLog(program, 512, NULL, info);
-                    printf("Program link error: %s\n", info);
-                    glDeleteProgram(program);
-                    glDeleteShader(vs);
-                    glDeleteShader(fs);
-                    break;
-                }
-
-                glUseProgram(program);
-                glGenBuffers(1, &vertex_buffer);
-
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
-                           canvas_height * PD4WEB_PATCH_ZOOM);
-
-                // Full screen quad
-                float vertices[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
-
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                if (a_position == -1) {
-                    printf("Error: attribute 'a_position' not found.\n");
-                    glDeleteProgram(program);
-                    glDeleteShader(vs);
-                    glDeleteShader(fs);
-                    glDeleteBuffers(1, &vertex_buffer);
-                    break;
-                }
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                GLuint u_rect = glGetUniformLocation(program, "u_rect");
-                GLuint u_radius = glGetUniformLocation(program, "u_radius");
-                GLuint u_line_width = glGetUniformLocation(program, "u_line_width");
-
-                glUniform4f(u_color, r, g, b, 1.0f);
-                glUniform4f(u_rect, x / canvas_width, y / canvas_height, width / canvas_width,
-                            height / canvas_height);
-                glUniform1f(u_radius, radius);
-                glUniform1f(u_line_width, line_width / fmin(canvas_width, canvas_height));
-
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-                // Cleanup
-                glDeleteProgram(program);
-                glDeleteShader(vs);
-                glDeleteShader(fs);
-                glDeleteBuffers(1, &vertex_buffer);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
             }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgBeginPath(vg);
+            nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgRoundedRect(vg, x, y, width, height, radius);
+            nvgStrokeWidth(vg, thickness);
+            nvgStroke(vg);
+            nvgEndFrame(vg);
             break;
         }
+
         case DRAW_LINE: {
             float x1 = cmd.x1;
             float y1 = cmd.y1;
@@ -840,95 +406,125 @@ int pd4weblua_draw() {
             float line_width = cmd.line_width;
             float r, g, b;
             hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
-
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer(cmd.layer_id);
-            if (ctx) {
-                GLuint program;
-                GLuint vertex_buffer;
-
-                const char *vertex_shader_src = "attribute vec2 a_position;"
-                                                "void main() {"
-                                                "  gl_Position = vec4(a_position, 0.0, 1.0);"
-                                                "}";
-
-                const char *fragment_shader_src = "precision mediump float;"
-                                                  "uniform vec4 u_color;"
-                                                  "void main() {"
-                                                  "  gl_FragColor = u_color;"
-                                                  "}";
-
-                GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-                glShaderSource(vs, 1, &vertex_shader_src, NULL);
-                glCompileShader(vs);
-
-                GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-                glShaderSource(fs, 1, &fragment_shader_src, NULL);
-                glCompileShader(fs);
-
-                program = glCreateProgram();
-                glAttachShader(program, vs);
-                glAttachShader(program, fs);
-                glLinkProgram(program);
-                glUseProgram(program);
-
-                glGenBuffers(1, &vertex_buffer);
-                glEnable(GL_BLEND);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-                float canvas_width = cmd.canvas_width;
-                float canvas_height = cmd.canvas_height;
-                glViewport(0, 0, canvas_width * PD4WEB_PATCH_ZOOM,
-                           canvas_height * PD4WEB_PATCH_ZOOM);
-
-                // Calcula a direção perpendicular para a espessura da linha
-                float dx = x2 - x1;
-                float dy = y2 - y1;
-                float len = sqrtf(dx * dx + dy * dy);
-                if (len == 0)
-                    break; // linha degenerate
-
-                float nx = -dy / len;
-                float ny = dx / len;
-
-                float half_width = line_width / 2.0f;
-
-                // Quatro vértices do retângulo da linha
-                float verts[8];
-
-                // Ponto 1 - lado esquerdo
-                verts[0] = 2.0f * ((x1 + nx * half_width) / canvas_width) - 1.0f;
-                verts[1] = 1.0f - 2.0f * ((y1 + ny * half_width) / canvas_height);
-
-                // Ponto 1 - lado direito
-                verts[2] = 2.0f * ((x1 - nx * half_width) / canvas_width) - 1.0f;
-                verts[3] = 1.0f - 2.0f * ((y1 - ny * half_width) / canvas_height);
-
-                // Ponto 2 - lado esquerdo
-                verts[4] = 2.0f * ((x2 + nx * half_width) / canvas_width) - 1.0f;
-                verts[5] = 1.0f - 2.0f * ((y2 + ny * half_width) / canvas_height);
-
-                // Ponto 2 - lado direito
-                verts[6] = 2.0f * ((x2 - nx * half_width) / canvas_width) - 1.0f;
-                verts[7] = 1.0f - 2.0f * ((y2 - ny * half_width) / canvas_height);
-
-                glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
-                glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
-
-                GLuint a_position = glGetAttribLocation(program, "a_position");
-                glEnableVertexAttribArray(a_position);
-                glVertexAttribPointer(a_position, 2, GL_FLOAT, GL_FALSE, 0, 0);
-
-                GLuint u_color = glGetUniformLocation(program, "u_color");
-                glUniform4f(u_color, r, g, b, 1.0f);
-
-                // Desenha retângulo da linha com TRIANGLE_STRIP
-                glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-                glDeleteProgram(program);
-                glDeleteShader(vs);
-                glDeleteShader(fs);
-                glDeleteBuffers(1, &vertex_buffer);
+            float canvas_width = cmd.canvas_width;
+            float canvas_height = cmd.canvas_height;
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
             }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+
+            nvgBeginPath(vg);
+            nvgStrokeWidth(vg, line_width);
+            nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgMoveTo(vg, x1, y1);
+            nvgLineTo(vg, x2, y2);
+            nvgStroke(vg);
+            nvgEndFrame(vg);
+            break;
+        }
+
+        case STROKE_PATH: {
+            float line_width = cmd.line_width / PD4WEB_PATCH_ZOOM;
+            float *coords = cmd.path_coords;
+            int coords_len = cmd.path_size;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            float canvas_width = cmd.canvas_width;
+            float canvas_height = cmd.canvas_height;
+
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
+            }
+            NVGcontext *vg = ctx->vg;
+
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgBeginPath(vg);
+            nvgStrokeWidth(vg, line_width);
+            nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+
+            if (coords_len >= 2) {
+                nvgMoveTo(vg, coords[0], coords[1]);
+                for (int i = 1; i < coords_len; i++) {
+                    nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                }
+            }
+            nvgStroke(vg);
+            nvgEndFrame(vg);
+            free(cmd.path_coords);
+            break;
+        }
+        case FILL_PATH: {
+            float *coords = cmd.path_coords;
+            int coords_len = cmd.path_size;
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            float canvas_width = cmd.canvas_width;
+            float canvas_height = cmd.canvas_height;
+
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
+            }
+            NVGcontext *vg = ctx->vg;
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgBeginPath(vg);
+            if (coords_len >= 2) {
+                nvgMoveTo(vg, coords[0], coords[1]);
+                for (int i = 1; i < coords_len; i++) {
+                    nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                }
+                nvgClosePath(vg);
+            }
+            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgFill(vg);
+            nvgEndFrame(vg);
+            free(cmd.path_coords);
+            break;
+        }
+        case FILL_ALL: {
+            float r, g, b;
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx) {
+                break;
+            }
+            glClearColor(r, g, b, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+            break;
+        }
+        case DRAW_TEXT: {
+            const char *text = cmd.text;
+            float x = cmd.x1;
+            float y = cmd.y1;
+            float maxWidth = cmd.width;
+            float fontSize = cmd.font_size;
+            float r, g, b;
+
+            if (!text || !cmd.layer_id || maxWidth <= 0 || fontSize <= 0) {
+                break; // Invalid parameters
+            }
+
+            hex_to_rgb_normalized(cmd.current_color, &r, &g, &b);
+            LayerCtx *ctx = get_layer_ctx(cmd.layer_id, cmd.canvas_width, cmd.canvas_height);
+            if (!ctx || !ctx->vg) {
+                break;
+            }
+
+            NVGcontext *vg = ctx->vg;
+
+            nvgBeginFrame(vg, cmd.canvas_width, cmd.canvas_height, devicePixelRatio);
+            nvgFontSize(vg, fontSize);
+            nvgFontFace(vg, "sans");
+            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
+            nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+
+            // Use nvgTextBox with a NULL end pointer to draw wrapped text
+            nvgTextBox(vg, x, y, maxWidth, text, NULL);
+
+            nvgEndFrame(vg);
             break;
         }
         }
@@ -1060,7 +656,7 @@ static const luaL_Reg gfx_methods[] = {{"fill_ellipse", fill_ellipse},
                                        {"stroke_rounded_rect", stroke_rounded_rect},
                                        {"draw_line", draw_line},
                                        {"draw_text", draw_text},
-                                       {"draw_svg", draw_svg}, // TODO:
+                                       // {"draw_svg", draw_svg}, // TODO:
                                        {"stroke_path", stroke_path},
                                        {"fill_path", fill_path},
                                        {"fill_all", fill_all},
@@ -1088,8 +684,6 @@ int pdlua_gfx_setup(lua_State *L) {
 
     luaL_newlib(L, gfx_lib);
     lua_setglobal(L, "_gfx_internal");
-
-    Pd4WebShaders.compiled = false;
 
     return 1;
 }
@@ -1200,12 +794,14 @@ static int start_paint(lua_State *L) {
         lua_pushnil(L);
         return 1;
     }
+    isDrawing = 1;
 
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
     t_pdlua_gfx *gfx = &obj->gfx;
 
     if (gfx->object_tag[0] == '\0') {
         lua_pushnil(L);
+        isDrawing = 0;
         return 1;
     }
 
@@ -1214,8 +810,10 @@ static int start_paint(lua_State *L) {
     if (layer > gfx->num_layers) {
         pdlua_gfx_repaint(obj, 0);
         lua_pushnil(L);
+        isDrawing = 0;
         return 1;
     }
+
     int new_num_layers = layer + 1;
     if (gfx->layer_tags) {
         gfx->layer_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
@@ -1224,7 +822,7 @@ static int start_paint(lua_State *L) {
         gfx->layer_tags = getbytes(sizeof(char *));
     }
 
-    if (gfx->first_draw) {
+    if (gfx->first_draw || layer >= gfx->num_layers) {
         gfx->layer_tags[layer] = getbytes(64);
         snprintf(gfx->layer_tags[layer], 64, "layer_%p_%d", obj, layer);
         gfx->num_layers = new_num_layers;
@@ -1238,33 +836,32 @@ static int start_paint(lua_State *L) {
                 let width = $3;
                 let height = $4;
                 let zoom = $5;
+                let dpr = window.devicePixelRatio || 1;
+                let scale = zoom * dpr;
 
                 const container = document.getElementById("Pd4WebPatchDiv");
-                var item = document.getElementById(layer_id);
-                if (document.getElementById(layer_id) == null) {
+                let item = document.getElementById(layer_id);
+                if (!item) {
                     item = document.createElement("canvas");
                     container.appendChild(item);
-                } else {
-                    item = document.getElementById(layer_id);
                 }
 
                 item.id = layer_id;
-                item.width = width * zoom;
-                item.height = height * zoom;
+                item.width = width * scale;
+                item.height = height * scale;
+
+                item.style.width = (width * zoom) + "px";
+                item.style.height = (height * zoom) + "px";
+
                 item.style.position = "absolute";
-                item.style.border = "1px solid #000";
+                item.style.border = zoom + "px solid #000";
+                item.style.boxShadow = "1px 1px 2px rgba(0, 0, 0, 0.2)";
                 item.style.left = (x_pos * zoom) + "px";
                 item.style.top = (y_pos * zoom) + "px";
             },
             gfx->layer_tags[layer], x, y, gfx->width, gfx->height, PD4WEB_PATCH_ZOOM);
-        gfx->first_draw = 0;
 
-        if (!Pd4WebShaders.compiled) {
-            // printf("Compiling Pd4Web Shaders\n");
-            // create_webgl_context_for_layer(gfx->layer_tags[layer]);
-            // Pd4WebShaders.compiled = true;
-            // compile_all_shaders();
-        }
+        gfx->first_draw = 0;
     }
     gfx->current_layer_tag = gfx->layer_tags[layer];
     lua_pushlightuserdata(L, gfx);
@@ -1278,6 +875,7 @@ static int end_paint(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
     t_pdlua *obj = (t_pdlua *)gfx->object;
     t_canvas *cnv = glist_getcanvas(obj->canvas);
+    isDrawing = 0;
 
     return 0;
 }
@@ -1415,6 +1013,7 @@ static int fill_rect(lua_State *L) {
 // ─────────────────────────────────────
 static int stroke_rect(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+
     t_pdlua *obj = gfx->object;
 
     GuiValues cmd = {0};
@@ -1446,6 +1045,7 @@ static int fill_rounded_rect(lua_State *L) {
 
     GuiValues cmd = {0};
     cmd.command = FILL_ROUNDED_RECT;
+
     strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
@@ -1519,12 +1119,36 @@ static int draw_line(lua_State *L) {
         return luaL_error(L, "Command queue full");
     }
     return 0;
-
-    return 0;
 }
 
 // ─────────────────────────────────────
-static int draw_text(lua_State *L) { return 0; }
+static int draw_text(lua_State *L) {
+    t_pdlua_gfx *gfx = pop_graphics_context(L);
+
+    GuiValues cmd = {0};
+    cmd.command = DRAW_TEXT;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    const char *text = luaL_checkstring(L, 1);
+    size_t len = strlen(text) + 1;
+    cmd.text = (char *)malloc(len);
+    if (cmd.text == NULL) {
+        luaL_error(L, "Error allocating memory for text");
+        return 0;
+    }
+    strncpy(cmd.text, text, len);
+    cmd.x1 = luaL_checknumber(L, 2);
+    cmd.y1 = luaL_checknumber(L, 3);
+    cmd.width = luaL_checknumber(L, 4);
+    cmd.font_size = luaL_checknumber(L, 5);
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
+
+    return 0;
+}
 
 // ─────────────────────────────────────
 static uint64_t pdlua_image_hash(unsigned char *str) {
@@ -1589,35 +1213,69 @@ static char *pdlua_base64_encode(const unsigned char *data, size_t input_length)
 }
 
 // ─────────────────────────────────────
-static int draw_svg(lua_State *L) {}
-
-// ─────────────────────────────────────
-static int stroke_path(lua_State *L) {}
-
-// ─────────────────────────────────────
-static int fill_path(lua_State *L) {
+static int stroke_path(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
+
+    GuiValues cmd = {0};
+    cmd.command = STROKE_PATH;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
     if (path->num_path_segments < 3) {
         return 0;
     }
 
-    // GuiValues *v = &LuaGuiQueue->values[pd4web_get_next_free_spot()];
-    // strlcpy(v->current_color, gfx->current_color, sizeof(v->current_color));
-    // strlcpy(v->layer_id, gfx->current_layer_tag, sizeof(v->layer_id));
-    // v->command = FILL_PATH;
-    // // free after complete draw in main thread
-    // v->path_coords = getbytes(path->num_path_segments * 2 * sizeof(t_float));
-    // v->path_size = path->num_path_segments;
-    //
-    // for (int i = 0; i < path->num_path_segments; i++) {
-    //     float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
-    //     transform_point_float(gfx, &x, &y);
-    //     v->path_coords[i * 2] = (x * PD4WEB_PATCH_ZOOM);
-    //     v->path_coords[i * 2 + 1] = (y * PD4WEB_PATCH_ZOOM);
-    // }
-    // v->drawed = 0;
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+    cmd.line_width = luaL_checknumber(L, 2) * PD4WEB_PATCH_ZOOM;
 
+    cmd.path_coords = malloc(path->num_path_segments * 2 * sizeof(t_float));
+    cmd.path_size = path->num_path_segments;
+    for (int i = 0; i < path->num_path_segments; i++) {
+        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
+        transform_point_float(gfx, &x, &y);
+        cmd.path_coords[i * 2] = x;
+        cmd.path_coords[i * 2 + 1] = y;
+    }
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
+    return 0;
+}
+
+// ─────────────────────────────────────
+static int fill_path(lua_State *L) {
+    t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
+
+    GuiValues cmd = {0};
+    cmd.command = FILL_PATH;
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
+    if (path->num_path_segments < 3) {
+        return 0;
+    }
+
+    cmd.canvas_width = gfx->width;
+    cmd.canvas_height = gfx->height;
+
+    cmd.path_coords = malloc(path->num_path_segments * 2 * sizeof(t_float));
+    cmd.path_size = path->num_path_segments;
+    for (int i = 0; i < path->num_path_segments; i++) {
+        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
+        transform_point_float(gfx, &x, &y);
+        cmd.path_coords[i * 2] = x;
+        cmd.path_coords[i * 2 + 1] = y;
+    }
+
+    if (!enqueue_command(&cmd)) {
+        return luaL_error(L, "Command queue full");
+    }
     return 0;
 }
 
