@@ -14,7 +14,7 @@ Libraries:
     Source: GITHUB
     Developer: charlesneimog
     Repository: pd-saf
-    Version: cfb1d36ab5c39e18e10812689dc6f4bb0797a21d
+    Version: 10f6ce5ed3476f732e2a47b5f911192acc7f774b
 # ─────────────── pd-lua ───────────────
   - Name: pdlua
     Source: GITHUB
