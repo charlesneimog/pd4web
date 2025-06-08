@@ -443,7 +443,10 @@ class GetAndBuildExternals:
         make = self.Pd4Web.Compiler.MAKE
         releaseType = "Release"
         if self.Pd4Web.DEBUG:
-            releaseType = "Debug"
+            if not self.Pd4Web.PDLUA:
+                releaseType = "Debug"
+            else:
+                self.Pd4Web.print("Debug mode disable for pdlua, check https://github.com/charlesneimog/pd4web/issues/52", color="yellow")
 
         command = [
             emcmake,
