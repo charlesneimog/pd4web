@@ -320,13 +320,24 @@ void clear_commands_from_layer(const char *layer_id, int index) {
 
     for (size_t i = 0; i < map->size; i++) {
         if (map->entries[i].index == index) {
-            // Libera todos os comandos
-            free(map->entries[i].commands);
+            LayerIndex *entry = &map->entries[i];
 
-            // Zera o estado
-            map->entries[i].commands = NULL;
-            map->entries[i].size = 0;
-            map->entries[i].capacity = 0;
+            for (size_t k = 0; k < entry->size; k++) {
+                GuiCommand *cmd = &entry->commands[k];
+
+                if (cmd->command == DRAW_TEXT && cmd->text) {
+                    free(cmd->text);
+                    cmd->text = NULL;
+                } else if ((cmd->command == STROKE_PATH || cmd->command == FILL_PATH) && cmd->path_coords) {
+                    free(cmd->path_coords);
+                    cmd->path_coords = NULL;
+                }
+            }
+
+            free(entry->commands);
+            entry->commands = NULL;
+            entry->size = 0;
+            entry->capacity = 0;
             return;
         }
     }
@@ -777,12 +788,100 @@ void pdlua_gfx_mouse_event(t_pdlua *o, int x, int y, int type) {
     lua_pop(__L(), 1); /* pop the global "pd" */
 }
 
-// ─────────────────────────────────────
-// Pass mouse events to lua script (but easier to understand)
+// ╭─────────────────────────────────────╮
+// │           Mouse Movements           │
+// ╰─────────────────────────────────────╯
+// NOTE: We keep this 4 functions to avoid change pdlua.c
 void pdlua_gfx_mouse_down(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 0); }
 void pdlua_gfx_mouse_up(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 1); }
 void pdlua_gfx_mouse_move(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 2); }
 void pdlua_gfx_mouse_drag(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 3); }
+
+// ─────────────────────────────────────
+typedef struct {
+    t_pdlua *obj;
+    t_pdlua_gfx *gfx;
+    bool dragging;
+} mouse_data;
+
+// ──────────────────────────────────────────
+EM_BOOL mouse_down_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+    float x = e->targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->targetY / PD4WEB_PATCH_ZOOM;
+    data->dragging = true;
+    pdlua_gfx_mouse_event(data->obj, x, y, 0);
+    return EM_TRUE;
+}
+
+// ──────────────────────────────────────────
+EM_BOOL mouse_up_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+    float x = e->targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->targetY / PD4WEB_PATCH_ZOOM;
+    data->dragging = false;
+    pdlua_gfx_mouse_event(data->obj, x, y, 1);
+    return EM_TRUE;
+}
+
+// ──────────────────────────────────────────
+EM_BOOL mouse_move_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+    float x = e->targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->targetY / PD4WEB_PATCH_ZOOM;
+    if (!data->dragging) {
+        pdlua_gfx_mouse_event(data->obj, x, y, 2);
+    } else {
+        pdlua_gfx_mouse_event(data->obj, x, y, 3);
+    }
+    return EM_TRUE;
+}
+
+// ──────────────────────────────────────────
+EM_BOOL touch_start_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+
+    if (e->numTouches < 1)
+        return EM_FALSE;
+
+    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
+
+    data->dragging = true;
+    pdlua_gfx_mouse_event(data->obj, x, y, 0); // 0 = mouse down equivalent
+    return EM_TRUE;
+}
+
+// ──────────────────────────────────────────
+EM_BOOL touch_end_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+
+    // Use last known position if needed; touchend often lacks valid coordinates
+    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
+
+    data->dragging = false;
+    pdlua_gfx_mouse_event(data->obj, x, y, 1); // 1 = mouse up equivalent
+    return EM_TRUE;
+}
+
+// ──────────────────────────────────────────
+EM_BOOL touch_move_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
+    mouse_data *data = (mouse_data *)userData;
+
+    if (e->numTouches < 1)
+        return EM_FALSE;
+
+    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
+    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
+
+    if (!data->dragging) {
+        pdlua_gfx_mouse_event(data->obj, x, y, 2); // 2 = hover
+    } else {
+        pdlua_gfx_mouse_event(data->obj, x, y, 3); // 3 = drag
+    }
+    return EM_TRUE;
+}
 
 // ─────────────────────────────────────
 typedef struct _path_state {
@@ -957,19 +1056,6 @@ static int set_size(lua_State *L) {
 }
 
 // ─────────────────────────────────────
-typedef struct {
-    t_pdlua *obj;
-    t_pdlua_gfx *gfx;
-} mouse_data;
-
-// ─────────────────────────────────────
-EM_BOOL mousemove_callback(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-    printf("Mouse moved: x=%ld, y=%ld\n", e->canvasX, e->canvasY);
-    return EM_TRUE;
-}
-
-// ─────────────────────────────────────
 static int start_paint(lua_State *L) {
     if (!lua_islightuserdata(L, 1)) {
         lua_pushnil(L);
@@ -1050,7 +1136,13 @@ static int start_paint(lua_State *L) {
         mouse_data *data = malloc(sizeof(mouse_data));
         data->obj = obj;
         data->gfx = gfx;
-        emscripten_set_mousemove_callback(selector, (void *)data, EM_FALSE, mousemove_callback);
+        data->dragging = false;
+        emscripten_set_mousedown_callback(selector, data, EM_FALSE, mouse_down_cb);
+        emscripten_set_mouseup_callback(selector, data, EM_FALSE, mouse_up_cb);
+        emscripten_set_mousemove_callback(selector, data, EM_FALSE, mouse_move_cb);
+        emscripten_set_touchstart_callback(selector, data, EM_FALSE, touch_start_cb);
+        emscripten_set_touchend_callback(selector, data, EM_FALSE, touch_end_cb);
+        emscripten_set_touchmove_callback(selector, data, EM_FALSE, touch_move_cb);
     }
 
     char layer_id[64];

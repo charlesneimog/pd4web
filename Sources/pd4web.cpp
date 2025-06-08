@@ -1240,22 +1240,6 @@ void Pd4Web::init() {
 
     return;
 }
-// ╭─────────────────────────────────────╮
-// │            Lua Functions            │
-// ╰─────────────────────────────────────╯
-#ifdef PD4WEB_LUA
-static int set_size(lua_State *L) {
-    if (!lua_islightuserdata(L, 1)) {
-        return 0;
-    }
-
-    // t_pdlua *obj = (t_pdlua*)lua_touserdata(L, 1);
-    float width = luaL_checknumber(L, 2);
-    float height = luaL_checknumber(L, 3);
-    printf("setting size to %f %f\n", width, height);
-    return 0;
-}
-#endif
 
 // ╭─────────────────────────────────────╮
 // │              Main Loop              │

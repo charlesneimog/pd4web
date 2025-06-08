@@ -61,7 +61,7 @@ class GetAndBuildExternals:
 
         if self.Pd4Web.PDLUA:
             pdlua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pdlua.h")
-            pd4weblua_gfx= os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
+            pd4weblua_gfx = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
             roboto_font = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../Roboto-Regular.ttf")
             shutil.copy(pd4weblua_gfx, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua_gfx.h"))
             shutil.copy(pdlua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.h"))
@@ -446,7 +446,10 @@ class GetAndBuildExternals:
             if not self.Pd4Web.PDLUA:
                 releaseType = "Debug"
             else:
-                self.Pd4Web.print("Debug mode disable for pdlua, check https://github.com/charlesneimog/pd4web/issues/52", color="yellow")
+                self.Pd4Web.print(
+                    "Debug mode disable for pdlua, check https://github.com/charlesneimog/pd4web/issues/52",
+                    color="yellow",
+                )
 
         command = [
             emcmake,
@@ -463,6 +466,7 @@ class GetAndBuildExternals:
             "-Wno-dev",
             f"-DCMAKE_MAKE_PROGRAM={ninja}",
         ]
+
         if self.Pd4Web.verbose:
             self.Pd4Web.print(
                 " ".join(command), color="green", silence=self.Pd4Web.SILENCE, pd4web=self.Pd4Web.PD_EXTERNAL
