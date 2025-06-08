@@ -60,15 +60,14 @@ class GetAndBuildExternals:
         self.CreateCppCallsExternalFile()
 
         if self.Pd4Web.PDLUA:
-            weblua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
-            pdlua_c = os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.c")
-            with open(pdlua_c, "r") as file:
-                content = file.read()
-            updated_content = re.sub(r'#include "pdlua_gfx\.h"', '#include "pd4weblua_gfx.c"', content)
-            with open(pdlua_c, "w") as file:
-                file.write(updated_content)
-
-            shutil.copy(weblua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pd4weblua_gfx.c"))
+            pdlua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pdlua.h")
+            pd4weblua_gfx= os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
+            roboto_font = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../Roboto-Regular.ttf")
+            shutil.copy(pd4weblua_gfx, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua_gfx.h"))
+            shutil.copy(pdlua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.h"))
+            shutil.copy(
+                roboto_font, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/Roboto-Regular.ttf")
+            )
 
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │

@@ -1363,5 +1363,6 @@ int main() {
     MAIN_THREAD_ASYNC_EM_ASM({ setTimeout(function() { Pd4Web._vis(); }, 100); });
 
     emscripten_set_main_loop(Pd4Web::guiLoop, 0, 1);
+
     return 0;
 }

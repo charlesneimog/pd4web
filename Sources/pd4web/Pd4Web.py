@@ -26,7 +26,7 @@ class Pd4Web:
     BYPASS_UNSUPPORTED: bool = False
     SILENCE: bool = False
     PD_VERSION: str = "0.55-2"
-    EMSDK_VERSION: str = "4.0.9"
+    EMSDK_VERSION: str = "4.0.10"
     DEBUG: bool = False
 
     # Compiler
@@ -243,7 +243,19 @@ class Pd4Web:
             command = f"{self.EMSDK} install {self.EMSDK_VERSION}"
             result = subprocess.run(command, shell=True, env=self.env).returncode
             if result != 0:
-                self.exception("Failed to activate emsdk")
+                emsdk_git = self.APPDATA + "/emsdk"
+                repo = pygit2.Repository(emsdk_git)
+                remote = repo.remotes["origin"]
+                remote.fetch()
+                remote_branch = repo.lookup_reference("refs/remotes/origin/main")
+                target_commit = repo.get(remote_branch.target)
+                repo.reset(target_commit.id, pygit2.GIT_RESET_HARD)
+                tag_ref = repo.lookup_reference(f"refs/tags/{self.EMSDK_VERSION}")
+                repo.reset(tag_ref.target, pygit2.GIT_RESET_HARD)
+                command = f"{self.EMSDK} install {self.EMSDK_VERSION}"
+                result = subprocess.run(command, shell=True, env=self.env).returncode
+                if result != 0:
+                    self.exception("Failed to update and activate emsdk, please report this issue")
 
             # Activate
             command = f"{self.EMSDK} activate {self.EMSDK_VERSION}"
