@@ -210,12 +210,6 @@ EM_JS(void, _JS_loadStyle, (void), {
 });
 
 // ─────────────────────────────────────
-EM_JS(void, _JS_setTitle, (const char *projectName), {
-    let title = UTF8ToString(projectName);
-    document.title = title;
-});
-
-// ─────────────────────────────────────
 EM_JS(void, _JS_alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
@@ -969,6 +963,7 @@ void Pd4Web::unbindReceiver() {
  * @return true if processing succeeded, false otherwise.
  */
 
+extern "C" int processing_block = 0;
 EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutputs,
                         AudioSampleFrame *Out, int numParams, const AudioParamFrame *params,
                         void *data) {
@@ -1018,10 +1013,12 @@ EM_BOOL Pd4Web::process(int numInputs, const AudioSampleFrame *In, int numOutput
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
 
+    // TODO: Temporary fix, thing other way
+    processing_block = 1;
     libpd_process_float(2, In[0].data, LibPdOuts);
+    processing_block = 0;
 
     // TODO: Fix multiple channels
-
     int OutI = 0;
     for (int i = 0; i < ChCount; i++) {
         for (int j = i; j < (128 * ChCount); j += ChCount) {
@@ -1305,8 +1302,7 @@ int main() {
 
     if (PD4WEB_GUI) {
         _JS_loadStyle();
-        // _JS_loadGui(PD4WEB_AUTO_THEME, PD4WEB_PATCH_ZOOM);
-        _JS_setTitle(PD4WEB_PROJECT_NAME);
+        emscripten_set_window_title(PD4WEB_PROJECT_NAME);
     }
     _JS_addAlertOnError();
 
