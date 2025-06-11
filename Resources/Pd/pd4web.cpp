@@ -2,6 +2,10 @@
 #include <array>
 #include <filesystem>
 #include <string>
+
+#ifndef _POSIX_SEM_VALUE_MAX 
+#define _POSIX_SEM_VALUE_MAX 32767
+#endif
 #include <thread>
 
 #ifdef _WIN32

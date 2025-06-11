@@ -3,7 +3,7 @@ project(pd4web)
 
 # Set the path to pd.cmake
 set(PDCMAKE_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/../../Sources/Libraries/pd.cmake/"
+    "${CMAKE_CURRENT_SOURCE_DIR}/"
     CACHE PATH "Path to pd.cmake")
 
 include(${PDCMAKE_DIR}/pd.cmake)
