@@ -62,11 +62,11 @@ class GetAndBuildExternals:
         if self.Pd4Web.PDLUA:
             pdlua_h = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pdlua.h")
             pd4weblua_gfx = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../pd4weblua_gfx.c")
-            roboto_font = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../Roboto-Regular.ttf")
+            roboto_font = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../Font/DejaVuSans.ttf")
             shutil.copy(pd4weblua_gfx, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua_gfx.h"))
             shutil.copy(pdlua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.h"))
             shutil.copy(
-                roboto_font, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/Roboto-Regular.ttf")
+                roboto_font, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/DejaVuSans.ttf")
             )
 
         # ╭──────────────────────────────────────╮
@@ -174,6 +174,8 @@ class GetAndBuildExternals:
             "    --closure 0",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
+            "    -fwasm-exceptions", 
+            "    -sSUPPORT_LONGJMP=wasm",
             "    -sMAX_WEBGL_VERSION=2",
             "    -sMIN_WEBGL_VERSION=2",
             f"   --pre-js {guifile}",
@@ -307,13 +309,12 @@ class GetAndBuildExternals:
 
         externalsTargets = []
         print()
-        for library, objects in usedObjectsName.items():
+        for library, objects in sorted(usedObjectsName.items()):
             if library == "pure-data":
                 # TODO: Need to check for extra objects
                 continue
             libraryPath = self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/" + library
             for pdobject in objects:
-
                 if pdobject not in self.Pd4Web.externalsLinkLibraries:
                     self.Pd4Web.externalsLinkLibraries.append(pdobject)
                 if libraryPath + "/build" not in self.Pd4Web.externalsLinkLibrariesFolders:
