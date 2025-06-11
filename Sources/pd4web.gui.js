@@ -72,9 +72,7 @@ function setSoundIcon(icon, animation) {
             soundSwitch.innerHTML = "";
             soundSwitch.appendChild(svgElement);
         }
-    } else {
-        console.error("Pd4WebAudioSwitch not found");
-    }
+    } 
 }
 
 // ─────────────────────────────────────

@@ -18,12 +18,12 @@ std::vector<Pd4Web *> Pd4WebInstances;
 // clang-format off
 // ─────────────────────────────────────
 EM_JS(void, _JS_addSoundToggle, (void), {
-    let soundSwitch = document.getElementById("Pd4WebAudioSwitch");
-    if (soundSwitch == null || typeof Pd4Web === "undefined") {
+    const soundSwitch = document.getElementById("Pd4WebAudioSwitch");
+    if (!soundSwitch || typeof Pd4Web === "undefined") {
         return;
     }
-    soundSwitch.addEventListener("click", function () {
-        if (Pd4Web){
+    soundSwitch.addEventListener("click", () => {
+        if (Pd4Web && typeof Pd4Web.soundToggle === "function") {
             Pd4Web.soundToggle();
         }
     });
