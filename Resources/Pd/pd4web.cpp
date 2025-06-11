@@ -564,7 +564,8 @@ static void pd4web_compile(Pd4Web *x) {
         return;
     }
     std::string cmd = x->pd4web + " --pd-external";
-    cmd += " --pd-external-version \"" + x->version + "\" ";
+    std::string version = PD4WEB_EXTERNAL_VERSION;
+    cmd += " --pd-external-version \"" + version + "\" ";
     if (x->verbose) {
         cmd += " --verbose ";
     }
