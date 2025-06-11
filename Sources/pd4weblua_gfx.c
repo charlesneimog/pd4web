@@ -84,7 +84,7 @@ typedef struct {
     float y1;
     float x2;
     float y2;
-    char *text;
+    char text[1024];
     float font_size;
     float stroke_width;
     float canvas_width;
@@ -325,10 +325,8 @@ void clear_commands_from_layer(const char *layer_id, int index) {
             for (size_t k = 0; k < entry->size; k++) {
                 GuiCommand *cmd = &entry->commands[k];
 
-                if (cmd->command == DRAW_TEXT && cmd->text) {
-                    free(cmd->text);
-                    cmd->text = NULL;
-                } else if ((cmd->command == STROKE_PATH || cmd->command == FILL_PATH) && cmd->path_coords) {
+                if ((cmd->command == STROKE_PATH || cmd->command == FILL_PATH) &&
+                    cmd->path_coords) {
                     free(cmd->path_coords);
                     cmd->path_coords = NULL;
                 }
@@ -458,7 +456,7 @@ LayerCtx *get_layer_ctx(const char *layer_id, float canvas_width, float canvas_h
             layer_contexts[i].vg = vg;
             layer_contexts[i].in_use = 1;
 
-            layer_contexts[i].font_handler = nvgCreateFont(vg, "roboto", "Roboto-Regular.ttf");
+            layer_contexts[i].font_handler = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
             if (layer_contexts[i].font_handler == -1) {
                 fprintf(stderr, "Failed to create font\n");
                 return NULL;
@@ -773,7 +771,12 @@ void pdlua_gfx_repaint(t_pdlua *o, int firsttime) {
 
 // ─────────────────────────────────────
 // Pass mouse events to lua script
+extern int processing_block;
 void pdlua_gfx_mouse_event(t_pdlua *o, int x, int y, int type) {
+    if (processing_block) {
+        return;
+    }
+
     lua_getglobal(__L(), "pd");
     lua_getfield(__L(), -1, "_mouseevent");
     lua_pushlightuserdata(__L(), o);
@@ -1061,6 +1064,7 @@ static int start_paint(lua_State *L) {
         lua_pushnil(L);
         return 1;
     }
+
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
     t_pdlua_gfx *gfx = &obj->gfx;
 
@@ -1081,17 +1085,37 @@ static int start_paint(lua_State *L) {
 
     int new_num_layers = layer + 1;
     if (gfx->layer_tags) {
-        gfx->layer_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
+        char **new_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
                                       sizeof(char *) * new_num_layers);
+        if (!new_tags) {
+            lua_pushnil(L);
+            return 1;
+        }
+        gfx->layer_tags = new_tags;
     } else {
-        gfx->layer_tags = getbytes(sizeof(char *));
+        gfx->layer_tags = getbytes(sizeof(char *) * new_num_layers);
+        if (!gfx->layer_tags) {
+            lua_pushnil(L);
+            return 1;
+        }
     }
+
+    // Initialize any new entries to NULL
+    for (int i = gfx->num_layers; i < new_num_layers; ++i) {
+        gfx->layer_tags[i] = NULL;
+    }
+
     gfx->num_layers = new_num_layers;
 
     if (gfx->first_draw) {
+        // Allocate layer tag string
         gfx->layer_tags[layer] = getbytes(64);
+        if (!gfx->layer_tags[layer]) {
+            lua_pushnil(L);
+            return 1;
+        }
         snprintf(gfx->layer_tags[layer], 64, "layer_%p", obj);
-        gfx->num_layers = new_num_layers;
+
         int x = text_xpix((t_object *)obj, obj->canvas);
         int y = text_ypix((t_object *)obj, obj->canvas);
         create_new_layer(gfx->layer_tags[layer]);
@@ -1130,25 +1154,41 @@ static int start_paint(lua_State *L) {
             },
             gfx->layer_tags[layer], x, y, gfx->width, gfx->height, PD4WEB_PATCH_ZOOM, layer);
 
-        gfx->first_draw = 0;
-        char selector[64];
+        // Allocate selector string dynamically to persist
+        char *selector = getbytes(64);
+        if (!selector) {
+            lua_pushnil(L);
+            return 1;
+        }
         snprintf(selector, 64, "#layer_%p", obj);
+
         mouse_data *data = malloc(sizeof(mouse_data));
+        if (!data) {
+            freebytes(selector, 64);
+            lua_pushnil(L);
+            return 1;
+        }
+
         data->obj = obj;
         data->gfx = gfx;
         data->dragging = false;
+
+        // Optionally store selector pointer in gfx to allow future cleanup
+        gfx->current_layer_tag = gfx->layer_tags[layer];
+        gfx->current_layer = layer;
+
         emscripten_set_mousedown_callback(selector, data, EM_FALSE, mouse_down_cb);
         emscripten_set_mouseup_callback(selector, data, EM_FALSE, mouse_up_cb);
         emscripten_set_mousemove_callback(selector, data, EM_FALSE, mouse_move_cb);
         emscripten_set_touchstart_callback(selector, data, EM_FALSE, touch_start_cb);
         emscripten_set_touchend_callback(selector, data, EM_FALSE, touch_end_cb);
         emscripten_set_touchmove_callback(selector, data, EM_FALSE, touch_move_cb);
+
+        gfx->first_draw = 0;
     }
 
     char layer_id[64];
     snprintf(layer_id, 64, "layer_%p", obj);
-    gfx->current_layer_tag = gfx->layer_tags[layer];
-    gfx->current_layer = layer;
 
     update_layer_node_width_and_height(layer_id, gfx->width, gfx->height);
     clear_commands_from_layer(layer_id, layer);
@@ -1421,29 +1461,37 @@ static int draw_line(lua_State *L) {
 static int draw_text(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
     t_pdlua *obj = gfx->object;
+    t_canvas *cnv = glist_getcanvas(obj->canvas);
+
+    const char *text = luaL_checkstring(L, 1);
+    int x = luaL_checknumber(L, 2);
+    int y = luaL_checknumber(L, 3);
+    int w = luaL_checknumber(L, 4);
+    int font_height = luaL_checknumber(L, 5) ;
+
+    transform_point(gfx, &x, &y);
+    transform_size(gfx, &w, &font_height);
 
     GuiCommand cmd = {0};
     cmd.command = DRAW_TEXT;
     strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
-    const char *text = luaL_checkstring(L, 1);
-    size_t len = strlen(text) + 1;
-    cmd.text = (char *)malloc(len);
-    if (cmd.text == NULL) {
-        luaL_error(L, "Error allocating memory for text");
-        return 0;
+    size_t len = strlen(text);
+    if (len > 1024) {
+        snprintf(cmd.text, 1024, "Text is too long");
+    } else {
+        snprintf(cmd.text, 1024, "%s", text);
     }
-    strncpy(cmd.text, text, len);
-    cmd.x1 = luaL_checknumber(L, 2);
-    cmd.y1 = luaL_checknumber(L, 3);
-    cmd.width = luaL_checknumber(L, 4);
-    cmd.font_size = luaL_checknumber(L, 5);
+
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.width = w;
+    cmd.font_size = font_height;
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
     add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
-
     return 0;
 }
 
