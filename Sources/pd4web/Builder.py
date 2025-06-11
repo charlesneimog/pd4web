@@ -39,6 +39,15 @@ PD4WEB_HTML_INITIALIZER = """
 </script>
 """
 
+PD_CMAKE = """
+set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
+set(PDCMAKE_VERSION "v0.2.0")
+if(NOT EXISTS "${PDCMAKE_FILE}")
+    file(DOWNLOAD https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake ${PDCMAKE_FILE})
+endif()
+include(${PDCMAKE_FILE})
+"""
+
 
 class GetAndBuildExternals:
     def __init__(self, Pd4Web: Pd4Web):
@@ -117,7 +126,8 @@ class GetAndBuildExternals:
         self.cmakeFile.append('set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")\n')
 
         self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")')
-        self.cmakeFile.append('include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pd.cmake")')
+        self.cmakeFile.append(PD_CMAKE)
+
         self.cmakeFile.append('include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")\n')
 
         self.cmakeFile.append("add_definitions(-DPDTHREADS)")
@@ -207,10 +217,6 @@ class GetAndBuildExternals:
         shutil.copy(
             self.Pd4Web.PD4WEB_ROOT + "/../pd4web.hpp",
             self.Pd4Web.PROJECT_ROOT + "/Pd4Web/",
-        )
-        shutil.copy(
-            self.Pd4Web.PD4WEB_LIBRARIES + "/pd.cmake/pd.cmake",
-            self.Pd4Web.PROJECT_ROOT + "/Pd4Web/Externals/pd.cmake",
         )
         shutil.copy(
             self.Pd4Web.PD4WEB_LIBRARIES + "/libpd.cmake",
