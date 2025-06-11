@@ -394,7 +394,7 @@ class Patch:
                     if patchLine.Tokens[2] == "-lib":
                         path = patchLine.Tokens[3]
                         if not self.Pd4Web.Libraries.isSupportedLibrary(path):
-                            self.Pd4Web.exception(f"Library not supported: {path} in {self.patchFile}")
+                            self.Pd4Web.exception(f"Library not supported: '{path}' in {self.patchFile}")
                         self.Pd4Web.Objects.GetSupportedObjects(path)
                         self.Pd4Web.declaredLibsObjs.append(path)
                         if path == "pdlua" or path == "lua":
