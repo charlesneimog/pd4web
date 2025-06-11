@@ -11,7 +11,7 @@ endif()
 # │              DEJAVU TTF              │
 # ╰──────────────────────────────────────╯
 set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${LIB_DIR}/Roboto-Regular.ttf@/Roboto-Regular.ttf")
+    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${LIB_DIR}/DejaVuSans.ttf@/DejaVuSans.ttf")
 
 # ╭──────────────────────────────────────╮
 # │                NANOVG                │
@@ -36,8 +36,12 @@ add_subdirectory(${NANOVG_DIR} EXCLUDE_FROM_ALL)
 include_directories("${NANOVG_DIR}/src")
 
 include_directories("${LIB_DIR}/lua")
-pd_add_external(pdlua "${LIB_DIR}/pdlua.c")
-target_link_libraries(pdlua PUBLIC lua nanovg)
+if (NOT TARGET pdlua)
+    pd_add_external(pdlua "${LIB_DIR}/pdlua.c")
+    target_link_libraries(pdlua PUBLIC lua)
+endif()
+
+target_link_libraries(pdlua PUBLIC nanovg)
 target_include_directories(pdlua PRIVATE "${PD4WEB_EXTERNAL_DIR}/../")
 
 # set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file
