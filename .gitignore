@@ -39,3 +39,4 @@ Tests/Libraries/ambi~/.gitignore
 Tests/Libraries/ambi~/favicon.ico
 Tests/Libraries/ambi~/index.html
 Tests/Libraries/else/else/
+Sources/Compiler/.cache/clangd/index
