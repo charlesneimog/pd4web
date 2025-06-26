@@ -18,9 +18,14 @@ bool Pd4Web::cmdExecute(std::string cmd) {
 // ─────────────────────────────────────
 bool Pd4Web::cmdInstallEmsdk() {
 #ifdef _WIN32
+    // TODO: do for windows
 #else
     INFO("Installing emsdk, this will take some time");
     std::string cmd = "bash " + m_EmsdkInstaller + " install " + EMSDK_VERSION;
+    if (!cmdExecute(cmd)) {
+        return false;
+    }
+    cmd = "bash " + m_EmsdkInstaller + " install " + "ninja-git-release-64bit";
     return cmdExecute(cmd);
 #endif
     return true;

@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.13)
+cmake_policy(SET CMP0077 NEW)
 project(pd4web-compiler)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(BUILD_SHARED_LIBS OFF)
 
 option(PD4WEB_BUILD_COMPILER ON)
 
@@ -25,7 +27,6 @@ endif()
 # libtreesitter-cpp
 # ──────────────────────────────────────────────────────────────────
 set(BUILD_SHARED_LIBS OFF)
-
 set(TREESITTER_URL https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.25.6.tar.gz)
 set(TREESITTER_TAR ${CMAKE_BINARY_DIR}/tree-sitter.tar.gz)
 set(TREESITTER_SRC_DIR ${CMAKE_BINARY_DIR}/tree-sitter-v0.25.6)
@@ -60,9 +61,6 @@ if(NOT EXISTS ${TREESITTER_C_SRC_DIR})
     message(STATUS "Extracting tree-sitter-c...")
     file(ARCHIVE_EXTRACT INPUT ${TREESITTER_C_TAR} DESTINATION ${CMAKE_BINARY_DIR})
 endif()
-
-# 1. Adicionar como subdiretório add_subdirectory(${TREESITTER_C_SRC_DIR}
-#   ${CMAKE_BINARY_DIR}/tree-sitter-c-build EXCLUDE_FROM_ALL)
 add_library(tree-sitter-c STATIC "${TREESITTER_C_SRC_DIR}/src/parser.c")
 
 # ╭──────────────────────────────────────╮
@@ -100,12 +98,23 @@ if(NOT EXISTS "${CXXOPTS_FILE}")
         SHOW_PROGRESS
         ${CXXOPTS_FILE})
 endif()
-include_directories(${CMAKE_BINARY_DIR})
+
+# ──────────────────────────────────────────────────────────────────
+# json
+# ──────────────────────────────────────────────────────────────────
+set(JSON_FILE ${CMAKE_BINARY_DIR}/json.hpp)
+set(JSON_VERSION "v3.12.0")
+if(NOT EXISTS "${JSON_FILE}")
+    file(
+        DOWNLOAD
+        "https://raw.githubusercontent.com/nlohmann/json/refs/tags/${JSON_VERSION}/single_include/nlohmann/json.hpp"
+        SHOW_PROGRESS
+        ${JSON_FILE})
+endif()
 
 # ──────────────────────────────────────────────────────────────────
 # Download e extração do libgit2
 # ──────────────────────────────────────────────────────────────────
-set(BUILD_SHARED_LIBS OFF)
 set(GIT_FILE ${CMAKE_BINARY_DIR}/libgit2.tar.gz)
 if(NOT EXISTS ${GIT_FILE})
     message(STATUS "Downloading libgit2")
@@ -113,6 +122,7 @@ if(NOT EXISTS ${GIT_FILE})
          ${GIT_FILE})
 endif()
 file(ARCHIVE_EXTRACT INPUT ${GIT_FILE} DESTINATION ${CMAKE_BINARY_DIR})
+include_directories(${CMAKE_BINARY_DIR}/libgit2-1.9.1/include)
 
 # ──────────────────────────────────────────────────────────────────
 # libgit2 (compilação estática com OpenSSL)
@@ -133,6 +143,7 @@ add_library(
     "${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmd.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/builder.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp")
 
 target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR})

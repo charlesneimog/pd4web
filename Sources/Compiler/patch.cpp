@@ -73,6 +73,11 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, std::string Abs) {
         found = true;
     }
 
+    if (!found) {
+        print("Could not find file " + Abs + ".pd", Pd4WebColor::RED, p->printLevel + 1);
+        return "";
+    }
+
     return fullPath;
 }
 
@@ -89,21 +94,28 @@ void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
-    auto pos = pl.Name.find('/'); // find slash
-    if (pos == std::string::npos) {
-        return;
-    }
+void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
+    std::string lib = pl.Lib;
 
-    std::string lib = pl.Name.substr(0, pos);
     for (Library SupportedLib : m_Libraries) {
         if (SupportedLib.Name == lib) {
-            std::vector<std::string> objects = listObjectsInLibrary(lib);
+            std::vector<std::string> objects = listObjectsInLibrary(p, lib);
             for (std::string obj : objects) {
                 if (obj == pl.Name) {
                     pl.Found = true;
+                    pl.isExternal = true;
+                    p->UsedLibs.push_back(SupportedLib.Name);
                 }
             }
+        }
+    }
+
+    for (Library SupportedLib : m_Libraries) {
+        if (SupportedLib.Name == pl.Name) {
+            pl.Found = true;
+            pl.isExternal = true;
+            p->UsedLibs.push_back(pl.Name);
+            std::vector<std::string> objects = listObjectsInLibrary(p, pl.Name);
         }
     }
 }
@@ -140,27 +152,52 @@ void Pd4Web::isMidiObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
 
     if (std::find(midiIn.begin(), midiIn.end(), pl.Name) != midiIn.end()) {
         Patch->Midi = true;
-        print("Activate Midi Support", Pd4WebColor::GREEN);
+        print("Activate Midi In Support", Pd4WebColor::GREEN, Patch->printLevel + 1);
     } else if (std::find(midiOut.begin(), midiOut.end(), pl.Name) != midiOut.end()) {
         Patch->Midi = true;
-        print("Activate Midi Support", Pd4WebColor::GREEN);
+        print("Activate Midi Out Support", Pd4WebColor::GREEN, Patch->printLevel + 1);
     } else {
         Patch->Midi = false;
     }
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
-    LOG(__FUNCTION__);
-    std::string Obj = pl.OriginalTokens[4];
-    int length = pl.OriginalTokens.size();
+std::string Pd4Web::getObjLib(std::string &objToken) {
+    if (objToken == "/" || objToken == "//") {
+        return "";
+    }
+
+    size_t slashPos = objToken.find_last_of('/');
+    if (slashPos != std::string::npos) {
+        return objToken.substr(0, slashPos);
+    }
+
+    return "";
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::getObjName(std::string &objToken) {
+    if (objToken == "/" || objToken == "//") {
+        return objToken;
+    }
+
+    std::string Obj = objToken;
     Obj.erase(std::remove(Obj.begin(), Obj.end(), ','), Obj.end());
     Obj.erase(std::remove(Obj.begin(), Obj.end(), ';'), Obj.end());
-    pl.Name = Obj;
 
-    if (Obj == "declare") {
-        return true;
+    size_t slashPos = Obj.find_last_of('/');
+    if (slashPos != std::string::npos) {
+        Obj = Obj.substr(slashPos + 1);
     }
+
+    return Obj;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
+    int length = pl.OriginalTokens.size();
+    std::string Obj = getObjName(pl.OriginalTokens[4]);
+    std::string Lib = getObjLib(pl.OriginalTokens[4]);
 
     if (Obj == "adc~") {
         unsigned int input = 0;
@@ -178,7 +215,7 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
             input = 1;
         }
         p->Input = input;
-        print("Number of input is " + std::to_string(input), Pd4WebColor::GREEN);
+        print("Number of input is " + std::to_string(input), Pd4WebColor::GREEN, p->printLevel + 1);
     } else if (Obj == "dac~") {
         unsigned int output = 0;
 
@@ -195,64 +232,94 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
             output = 1;
         }
         p->Output = output;
-        print("Number of output is " + std::to_string(output), Pd4WebColor::GREEN);
+        print("Number of output is " + std::to_string(output), Pd4WebColor::GREEN,
+              p->printLevel + 1);
         return true;
+    }
+    return false;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
+    std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s"};
+    std::vector<std::string> filtered;
+    std::copy_if(pl.OriginalTokens.begin(), pl.OriginalTokens.end(), std::back_inserter(filtered),
+                 [&args](const std::string &token) {
+                     auto is_number = [](const std::string &s) {
+                         return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+                     };
+                     return args.find(token) == args.end() && !is_number(token);
+                 });
+
+    if (filtered.size() != 1) {
+        LOG("Filtered should return just 1 result, please report");
+        return false;
+    } else {
+        std::string abs = filtered[0];
+        abs.erase(
+            std::remove_if(abs.begin(), abs.end(), [](char c) { return c == ';' || c == ','; }),
+            abs.end());
+
+        fs::path AbsPath = getAbsPath(p, abs);
+        auto Abstraction = std::make_shared<Patch>();
+        Abstraction->Path = AbsPath;
+        Abstraction->Root = AbsPath.parent_path();
+        Abstraction->Father = p;
+        Abstraction->mainRoot = p->mainRoot;
+        p->Childs.push_back(Abstraction);
+        pl.isAbstraction = true;
+
+        print("\n");
+        print("Processing SubPatch '" + abs + ".pd'", Pd4WebColor::BLUE, p->printLevel + 1);
+        Abstraction->printLevel = p->printLevel + 1;
+        processSubpatch(Abstraction);
+    }
+    return true;
+    // TODO: Get Abs
+    // TODO: Check for abs inside Current Path
+    // TODO: Check for abs inside Library
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
+    LOG(__FUNCTION__);
+
+    int length = pl.OriginalTokens.size();
+    std::string Obj = getObjName(pl.OriginalTokens[4]);
+    std::string Lib = getObjLib(pl.OriginalTokens[4]);
+
+    pl.Name = Obj;
+    pl.Lib = Lib;
+
+    if (Obj == "declare") {
+        return true;
+    }
+
+    if (Obj == "adc~" || Obj == "dac~") {
+        processObjAudioInOut(p, pl);
     }
 
     if (Obj == "clone") {
-        std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s"};
-        std::vector<std::string> filtered;
-        std::copy_if(pl.OriginalTokens.begin(), pl.OriginalTokens.end(),
-                     std::back_inserter(filtered), [&args](const std::string &token) {
-                         auto is_number = [](const std::string &s) {
-                             return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
-                         };
-                         return args.find(token) == args.end() && !is_number(token);
-                     });
-
-        if (filtered.size() != 1) {
-            LOG("Filtered should return just 1 result, please report");
-            return false;
-        } else {
-            std::string abs = filtered[0];
-            abs.erase(
-                std::remove_if(abs.begin(), abs.end(), [](char c) { return c == ';' || c == ','; }),
-                abs.end());
-
-            fs::path AbsPath = getAbsPath(p, abs);
-            auto Abstraction = std::make_shared<Patch>();
-            Abstraction->Path = AbsPath;
-            Abstraction->Root = AbsPath.parent_path();
-            p->Childs.push_back(Abstraction);
-            print("Processing SubPatch " + abs, Pd4WebColor::GREEN);
-            processSubpatch(Abstraction);
-        }
-
-        // Get Abs
-        // Check for abs inside Current Path
-        // Check for abs inside Library
+        processObjClone(p, pl);
     } else if (Obj == "pdlua") {
         p->PdLua = true;
+        p->UsedLibs.push_back("pdlua");
         return true;
     }
 
+    isMidiObj(p, pl);
     isPdObj(p, pl);
 
     if (pl.isExternal) {
         if (p->PdLua) {
             isLuaObj(p, pl);
         }
-
         isExternalLibObj(p, pl);
-
         if (!pl.Found) {
-            print("Object '" + pl.Name + "' not found", Pd4WebColor::RED);
+            print("Object '" + pl.Name + "' not found", Pd4WebColor::RED, p->printLevel + 1);
             return false;
         }
     }
-
-    isMidiObj(p, pl);
-
     return true;
 }
 
@@ -267,14 +334,14 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
             Lib.pop_back();
         }
         if (Token == "-lib") {
-            p->DeclaredLibs.push_back(Lib);
-            std::vector<std::string> objectsInLibrary = listObjectsInLibrary(Lib);
+            p->UsedLibs.push_back(Lib);
+            std::vector<std::string> objectsInLibrary = listObjectsInLibrary(p, Lib);
             p->ValidObjectNames.insert(p->ValidObjectNames.end(), objectsInLibrary.begin(),
                                        objectsInLibrary.end());
-            print("Found declare library " + Lib, Pd4WebColor::GREEN);
+            print("Found declare library " + Lib, Pd4WebColor::GREEN, p->printLevel + 1);
         } else if (Token == "-path") {
             p->DeclaredPaths.push_back(Lib);
-            print("Found declare path " + Lib, Pd4WebColor::GREEN);
+            print("Found declare path " + Lib, Pd4WebColor::GREEN, p->printLevel + 1);
         }
         index += 2;
     }
@@ -282,8 +349,85 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 }
 
 // ─────────────────────────────────────
+void Pd4Web::removePreffix(std::shared_ptr<Patch> &p, bool mainPatch) {
+    std::string editPatch = "";
+    for (auto pl : p->PatchLines) {
+
+        // tradicional external
+        if (pl.isExternal && pl.Type == PatchLine::OBJ) {
+            std::string &token = pl.OriginalTokens[4];
+            size_t firstSlash = token.find('/');
+            if (firstSlash != std::string::npos) {
+                size_t secondSlash = token.find('/', firstSlash + 1);
+                if (secondSlash != std::string::npos) {
+                    token = token.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+                } else {
+                    token = token.substr(firstSlash + 1);
+                }
+            }
+        } else if (pl.isAbstraction && pl.Type == PatchLine::OBJ && pl.Name != "clone") {
+            std::string &token = pl.OriginalTokens[4];
+            size_t firstSlash = token.find('/');
+            if (firstSlash != std::string::npos) {
+                size_t secondSlash = token.find('/', firstSlash + 1);
+                if (secondSlash != std::string::npos) {
+                    token = token.substr(firstSlash + 1, secondSlash - firstSlash - 1);
+                } else {
+                    token = token.substr(firstSlash + 1);
+                }
+            }
+        } else if (pl.isAbstraction && pl.Type == PatchLine::OBJ && pl.Name == "clone") {
+            std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s"};
+
+            std::vector<size_t> filteredIndexes;
+            std::vector<std::string> filtered;
+
+            for (size_t i = 0; i < pl.OriginalTokens.size(); ++i) {
+                const std::string &token = pl.OriginalTokens[i];
+
+                auto is_number = [](const std::string &s) {
+                    return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
+                };
+
+                if (args.find(token) == args.end() && !is_number(token)) {
+                    std::string cleaned = token;
+
+                    // Remove prefix before last slash, keep everything after (including ';')
+                    size_t slashPos = cleaned.rfind('/');
+                    if (slashPos != std::string::npos) {
+                        cleaned = cleaned.substr(slashPos + 1);
+                    }
+
+                    filteredIndexes.push_back(i);
+                    filtered.push_back(cleaned);
+                }
+            }
+
+            for (size_t i = 0; i < filteredIndexes.size(); ++i) {
+                pl.OriginalTokens[filteredIndexes[i]] = filtered[i];
+            }
+        }
+
+        // save
+        for (auto &token : pl.OriginalTokens) {
+            editPatch += token + " ";
+        }
+        editPatch += "\n";
+    }
+
+    if (mainPatch) {
+        writeFile((p->mainRoot / "WebPatch" / "index.pd").string(), editPatch);
+    } else {
+        writeFile((p->mainRoot / ".tmp" / p->Path.filename()).string(), editPatch);
+    }
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &p) {
     LOG(__FUNCTION__);
+
+    p->printLevel += 1;
+
     bool ok = openPatch(p);
     if (!ok) {
         return false;
@@ -296,13 +440,24 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &p) {
     }
 
     unsigned int i = 0;
-    for (PatchLine Line : p->PatchLines) {
+    for (PatchLine &Line : p->PatchLines) {
         ok = processLine(p, Line);
         if (!ok) {
             LOG("Failed to process subpatch line" + std::to_string(i))
             return false;
         }
         i++;
+    }
+
+    // TODO: Review this
+    for (auto lib : p->UsedLibs) {
+        p->Father->UsedLibs.push_back(lib);
+    }
+
+    for (auto &pl : p->PatchLines) {
+        if (pl.isExternal) {
+            p->Father->ExternalPatchLines.push_back(pl);
+        }
     }
 
     return true;
@@ -320,24 +475,15 @@ bool Pd4Web::isUniqueObjFromLibrary(std::shared_ptr<Patch> &p, std::string &Obj)
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::configureExternalsObjects(std::shared_ptr<Patch> &p) {
-    LOG(__FUNCTION__);
-    for (PatchLine &Obj : p->ExternalObjects) {
-        if (isUniqueObjFromLibrary(p, Obj.Name)) {
-            printf("%s is unique library\n", Obj.Name.c_str());
-        }
-    }
-
-    return true;
-}
-
-// ─────────────────────────────────────
 bool Pd4Web::processPatch() {
     LOG(__FUNCTION__);
 
     auto p = std::make_shared<Patch>();
     p->Path = fs::path(m_PatchFile);
     p->Root = p->Path.parent_path();
+    p->mainRoot = p->Root;
+    p->ProjectName = p->Path.parent_path().filename().string();
+    p->Pd4WebRoot = m_Pd4WebRoot;
 
     bool ok = openPatch(p);
     if (!ok) {
@@ -347,27 +493,31 @@ bool Pd4Web::processPatch() {
     LOG("Getting PureData Internal Objects");
     getSupportedLibraries(p);
     if (m_PdObjects.empty()) {
-        print("Listing PureData Objects", Pd4WebColor::GREEN);
-        m_PdObjects = listObjectsInLibrary("pure-data/src");
+        print("Listing PureData Objects", Pd4WebColor::GREEN, p->printLevel + 1);
+        m_PdObjects = listObjectsInLibrary(p, "pure-data/src");
         m_PdObjects.push_back("list");
     }
     p->ValidObjectNames = m_PdObjects;
 
+    print("\n", Pd4WebColor::GREEN);
+    print("Processing Patch '" + p->ProjectName + ".pd'", Pd4WebColor::BLUE, p->printLevel);
     unsigned int i = 1;
     for (PatchLine &PatchLine : p->PatchLines) {
         ok = processLine(p, PatchLine);
         if (!ok) {
-            print("Failed to process line " + std::to_string(i), Pd4WebColor::RED);
+            print("Failed to process line " + std::to_string(i), Pd4WebColor::RED,
+                  p->printLevel + 1);
             return false;
         }
         i++;
     }
 
-    ok = configureExternalsObjects(p);
-    if (!ok) {
-        print("Error configuring externals", Pd4WebColor::RED);
-        return false;
-    }
+    getSupportedLibraries(p);
+    configureProjectToCompile(p);
+
+    removePreffix(p, true);
+
+    buildPatch(p);
 
     return true;
 }

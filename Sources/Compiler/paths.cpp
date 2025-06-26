@@ -13,6 +13,7 @@ bool Pd4Web::initPaths() {
     m_Emcc = m_Pd4WebRoot + "emsdk/upstream/emscripten/emcc";
     m_Emconfigure = m_Pd4WebRoot + "emsdk/upstream/emscripten/emconfigure";
     m_Emmake = m_Pd4WebRoot + "emsdk/upstream/emscripten/emmake";
+    m_Ninja = m_Pd4WebRoot + "emsdk/ninja/git-release_64bit/bin/ninja";
 
     return true;
 }
@@ -22,7 +23,7 @@ bool Pd4Web::checkAllPaths() {
     LOG(__FUNCTION__);
     // check if m_Emcmake exists
 
-    print("Checking emscripten paths", Pd4WebColor::GREEN);
+    print("Checking emscripten paths", Pd4WebColor::GREEN, 2);
 
     bool ok = std::filesystem::exists(m_Emcmake);
     if (!ok) {
@@ -44,6 +45,7 @@ bool Pd4Web::checkAllPaths() {
         LOG("emmake not found");
         return false;
     }
+
     return true;
 }
 

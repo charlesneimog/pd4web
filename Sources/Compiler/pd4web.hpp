@@ -1,13 +1,14 @@
 #pragma once
 
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <memory>
-#include <regex>
 #include <string>
 #include <sys/stat.h>
 
 #include <cxxopts.hpp>
+#include <json.hpp>
 #include <yaml.hpp>
 
 extern "C" {
@@ -24,9 +25,11 @@ const TSLanguage *tree_sitter_c();
 #define PD_VERSION "0.55-2"
 #define EMSDK_VERSION "4.0.10"
 
+using json = nlohmann::json;
 using YamlNode = ::fkyaml::v0_4_2::basic_node<>;
 namespace fs = std::filesystem;
 
+// ──────────────────────────────────────────
 enum Pd4WebColor {
     YELLOW = 0,
     RED,
@@ -34,6 +37,7 @@ enum Pd4WebColor {
     BLUE,
 };
 
+// ──────────────────────────────────────────
 struct PatchLine {
     enum PatchTokenType { DECLARE = 0, OBJ, CONNECTION, CANVAS, RESTORE, MSG, INVALID };
     PatchTokenType Type;
@@ -42,21 +46,31 @@ struct PatchLine {
 
     bool isLuaExternal;
     bool isExternal;
+    bool isAbstraction;
     bool Found;
 
     std::string Name;
+    std::string Lib;
 };
 
+// ──────────────────────────────────────────
 struct Patch {
     fs::path Path;
     fs::path Root;
-
+    fs::path Pd4WebRoot;
+    fs::path mainRoot;
+    std::string ProjectName;
+    int MemorySize = 64;
+    int Zoom = 1;
     std::vector<PatchLine> PatchLines;
+    std::vector<PatchLine> ExternalPatchLines;
+
+    json ExternalObjectsJson;
 
     // Objects
     std::vector<PatchLine> ExternalObjects;
     std::vector<std::string> DeclaredPaths;
-    std::vector<std::string> DeclaredLibs;
+    std::vector<std::string> UsedLibs;
     std::vector<std::string> ValidObjectNames;
     std::vector<std::string> ValidLuaObjects;
 
@@ -66,11 +80,14 @@ struct Patch {
     bool PdLua;
     unsigned Input;
     unsigned Output;
+    unsigned Sr = 48000;
 
     std::shared_ptr<Patch> Father;
     std::vector<std::shared_ptr<Patch>> Childs;
+    int printLevel = 1; // just to better debug info
 };
 
+// ──────────────────────────────────────────
 struct Library {
     std::string Name;
     std::string Source;
@@ -80,8 +97,10 @@ struct Library {
     std::string Url;
 };
 
+// ──────────────────────────────────────────
 using Libraries = std::vector<Library>;
 
+// ──────────────────────────────────────────
 class Pd4Web {
   public:
     Pd4Web(std::string pathHome);
@@ -116,11 +135,13 @@ class Pd4Web {
     bool initPaths();
     std::string getEmsdkPath();
     bool checkAllPaths();
+    std::string m_Cmake;
     std::string m_EmsdkInstaller;
     std::string m_Emcmake;
     std::string m_Emcc;
     std::string m_Emconfigure;
     std::string m_Emmake;
+    std::string m_Ninja;
 
     // Git
     bool gitRepoExists(const std::string &path);
@@ -138,6 +159,8 @@ class Pd4Web {
     bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processSubpatch(std::shared_ptr<Patch> &Patch);
     fs::path getAbsPath(std::shared_ptr<Patch> &Patch, std::string Abs);
+    std::string getObjName(std::string &ObjToken);
+    std::string getObjLib(std::string &ObjToken);
 
     bool processDeclareClass(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     bool processObjClass(std::shared_ptr<Patch> &Patch, PatchLine &pl);
@@ -152,7 +175,13 @@ class Pd4Web {
     void isDollarObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExtraObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
 
-    bool configureExternalsObjects(std::shared_ptr<Patch> &Patch);
+    void removePreffix(std::shared_ptr<Patch> &p, bool mainPatch = false);
+
+    // process
+    bool processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl);
+    bool processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl);
+
+    // bool configureExternalsObjects(std::shared_ptr<Patch> &Patch);
     bool isUniqueObjFromLibrary(std::shared_ptr<Patch> &p, std::string &Obj);
 
     // Libraries
@@ -161,8 +190,15 @@ class Pd4Web {
     Libraries m_Libraries;
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);
     bool libsDownload(YamlNode node);
-    std::vector<std::string> listObjectsInLibrary(std::string Lib);
+    std::vector<std::string> listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
+    std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     bool findSetupFunction(std::string objName, std::string Lib);
+
+    void treesitterCheckForSetupFunction(std::string &content, TSNode node,
+                                         std::vector<std::string> &objectNames,
+                                         std::vector<std::string> &setupNames,
+                                         std::vector<std::string> &setupSignatures);
+
     std::vector<fs::path> findLuaObjects(std::shared_ptr<Patch> &Patch, fs::path Folder,
                                          PatchLine &pl);
 
@@ -171,13 +207,27 @@ class Pd4Web {
     std::vector<std::string> m_DeclaredLibraries;
     std::vector<std::string> m_DeclaredPaths;
 
+    // Builder
+    std::string m_MainCmake;
+    void configureProjectToCompile(std::shared_ptr<Patch> &p);
+    void createConfigFile(std::shared_ptr<Patch> &p);
+    void createMainCmake(std::shared_ptr<Patch> &p);
+    void createExternalsCppFile(std::shared_ptr<Patch> &p);
+    void copySources(std::shared_ptr<Patch> &p);
+    void buildPatch(std::shared_ptr<Patch> &p);
+
     // Utils
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);
-    void print(std::string msg, enum Pd4WebColor color);
+    void print(std::string msg, enum Pd4WebColor color = Pd4WebColor::GREEN, int level = 1);
+
+    std::string readFile(const std::string &path);
+    void writeFile(const std::string &path, const std::string &content);
+    void replaceAll(std::string &str, const std::string &from, const std::string &to);
 };
 
+// ──────────────────────────────────────────
 #define LOG(msg)                                                                                   \
     // std::cout << "[LOG]  " << __FUNCTION__ << ":" << __LINE__ << " - " << msg << std::endl;
 

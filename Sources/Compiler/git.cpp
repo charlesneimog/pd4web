@@ -62,8 +62,10 @@ int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) 
 bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath) {
     LOG(__PRETTY_FUNCTION__);
     git_repository *repo = nullptr;
-    if (git_repository_open(&repo, repoRoot.c_str()) != 0)
+
+    if (git_repository_open(&repo, (const char *)repoRoot.c_str()) != 0){
         return false;
+    }
 
     SubmoduleFileCheckContext ctx{repoRoot, filePath, false};
 

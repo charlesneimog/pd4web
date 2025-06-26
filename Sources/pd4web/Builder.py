@@ -74,9 +74,7 @@ class GetAndBuildExternals:
             roboto_font = os.path.join(self.Pd4Web.PD4WEB_ROOT, "../Font/DejaVuSans.ttf")
             shutil.copy(pd4weblua_gfx, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua_gfx.h"))
             shutil.copy(pdlua_h, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/pdlua.h"))
-            shutil.copy(
-                roboto_font, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/DejaVuSans.ttf")
-            )
+            shutil.copy(roboto_font, os.path.join(self.Pd4Web.PROJECT_ROOT, "Pd4Web/Externals/pdlua/DejaVuSans.ttf"))
 
         # ╭──────────────────────────────────────╮
         # │   Here we have the source, now we    │
@@ -184,7 +182,7 @@ class GetAndBuildExternals:
             "    --closure 0",
             "    -sWASM_WORKERS=1",
             "    -sAUDIO_WORKLET=1",
-            "    -fwasm-exceptions", 
+            "    -fwasm-exceptions",
             "    -sSUPPORT_LONGJMP=wasm",
             "    -sMAX_WEBGL_VERSION=2",
             "    -sMIN_WEBGL_VERSION=2",
@@ -503,10 +501,6 @@ class GetAndBuildExternals:
         # Scripts
         pd4web_js = soup.new_tag("script", src="./pd4web.js")
         meta_tag.insert_after(pd4web_js)
-
-        if self.Pd4Web.PDLUA:
-            pixi = soup.new_tag("script", src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.6.6/pixi.min.js")
-            meta_tag.insert_after(pixi)
 
         threads = soup.new_tag("script", src="./pd4web.threads.js")
         meta_tag.insert_after(threads)

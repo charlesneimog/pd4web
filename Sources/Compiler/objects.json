@@ -1,0 +1,2568 @@
+{
+  "earplug~": {
+    "earplug~": [
+      "void earplug_tilde_setup(void)",
+      "earplug_tilde_setup"
+    ]
+  },
+  "else": {
+    "_active_gui": [
+      "static int active_gui_setup(void)",
+      "active_gui_setup"
+    ],
+    "_elsefile": [
+      "void elsefile_setup(void)",
+      "elsefile_setup"
+    ],
+    "_format_proxy": [
+      "void format_setup(void)",
+      "format_setup"
+    ],
+    "_handle": [
+      "void note_setup(void)",
+      "note_setup"
+    ],
+    "_hot_proxy": [
+      "void hot_setup(void)",
+      "hot_setup"
+    ],
+    "_notesink": [
+      "void note_setup(void)",
+      "note_setup"
+    ],
+    "_rec_track": [
+      "void rec_setup(void)",
+      "rec_setup"
+    ],
+    "_selector_proxy": [
+      "void selector_setup(void)",
+      "selector_setup"
+    ],
+    "above~": [
+      "void above_tilde_setup(void)",
+      "above_tilde_setup"
+    ],
+    "add~": [
+      "void add_tilde_setup(void)",
+      "add_tilde_setup"
+    ],
+    "adsr~": [
+      "void adsr_tilde_setup(void)",
+      "adsr_tilde_setup"
+    ],
+    "allpass.2nd~": [
+      "void setup_allpass0x2e2nd_tilde(void)",
+      "setup_allpass0x2e2nd_tilde"
+    ],
+    "allpass.rev~": [
+      "void setup_allpass0x2erev_tilde(void)",
+      "setup_allpass0x2erev_tilde"
+    ],
+    "args": [
+      "void args_setup(void)",
+      "args_setup"
+    ],
+    "asr~": [
+      "void asr_tilde_setup(void)",
+      "asr_tilde_setup"
+    ],
+    "autofade.mc~": [
+      "void setup_autofade0x2emc_tilde(void)",
+      "setup_autofade0x2emc_tilde"
+    ],
+    "autofade2.mc~": [
+      "void setup_autofade20x2emc_tilde(void)",
+      "setup_autofade20x2emc_tilde"
+    ],
+    "autofade2~": [
+      "void autofade2_tilde_setup(void)",
+      "autofade2_tilde_setup"
+    ],
+    "autofade~": [
+      "void autofade_tilde_setup(void)",
+      "autofade_tilde_setup"
+    ],
+    "balance~": [
+      "void balance_tilde_setup(void)",
+      "balance_tilde_setup"
+    ],
+    "bandpass~": [
+      "void bandpass_tilde_setup(void)",
+      "bandpass_tilde_setup"
+    ],
+    "bandstop~": [
+      "void bandstop_tilde_setup(void)",
+      "bandstop_tilde_setup"
+    ],
+    "beat~": [
+      "void beat_tilde_setup(void)",
+      "beat_tilde_setup"
+    ],
+    "bend.in": [
+      "void setup_bend0x2ein(void)",
+      "setup_bend0x2ein"
+    ],
+    "bend.out": [
+      "void setup_bend0x2eout(void)",
+      "setup_bend0x2eout"
+    ],
+    "bicoeff": [
+      "void bicoeff_setup(void)",
+      "bicoeff_setup"
+    ],
+    "bicoeff2": [
+      "void bicoeff2_setup(void)",
+      "bicoeff2_setup"
+    ],
+    "biquads~": [
+      "void biquads_tilde_setup(void)",
+      "biquads_tilde_setup"
+    ],
+    "bitnormal~": [
+      "void bitnormal_tilde_setup(void)",
+      "bitnormal_tilde_setup"
+    ],
+    "bl.imp2~": [
+      "void setup_bl0x2eimp2_tilde(void)",
+      "setup_bl0x2eimp2_tilde"
+    ],
+    "bl.imp~": [
+      "void setup_bl0x2eimp_tilde(void)",
+      "setup_bl0x2eimp_tilde"
+    ],
+    "bl.saw2~": [
+      "void setup_bl0x2esaw2_tilde(void)",
+      "setup_bl0x2esaw2_tilde"
+    ],
+    "bl.saw~": [
+      "void setup_bl0x2esaw_tilde(void)",
+      "setup_bl0x2esaw_tilde"
+    ],
+    "bl.square~": [
+      "void setup_bl0x2esquare_tilde(void)",
+      "setup_bl0x2esquare_tilde"
+    ],
+    "bl.tri~": [
+      "void setup_bl0x2etri_tilde(void)",
+      "setup_bl0x2etri_tilde"
+    ],
+    "bl.vsaw~": [
+      "void setup_bl0x2evsaw_tilde(void)",
+      "setup_bl0x2evsaw_tilde"
+    ],
+    "blocksize~": [
+      "void blocksize_tilde_setup(void)",
+      "blocksize_tilde_setup"
+    ],
+    "break": [
+      "void break_setup(void)",
+      "break_setup"
+    ],
+    "brown~": [
+      "void brown_tilde_setup(void)",
+      "brown_tilde_setup"
+    ],
+    "buffer": [
+      "void buffer_setup(void)",
+      "buffer_setup"
+    ],
+    "buffer proxy": [
+      "void buffer_setup(void)",
+      "buffer_setup"
+    ],
+    "button": [
+      "void button_setup(void)",
+      "button_setup"
+    ],
+    "canvas.active": [
+      "void setup_canvas0x2eactive(void)",
+      "setup_canvas0x2eactive"
+    ],
+    "canvas.bounds": [
+      "void setup_canvas0x2ebounds(void)",
+      "setup_canvas0x2ebounds"
+    ],
+    "canvas.edit": [
+      "void setup_canvas0x2eedit(void)",
+      "setup_canvas0x2eedit"
+    ],
+    "canvas.gop": [
+      "void setup_canvas0x2egop(void)",
+      "setup_canvas0x2egop"
+    ],
+    "canvas.mouse": [
+      "void setup_canvas0x2emouse(void)",
+      "setup_canvas0x2emouse"
+    ],
+    "canvas.name": [
+      "void setup_canvas0x2ename(void)",
+      "setup_canvas0x2ename"
+    ],
+    "canvas.pos": [
+      "void setup_canvas0x2epos(void)",
+      "setup_canvas0x2epos"
+    ],
+    "canvas.setname": [
+      "void setup_canvas0x2esetname(void)",
+      "setup_canvas0x2esetname"
+    ],
+    "canvas.vis": [
+      "void setup_canvas0x2evis(void)",
+      "setup_canvas0x2evis"
+    ],
+    "canvas.zoom": [
+      "void setup_canvas0x2ezoom(void)",
+      "setup_canvas0x2ezoom"
+    ],
+    "car2pol~": [
+      "void car2pol_tilde_setup(void)",
+      "car2pol_tilde_setup"
+    ],
+    "ceil": [
+      "void ceil_setup(void)",
+      "ceil_setup"
+    ],
+    "ceil~": [
+      "void ceil_tilde_setup(void)",
+      "ceil_tilde_setup"
+    ],
+    "cents2ratio": [
+      "void cents2ratio_setup(void)",
+      "cents2ratio_setup"
+    ],
+    "cents2ratio~": [
+      "void cents2ratio_tilde_setup(void)",
+      "cents2ratio_tilde_setup"
+    ],
+    "chance": [
+      "void chance_setup(void)",
+      "chance_setup"
+    ],
+    "chance~": [
+      "void chance_tilde_setup(void)",
+      "chance_tilde_setup"
+    ],
+    "changed": [
+      "void changed_setup(void)",
+      "changed_setup"
+    ],
+    "changed proxy": [
+      "void changed_setup(void)",
+      "changed_setup"
+    ],
+    "changed2~": [
+      "void changed2_tilde_setup(void)",
+      "changed2_tilde_setup"
+    ],
+    "changed~": [
+      "void changed_tilde_setup(void)",
+      "changed_tilde_setup"
+    ],
+    "circuit~": [
+      "void circuit_tilde_setup(void)",
+      "circuit_tilde_setup"
+    ],
+    "click": [
+      "void click_setup(void)",
+      "click_setup"
+    ],
+    "colors": [
+      "void colors_setup(void)",
+      "colors_setup"
+    ],
+    "comb.filt~": [
+      "void setup_comb0x2efilt_tilde(void)",
+      "setup_comb0x2efilt_tilde"
+    ],
+    "comb.rev~": [
+      "void setup_comb0x2erev_tilde(void)",
+      "setup_comb0x2erev_tilde"
+    ],
+    "conv~": [
+      "void conv_tilde_setup(void)",
+      "conv_tilde_setup"
+    ],
+    "cosine~": [
+      "void cosine_tilde_setup(void)",
+      "cosine_tilde_setup"
+    ],
+    "crackle~": [
+      "void crackle_tilde_setup(void)",
+      "crackle_tilde_setup"
+    ],
+    "crossover~": [
+      "void crossover_tilde_setup(void)",
+      "crossover_tilde_setup"
+    ],
+    "ctl.in": [
+      "void setup_ctl0x2ein(void)",
+      "setup_ctl0x2ein"
+    ],
+    "ctl.out": [
+      "void setup_ctl0x2eout(void)",
+      "setup_ctl0x2eout"
+    ],
+    "cusp~": [
+      "void cusp_tilde_setup(void)",
+      "cusp_tilde_setup"
+    ],
+    "datetime": [
+      "void datetime_setup(void)",
+      "datetime_setup"
+    ],
+    "db2lin~": [
+      "void db2lin_tilde_setup(void)",
+      "db2lin_tilde_setup"
+    ],
+    "decay2~": [
+      "void decay2_tilde_setup(void)",
+      "decay2_tilde_setup"
+    ],
+    "decay~": [
+      "void decay_tilde_setup(void)",
+      "decay_tilde_setup"
+    ],
+    "default": [
+      "void default_setup(void)",
+      "default_setup"
+    ],
+    "default proxy": [
+      "void default_setup(void)",
+      "default_setup"
+    ],
+    "del~": [
+      "void del_tilde_setup(void)",
+      "del_tilde_setup"
+    ],
+    "del~ in": [
+      "void del_tilde_setup(void)",
+      "del_tilde_setup"
+    ],
+    "del~ out": [
+      "void del_tilde_setup(void)",
+      "del_tilde_setup"
+    ],
+    "detect~": [
+      "void detect_tilde_setup(void)",
+      "detect_tilde_setup"
+    ],
+    "dir": [
+      "void dir_setup(void)",
+      "dir_setup"
+    ],
+    "dollsym": [
+      "void dollsym_setup(void)",
+      "dollsym_setup"
+    ],
+    "downsample~": [
+      "void downsample_tilde_setup(void)",
+      "downsample_tilde_setup"
+    ],
+    "drive~": [
+      "void drive_tilde_setup(void)",
+      "drive_tilde_setup"
+    ],
+    "dust2~": [
+      "void dust2_tilde_setup(void)",
+      "dust2_tilde_setup"
+    ],
+    "dust~": [
+      "void dust_tilde_setup(void)",
+      "dust_tilde_setup"
+    ],
+    "else": [
+      "void else_setup(void)",
+      "else_setup"
+    ],
+    "else/del~": [
+      "void del_tilde_setup(void)",
+      "del_tilde_setup"
+    ],
+    "envgen proxy": [
+      "void envgen_tilde_setup(void)",
+      "envgen_tilde_setup"
+    ],
+    "envgen~": [
+      "void envgen_tilde_setup(void)",
+      "envgen_tilde_setup"
+    ],
+    "eq~": [
+      "void eq_tilde_setup(void)",
+      "eq_tilde_setup"
+    ],
+    "factor": [
+      "void factor_setup(void)",
+      "factor_setup"
+    ],
+    "fader~": [
+      "void fader_tilde_setup(void)",
+      "fader_tilde_setup"
+    ],
+    "fbdelay~": [
+      "void fbdelay_tilde_setup(void)",
+      "fbdelay_tilde_setup"
+    ],
+    "fbsine2~": [
+      "void fbsine2_tilde_setup(void)",
+      "fbsine2_tilde_setup"
+    ],
+    "fbsine~": [
+      "void fbsine_tilde_setup(void)",
+      "fbsine_tilde_setup"
+    ],
+    "fdn.rev~": [
+      "void setup_fdn0x2erev_tilde(void)",
+      "setup_fdn0x2erev_tilde"
+    ],
+    "ffdelay~": [
+      "void ffdelay_tilde_setup(void)",
+      "ffdelay_tilde_setup"
+    ],
+    "filterdelay~": [
+      "void filterdelay_tilde_setup(void)",
+      "filterdelay_tilde_setup"
+    ],
+    "float2bits": [
+      "void float2bits_setup(void)",
+      "float2bits_setup"
+    ],
+    "floor": [
+      "void floor_setup(void)",
+      "floor_setup"
+    ],
+    "floor~": [
+      "void floor_tilde_setup(void)",
+      "floor_tilde_setup"
+    ],
+    "fm~": [
+      "void fm_tilde_setup(void)",
+      "fm_tilde_setup"
+    ],
+    "fold": [
+      "void fold_setup(void)",
+      "fold_setup"
+    ],
+    "fold~": [
+      "void fold_tilde_setup(void)",
+      "fold_tilde_setup"
+    ],
+    "fontsize": [
+      "void fontsize_setup(void)",
+      "fontsize_setup"
+    ],
+    "format": [
+      "void format_setup(void)",
+      "format_setup"
+    ],
+    "freq.shift~": [
+      "void setup_freq0x2eshift_tilde(void)",
+      "setup_freq0x2eshift_tilde"
+    ],
+    "function": [
+      "void function_setup(void)",
+      "function_setup"
+    ],
+    "function~": [
+      "void function_tilde_setup(void)",
+      "function_tilde_setup"
+    ],
+    "gate2imp~": [
+      "void gate2imp_tilde_setup(void)",
+      "gate2imp_tilde_setup"
+    ],
+    "gaussian~": [
+      "void gaussian_tilde_setup(void)",
+      "gaussian_tilde_setup"
+    ],
+    "gbman~": [
+      "void gbman_tilde_setup(void)",
+      "gbman_tilde_setup"
+    ],
+    "gcd": [
+      "void gcd_setup(void)",
+      "gcd_setup"
+    ],
+    "gendyn~": [
+      "void gendyn_tilde_setup(void)",
+      "gendyn_tilde_setup"
+    ],
+    "get~": [
+      "void get_tilde_setup(void)",
+      "get_tilde_setup"
+    ],
+    "giga.rev~": [
+      "void setup_giga0x2erev_tilde(void)",
+      "setup_giga0x2erev_tilde"
+    ],
+    "glide2~": [
+      "void glide2_tilde_setup(void)",
+      "glide2_tilde_setup"
+    ],
+    "glide~": [
+      "void glide_tilde_setup(void)",
+      "glide_tilde_setup"
+    ],
+    "gray~": [
+      "void gray_tilde_setup(void)",
+      "gray_tilde_setup"
+    ],
+    "henon~": [
+      "void henon_tilde_setup(void)",
+      "henon_tilde_setup"
+    ],
+    "highpass~": [
+      "void highpass_tilde_setup(void)",
+      "highpass_tilde_setup"
+    ],
+    "highshelf~": [
+      "void highshelf_tilde_setup(void)",
+      "highshelf_tilde_setup"
+    ],
+    "hot": [
+      "void hot_setup(void)",
+      "hot_setup"
+    ],
+    "hz2rad": [
+      "void hz2rad_setup(void)",
+      "hz2rad_setup"
+    ],
+    "ikeda~": [
+      "void ikeda_tilde_setup(void)",
+      "ikeda_tilde_setup"
+    ],
+    "imp2~": [
+      "void imp2_tilde_setup(void)",
+      "imp2_tilde_setup"
+    ],
+    "impseq~": [
+      "void impseq_tilde_setup(void)",
+      "impseq_tilde_setup"
+    ],
+    "impulse2~": [
+      "void impulse2_tilde_setup(void)",
+      "impulse2_tilde_setup"
+    ],
+    "impulse~": [
+      "void impulse_tilde_setup(void)",
+      "impulse_tilde_setup"
+    ],
+    "imp~": [
+      "void imp_tilde_setup(void)",
+      "imp_tilde_setup"
+    ],
+    "initmess": [
+      "void initmess_setup(void)",
+      "initmess_setup"
+    ],
+    "keyboard": [
+      "void keyboard_setup(void)",
+      "keyboard_setup"
+    ],
+    "keycode": [
+      "void keycode_setup(void)",
+      "keycode_setup"
+    ],
+    "knob": [
+      "void knob_setup(void)",
+      "knob_setup"
+    ],
+    "lag2~": [
+      "void lag2_tilde_setup(void)",
+      "lag2_tilde_setup"
+    ],
+    "lag~": [
+      "void lag_tilde_setup(void)",
+      "lag_tilde_setup"
+    ],
+    "lastvalue~": [
+      "void lastvalue_tilde_setup(void)",
+      "lastvalue_tilde_setup"
+    ],
+    "latoocarfian~": [
+      "void latoocarfian_tilde_setup(void)",
+      "latoocarfian_tilde_setup"
+    ],
+    "lb": [
+      "void lb_setup(void)",
+      "lb_setup"
+    ],
+    "lfnoise~": [
+      "void lfnoise_tilde_setup(void)",
+      "lfnoise_tilde_setup"
+    ],
+    "limit": [
+      "void limit_setup(void)",
+      "limit_setup"
+    ],
+    "lin2db~": [
+      "void lin2db_tilde_setup(void)",
+      "lin2db_tilde_setup"
+    ],
+    "lincong~": [
+      "void lincong_tilde_setup(void)",
+      "lincong_tilde_setup"
+    ],
+    "loadbanger": [
+      "void loadbanger_setup(void)",
+      "loadbanger_setup"
+    ],
+    "logistic~": [
+      "void logistic_tilde_setup(void)",
+      "logistic_tilde_setup"
+    ],
+    "loop": [
+      "void loop_setup(void)",
+      "loop_setup"
+    ],
+    "lop2~": [
+      "void lop2_tilde_setup(void)",
+      "lop2_tilde_setup"
+    ],
+    "lorenz~": [
+      "void lorenz_tilde_setup(void)",
+      "lorenz_tilde_setup"
+    ],
+    "lowpass~": [
+      "void lowpass_tilde_setup(void)",
+      "lowpass_tilde_setup"
+    ],
+    "lowshelf~": [
+      "void lowshelf_tilde_setup(void)",
+      "lowshelf_tilde_setup"
+    ],
+    "match~": [
+      "void match_tilde_setup(void)",
+      "match_tilde_setup"
+    ],
+    "median~": [
+      "void median_tilde_setup(void)",
+      "median_tilde_setup"
+    ],
+    "merge": [
+      "extern void merge_setup(void)",
+      "merge_setup"
+    ],
+    "merge-inlet": [
+      "extern void merge_setup(void)",
+      "merge_setup"
+    ],
+    "merge~": [
+      "void merge_tilde_setup(void)",
+      "merge_tilde_setup"
+    ],
+    "message": [
+      "void message_setup(void)",
+      "message_setup"
+    ],
+    "message proxy": [
+      "void message_setup(void)",
+      "message_setup"
+    ],
+    "messbox": [
+      "void messbox_setup(void)",
+      "messbox_setup"
+    ],
+    "metronome": [
+      "void metronome_setup(void)",
+      "metronome_setup"
+    ],
+    "midi": [
+      "void midi_setup(void)",
+      "midi_setup"
+    ],
+    "mouse": [
+      "void mouse_setup(void)",
+      "mouse_setup"
+    ],
+    "mov.avg~": [
+      "void setup_mov0x2eavg_tilde(void)",
+      "setup_mov0x2eavg_tilde"
+    ],
+    "mov.rms~": [
+      "void setup_mov0x2erms_tilde(void)",
+      "setup_mov0x2erms_tilde"
+    ],
+    "mpe.in": [
+      "void setup_mpe0x2ein(void)",
+      "setup_mpe0x2ein"
+    ],
+    "mtx.mc~": [
+      "void setup_mtx0x2emc_tilde(void)",
+      "setup_mtx0x2emc_tilde"
+    ],
+    "mtx~": [
+      "void mtx_tilde_setup(void)",
+      "mtx_tilde_setup"
+    ],
+    "nchs~": [
+      "void nchs_tilde_setup(void)",
+      "nchs_tilde_setup"
+    ],
+    "note": [
+      "void note_setup(void)",
+      "note_setup"
+    ],
+    "note.in": [
+      "void setup_note0x2ein(void)",
+      "setup_note0x2ein"
+    ],
+    "note.out": [
+      "void setup_note0x2eout(void)",
+      "setup_note0x2eout"
+    ],
+    "noteinfo": [
+      "void noteinfo_setup(void)",
+      "noteinfo_setup"
+    ],
+    "numbox~": [
+      "void numbox_tilde_setup(void)",
+      "numbox_tilde_setup"
+    ],
+    "nyquist~": [
+      "void nyquist_tilde_setup(void)",
+      "nyquist_tilde_setup"
+    ],
+    "openfile": [
+      "void openfile_setup(void)",
+      "openfile_setup"
+    ],
+    "op~": [
+      "void op_tilde_setup(void)",
+      "op_tilde_setup"
+    ],
+    "order": [
+      "void order_setup(void)",
+      "order_setup"
+    ],
+    "osc.format": [
+      "void setup_osc0x2eformat(void)",
+      "setup_osc0x2eformat"
+    ],
+    "osc.parse": [
+      "void setup_osc0x2eparse(void)",
+      "setup_osc0x2eparse"
+    ],
+    "osc.route": [
+      "void setup_osc0x2eroute(void)",
+      "setup_osc0x2eroute"
+    ],
+    "pack2": [
+      "extern void pack2_setup(void)",
+      "pack2_setup"
+    ],
+    "pack2-inlet": [
+      "extern void pack2_setup(void)",
+      "pack2_setup"
+    ],
+    "pad": [
+      "void pad_setup(void)",
+      "pad_setup"
+    ],
+    "pan.mc~": [
+      "void setup_pan0x2emc_tilde(void)",
+      "setup_pan0x2emc_tilde"
+    ],
+    "pan2~": [
+      "void pan2_tilde_setup(void)",
+      "pan2_tilde_setup"
+    ],
+    "pan4~": [
+      "void pan4_tilde_setup(void)",
+      "pan4_tilde_setup"
+    ],
+    "panic": [
+      "void panic_setup(void)",
+      "panic_setup"
+    ],
+    "pan~": [
+      "void pan_tilde_setup(void)",
+      "pan_tilde_setup"
+    ],
+    "parabolic~": [
+      "void parabolic_tilde_setup(void)",
+      "parabolic_tilde_setup"
+    ],
+    "pdlink": [
+      "void pdlink_setup(void)",
+      "pdlink_setup"
+    ],
+    "pdlink~": [
+      "void pdlink_tilde_setup(void)",
+      "pdlink_tilde_setup"
+    ],
+    "pdlua proxy clock": [
+      "static void pdlua_proxyclock_setup(void)",
+      "pdlua_proxyclock_setup"
+    ],
+    "pdlua proxy inlet": [
+      "static void pdlua_proxyinlet_setup(void)",
+      "pdlua_proxyinlet_setup"
+    ],
+    "pdlua proxy receive": [
+      "static void pdlua_proxyreceive_setup()",
+      "pdlua_proxyreceive_setup"
+    ],
+    "peak~": [
+      "void peak_tilde_setup(void)",
+      "peak_tilde_setup"
+    ],
+    "pgm.in": [
+      "void setup_pgm0x2ein(void)",
+      "setup_pgm0x2ein"
+    ],
+    "pgm.out": [
+      "void setup_pgm0x2eout(void)",
+      "setup_pgm0x2eout"
+    ],
+    "phaseseq~": [
+      "void phaseseq_tilde_setup(void)",
+      "phaseseq_tilde_setup"
+    ],
+    "pic": [
+      "void pic_setup(void)",
+      "pic_setup"
+    ],
+    "pick~": [
+      "void pick_tilde_setup(void)",
+      "pick_tilde_setup"
+    ],
+    "pimpmul~": [
+      "void pimpmul_tilde_setup(void)",
+      "pimpmul_tilde_setup"
+    ],
+    "pimp~": [
+      "void pimp_tilde_setup(void)",
+      "pimp_tilde_setup"
+    ],
+    "pink~": [
+      "void pink_tilde_setup(void)",
+      "pink_tilde_setup"
+    ],
+    "pipe2": [
+      "void pipe2_setup(void)",
+      "pipe2_setup"
+    ],
+    "plaits~": [
+      "void plaits_tilde_setup(void)",
+      "plaits_tilde_setup"
+    ],
+    "play.file~": [
+      "void setup_play0x2efile_tilde(void)",
+      "setup_play0x2efile_tilde"
+    ],
+    "pluck~": [
+      "void pluck_tilde_setup(void)",
+      "pluck_tilde_setup"
+    ],
+    "pm2~": [
+      "void pm2_tilde_setup(void)",
+      "pm2_tilde_setup"
+    ],
+    "pm4~": [
+      "void pm4_tilde_setup(void)",
+      "pm4_tilde_setup"
+    ],
+    "pm6~": [
+      "void pm6_tilde_setup(void)",
+      "pm6_tilde_setup"
+    ],
+    "pm~": [
+      "void pm_tilde_setup(void)",
+      "pm_tilde_setup"
+    ],
+    "pol2car~": [
+      "void pol2car_tilde_setup(void)",
+      "pol2car_tilde_setup"
+    ],
+    "power~": [
+      "void power_tilde_setup(void)",
+      "power_tilde_setup"
+    ],
+    "properties": [
+      "void properties_setup(void)",
+      "properties_setup"
+    ],
+    "ptouch.in": [
+      "void setup_ptouch0x2ein(void)",
+      "setup_ptouch0x2ein"
+    ],
+    "ptouch.out": [
+      "void setup_ptouch0x2eout(void)",
+      "setup_ptouch0x2eout"
+    ],
+    "pulsecount~": [
+      "void pulsecount_tilde_setup(void)",
+      "pulsecount_tilde_setup"
+    ],
+    "pulsediv~": [
+      "void pulsediv_tilde_setup(void)",
+      "pulsediv_tilde_setup"
+    ],
+    "pulse~": [
+      "void pulse_tilde_setup(void)",
+      "pulse_tilde_setup"
+    ],
+    "quad~": [
+      "void quad_tilde_setup(void)",
+      "quad_tilde_setup"
+    ],
+    "quantizer": [
+      "void quantizer_setup(void)",
+      "quantizer_setup"
+    ],
+    "quantizer~": [
+      "void quantizer_tilde_setup(void)",
+      "quantizer_tilde_setup"
+    ],
+    "rad2hz": [
+      "void rad2hz_setup(void)",
+      "rad2hz_setup"
+    ],
+    "rampnoise~": [
+      "void rampnoise_tilde_setup(void)",
+      "rampnoise_tilde_setup"
+    ],
+    "ramp~": [
+      "void ramp_tilde_setup(void)",
+      "ramp_tilde_setup"
+    ],
+    "rand.f": [
+      "void setup_rand0x2ef(void)",
+      "setup_rand0x2ef"
+    ],
+    "rand.f~": [
+      "void setup_rand0x2ef_tilde(void)",
+      "setup_rand0x2ef_tilde"
+    ],
+    "rand.hist": [
+      "void setup_rand0x2ehist(void)",
+      "setup_rand0x2ehist"
+    ],
+    "rand.i": [
+      "void setup_rand0x2ei(void)",
+      "setup_rand0x2ei"
+    ],
+    "rand.i~": [
+      "void setup_rand0x2ei_tilde(void)",
+      "setup_rand0x2ei_tilde"
+    ],
+    "rand.u": [
+      "void setup_rand0x2eu(void)",
+      "setup_rand0x2eu"
+    ],
+    "randpulse2~": [
+      "void randpulse2_tilde_setup(void)",
+      "randpulse2_tilde_setup"
+    ],
+    "randpulse~": [
+      "void randpulse_tilde_setup(void)",
+      "randpulse_tilde_setup"
+    ],
+    "range~": [
+      "void range_tilde_setup(void)",
+      "range_tilde_setup"
+    ],
+    "ratio2cents": [
+      "void ratio2cents_setup(void)",
+      "ratio2cents_setup"
+    ],
+    "ratio2cents~": [
+      "void ratio2cents_tilde_setup(void)",
+      "ratio2cents_tilde_setup"
+    ],
+    "rec": [
+      "void rec_setup(void)",
+      "rec_setup"
+    ],
+    "receiver": [
+      "void receiver_setup(void)",
+      "receiver_setup"
+    ],
+    "receiver proxy": [
+      "void receiver_setup(void)",
+      "receiver_setup"
+    ],
+    "repeat~": [
+      "void repeat_tilde_setup(void)",
+      "repeat_tilde_setup"
+    ],
+    "rescale": [
+      "void rescale_setup(void)",
+      "rescale_setup"
+    ],
+    "rescale~": [
+      "void rescale_tilde_setup(void)",
+      "rescale_tilde_setup"
+    ],
+    "resonant2~": [
+      "void resonant2_tilde_setup(void)",
+      "resonant2_tilde_setup"
+    ],
+    "resonant~": [
+      "void resonant_tilde_setup(void)",
+      "resonant_tilde_setup"
+    ],
+    "rint": [
+      "void rint_setup(void)",
+      "rint_setup"
+    ],
+    "rint~": [
+      "void rint_tilde_setup(void)",
+      "rint_tilde_setup"
+    ],
+    "rms~": [
+      "void rms_tilde_setup(void )",
+      "rms_tilde_setup"
+    ],
+    "rotate.mc~": [
+      "void setup_rotate0x2emc_tilde(void)",
+      "setup_rotate0x2emc_tilde"
+    ],
+    "rotate~": [
+      "void rotate_tilde_setup(void)",
+      "rotate_tilde_setup"
+    ],
+    "route2": [
+      "void route2_setup(void)",
+      "route2_setup"
+    ],
+    "routeall": [
+      "void routeall_setup(void)",
+      "routeall_setup"
+    ],
+    "router": [
+      "void router_setup(void)",
+      "router_setup"
+    ],
+    "routetype": [
+      "void routetype_setup(void)",
+      "routetype_setup"
+    ],
+    "s2f~": [
+      "void s2f_tilde_setup(void)",
+      "s2f_tilde_setup"
+    ],
+    "saw2~": [
+      "void saw2_tilde_setup(void)",
+      "saw2_tilde_setup"
+    ],
+    "saw~": [
+      "void saw_tilde_setup(void)",
+      "saw_tilde_setup"
+    ],
+    "schmitt~": [
+      "void schmitt_tilde_setup(void)",
+      "schmitt_tilde_setup"
+    ],
+    "scope~": [
+      "void scope_tilde_setup(void)",
+      "scope_tilde_setup"
+    ],
+    "selector": [
+      "void selector_setup(void)",
+      "selector_setup"
+    ],
+    "select~": [
+      "void select_tilde_setup(void)",
+      "select_tilde_setup"
+    ],
+    "sender": [
+      "void sender_setup(void)",
+      "sender_setup"
+    ],
+    "separate": [
+      "void separate_setup(void)",
+      "separate_setup"
+    ],
+    "sequencer~": [
+      "void sequencer_tilde_setup(void)",
+      "sequencer_tilde_setup"
+    ],
+    "sfload": [
+      "void sfload_setup(void)",
+      "sfload_setup"
+    ],
+    "sfont~": [
+      "void sfont_tilde_setup(void)",
+      "sfont_tilde_setup"
+    ],
+    "sfz~": [
+      "void sfz_tilde_setup()",
+      "sfz_tilde_setup"
+    ],
+    "shaper~": [
+      "void shaper_tilde_setup(void)",
+      "shaper_tilde_setup"
+    ],
+    "sh~": [
+      "void sh_tilde_setup(void)",
+      "sh_tilde_setup"
+    ],
+    "sig2float~": [
+      "void sig2float_tilde_setup(void)",
+      "sig2float_tilde_setup"
+    ],
+    "sigs~": [
+      "void sigs_tilde_setup(void)",
+      "sigs_tilde_setup"
+    ],
+    "sine~": [
+      "void sine_tilde_setup(void)",
+      "sine_tilde_setup"
+    ],
+    "sin~": [
+      "void sin_tilde_setup(void)",
+      "sin_tilde_setup"
+    ],
+    "slew2~": [
+      "void slew2_tilde_setup(void)",
+      "slew2_tilde_setup"
+    ],
+    "slew~": [
+      "void slew_tilde_setup(void)",
+      "slew_tilde_setup"
+    ],
+    "slice": [
+      "void slice_setup(void)",
+      "slice_setup"
+    ],
+    "slice~": [
+      "void slice_tilde_setup(void)",
+      "slice_tilde_setup"
+    ],
+    "sort": [
+      "void sort_setup(void)",
+      "sort_setup"
+    ],
+    "spread": [
+      "void spread_setup(void)",
+      "spread_setup"
+    ],
+    "spread.mc~": [
+      "void setup_spread0x2emc_tilde(void)",
+      "setup_spread0x2emc_tilde"
+    ],
+    "spread~": [
+      "void spread_tilde_setup(void)",
+      "spread_tilde_setup"
+    ],
+    "square~": [
+      "void square_tilde_setup(void)",
+      "square_tilde_setup"
+    ],
+    "sr~": [
+      "void sr_tilde_setup(void)",
+      "sr_tilde_setup"
+    ],
+    "standard~": [
+      "void standard_tilde_setup(void)",
+      "standard_tilde_setup"
+    ],
+    "status~": [
+      "void status_tilde_setup(void)",
+      "status_tilde_setup"
+    ],
+    "stepnoise~": [
+      "void stepnoise_tilde_setup(void)",
+      "stepnoise_tilde_setup"
+    ],
+    "sum~": [
+      "void sum_tilde_setup(void)",
+      "sum_tilde_setup"
+    ],
+    "susloop~": [
+      "void susloop_tilde_setup(void)",
+      "susloop_tilde_setup"
+    ],
+    "suspedal": [
+      "void suspedal_setup(void)",
+      "suspedal_setup"
+    ],
+    "svfilter~": [
+      "void svfilter_tilde_setup(void)",
+      "svfilter_tilde_setup"
+    ],
+    "symbol2any": [
+      "void symbol2any_setup(void)",
+      "symbol2any_setup"
+    ],
+    "tabplayer~": [
+      "void tabplayer_tilde_setup(void)",
+      "tabplayer_tilde_setup"
+    ],
+    "tabreader": [
+      "void tabreader_setup(void)",
+      "tabreader_setup"
+    ],
+    "tabreader~": [
+      "void tabreader_tilde_setup(void)",
+      "tabreader_tilde_setup"
+    ],
+    "tabwriter~": [
+      "void tabwriter_tilde_setup(void)",
+      "tabwriter_tilde_setup"
+    ],
+    "tempo~": [
+      "void tempo_tilde_setup(void)",
+      "tempo_tilde_setup"
+    ],
+    "timed.gate~": [
+      "void setup_timed0x2egate_tilde(void)",
+      "setup_timed0x2egate_tilde"
+    ],
+    "toggleff~": [
+      "void toggleff_tilde_setup(void)",
+      "toggleff_tilde_setup"
+    ],
+    "touch.in": [
+      "void setup_touch0x2ein(void)",
+      "setup_touch0x2ein"
+    ],
+    "touch.out": [
+      "void setup_touch0x2eout(void)",
+      "setup_touch0x2eout"
+    ],
+    "trig.delay2~": [
+      "void setup_trig0x2edelay2_tilde(void)",
+      "setup_trig0x2edelay2_tilde"
+    ],
+    "trig.delay~": [
+      "void setup_trig0x2edelay_tilde(void)",
+      "setup_trig0x2edelay_tilde"
+    ],
+    "trighold~": [
+      "void trighold_tilde_setup(void)",
+      "trighold_tilde_setup"
+    ],
+    "tri~": [
+      "void tri_tilde_setup(void)",
+      "tri_tilde_setup"
+    ],
+    "trunc": [
+      "void trunc_setup(void)",
+      "trunc_setup"
+    ],
+    "trunc~": [
+      "void trunc_tilde_setup(void)",
+      "trunc_tilde_setup"
+    ],
+    "unmerge": [
+      "void unmerge_setup(void)",
+      "unmerge_setup"
+    ],
+    "unmerge~": [
+      "void unmerge_tilde_setup(void)",
+      "unmerge_tilde_setup"
+    ],
+    "var": [
+      "void var_setup(void)",
+      "var_setup"
+    ],
+    "vcf2~": [
+      "void vcf2_tilde_setup(void)",
+      "vcf2_tilde_setup"
+    ],
+    "velvet~": [
+      "void velvet_tilde_setup(void)",
+      "velvet_tilde_setup"
+    ],
+    "voices": [
+      "void voices_setup(void)",
+      "voices_setup"
+    ],
+    "vsaw~": [
+      "void vsaw_tilde_setup(void)",
+      "vsaw_tilde_setup"
+    ],
+    "vu~": [
+      "void vu_tilde_setup(void )",
+      "vu_tilde_setup"
+    ],
+    "wavetable~": [
+      "void wavetable_tilde_setup(void)",
+      "wavetable_tilde_setup"
+    ],
+    "white~": [
+      "void white_tilde_setup(void)",
+      "white_tilde_setup"
+    ],
+    "wrap2": [
+      "void wrap2_setup(void)",
+      "wrap2_setup"
+    ],
+    "wrap2~": [
+      "void wrap2_tilde_setup(void)",
+      "wrap2_tilde_setup"
+    ],
+    "wt2d~": [
+      "void wt2d_tilde_setup(void)",
+      "wt2d_tilde_setup"
+    ],
+    "wt~": [
+      "void wt_tilde_setup(void)",
+      "wt_tilde_setup"
+    ],
+    "xfade.mc~": [
+      "void setup_xfade0x2emc_tilde(void)",
+      "setup_xfade0x2emc_tilde"
+    ],
+    "xfade~": [
+      "void xfade_tilde_setup(void)",
+      "xfade_tilde_setup"
+    ],
+    "xgate.mc~": [
+      "void setup_xgate0x2emc_tilde(void)",
+      "setup_xgate0x2emc_tilde"
+    ],
+    "xgate2.mc~": [
+      "void setup_xgate20x2emc_tilde(void)",
+      "setup_xgate20x2emc_tilde"
+    ],
+    "xgate2~": [
+      "void xgate2_tilde_setup(void)",
+      "xgate2_tilde_setup"
+    ],
+    "xgate~": [
+      "void xgate_tilde_setup(void)",
+      "xgate_tilde_setup"
+    ],
+    "xmod2~": [
+      "void xmod2_tilde_setup(void)",
+      "xmod2_tilde_setup"
+    ],
+    "xmod~": [
+      "void xmod_tilde_setup(void)",
+      "xmod_tilde_setup"
+    ],
+    "xselect.mc~": [
+      "void setup_xselect0x2emc_tilde(void)",
+      "setup_xselect0x2emc_tilde"
+    ],
+    "xselect2.mc~": [
+      "void setup_xselect20x2emc_tilde(void)",
+      "setup_xselect20x2emc_tilde"
+    ],
+    "xselect2~": [
+      "void xselect2_tilde_setup(void)",
+      "xselect2_tilde_setup"
+    ],
+    "xselect~": [
+      "void xselect_tilde_setup(void)",
+      "xselect_tilde_setup"
+    ],
+    "zerocross~": [
+      "void zerocross_tilde_setup(void)",
+      "zerocross_tilde_setup"
+    ]
+  },
+  "pure-data/src": {
+    "!=": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "%": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "&": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "&&": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "*": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "*~": [
+      "static void times_setup(void)",
+      "times_setup"
+    ],
+    "+": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "+~": [
+      "static void plus_setup(void)",
+      "plus_setup"
+    ],
+    "-": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "-~": [
+      "static void minus_setup(void)",
+      "minus_setup"
+    ],
+    "/": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "/~": [
+      "static void over_setup(void)",
+      "over_setup"
+    ],
+    "<": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "<<": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "<=": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "==": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    ">": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    ">=": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    ">>": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "abs": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "abs~": [
+      "static void abs_tilde_setup(void)",
+      "abs_tilde_setup"
+    ],
+    "adc~": [
+      "static void adc_setup(void)",
+      "adc_setup"
+    ],
+    "append": [
+      "static void append_setup(void)",
+      "append_setup"
+    ],
+    "array": [
+      "void g_array_setup(void)",
+      "g_array_setup"
+    ],
+    "array define": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array get": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array max": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array min": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array quantile": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array random": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array set": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array size": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "array sum": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "atan": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "atan2": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "b": [
+      "void bang_setup(void)",
+      "bang_setup"
+    ],
+    "backtracer": [
+      "void obj_init(void)",
+      "obj_init"
+    ],
+    "bag": [
+      "static void bag_setup(void)",
+      "bag_setup"
+    ],
+    "bang": [
+      "void bang_setup(void)",
+      "bang_setup"
+    ],
+    "bang~": [
+      "static void bang_tilde_setup(void)",
+      "bang_tilde_setup"
+    ],
+    "bendin": [
+      "static void bendin_setup(void)",
+      "bendin_setup"
+    ],
+    "bendout": [
+      "static void bendout_setup(void)",
+      "bendout_setup"
+    ],
+    "bindlist": [
+      "void m_pd_setup(void)",
+      "m_pd_setup"
+    ],
+    "biquad~": [
+      "void sigbiquad_setup(void)",
+      "sigbiquad_setup"
+    ],
+    "block~": [
+      "void block_tilde_setup(void)",
+      "block_tilde_setup"
+    ],
+    "bng": [
+      "void g_bang_setup(void)",
+      "g_bang_setup"
+    ],
+    "bp~": [
+      "void sigbp_setup(void)",
+      "sigbp_setup"
+    ],
+    "canvas": [
+      "void g_canvas_setup(void)",
+      "g_canvas_setup"
+    ],
+    "canvasmaker": [
+      "void mess_init(void)",
+      "mess_init"
+    ],
+    "catch~": [
+      "static void sigcatch_setup(void)",
+      "sigcatch_setup"
+    ],
+    "change": [
+      "void change_setup(void)",
+      "change_setup"
+    ],
+    "clip": [
+      "static void clip_setup(void)",
+      "clip_setup"
+    ],
+    "clip~": [
+      "static void clip_setup(void)",
+      "clip_setup"
+    ],
+    "clone": [
+      "void clone_setup(void)",
+      "clone_setup"
+    ],
+    "clone-inlet": [
+      "void clone_setup(void)",
+      "clone_setup"
+    ],
+    "clone-outlet": [
+      "void clone_setup(void)",
+      "clone_setup"
+    ],
+    "cnv": [
+      "void g_mycanvas_setup(void)",
+      "g_mycanvas_setup"
+    ],
+    "cos": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "cos~": [
+      "static void cos_setup(void)",
+      "cos_setup"
+    ],
+    "cpole~": [
+      "void sigcpole_setup(void)",
+      "sigcpole_setup"
+    ],
+    "cputime": [
+      "static void cputime_setup(void)",
+      "cputime_setup"
+    ],
+    "ctlin": [
+      "static void ctlin_setup(void)",
+      "ctlin_setup"
+    ],
+    "ctlout": [
+      "static void ctlout_setup(void)",
+      "ctlout_setup"
+    ],
+    "czero_rev~": [
+      "void sigczero_rev_setup(void)",
+      "sigczero_rev_setup"
+    ],
+    "czero~": [
+      "void sigczero_setup(void)",
+      "sigczero_setup"
+    ],
+    "dac~": [
+      "static void dac_setup(void)",
+      "dac_setup"
+    ],
+    "dbtopow": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "dbtopow~": [
+      "void dbtopow_tilde_setup(void)",
+      "dbtopow_tilde_setup"
+    ],
+    "dbtorms": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "dbtorms~": [
+      "void dbtorms_tilde_setup(void)",
+      "dbtorms_tilde_setup"
+    ],
+    "declare": [
+      "void g_canvas_setup(void)",
+      "g_canvas_setup"
+    ],
+    "del": [
+      "static void delay_setup(void)",
+      "delay_setup"
+    ],
+    "delay": [
+      "static void delay_setup(void)",
+      "delay_setup"
+    ],
+    "delread4~": [
+      "static void sigvd_setup(void)",
+      "sigvd_setup"
+    ],
+    "delread~": [
+      "static void sigdelread_setup(void)",
+      "sigdelread_setup"
+    ],
+    "delwrite~": [
+      "static void sigdelwrite_setup(void)",
+      "sigdelwrite_setup"
+    ],
+    "div": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "drawcurve": [
+      "static void curve_setup(void)",
+      "curve_setup"
+    ],
+    "drawnumber": [
+      "static void drawnumber_setup(void)",
+      "drawnumber_setup"
+    ],
+    "drawpolygon": [
+      "static void curve_setup(void)",
+      "curve_setup"
+    ],
+    "drawsymbol": [
+      "static void drawnumber_setup(void)",
+      "drawnumber_setup"
+    ],
+    "drawtext": [
+      "static void drawnumber_setup(void)",
+      "drawnumber_setup"
+    ],
+    "element": [
+      "static void elem_setup(void)",
+      "elem_setup"
+    ],
+    "env~": [
+      "void env_tilde_setup(void)",
+      "env_tilde_setup"
+    ],
+    "exp": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "expr": [
+      "voidexpr_setup(void)",
+      "expr_setup"
+    ],
+    "exprproxy": [
+      "voidexpr_setup(void)",
+      "expr_setup"
+    ],
+    "expr~": [
+      "voidexpr_setup(void)",
+      "expr_setup"
+    ],
+    "exp~": [
+      "static void exp_tilde_setup(void)",
+      "exp_tilde_setup"
+    ],
+    "f": [
+      "void pdfloat_setup(void)",
+      "pdfloat_setup"
+    ],
+    "fexpr~": [
+      "voidexpr_setup(void)",
+      "expr_setup"
+    ],
+    "fft~": [
+      "static void sigfft_setup(void)",
+      "sigfft_setup"
+    ],
+    "file": [
+      "void x_file_setup(void)",
+      "x_file_setup"
+    ],
+    "file define": [
+      "void x_file_setup(void)",
+      "x_file_setup"
+    ],
+    "filledcurve": [
+      "static void curve_setup(void)",
+      "curve_setup"
+    ],
+    "filledpolygon": [
+      "static void curve_setup(void)",
+      "curve_setup"
+    ],
+    "float": [
+      "void pdfloat_setup(void)",
+      "pdfloat_setup"
+    ],
+    "framp~": [
+      "static void sigframp_setup(void)",
+      "sigframp_setup"
+    ],
+    "fswap": [
+      "void swap_setup(void)",
+      "swap_setup"
+    ],
+    "ftom": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "ftom~": [
+      "void ftom_tilde_setup(void)",
+      "ftom_tilde_setup"
+    ],
+    "fudiformat": [
+      "static void fudiformat_setup(void)",
+      "fudiformat_setup"
+    ],
+    "fudiparse": [
+      "void fudiparse_setup(void)",
+      "fudiparse_setup"
+    ],
+    "gatom": [
+      "void g_text_setup(void)",
+      "g_text_setup"
+    ],
+    "get": [
+      "static void get_setup(void)",
+      "get_setup"
+    ],
+    "getsize": [
+      "static void getsize_setup(void)",
+      "getsize_setup"
+    ],
+    "gfxstub": [
+      "static void gfxstub_setup(void)",
+      "gfxstub_setup"
+    ],
+    "guiconnect": [
+      "void g_guiconnect_setup(void)",
+      "g_guiconnect_setup"
+    ],
+    "hdl": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "hip~": [
+      "void sighip_setup(void)",
+      "sighip_setup"
+    ],
+    "hradio": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "hsl": [
+      "void g_slider_setup(void)",
+      "g_slider_setup"
+    ],
+    "hslider": [
+      "void g_slider_setup(void)",
+      "g_slider_setup"
+    ],
+    "i": [
+      "void pdint_setup(void)",
+      "pdint_setup"
+    ],
+    "ifft~": [
+      "static void sigfft_setup(void)",
+      "sigfft_setup"
+    ],
+    "inlet": [
+      "static void vinlet_setup(void)",
+      "vinlet_setup"
+    ],
+    "inlet~": [
+      "static void vinlet_setup(void)",
+      "vinlet_setup"
+    ],
+    "int": [
+      "void pdint_setup(void)",
+      "pdint_setup"
+    ],
+    "key": [
+      "static void key_setup(void)",
+      "key_setup"
+    ],
+    "keyname": [
+      "static void key_setup(void)",
+      "key_setup"
+    ],
+    "keyup": [
+      "static void key_setup(void)",
+      "key_setup"
+    ],
+    "libpd_receive": [
+      "void libpdreceive_setup(void)",
+      "libpdreceive_setup"
+    ],
+    "line": [
+      "static void line_setup(void)",
+      "line_setup"
+    ],
+    "line~": [
+      "static void line_tilde_setup(void)",
+      "line_tilde_setup"
+    ],
+    "list append": [
+      "static void list_append_setup(void)",
+      "list_append_setup"
+    ],
+    "list fromsymbol": [
+      "static void list_fromsymbol_setup(void)",
+      "list_fromsymbol_setup"
+    ],
+    "list inlet": [
+      "static void alist_setup(void)",
+      "alist_setup"
+    ],
+    "list length": [
+      "static void list_length_setup(void)",
+      "list_length_setup"
+    ],
+    "list prepend": [
+      "static void list_prepend_setup(void)",
+      "list_prepend_setup"
+    ],
+    "list split": [
+      "static void list_split_setup(void)",
+      "list_split_setup"
+    ],
+    "list store": [
+      "static void list_store_setup(void)",
+      "list_store_setup"
+    ],
+    "list tosymbol": [
+      "static void list_tosymbol_setup(void)",
+      "list_tosymbol_setup"
+    ],
+    "list trim": [
+      "static void list_trim_setup(void)",
+      "list_trim_setup"
+    ],
+    "loadbang": [
+      "static void loadbang_setup(void)",
+      "loadbang_setup"
+    ],
+    "log": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "log~": [
+      "static void log_tilde_setup(void)",
+      "log_tilde_setup"
+    ],
+    "lop~": [
+      "void siglop_setup(void)",
+      "siglop_setup"
+    ],
+    "makefilename": [
+      "static void makefilename_setup(void)",
+      "makefilename_setup"
+    ],
+    "makenote": [
+      "static void makenote_setup(void)",
+      "makenote_setup"
+    ],
+    "max": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "max~": [
+      "static void max_setup(void)",
+      "max_setup"
+    ],
+    "message": [
+      "void g_text_setup(void)",
+      "g_text_setup"
+    ],
+    "messresponder": [
+      "void g_text_setup(void)",
+      "g_text_setup"
+    ],
+    "metro": [
+      "static void metro_setup(void)",
+      "metro_setup"
+    ],
+    "midiin": [
+      "static void midiin_setup(void)",
+      "midiin_setup"
+    ],
+    "midiout": [
+      "static void midiout_setup(void)",
+      "midiout_setup"
+    ],
+    "midirealtimein": [
+      "static void midirealtimein_setup(void)",
+      "midirealtimein_setup"
+    ],
+    "min": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "min~": [
+      "static void min_setup(void)",
+      "min_setup"
+    ],
+    "mod": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "moses": [
+      "static void moses_setup(void)",
+      "moses_setup"
+    ],
+    "mtof": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "mtof~": [
+      "void mtof_tilde_setup(void)",
+      "mtof_tilde_setup"
+    ],
+    "my_canvas": [
+      "void g_mycanvas_setup(void)",
+      "g_mycanvas_setup"
+    ],
+    "my_numbox": [
+      "void g_numbox_setup(void)",
+      "g_numbox_setup"
+    ],
+    "namecanvas": [
+      "static void namecanvas_setup(void)",
+      "namecanvas_setup"
+    ],
+    "nbx": [
+      "void g_numbox_setup(void)",
+      "g_numbox_setup"
+    ],
+    "netreceive": [
+      "static void netreceive_setup(void)",
+      "netreceive_setup"
+    ],
+    "netsend": [
+      "static void netsend_setup(void)",
+      "netsend_setup"
+    ],
+    "noise~": [
+      "static void noise_setup(void)",
+      "noise_setup"
+    ],
+    "notein": [
+      "static void notein_setup(void)",
+      "notein_setup"
+    ],
+    "noteout": [
+      "static void noteout_setup(void)",
+      "noteout_setup"
+    ],
+    "objectmaker": [
+      "void mess_init(void)",
+      "mess_init"
+    ],
+    "objects": null,
+    "openpanel": [
+      "static void openpanel_setup(void)",
+      "openpanel_setup"
+    ],
+    "oscformat": [
+      "void oscformat_setup(void)",
+      "oscformat_setup"
+    ],
+    "oscparse": [
+      "void oscparse_setup(void)",
+      "oscparse_setup"
+    ],
+    "osc~": [
+      "static void osc_setup(void)",
+      "osc_setup"
+    ],
+    "outlet": [
+      "static void voutlet_setup(void)",
+      "voutlet_setup"
+    ],
+    "outlet~": [
+      "static void voutlet_setup(void)",
+      "voutlet_setup"
+    ],
+    "pack": [
+      "static void pack_setup(void)",
+      "pack_setup"
+    ],
+    "page": [
+      "void g_canvas_setup(void)",
+      "g_canvas_setup"
+    ],
+    "pd": [
+      "void g_canvas_setup(void)",
+      "g_canvas_setup"
+    ],
+    "pdcontrol": [
+      "static void pdcontrol_setup(void)",
+      "pdcontrol_setup"
+    ],
+    "pgmin": [
+      "static void pgmin_setup(void)",
+      "pgmin_setup"
+    ],
+    "pgmout": [
+      "static void pgmout_setup(void)",
+      "pgmout_setup"
+    ],
+    "phasor~": [
+      "static void phasor_setup(void)",
+      "phasor_setup"
+    ],
+    "pipe": [
+      "static void pipe_setup(void)",
+      "pipe_setup"
+    ],
+    "plot": [
+      "static void plot_setup(void)",
+      "plot_setup"
+    ],
+    "pointer": [
+      "static void ptrobj_setup(void)",
+      "ptrobj_setup"
+    ],
+    "poly": [
+      "static void poly_setup(void)",
+      "poly_setup"
+    ],
+    "polytouchin": [
+      "static void polytouchin_setup(void)",
+      "polytouchin_setup"
+    ],
+    "polytouchout": [
+      "static void polytouchout_setup(void)",
+      "polytouchout_setup"
+    ],
+    "pow": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "powtodb": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "powtodb~": [
+      "void powtodb_tilde_setup(void)",
+      "powtodb_tilde_setup"
+    ],
+    "pow~": [
+      "static void pow_tilde_setup(void)",
+      "pow_tilde_setup"
+    ],
+    "print": [
+      "static void print_setup(void)",
+      "print_setup"
+    ],
+    "print~": [
+      "static void print_setup(void)",
+      "print_setup"
+    ],
+    "q8_rsqrt~": [
+      "void sigrsqrt_setup(void)",
+      "sigrsqrt_setup"
+    ],
+    "q8_sqrt~": [
+      "void sigsqrt_setup(void)",
+      "sigsqrt_setup"
+    ],
+    "qlist": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "r": [
+      "static void receive_setup(void)",
+      "receive_setup"
+    ],
+    "radiobut": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "radiobutton": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "random": [
+      "static void random_setup(void)",
+      "random_setup"
+    ],
+    "rdb": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "readsf~": [
+      "static void readsf_setup(void)",
+      "readsf_setup"
+    ],
+    "realtime": [
+      "static void realtime_setup(void)",
+      "realtime_setup"
+    ],
+    "receive": [
+      "static void receive_setup(void)",
+      "receive_setup"
+    ],
+    "receive~": [
+      "static void sigreceive_setup(void)",
+      "sigreceive_setup"
+    ],
+    "rfft~": [
+      "static void sigrfft_setup(void)",
+      "sigrfft_setup"
+    ],
+    "rifft~": [
+      "static void sigrifft_setup(void)",
+      "sigrifft_setup"
+    ],
+    "rmstodb": [
+      "void x_acoustics_setup(void)",
+      "x_acoustics_setup"
+    ],
+    "rmstodb~": [
+      "void rmstodb_tilde_setup(void)",
+      "rmstodb_tilde_setup"
+    ],
+    "route": [
+      "void route_setup(void)",
+      "route_setup"
+    ],
+    "rpole~": [
+      "void sigrpole_setup(void)",
+      "sigrpole_setup"
+    ],
+    "rsqrt~": [
+      "void sigrsqrt_setup(void)",
+      "sigrsqrt_setup"
+    ],
+    "rzero_rev~": [
+      "void sigrzero_rev_setup(void)",
+      "sigrzero_rev_setup"
+    ],
+    "rzero~": [
+      "void sigrzero_setup(void)",
+      "sigrzero_setup"
+    ],
+    "r~": [
+      "static void sigreceive_setup(void)",
+      "sigreceive_setup"
+    ],
+    "s": [
+      "static void send_setup(void)",
+      "send_setup"
+    ],
+    "samphold~": [
+      "void sigsamphold_setup(void)",
+      "sigsamphold_setup"
+    ],
+    "samplerate~": [
+      "static void samplerate_tilde_setup(void)",
+      "samplerate_tilde_setup"
+    ],
+    "savepanel": [
+      "static void savepanel_setup(void)",
+      "savepanel_setup"
+    ],
+    "savestate": [
+      "static void savestate_setup(void)",
+      "savestate_setup"
+    ],
+    "scalar": [
+      "void g_scalar_setup(void)",
+      "g_scalar_setup"
+    ],
+    "scalar define": [
+      "void x_scalar_setup(void)",
+      "x_scalar_setup"
+    ],
+    "sel": [
+      "void select_setup(void)",
+      "select_setup"
+    ],
+    "select": [
+      "void select_setup(void)",
+      "select_setup"
+    ],
+    "send": [
+      "static void send_setup(void)",
+      "send_setup"
+    ],
+    "send~": [
+      "static void sigsend_setup(void)",
+      "sigsend_setup"
+    ],
+    "set": [
+      "static void set_setup(void)",
+      "set_setup"
+    ],
+    "setsize": [
+      "static void setsize_setup(void)",
+      "setsize_setup"
+    ],
+    "sig~": [
+      "static void sig_tilde_setup(void)",
+      "sig_tilde_setup"
+    ],
+    "sin": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "slop~": [
+      "void slop_tilde_setup(void)",
+      "slop_tilde_setup"
+    ],
+    "snake_in~": [
+      "static void snake_tilde_setup(void)",
+      "snake_tilde_setup"
+    ],
+    "snake_out~": [
+      "static void snake_tilde_setup(void)",
+      "snake_tilde_setup"
+    ],
+    "snake~": [
+      "static void snake_tilde_setup(void)",
+      "snake_tilde_setup"
+    ],
+    "snapshot~": [
+      "static void snapshot_tilde_setup(void)",
+      "snapshot_tilde_setup"
+    ],
+    "soundfiler": [
+      "static void soundfiler_setup(void)",
+      "soundfiler_setup"
+    ],
+    "spigot": [
+      "static void spigot_setup(void)",
+      "spigot_setup"
+    ],
+    "sqrt": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "sqrt~": [
+      "void sigsqrt_setup(void)",
+      "sigsqrt_setup"
+    ],
+    "stripnote": [
+      "static void stripnote_setup(void)",
+      "stripnote_setup"
+    ],
+    "struct": [
+      "static void gtemplate_setup(void)",
+      "gtemplate_setup"
+    ],
+    "swap": [
+      "void swap_setup(void)",
+      "swap_setup"
+    ],
+    "switch~": [
+      "void block_tilde_setup(void)",
+      "block_tilde_setup"
+    ],
+    "symbol": [
+      "void pdsymbol_setup(void)",
+      "pdsymbol_setup"
+    ],
+    "sysexin": [
+      "static void midiin_setup(void)",
+      "midiin_setup"
+    ],
+    "s~": [
+      "static void sigsend_setup(void)",
+      "sigsend_setup"
+    ],
+    "t": [
+      "static void trigger_setup(void)",
+      "trigger_setup"
+    ],
+    "table": [
+      "void x_array_setup(void)",
+      "x_array_setup"
+    ],
+    "tabosc4~": [
+      "static void tabosc4_tilde_setup(void)",
+      "tabosc4_tilde_setup"
+    ],
+    "tabplay~": [
+      "static void tabplay_tilde_setup(void)",
+      "tabplay_tilde_setup"
+    ],
+    "tabread": [
+      "static void tabread_setup(void)",
+      "tabread_setup"
+    ],
+    "tabread4": [
+      "static void tabread4_setup(void)",
+      "tabread4_setup"
+    ],
+    "tabread4~": [
+      "static void tabread4_tilde_setup(void)",
+      "tabread4_tilde_setup"
+    ],
+    "tabread~": [
+      "static void tabread_tilde_setup(void)",
+      "tabread_tilde_setup"
+    ],
+    "tabreceive~": [
+      "static void tabreceive_setup(void)",
+      "tabreceive_setup"
+    ],
+    "tabsend~": [
+      "static void tabsend_setup(void)",
+      "tabsend_setup"
+    ],
+    "tabwrite": [
+      "void tabwrite_setup(void)",
+      "tabwrite_setup"
+    ],
+    "tabwrite~": [
+      "static void tabwrite_tilde_setup(void)",
+      "tabwrite_tilde_setup"
+    ],
+    "tan": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "template": [
+      "static void template_setup(void)",
+      "template_setup"
+    ],
+    "text": [
+      "void g_text_setup(void)",
+      "g_text_setup"
+    ],
+    "text define": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text delete": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text fromlist": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text get": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text insert": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text search": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text sequence": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text set": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text size": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "text tolist": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "textfile": [
+      "void x_qlist_setup(void)",
+      "x_qlist_setup"
+    ],
+    "tgl": [
+      "void g_toggle_setup(void)",
+      "g_toggle_setup"
+    ],
+    "threshold~": [
+      "static void threshold_tilde_setup(void)",
+      "threshold_tilde_setup"
+    ],
+    "throw~": [
+      "static void sigthrow_setup(void)",
+      "sigthrow_setup"
+    ],
+    "timer": [
+      "static void timer_setup(void)",
+      "timer_setup"
+    ],
+    "toggle": [
+      "void g_toggle_setup(void)",
+      "g_toggle_setup"
+    ],
+    "touchin": [
+      "static void touchin_setup(void)",
+      "touchin_setup"
+    ],
+    "touchout": [
+      "static void touchout_setup(void)",
+      "touchout_setup"
+    ],
+    "trace": [
+      "static void trace_setup(void)",
+      "trace_setup"
+    ],
+    "trigger": [
+      "static void trigger_setup(void)",
+      "trigger_setup"
+    ],
+    "unpack": [
+      "static void unpack_setup(void)",
+      "unpack_setup"
+    ],
+    "until": [
+      "static void until_setup(void)",
+      "until_setup"
+    ],
+    "v": [
+      "static void value_setup(void)",
+      "value_setup"
+    ],
+    "value": [
+      "static void value_setup(void)",
+      "value_setup"
+    ],
+    "vcf~": [
+      "staticvoid sigvcf_setup(void)",
+      "sigvcf_setup"
+    ],
+    "vdl": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "vd~": [
+      "static void sigvd_setup(void)",
+      "sigvd_setup"
+    ],
+    "vline~": [
+      "static void vline_tilde_setup(void)",
+      "vline_tilde_setup"
+    ],
+    "vradio": [
+      "void g_radio_setup(void)",
+      "g_radio_setup"
+    ],
+    "vsl": [
+      "void g_slider_setup(void)",
+      "g_slider_setup"
+    ],
+    "vslider": [
+      "void g_slider_setup(void)",
+      "g_slider_setup"
+    ],
+    "vsnapshot~": [
+      "static void vsnapshot_tilde_setup(void)",
+      "vsnapshot_tilde_setup"
+    ],
+    "vu": [
+      "void g_vumeter_setup(void)",
+      "g_vumeter_setup"
+    ],
+    "wrap": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "wrap~": [
+      "void sigwrap_setup(void)",
+      "sigwrap_setup"
+    ],
+    "writesf~": [
+      "static void writesf_setup(void)",
+      "writesf_setup"
+    ],
+    "|": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ],
+    "||": [
+      "void x_arithmetic_setup(void)",
+      "x_arithmetic_setup"
+    ]
+  },
+  "saf": {
+    "objects": null,
+    "saf": [
+      "void saf_setup(void)",
+      "saf_setup"
+    ],
+    "saf.binauraliser~": [
+      "void setup_saf0x2ebinauraliser_tilde(void)",
+      "setup_saf0x2ebinauraliser_tilde"
+    ],
+    "saf.binaural~": [
+      "void setup_saf0x2ebinaural_tilde(void)",
+      "setup_saf0x2ebinaural_tilde"
+    ],
+    "saf.decoder~": [
+      "void setup_saf0x2edecoder_tilde(void)",
+      "setup_saf0x2edecoder_tilde"
+    ],
+    "saf.encoder~": [
+      "void setup_saf0x2eencoder_tilde(void)",
+      "setup_saf0x2eencoder_tilde"
+    ],
+    "saf.pitchshifter~": [
+      "void setup_saf0x2epitchshifter_tilde(void)",
+      "setup_saf0x2epitchshifter_tilde"
+    ],
+    "saf.roomsim~": [
+      "void setup_saf0x2eroomsim_tilde(void)",
+      "setup_saf0x2eroomsim_tilde"
+    ]
+  }
+}

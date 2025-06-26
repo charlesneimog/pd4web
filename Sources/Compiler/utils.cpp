@@ -1,6 +1,33 @@
 #include "pd4web.hpp"
 
 // ─────────────────────────────────────
+std::string Pd4Web::readFile(const std::string &path) {
+    std::ifstream file(path);
+    if (!file)
+        throw std::runtime_error("Failed to open file: " + path);
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
+
+// ─────────────────────────────────────
+void Pd4Web::writeFile(const std::string &path, const std::string &content) {
+    std::ofstream file(path);
+    if (!file)
+        throw std::runtime_error("Failed to write file: " + path);
+    file << content;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::replaceAll(std::string &str, const std::string &from, const std::string &to) {
+    size_t pos = 0;
+    while ((pos = str.find(from, pos)) != std::string::npos) {
+        str.replace(pos, from.length(), to);
+        pos += to.length();
+    }
+}
+
+// ─────────────────────────────────────
 std::string Pd4Web::formatLibUrl(const std::string &format, const std::string &arg1,
                                  const std::string &arg2) {
     std::string result = format;
@@ -27,28 +54,30 @@ bool Pd4Web::isNumber(const std::string &s) {
 }
 
 // ──────────────────────────────────────────
-void Pd4Web::print(std::string msg, enum Pd4WebColor color) {
+void Pd4Web::print(std::string msg, enum Pd4WebColor color, int level) {
     if (msg == "\n") {
         std::cout << std::endl;
         return;
     }
 
+    std::string tablevel(level * 2, ' ');
+
     const std::string RESET = "\033[0m";
     switch (color) {
     case Pd4WebColor::RED: {
-        std::cout << "\033[31m    🔴️ ERROR: " << msg << RESET << std::endl;
+        std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
         break;
     }
     case Pd4WebColor::YELLOW: {
-        std::cout << "\033[33m    🟡️ WARNING: " << msg << RESET << std::endl;
+        std::cout << tablevel << "\033[33mWARNING: " << msg << RESET << std::endl;
         break;
     }
     case Pd4WebColor::GREEN: {
-        std::cout << "\033[32m    🟢️ " << msg << RESET << std::endl;
+        std::cout << tablevel << "\033[32m" << msg << RESET << std::endl;
         break;
     }
     case Pd4WebColor::BLUE: {
-        std::cout << "\033[34m    🔵️ " << msg << RESET << std::endl;
+        std::cout << tablevel << "\033[34m" << msg << RESET << std::endl;
         break;
     }
     }

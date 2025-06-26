@@ -3,7 +3,7 @@
 Pd4Web::Pd4Web(std::string pathHome) {
     LOG(__PRETTY_FUNCTION__);
 
-    print("\n", Pd4WebColor::GREEN);
+    print("Initializing pd4web", Pd4WebColor::BLUE);
     m_Pd4WebRoot = pathHome;
     if (pathHome.back() != '/') {
         m_Pd4WebRoot += "/";
