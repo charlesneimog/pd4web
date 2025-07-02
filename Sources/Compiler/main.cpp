@@ -14,6 +14,9 @@ int main(int argc, char *argv[]) {
     // process
     Pd4Web pd4web(pd4webHome.string());
     pd4web.parseArgs(argc, argv);
+
+    pd4web.setPd4WebFilesFolder("/home/neimog/Documents/Git/pd4web/Sources/Pd4Web");
+    pd4web.init();
     pd4web.processPatch();
     return 0;
 }

@@ -1,20 +1,20 @@
 #include "pd4web.hpp"
 
 Pd4Web::Pd4Web(std::string pathHome) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     m_Init = false;
     m_Error = false;
-
-    if (pathHome.empty()) {
-        print("Provide a valid .pd patch to be compiled", Pd4WebColor::RED);
-        return;
-    }
-
-    print("Initializing pd4web", Pd4WebColor::BLUE);
     m_Pd4WebRoot = pathHome;
-    if (pathHome.back() != '/') {
+    m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::init() {
+    if (m_Pd4WebRoot.back() != '/') {
         m_Pd4WebRoot += "/";
     }
+
+    print("Initializing pd4web", Pd4WebLogLevel::LOG1);
     git_libgit2_init();
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();
@@ -23,79 +23,105 @@ Pd4Web::Pd4Web(std::string pathHome) {
     ts_parser_set_language(m_cParser, tree_sitter_c());
 
     // clone emscripten and pd
+    print("Checking emsdk", Pd4WebLogLevel::LOG2);
     bool ok = gitClone("https://github.com/emscripten-core/emsdk.git", "emsdk", EMSDK_VERSION);
     if (!ok) {
-        return;
+        return false;
     }
+
+    print("Checking pure-data", Pd4WebLogLevel::LOG2);
     ok = gitClone("https://github.com/pure-data/pure-data.git", "pure-data", PD_VERSION);
     if (!ok) {
-        return;
+        return false;
     }
 
     // install emscripten
+    print("Initializing paths", Pd4WebLogLevel::LOG2);
     ok = initPaths();
     if (!ok) {
         std::cout << "Failed to init paths" << std::endl;
-        return;
+        return false;
     }
 
     ok = checkAllPaths();
     if (!ok) {
         ok = cmdInstallEmsdk();
         if (!ok) {
-            return;
+            return false;
         }
         ok = checkAllPaths();
         if (!ok) {
-            return;
+            return false;
         }
     }
     m_Init = true;
+
+    return true;
 }
 
 // ─────────────────────────────────────
 void Pd4Web::parseArgs(int argc, char *argv[]) {
-    LOG(__PRETTY_FUNCTION__);
-    cxxopts::Options options("pd4web", "Compile Pure Data externals for the web");
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    cxxopts::Options options("pd4web", "pd4web compiles PureData patches with external objects for "
+                                       "Wasm, allowing to run entire patches in web browsers.\n");
+
+    bool disableGui = false;
 
     // clang-format off
     options.add_options()
-        // TODO:
-        ("v,verbose", "Enable verbose",
-            cxxopts::value<bool>(m_Verbose)->default_value("false"))
+        ("h,help", "Print this usage.")
+
+        // // TODO:
+        // ("v,verbose", "Enable verbose.",
+        //     cxxopts::value<bool>(m_Verbose)->default_value("false"))
 
         // TODO:
-        ("m,initial-memory", "Initial memory size (in MB)", 
-            cxxopts::value<int>(m_Memory))
+        ("m,initial-memory", "Initial memory size (in MB).", 
+            cxxopts::value<int>(m_Memory)->default_value("32"))
+
 
         // TODO:
-        ("nogui", "Disable GUI", 
-            cxxopts::value<bool>(m_RenderGui)->default_value("true"))
-
-        // TODO:
-        ("z,patch-zoom", "Patch zoom", 
+        ("z,patch-zoom", "Patch zoom.", 
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
         // TODO:
-        ("o,output-folder", "Output folder", 
+        ("o,output-folder", "Output folder.", 
             cxxopts::value<std::string>(m_OutputFolder))
 
-        ("patch_file", "Patch file to be compiled", 
+        ("patch_file", "Patch file to be compiled.", 
             cxxopts::value<std::string>(m_PatchFile))
 
         // TODO:
-        ("t,template-id", "Activate debug compilation (faster compilation slower execution)", 
+        ("t,template-id", "Set template id check https://charlesneimog.github.io/pd4web/patch/templates/.",
             cxxopts::value<int>(m_TemplateId))
 
-        ("d,debug", "Debug mode", 
-            cxxopts::value<bool>(m_Debug));
+
+        // TODO:
+        // ("server", "Run pd4web server",
+        //     cxxopts::value<int>(m_TemplateId))
+        ("nogui", "Disable GUI interface.", 
+            cxxopts::value<bool>(disableGui))
+
+        ("debug", "Activate debug compilation (faster compilation, slower and more error info execution).", 
+            cxxopts::value<bool>(m_Debug))
+
+        ("devdebug", "Activate development debug compilation (print function call).", 
+            cxxopts::value<bool>(m_DevDebug)->default_value("false"));
 
     // clang-format on
-
     options.parse_positional({"patch_file"});
     auto result = options.parse(argc, argv);
+
+    m_RenderGui = !disableGui;
+
     if (result.count("patch_file")) {
         std::string patchFile = result["patch_file"].as<std::string>();
-        LOG(patchFile);
+        print(patchFile, Pd4WebLogLevel::VERBOSE);
+    }
+
+    if (result.count("help")) {
+        options.set_width(120);
+        std::cout << options.help() << std::endl;
+        exit(0);
     }
 }

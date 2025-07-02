@@ -20,7 +20,7 @@ bool Pd4Web::cmdInstallEmsdk() {
 #ifdef _WIN32
     // TODO: do for windows
 #else
-    INFO("Installing emsdk, this will take some time");
+    print("Installing emsdk, this will take some time", LOG2);
     std::string cmd = "bash " + m_EmsdkInstaller + " install " + EMSDK_VERSION;
     if (!cmdExecute(cmd)) {
         return false;

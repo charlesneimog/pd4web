@@ -1,21 +1,46 @@
 #include "pd4web.hpp"
 
 // ─────────────────────────────────────
-// TODO: Rename to getSuppotedLibraries();
+bool Pd4Web::libIsSupported(std::string libName) {
+    for (Library lib : m_Libraries) {
+        if (lib.Name == libName) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::downloadSupportedLib(std::string libName) {
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    for (Library Lib : m_Libraries) {
+        if (Lib.Name == libName) {
+            bool ok = gitClone(Lib.Url, Lib.Name, Lib.Version);
+            if (!ok) {
+                print("Failed to clone library'" + libName + "'", Pd4WebLogLevel::ERROR);
+                return false;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+
     m_Libraries.clear();
 
-    // TODO: get true patch
-    std::ifstream file("/home/neimog/Documents/Git/pd4web/Sources/Libraries/Libraries.yaml");
+    std::ifstream file(Patch->Pd4WebFiles / "Libraries" / "Libraries.yaml");
     if (!file) {
-        LOG("Failed to open libraries file")
+        print("Failed to open libraries file", Pd4WebLogLevel::ERROR);
         return false;
     }
 
     YamlNode node = fkyaml::node::deserialize(file);
     if (!node.contains("Libraries")) {
-        LOG("YAML does not have libraries")
+        print("YAML does not have libraries", Pd4WebLogLevel::ERROR);
         return false;
     }
 
@@ -23,7 +48,7 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
     m_SourcesNode = node.at("Sources");
 
     if (!m_LibrariesNode.is_sequence()) {
-        LOG("YAML file has no sequence");
+        print("YAML file has no sequence", Pd4WebLogLevel::ERROR);
         return false;
     }
 
@@ -50,14 +75,14 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
 
     for (const std::string &declared : Patch->DeclaredLibs) {
         if (supportedLibraries.find(declared) == supportedLibraries.end()) {
-            LOG("Library '" + declared + "' is not supported")
+            print("Library '" + declared + "' is not supported", Pd4WebLogLevel::ERROR);
             return false;
         } else {
             for (Library Lib : m_Libraries) {
                 if (Lib.Name == declared) {
                     bool ok = gitClone(Lib.Url, Lib.Name, Lib.Version);
                     if (!ok) {
-                        LOG("Failed to clone library '" + declared + "'");
+                        print("Failed to clone library'" + declared + "'", Pd4WebLogLevel::ERROR);
                         return false;
                     }
                     return true;
@@ -72,6 +97,7 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
 // ─────────────────────────────────────
 std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::path dir,
                                              PatchLine &pl) {
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::vector<fs::path> results;
     if (!fs::exists(dir) || !fs::is_directory(dir)) {
         return results;
@@ -109,6 +135,8 @@ std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::
 // ─────────────────────────────────────
 std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch> &p,
                                                            std::string Lib) {
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+
     std::vector<std::string> absNames;
     const std::string jsonFile = "/home/neimog/Documents/Git/pd4web/Sources/Compiler/objects.json";
     json full_json;
@@ -132,7 +160,7 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
     std::string completPath = m_Pd4WebRoot + Lib;
     print("Listing all Abstractions inside '" + Lib +
               "'. This is done once for library and will take a while",
-          Pd4WebColor::GREEN, p->printLevel + 1);
+          Pd4WebLogLevel::LOG2, p->printLevel + 1);
 
     std::vector<std::string> patchNames;
     std::vector<std::string> patchPath;
@@ -164,6 +192,7 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode node,
                                              std::vector<std::string> &objectNames,
                                              std::vector<std::string> &setupNames,
                                              std::vector<std::string> &setupSignatures) {
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
 
     if (ts_node_is_null(node))
         return;
@@ -282,14 +311,14 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode node,
 
 // ─────────────────────────────────────
 std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::vector<std::string> objectNames;
     std::vector<std::string> setupSignatures;
     std::vector<std::string> setupNames;
 
     std::string completPath = m_Pd4WebRoot + Lib;
     if (!fs::exists(completPath) || !fs::is_directory(completPath)) {
-        LOG("Library '" + Lib + "' not found");
+        print("Library '" + Lib + "' not found", Pd4WebLogLevel::ERROR);
         return objectNames;
     }
 
@@ -315,7 +344,7 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
 
     print("Listing all Objects inside '" + Lib +
               "'. This is done once for library and will take a while",
-          Pd4WebColor::GREEN, p->printLevel + 1);
+          Pd4WebLogLevel::LOG2, p->printLevel + 1);
 
     for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
         if (!isFileFromGitSubmodule(completPath, entry.path()) && entry.is_regular_file()) {
@@ -354,7 +383,7 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
             full_json[Lib]["objects"][objectNames[i]] = {setupSignatures[i], setupNames[i]};
         }
     } else {
-        print("This should not happend please report", Pd4WebColor::RED);
+        print("This should not happend please report", Pd4WebLogLevel::ERROR);
         p->ExternalObjectsJson = full_json;
         return objectNames;
     }

@@ -11,6 +11,14 @@
 #include <json.hpp>
 #include <yaml.hpp>
 
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#define CPPHTTPLIB_OPENSSL_SUPPORT
+#include "httplib.h"
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 extern "C" {
 #include <git2.h>
 #include <tree_sitter/api.h>
@@ -30,24 +38,25 @@ using YamlNode = ::fkyaml::v0_4_2::basic_node<>;
 namespace fs = std::filesystem;
 
 // ──────────────────────────────────────────
-enum Pd4WebColor {
-    YELLOW = 0,
-    RED,
-    GREEN,
-    BLUE,
+enum Pd4WebLogLevel {
+    WARNING = 0,
+    ERROR,
+    LOG1,
+    LOG2,
+    VERBOSE,
 };
 
 // ──────────────────────────────────────────
 struct PatchLine {
     enum PatchTokenType { DECLARE = 0, OBJ, CONNECTION, CANVAS, RESTORE, MSG, TEXT, INVALID };
-    PatchTokenType Type;
+    PatchTokenType Type = INVALID;
     std::vector<std::string> OriginalTokens;
     std::vector<std::string> ModifiedTokens;
 
-    bool isLuaExternal;
-    bool isExternal;
-    bool isAbstraction;
-    bool Found;
+    bool isLuaExternal = false;
+    bool isExternal = false;
+    bool isAbstraction = false;
+    bool Found = false;
 
     std::string Name;
     std::string Lib;
@@ -60,6 +69,7 @@ struct Patch {
     fs::path PatchFolder;
     fs::path WebPatchFolder;
 
+    fs::path Pd4WebFiles;
     fs::path Pd4WebRoot;
     fs::path mainRoot;
     std::string ProjectName;
@@ -109,22 +119,36 @@ class Pd4Web {
   public:
     Pd4Web(std::string pathHome);
     void parseArgs(int argc, char *argv[]);
+    bool init();
     bool processPatch();
+
+    void setPatchFile(std::string file) { m_PatchFile = file; };
+    void setPd4WebFilesFolder(std::string path) { m_Pd4WebFiles = path; };
+    void setInitialMemory(int memory) { m_Memory = memory; };
+    void setPatchZoom(int zoom) { m_PatchZoom = zoom; };
+    void setOutputFolder(std::string folder) { m_OutputFolder = folder; };
+    void setTemplateId(int id) { m_TemplateId = id; };
+    void setDebugMode(bool debug) { m_Debug = debug; };
+    void setDevDebugMode(bool debug) { m_DevDebug = debug; };
+
+    void disableGuiRender() { m_RenderGui = false; };
 
   private:
     bool m_Init;
     bool m_Error;
-    std::string m_Pd4WebRoot;
-    std::string m_OutputFolder;
+    std::string m_Pd4WebRoot;   // TODO: is fs::path
+    std::string m_OutputFolder; // TODO: is fs::path
+    fs::path m_Pd4WebFiles;
 
-    std::string m_PatchFile;
-    std::string m_LibrariesPath;
+    std::string m_PatchFile;     // TODO: is fs::path
+    std::string m_LibrariesPath; // TODO: is fs::path
     int m_TemplateId;
     bool m_BypassUnsuported;
     bool m_Verbose;
     std::string m_PdVersion;
     std::string m_EmsdkVersion;
     bool m_Debug;
+    bool m_DevDebug = false;
     int m_Memory;
 
     unsigned m_ChnsOutCount;
@@ -142,6 +166,7 @@ class Pd4Web {
     bool initPaths();
     std::string getEmsdkPath();
     bool checkAllPaths();
+    bool getCmakeBinary();
     std::string m_Cmake;
     std::string m_EmsdkInstaller;
     std::string m_Emcmake;
@@ -197,6 +222,9 @@ class Pd4Web {
     TSParser *m_cppParser;
     TSParser *m_cParser;
     Libraries m_Libraries;
+    bool libIsSupported(std::string libName);
+    bool downloadSupportedLib(std::string libName);
+
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);
     bool libsDownload(YamlNode node);
     std::vector<std::string> listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
@@ -230,19 +258,9 @@ class Pd4Web {
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);
-    void print(std::string msg, enum Pd4WebColor color = Pd4WebColor::GREEN, int level = 1);
+    void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::LOG2, int level = 1);
 
     std::string readFile(const std::string &path);
     void writeFile(const std::string &path, const std::string &content);
     void replaceAll(std::string &str, const std::string &from, const std::string &to);
 };
-
-// ──────────────────────────────────────────
-#define LOG(msg)                                                                                   \
-    // std::cout << "[LOG]  " << __FUNCTION__ << ":" << __LINE__ << " - " << msg << std::endl;
-
-#ifdef PDOBJECT
-#else
-#define INFO(msg)                                                                                  \
-    std::cout << "[INFO] " << __FUNCTION__ << ":" << __LINE__ << " - " << msg << std::endl;
-#endif

@@ -2,7 +2,6 @@
 
 // ──────────────────────────────────────────
 static int progress_callback(const git_transfer_progress *stats, void *payload) {
-    LOG(__PRETTY_FUNCTION__);
     if (stats->total_objects == 0)
         return 0;
 
@@ -22,7 +21,7 @@ static int progress_callback(const git_transfer_progress *stats, void *payload) 
 
 // ─────────────────────────────────────
 bool Pd4Web::gitRepoExists(const std::string &path) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     struct stat info;
     if (stat(path.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         return false;
@@ -46,7 +45,6 @@ struct SubmoduleFileCheckContext {
 
 // ─────────────────────────────────────
 int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) {
-    LOG(__PRETTY_FUNCTION__);
     auto *ctx = static_cast<SubmoduleFileCheckContext *>(payload);
     fs::path submodulePath = ctx->repoRoot / git_submodule_path(sm);
     fs::path fileAbs = fs::absolute(ctx->filePath);
@@ -60,7 +58,7 @@ int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) 
 
 // ─────────────────────────────────────
 bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     git_repository *repo = nullptr;
     if (git_repository_open(&repo, (const char *)repoRoot.c_str()) != 0) {
         return false;
@@ -73,7 +71,7 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
 
 // ─────────────────────────────────────
 bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::string path = m_Pd4WebRoot + gitFolder;
     if (gitRepoExists(path)) {
         gitCheckout(url, gitFolder, tag);
@@ -104,7 +102,6 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
         repo,
         [](git_submodule *sm, const char *name, void *payload) -> int {
             std::string submodname = name;
-            LOG("Initializing submodule " + submodname);
             int err = git_submodule_update(sm, 1, nullptr); // 1 = initialize
             if (err != 0) {
                 const git_error *e = git_error_last();
@@ -148,7 +145,7 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
 
 // ─────────────────────────────────────
 bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::string path = m_Pd4WebRoot + gitFolder;
 
     git_repository *repo = nullptr;
@@ -238,7 +235,7 @@ bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
 
 // ─────────────────────────────────────
 bool Pd4Web::gitCheckout(std::string git, std::string gitFolder, std::string tag) {
-    LOG(__PRETTY_FUNCTION__);
+    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
 
     std::string path = m_Pd4WebRoot + gitFolder;
     git_repository *repo = nullptr;

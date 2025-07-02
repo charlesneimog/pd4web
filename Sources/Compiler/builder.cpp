@@ -16,9 +16,9 @@ std::string pdCMakeBlock = "# Pd Cmake\n"
 
 // ─────────────────────────────────────
 void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
-    print("Creating config.h file", Pd4WebColor::GREEN, p->printLevel + 1);
+    print("Creating config.h file", Pd4WebLogLevel::LOG2, p->printLevel + 1);
 
-    std::string configFile = readFile("/home/neimog/Documents/Git/pd4web/Sources/config.in.h");
+    std::string configFile = readFile(p->Pd4WebFiles / "config.in.h");
     replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"2\"");
     replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"4\"");
     replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.dev\"");
@@ -41,47 +41,53 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/Libraries/libpd.cmake",
+    fs::copy(p->Pd4WebFiles / "Libraries" / "libpd.cmake",
              p->WebPatchFolder / "Pd4Web" / "libpd.cmake", fs::copy_options::skip_existing);
 
     fs::create_directory(p->WebPatchFolder / "Pd4Web" / "pure-data");
 
-    print("Copying pure-data sources to Pd4Web", Pd4WebColor::GREEN, 2);
+    print("Copying pure-data sources to Pd4Web", Pd4WebLogLevel::LOG2, 2);
     fs::copy(p->Pd4WebRoot / "pure-data" / "src",
              p->WebPatchFolder / "Pd4Web" / "pure-data" / "src",
              fs::copy_options::recursive | fs::copy_options::skip_existing |
                  fs::copy_options::skip_symlinks);
 
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.cpp",
-             p->WebPatchFolder / "Pd4Web" / "pd4web.cpp", fs::copy_options::skip_existing);
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.hpp",
-             p->WebPatchFolder / "Pd4Web" / "pd4web.hpp", fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "pd4web.cpp", p->WebPatchFolder / "Pd4Web" / "pd4web.cpp",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "pd4web.hpp", p->WebPatchFolder / "Pd4Web" / "pd4web.hpp",
+             fs::copy_options::skip_existing);
 
     // Pd Lua
     if (p->PdLua) {
-        print("Replacig lua sources from pdlua to pd4web", Pd4WebColor::GREEN, 2);
-        fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pdlua.h",
+        print("Replacig lua sources from pdlua to pd4web", Pd4WebLogLevel::LOG2, 2);
+        fs::copy(p->Pd4WebFiles / "pdlua.h",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua.h",
                  fs::copy_options::overwrite_existing);
-        fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4weblua_gfx.c",
+        fs::copy(p->Pd4WebFiles / "pd4weblua_gfx.c",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua_gfx.h",
                  fs::copy_options::overwrite_existing);
-        fs::copy("/home/neimog/Documents/Git/pd4web/Sources/Font/DejaVuSans.ttf",
+        fs::copy(p->Pd4WebFiles / "Font" / "DejaVuSans.ttf",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "DejaVuSans.ttf",
                  fs::copy_options::skip_existing);
     }
 
+    writeFile((p->WebPatchFolder / "index.html").string(),
+              "<!doctype html><meta http-equiv=\"refresh\" content=\"0;url=WebPatch\">");
+
     // JavaScript
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/index.html",
-             p->WebPatchFolder / "WebPatch" / "index.html", fs::copy_options::skip_existing);
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.gui.js",
-             p->WebPatchFolder / "WebPatch" / "pd4web.gui.js", fs::copy_options::skip_existing);
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.threads.js",
+    fs::copy(p->Pd4WebFiles / "index.html", p->WebPatchFolder / "WebPatch" / "index.html",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "favicon.ico", p->WebPatchFolder / "favicon.ico",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "pd4web.gui.js", p->WebPatchFolder / "WebPatch" / "pd4web.gui.js",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "pd4web.threads.js",
              p->WebPatchFolder / "WebPatch" / "pd4web.threads.js", fs::copy_options::skip_existing);
-    fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.style.css",
+    fs::copy(p->Pd4WebFiles / "pd4web.style.css",
              p->WebPatchFolder / "WebPatch" / "pd4web.style.css", fs::copy_options::skip_existing);
+
     if (p->Midi) {
-        fs::copy("/home/neimog/Documents/Git/pd4web/Sources/pd4web.midi.js",
+        fs::copy(p->Pd4WebFiles / "pd4web.midi.js",
                  p->WebPatchFolder / "WebPatch" / "pd4web.midi.js",
                  fs::copy_options::skip_existing);
     }
@@ -92,16 +98,16 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
     for (Library Lib : m_Libraries) {
         fs::path cmakeFile = p->WebPatchFolder / "Pd4Web" / "Externals" / (LibName + ".cmake");
         if (Lib.Name == LibName && !fs::exists(cmakeFile)) {
-            print("Copying files of '" + LibName + "' to Pd4Web/Externals", Pd4WebColor::GREEN, 2);
+            print("Copying files of '" + LibName + "' to Pd4Web/Externals", Pd4WebLogLevel::LOG2,
+                  2);
             fs::copy(p->Pd4WebRoot / LibName, p->WebPatchFolder / "Pd4Web" / "Externals" / LibName,
                      fs::copy_options::recursive | fs::copy_options::skip_existing |
                          fs::copy_options::skip_symlinks);
 
             print("Copying build script '" + LibName + ".cmake' to Pd4Web/Externals",
-                  Pd4WebColor::GREEN, 2);
+                  Pd4WebLogLevel::LOG2, 2);
 
-            // TODO: Replace with right file
-            fs::copy("/home/neimog/Documents/Git/pd4web/Sources/Libraries/" + LibName + ".cmake",
+            fs::copy(p->Pd4WebFiles / "Libraries" / (LibName + ".cmake"),
                      p->WebPatchFolder / "Pd4Web" / "Externals" / (LibName + ".cmake"),
                      fs::copy_options::skip_existing);
         }
@@ -110,7 +116,7 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
 
 // ─────────────────────────────────────
 void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
-    print("Configuring CMakeLists.txt", Pd4WebColor::GREEN, p->printLevel + 1);
+    print("Configuring CMakeLists.txt", Pd4WebLogLevel::LOG2, p->printLevel + 1);
 
     fs::create_directory(p->WebPatchFolder / "Pd4Web");
     fs::create_directory(p->WebPatchFolder / "Pd4Web" / "Externals");
@@ -123,9 +129,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         copyCmakeLibFiles(p, Lib);
     }
 
-    // TODO: Replace with right file
-    std::string cmakeTemplate =
-        readFile("/home/neimog/Documents/Git/pd4web/Sources/Libraries/pd4web.in.cmake");
+    std::string cmakeTemplate = readFile(p->Pd4WebFiles / "Libraries" / "pd4web.in.cmake");
 
     replaceAll(cmakeTemplate, "@PROJECT_NAME@", p->ProjectName);
     replaceAll(cmakeTemplate, "@MEMORY_SIZE@", std::to_string(p->MemorySize));
@@ -152,7 +156,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
             AddedLibs.push_back(Lib);
             LibrariesInclude +=
                 "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" + Lib + ".cmake\")\n";
-            print("Including '" + Lib + "'", Pd4WebColor::GREEN, p->printLevel + 1);
+            print("Including '" + Lib + "'", Pd4WebLogLevel::LOG2, p->printLevel + 2);
         }
     }
 
@@ -163,7 +167,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
                 AddedLibs.push_back(Lib);
                 LibrariesInclude +=
                     "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" + Lib + ".cmake\")\n";
-                print("Including '" + Lib + "'", Pd4WebColor::GREEN, p->printLevel + 1);
+                print("Including '" + Lib + "'", Pd4WebLogLevel::LOG2, p->printLevel + 1);
             }
         }
     }
@@ -232,17 +236,22 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
-    // TODO: Replace to right file
-    print("Creating externals.cpp file", Pd4WebColor::GREEN, p->printLevel + 1);
+    print("Creating externals.cpp file", Pd4WebLogLevel::LOG2, p->printLevel + 1);
     print("\n");
-    std::string externalsTemplate =
-        readFile("/home/neimog/Documents/Git/pd4web/Sources/externals.in.cpp");
+    std::string externalsTemplate = readFile(p->Pd4WebFiles / "externals.in.cpp");
 
     std::string Declaration = "";
     std::string Call = "";
     if (p->PdLua) {
         Declaration += "extern \"C\" void pdlua_setup(void);\n";
         Call += "    pdlua_setup();\n";
+    }
+
+    std::string extraDefinitions = "";
+    for (std::string Lib : p->DeclaredLibs) {
+        if (Lib == "cyclone") {
+            extraDefinitions += "#if !defined(CYCLONE_OBJ_API)\n#define CYCLONE_OBJ_API\n#endif\n";
+        }
     }
 
     for (PatchLine &pl : p->ExternalPatchLines) {
@@ -258,7 +267,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                                   p->ExternalObjectsJson[pl.Lib]["objects"][pl.Name][0]
                                       .get<std::string>() +
                                   " setup function",
-                              Pd4WebColor::GREEN, p->printLevel + 1);
+                              Pd4WebLogLevel::LOG2, p->printLevel + 1);
                         Declaration += "extern \"C\" " +
                                        p->ExternalObjectsJson[pl.Lib]["objects"][pl.Name][0]
                                            .get<std::string>() +
@@ -268,15 +277,15 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                                     .get<std::string>() +
                                 "();\n";
                     } else {
-                        print("No objects name key " + pl.Name, Pd4WebColor::RED,
+                        print("No objects name key " + pl.Name, Pd4WebLogLevel::ERROR,
                               p->printLevel + 1);
                     }
                 } else {
-                    print("Something went wrong (no objects key) " + pl.Name, Pd4WebColor::RED,
+                    print("Something went wrong (no objects key) " + pl.Name, Pd4WebLogLevel::ERROR,
                           p->printLevel + 1);
                 }
             } else {
-                print("Something went wrong (no objects lib) " + pl.Name, Pd4WebColor::RED,
+                print("Something went wrong (no objects lib) " + pl.Name, Pd4WebLogLevel::ERROR,
                       p->printLevel + 1);
             }
         } else if (pl.isExternal && !pl.isLuaExternal && pl.Lib.empty() && !pl.Name.empty()) {
@@ -286,7 +295,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                               p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][0]
                                   .get<std::string>() +
                               " setup function",
-                          Pd4WebColor::GREEN, p->printLevel + 1);
+                          Pd4WebLogLevel::LOG2, p->printLevel + 1);
                     Declaration +=
                         "extern \"C\" " +
                         p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][0].get<std::string>() +
@@ -296,18 +305,20 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                         p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][1].get<std::string>() +
                         "();\n";
                 } else {
-                    print("Something went wrong no name " + pl.Name, Pd4WebColor::RED,
+                    print("Something went wrong no name " + pl.Name, Pd4WebLogLevel::ERROR,
                           p->printLevel + 1);
                 }
             } else {
-                print("Something went wrong no objects " + pl.Name, Pd4WebColor::RED,
+                print("Something went wrong no objects " + pl.Name, Pd4WebLogLevel::ERROR,
                       p->printLevel + 1);
             }
         } else {
-            print("Something went wrong for no lib" + pl.Name, Pd4WebColor::RED, p->printLevel + 1);
+            print("Something went wrong for no lib" + pl.Name, Pd4WebLogLevel::ERROR,
+                  p->printLevel + 1);
         }
     }
 
+    replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_EXTRA@", extraDefinitions);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_DECLARATION@", Declaration);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_SETUP@", Call);
     writeFile(p->WebPatchFolder.string() + "/Pd4Web/externals.cpp", externalsTemplate);
@@ -317,13 +328,13 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
 void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 
     print("\n");
-    print("Configuring Build Project", Pd4WebColor::BLUE);
+    print("Configuring Build Project", Pd4WebLogLevel::LOG1);
 
     createMainCmake(p);
     copySources(p);
 
     print("\n");
-    print("Configuring C++ Code", Pd4WebColor::BLUE);
+    print("Configuring C++ Code", Pd4WebLogLevel::LOG1);
     createConfigFile(p);
     createExternalsCppFile(p);
 }
@@ -331,14 +342,29 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 // ─────────────────────────────────────
 void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     std::string releaseType = "Release"; // or get from config
+    if (m_Debug) {
+        releaseType = "Debug";
+    }
     std::string configure = m_Emconfigure;
     std::string make = m_Emmake;
     std::string fullCommand;
-    std::vector<std::string> command = {m_Emcmake, // usually "emcmake"
-                                        "cmake",
+
+    fs::create_directory(p->WebPatchFolder / ".build");
+
+#ifdef _WIN32
+    auto path = (p->WebPatchFolder / ".build").string();
+    DWORD attrs = GetFileAttributes(path.c_str());
+    if (attrs != INVALID_FILE_ATTRIBUTES) {
+        SetFileAttributes(path.c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
+    }
+#endif
+
+    // TODO: on windows I need to set this cmake as binary
+    std::vector<std::string> command = {m_Emcmake,
+                                        m_Cmake,
                                         p->WebPatchFolder.string(),
                                         "-B",
-                                        (p->WebPatchFolder / "build").string(),
+                                        (p->WebPatchFolder / ".build").string(),
                                         "-G",
                                         "Ninja",
                                         "-DCMAKE_MAKE_PROGRAM=" +
@@ -356,9 +382,9 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 
     // build
     int cpuCount = std::thread::hardware_concurrency();
-    std::vector<std::string> buildCmd = {"cmake",
+    std::vector<std::string> buildCmd = {m_Cmake,
                                          "--build",
-                                         (p->WebPatchFolder / "build").string(),
+                                         (p->WebPatchFolder / ".build").string(),
                                          "-j" + std::to_string(cpuCount),
                                          "--target",
                                          "pd4web"};

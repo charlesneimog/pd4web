@@ -1,4 +1,1818 @@
 {
+  "cyclone": {
+    "abstractions": {
+      "All_about_cyclone": [
+        "All_about_cyclone",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/All_about_cyclone.pd"
+      ],
+      "README.deken": [
+        "README.deken",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/README.deken.pd"
+      ],
+      "accum-help": [
+        "accum-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/accum-help.pd"
+      ],
+      "acos-help": [
+        "acos-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/acos-help.pd"
+      ],
+      "acosh-help": [
+        "acosh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/acosh-help.pd"
+      ],
+      "acosh~-help": [
+        "acosh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/acosh~-help.pd"
+      ],
+      "acos~-help": [
+        "acos~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/acos~-help.pd"
+      ],
+      "active-help": [
+        "active-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/active-help.pd"
+      ],
+      "allpass~-help": [
+        "allpass~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/allpass~-help.pd"
+      ],
+      "anal-help": [
+        "anal-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/anal-help.pd"
+      ],
+      "append-help": [
+        "append-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/append-help.pd"
+      ],
+      "asin-help": [
+        "asin-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/asin-help.pd"
+      ],
+      "asinh-help": [
+        "asinh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/asinh-help.pd"
+      ],
+      "asinh~-help": [
+        "asinh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/asinh~-help.pd"
+      ],
+      "asin~-help": [
+        "asin~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/asin~-help.pd"
+      ],
+      "atan2~-help": [
+        "atan2~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atan2~-help.pd"
+      ],
+      "atanh-help": [
+        "atanh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atanh-help.pd"
+      ],
+      "atanh~-help": [
+        "atanh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atanh~-help.pd"
+      ],
+      "atan~-help": [
+        "atan~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atan~-help.pd"
+      ],
+      "atodb-help": [
+        "atodb-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atodb-help.pd"
+      ],
+      "atodb~-help": [
+        "atodb~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/atodb~-help.pd"
+      ],
+      "average~-help": [
+        "average~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/average~-help.pd"
+      ],
+      "avg~-help": [
+        "avg~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/avg~-help.pd"
+      ],
+      "bangbang-help": [
+        "bangbang-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bangbang-help.pd"
+      ],
+      "bitand~-help": [
+        "bitand~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitand~-help.pd"
+      ],
+      "bitnot~-help": [
+        "bitnot~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitnot~-help.pd"
+      ],
+      "bitor~-help": [
+        "bitor~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitor~-help.pd"
+      ],
+      "bitsafe~-help": [
+        "bitsafe~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitsafe~-help.pd"
+      ],
+      "bitshift~-help": [
+        "bitshift~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitshift~-help.pd"
+      ],
+      "bitxor~-help": [
+        "bitxor~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bitxor~-help.pd"
+      ],
+      "bondo-help": [
+        "bondo-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bondo-help.pd"
+      ],
+      "borax-help": [
+        "borax-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/borax-help.pd"
+      ],
+      "bucket-help": [
+        "bucket-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/bucket-help.pd"
+      ],
+      "buddy-help": [
+        "buddy-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/buddy-help.pd"
+      ],
+      "buffer~": [
+        "buffer~",
+        "/home/neimog/.local/share/pd4web/cyclone/cyclone_objects/abstractions/buffer~.pd"
+      ],
+      "buffer~-help": [
+        "buffer~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/buffer~-help.pd"
+      ],
+      "buffir~-help": [
+        "buffir~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/buffir~-help.pd"
+      ],
+      "capture-help": [
+        "capture-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/capture-help.pd"
+      ],
+      "capture~-help": [
+        "capture~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/capture~-help.pd"
+      ],
+      "cartopol-help": [
+        "cartopol-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cartopol-help.pd"
+      ],
+      "cartopol~-help": [
+        "cartopol~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cartopol~-help.pd"
+      ],
+      "change~-help": [
+        "change~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/change~-help.pd"
+      ],
+      "click~-help": [
+        "click~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/click~-help.pd"
+      ],
+      "clip-help": [
+        "clip-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/clip-help.pd"
+      ],
+      "clip~-help": [
+        "clip~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/clip~-help.pd"
+      ],
+      "coll-help": [
+        "coll-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/coll-help.pd"
+      ],
+      "comb~-help": [
+        "comb~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/comb~-help.pd"
+      ],
+      "comment-help": [
+        "comment-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/comment-help.pd"
+      ],
+      "cosh-help": [
+        "cosh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cosh-help.pd"
+      ],
+      "cosh~-help": [
+        "cosh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cosh~-help.pd"
+      ],
+      "cosx~-help": [
+        "cosx~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cosx~-help.pd"
+      ],
+      "counter-help": [
+        "counter-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/counter-help.pd"
+      ],
+      "count~-help": [
+        "count~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/count~-help.pd"
+      ],
+      "cross~-help": [
+        "cross~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cross~-help.pd"
+      ],
+      "curve~-help": [
+        "curve~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/curve~-help.pd"
+      ],
+      "cycle-help": [
+        "cycle-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cycle-help.pd"
+      ],
+      "cycle~-help": [
+        "cycle~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cycle~-help.pd"
+      ],
+      "cyclone-help": [
+        "cyclone-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/cyclone-help.pd"
+      ],
+      "cyclone-meta": [
+        "cyclone-meta",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/cyclone-meta.pd"
+      ],
+      "dbtoa-help": [
+        "dbtoa-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/dbtoa-help.pd"
+      ],
+      "dbtoa~-help": [
+        "dbtoa~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/dbtoa~-help.pd"
+      ],
+      "decide-help": [
+        "decide-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/decide-help.pd"
+      ],
+      "decode-help": [
+        "decode-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/decode-help.pd"
+      ],
+      "degrade~-help": [
+        "degrade~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/degrade~-help.pd"
+      ],
+      "delay~-help": [
+        "delay~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/delay~-help.pd"
+      ],
+      "deltaclip~-help": [
+        "deltaclip~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/deltaclip~-help.pd"
+      ],
+      "delta~-help": [
+        "delta~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/delta~-help.pd"
+      ],
+      "downsamp~-help": [
+        "downsamp~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/downsamp~-help.pd"
+      ],
+      "drunk-help": [
+        "drunk-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/drunk-help.pd"
+      ],
+      "dsponoff~": [
+        "dsponoff~",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/dsponoff~.pd"
+      ],
+      "edge~-help": [
+        "edge~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/edge~-help.pd"
+      ],
+      "equals~-help": [
+        "equals~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/equals~-help.pd"
+      ],
+      "flush-help": [
+        "flush-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/flush-help.pd"
+      ],
+      "forward-help": [
+        "forward-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/forward-help.pd"
+      ],
+      "frameaccum~-help": [
+        "frameaccum~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/frameaccum~-help.pd"
+      ],
+      "framedelta~-help": [
+        "framedelta~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/framedelta~-help.pd"
+      ],
+      "fromsymbol-help": [
+        "fromsymbol-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/fromsymbol-help.pd"
+      ],
+      "funbuff-help": [
+        "funbuff-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/funbuff-help.pd"
+      ],
+      "funnel-help": [
+        "funnel-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/funnel-help.pd"
+      ],
+      "gate-help": [
+        "gate-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/gate-help.pd"
+      ],
+      "gate~-help": [
+        "gate~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/gate~-help.pd"
+      ],
+      "grab-help": [
+        "grab-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/grab-help.pd"
+      ],
+      "greaterthaneq~-help": [
+        "greaterthaneq~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/greaterthaneq~-help.pd"
+      ],
+      "greaterthan~-help": [
+        "greaterthan~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/greaterthan~-help.pd"
+      ],
+      "header": [
+        "header",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/header.pd"
+      ],
+      "histo-help": [
+        "histo-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/histo-help.pd"
+      ],
+      "index~-help": [
+        "index~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/index~-help.pd"
+      ],
+      "iter-help": [
+        "iter-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/iter-help.pd"
+      ],
+      "join-help": [
+        "join-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/join-help.pd"
+      ],
+      "kink~-help": [
+        "kink~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/kink~-help.pd"
+      ],
+      "lessthaneq~-help": [
+        "lessthaneq~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/lessthaneq~-help.pd"
+      ],
+      "lessthan~-help": [
+        "lessthan~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/lessthan~-help.pd"
+      ],
+      "linedrive-help": [
+        "linedrive-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/linedrive-help.pd"
+      ],
+      "line~-help": [
+        "line~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/line~-help.pd"
+      ],
+      "listfunnel-help": [
+        "listfunnel-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/listfunnel-help.pd"
+      ],
+      "loadmess-help": [
+        "loadmess-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/loadmess-help.pd"
+      ],
+      "lookup~-help": [
+        "lookup~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/lookup~-help.pd"
+      ],
+      "lores~-help": [
+        "lores~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/lores~-help.pd"
+      ],
+      "match-help": [
+        "match-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/match-help.pd"
+      ],
+      "matrix~-help": [
+        "matrix~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/matrix~-help.pd"
+      ],
+      "maximum-help": [
+        "maximum-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/maximum-help.pd"
+      ],
+      "maximum~-help": [
+        "maximum~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/maximum~-help.pd"
+      ],
+      "mean-help": [
+        "mean-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/mean-help.pd"
+      ],
+      "midiflush-help": [
+        "midiflush-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/midiflush-help.pd"
+      ],
+      "midiformat-help": [
+        "midiformat-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/midiformat-help.pd"
+      ],
+      "midiparse-help": [
+        "midiparse-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/midiparse-help.pd"
+      ],
+      "minimum-help": [
+        "minimum-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/minimum-help.pd"
+      ],
+      "minimum~-help": [
+        "minimum~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/minimum~-help.pd"
+      ],
+      "minmax~-help": [
+        "minmax~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/minmax~-help.pd"
+      ],
+      "modulo~-help": [
+        "modulo~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/modulo~-help.pd"
+      ],
+      "mousefilter-help": [
+        "mousefilter-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/mousefilter-help.pd"
+      ],
+      "mousestate-help": [
+        "mousestate-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/mousestate-help.pd"
+      ],
+      "mstosamps~-help": [
+        "mstosamps~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/mstosamps~-help.pd"
+      ],
+      "mtr-help": [
+        "mtr-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/mtr-help.pd"
+      ],
+      "next-help": [
+        "next-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/next-help.pd"
+      ],
+      "notequals~-help": [
+        "notequals~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/notequals~-help.pd"
+      ],
+      "number~": [
+        "number~",
+        "/home/neimog/.local/share/pd4web/cyclone/cyclone_objects/abstractions/number~.pd"
+      ],
+      "number~-help": [
+        "number~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/number~-help.pd"
+      ],
+      "offer-help": [
+        "offer-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/offer-help.pd"
+      ],
+      "onebang-help": [
+        "onebang-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/onebang-help.pd"
+      ],
+      "onepole~-help": [
+        "onepole~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/onepole~-help.pd"
+      ],
+      "open-else": [
+        "open-else",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/extra_files/open-else.pd"
+      ],
+      "overdrive~-help": [
+        "overdrive~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/overdrive~-help.pd"
+      ],
+      "pak-help": [
+        "pak-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pak-help.pd"
+      ],
+      "past-help": [
+        "past-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/past-help.pd"
+      ],
+      "peak-help": [
+        "peak-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/peak-help.pd"
+      ],
+      "peakamp~-help": [
+        "peakamp~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/peakamp~-help.pd"
+      ],
+      "peek~-help": [
+        "peek~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/peek~-help.pd"
+      ],
+      "phaseshift~-help": [
+        "phaseshift~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/phaseshift~-help.pd"
+      ],
+      "phasewrap~-help": [
+        "phasewrap~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/phasewrap~-help.pd"
+      ],
+      "pink~-help": [
+        "pink~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pink~-help.pd"
+      ],
+      "play~-help": [
+        "play~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/play~-help.pd"
+      ],
+      "plusequals~-help": [
+        "plusequals~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/plusequals~-help.pd"
+      ],
+      "poke~-help": [
+        "poke~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/poke~-help.pd"
+      ],
+      "poltocar-help": [
+        "poltocar-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/poltocar-help.pd"
+      ],
+      "poltocar~-help": [
+        "poltocar~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/poltocar~-help.pd"
+      ],
+      "pong-help": [
+        "pong-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pong-help.pd"
+      ],
+      "pong~-help": [
+        "pong~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pong~-help.pd"
+      ],
+      "pow~-help": [
+        "pow~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pow~-help.pd"
+      ],
+      "prepend-help": [
+        "prepend-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/prepend-help.pd"
+      ],
+      "prob-help": [
+        "prob-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/prob-help.pd"
+      ],
+      "pv-help": [
+        "pv-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/pv-help.pd"
+      ],
+      "rampsmooth~-help": [
+        "rampsmooth~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rampsmooth~-help.pd"
+      ],
+      "rand~-help": [
+        "rand~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rand~-help.pd"
+      ],
+      "rdiv-help": [
+        "rdiv-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rdiv-help.pd"
+      ],
+      "rdiv~-help": [
+        "rdiv~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rdiv~-help.pd"
+      ],
+      "record~-help": [
+        "record~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/record~-help.pd"
+      ],
+      "reson~-help": [
+        "reson~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/reson~-help.pd"
+      ],
+      "rminus-help": [
+        "rminus-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rminus-help.pd"
+      ],
+      "rminus~-help": [
+        "rminus~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/rminus~-help.pd"
+      ],
+      "round-help": [
+        "round-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/round-help.pd"
+      ],
+      "round~-help": [
+        "round~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/round~-help.pd"
+      ],
+      "sah~-help": [
+        "sah~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sah~-help.pd"
+      ],
+      "sampstoms~-help": [
+        "sampstoms~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sampstoms~-help.pd"
+      ],
+      "scale-help": [
+        "scale-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/scale-help.pd"
+      ],
+      "scale~-help": [
+        "scale~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/scale~-help.pd"
+      ],
+      "scope~-help": [
+        "scope~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/scope~-help.pd"
+      ],
+      "selector~-help": [
+        "selector~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/selector~-help.pd"
+      ],
+      "seq-help": [
+        "seq-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/seq-help.pd"
+      ],
+      "sinh-help": [
+        "sinh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sinh-help.pd"
+      ],
+      "sinh~-help": [
+        "sinh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sinh~-help.pd"
+      ],
+      "sinx~-help": [
+        "sinx~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sinx~-help.pd"
+      ],
+      "slide~-help": [
+        "slide~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/slide~-help.pd"
+      ],
+      "snapshot~-help": [
+        "snapshot~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/snapshot~-help.pd"
+      ],
+      "speedlim-help": [
+        "speedlim-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/speedlim-help.pd"
+      ],
+      "spell-help": [
+        "spell-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/spell-help.pd"
+      ],
+      "spike~-help": [
+        "spike~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/spike~-help.pd"
+      ],
+      "split-help": [
+        "split-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/split-help.pd"
+      ],
+      "spray-help": [
+        "spray-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/spray-help.pd"
+      ],
+      "sprintf-help": [
+        "sprintf-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sprintf-help.pd"
+      ],
+      "substitute-help": [
+        "substitute-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/substitute-help.pd"
+      ],
+      "sustain-help": [
+        "sustain-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/sustain-help.pd"
+      ],
+      "svf~-help": [
+        "svf~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/svf~-help.pd"
+      ],
+      "switch-help": [
+        "switch-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/switch-help.pd"
+      ],
+      "table-help": [
+        "table-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/table-help.pd"
+      ],
+      "tanh-help": [
+        "tanh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/tanh-help.pd"
+      ],
+      "tanh~-help": [
+        "tanh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/tanh~-help.pd"
+      ],
+      "tanx~-help": [
+        "tanx~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/tanx~-help.pd"
+      ],
+      "teeth~-help": [
+        "teeth~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/teeth~-help.pd"
+      ],
+      "thresh-help": [
+        "thresh-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/thresh-help.pd"
+      ],
+      "thresh~-help": [
+        "thresh~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/thresh~-help.pd"
+      ],
+      "togedge-help": [
+        "togedge-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/togedge-help.pd"
+      ],
+      "tosymbol-help": [
+        "tosymbol-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/tosymbol-help.pd"
+      ],
+      "train~-help": [
+        "train~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/train~-help.pd"
+      ],
+      "trapezoid~-help": [
+        "trapezoid~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/trapezoid~-help.pd"
+      ],
+      "triangle~-help": [
+        "triangle~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/triangle~-help.pd"
+      ],
+      "trough-help": [
+        "trough-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/trough-help.pd"
+      ],
+      "trunc~-help": [
+        "trunc~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/trunc~-help.pd"
+      ],
+      "universal-help": [
+        "universal-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/universal-help.pd"
+      ],
+      "unjoin-help": [
+        "unjoin-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/unjoin-help.pd"
+      ],
+      "urn-help": [
+        "urn-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/urn-help.pd"
+      ],
+      "uzi-help": [
+        "uzi-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/uzi-help.pd"
+      ],
+      "vectral~-help": [
+        "vectral~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/vectral~-help.pd"
+      ],
+      "wave~-help": [
+        "wave~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/wave~-help.pd"
+      ],
+      "xbendin-help": [
+        "xbendin-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xbendin-help.pd"
+      ],
+      "xbendin2-help": [
+        "xbendin2-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xbendin2-help.pd"
+      ],
+      "xbendout-help": [
+        "xbendout-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xbendout-help.pd"
+      ],
+      "xbendout2-help": [
+        "xbendout2-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xbendout2-help.pd"
+      ],
+      "xnotein-help": [
+        "xnotein-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xnotein-help.pd"
+      ],
+      "xnoteout-help": [
+        "xnoteout-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/xnoteout-help.pd"
+      ],
+      "zerox~-help": [
+        "zerox~-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/zerox~-help.pd"
+      ],
+      "zl-help": [
+        "zl-help",
+        "/home/neimog/.local/share/pd4web/cyclone/documentation/help_files/zl-help.pd"
+      ]
+    },
+    "objects": {
+      "!-": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "!-~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "!/": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "!/~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "!=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "%~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "+=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "<=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "<~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "==~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      ">=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      ">~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "Append": [
+        "CYCLONE_OBJ_API void Append_setup(void)",
+        "Append_setup"
+      ],
+      "Borax": [
+        "CYCLONE_OBJ_API void Borax_setup(void)",
+        "Borax_setup"
+      ],
+      "Bucket": [
+        "CYCLONE_OBJ_API void Bucket_setup(void)",
+        "Bucket_setup"
+      ],
+      "Clip": [
+        "CYCLONE_OBJ_API void Clip_setup(void)",
+        "Clip_setup"
+      ],
+      "Clip~": [
+        "CYCLONE_OBJ_API void Clip_tilde_setup(void)",
+        "Clip_tilde_setup"
+      ],
+      "Decode": [
+        "CYCLONE_OBJ_API void Decode_setup(void)",
+        "Decode_setup"
+      ],
+      "Histo": [
+        "CYCLONE_OBJ_API void Histo_setup(void)",
+        "Histo_setup"
+      ],
+      "Line~": [
+        "CYCLONE_OBJ_API void Line_tilde_setup(void)",
+        "Line_tilde_setup"
+      ],
+      "MouseState": [
+        "CYCLONE_OBJ_API void MouseState_setup(void)",
+        "MouseState_setup"
+      ],
+      "Peak": [
+        "CYCLONE_OBJ_API void Peak_setup(void)",
+        "Peak_setup"
+      ],
+      "Pow~": [
+        "CYCLONE_OBJ_API void Pow_tilde_setup(void)",
+        "Pow_tilde_setup"
+      ],
+      "Scope~": [
+        "CYCLONE_OBJ_API void Scope_tilde_setup(void)",
+        "Scope_tilde_setup"
+      ],
+      "Snapshot~": [
+        "CYCLONE_OBJ_API void Snapshot_tilde_setup(void)",
+        "Snapshot_tilde_setup"
+      ],
+      "Table": [
+        "CYCLONE_OBJ_API void table_setup(void)",
+        "table_setup"
+      ],
+      "TogEdge": [
+        "CYCLONE_OBJ_API void TogEdge_setup(void)",
+        "TogEdge_setup"
+      ],
+      "Trough": [
+        "CYCLONE_OBJ_API void Trough_setup(void)",
+        "Trough_setup"
+      ],
+      "Uzi": [
+        "CYCLONE_OBJ_API void Uzi_setup(void)",
+        "Uzi_setup"
+      ],
+      "_bondo_proxy": [
+        "CYCLONE_OBJ_API void bondo_setup(void)",
+        "bondo_setup"
+      ],
+      "_buddy_proxy": [
+        "CYCLONE_OBJ_API void buddy_setup(void)",
+        "buddy_setup"
+      ],
+      "_commentsink": [
+        "CYCLONE_OBJ_API void comment_setup(void)",
+        "comment_setup"
+      ],
+      "_counter_proxy": [
+        "CYCLONE_OBJ_API void counter_setup(void)",
+        "counter_setup"
+      ],
+      "_file": [
+        "void file_setup(t_class *c, int embeddable)",
+        "file_setup"
+      ],
+      "_funnel_proxy": [
+        "CYCLONE_OBJ_API void funnel_setup(void)",
+        "funnel_setup"
+      ],
+      "_gate_proxy": [
+        "CYCLONE_OBJ_API void gate_setup(void)",
+        "gate_setup"
+      ],
+      "_handle": [
+        "CYCLONE_OBJ_API void comment_setup(void)",
+        "comment_setup"
+      ],
+      "_mtrack": [
+        "CYCLONE_OBJ_API void mtr_setup(void)",
+        "mtr_setup"
+      ],
+      "_sprintf_proxy": [
+        "CYCLONE_OBJ_API void sprintf_setup(void)",
+        "sprintf_setup"
+      ],
+      "_substitute_proxy": [
+        "CYCLONE_OBJ_API void substitute_setup(void)",
+        "substitute_setup"
+      ],
+      "_switch_proxy": [
+        "CYCLONE_OBJ_API void switch_setup(void)",
+        "switch_setup"
+      ],
+      "_zlproxy": [
+        "CYCLONE_OBJ_API void zl_setup(void)",
+        "zl_setup"
+      ],
+      "accum": [
+        "CYCLONE_OBJ_API void accum_setup(void)",
+        "accum_setup"
+      ],
+      "acos": [
+        "CYCLONE_OBJ_API void acos_setup(void)",
+        "acos_setup"
+      ],
+      "acosh": [
+        "CYCLONE_OBJ_API void acosh_setup(void)",
+        "acosh_setup"
+      ],
+      "acosh~": [
+        "CYCLONE_OBJ_API void acosh_tilde_setup(void)",
+        "acosh_tilde_setup"
+      ],
+      "acos~": [
+        "CYCLONE_OBJ_API void acos_tilde_setup(void)",
+        "acos_tilde_setup"
+      ],
+      "active": [
+        "CYCLONE_OBJ_API void active_setup(void)",
+        "active_setup"
+      ],
+      "allpass~": [
+        "CYCLONE_OBJ_API void allpass_tilde_setup(void)",
+        "allpass_tilde_setup"
+      ],
+      "anal": [
+        "CYCLONE_OBJ_API void anal_setup(void)",
+        "anal_setup"
+      ],
+      "asin": [
+        "CYCLONE_OBJ_API void asin_setup(void)",
+        "asin_setup"
+      ],
+      "asinh": [
+        "CYCLONE_OBJ_API void asinh_setup(void)",
+        "asinh_setup"
+      ],
+      "asinh~": [
+        "CYCLONE_OBJ_API void asinh_tilde_setup(void)",
+        "asinh_tilde_setup"
+      ],
+      "asin~": [
+        "CYCLONE_OBJ_API void asin_tilde_setup(void)",
+        "asin_tilde_setup"
+      ],
+      "atan2~": [
+        "CYCLONE_OBJ_API void atan2_tilde_setup(void)",
+        "atan2_tilde_setup"
+      ],
+      "atanh": [
+        "CYCLONE_OBJ_API void atanh_setup(void)",
+        "atanh_setup"
+      ],
+      "atanh~": [
+        "CYCLONE_OBJ_API void atanh_tilde_setup(void)",
+        "atanh_tilde_setup"
+      ],
+      "atan~": [
+        "CYCLONE_OBJ_API void atan_tilde_setup(void)",
+        "atan_tilde_setup"
+      ],
+      "atodb": [
+        "CYCLONE_OBJ_API void atodb_setup(void)",
+        "atodb_setup"
+      ],
+      "atodb~": [
+        "CYCLONE_OBJ_API void atodb_tilde_setup(void)",
+        "atodb_tilde_setup"
+      ],
+      "average~": [
+        "CYCLONE_OBJ_API void average_tilde_setup(void)",
+        "average_tilde_setup"
+      ],
+      "avg~": [
+        "CYCLONE_OBJ_API void avg_tilde_setup(void)",
+        "avg_tilde_setup"
+      ],
+      "bangbang": [
+        "CYCLONE_OBJ_API void bangbang_setup(void)",
+        "bangbang_setup"
+      ],
+      "bitand~": [
+        "CYCLONE_OBJ_API void bitand_tilde_setup(void)",
+        "bitand_tilde_setup"
+      ],
+      "bitnot~": [
+        "CYCLONE_OBJ_API void bitnot_tilde_setup(void)",
+        "bitnot_tilde_setup"
+      ],
+      "bitor~": [
+        "CYCLONE_OBJ_API void bitor_tilde_setup(void)",
+        "bitor_tilde_setup"
+      ],
+      "bitsafe~": [
+        "CYCLONE_OBJ_API void bitsafe_tilde_setup(void)",
+        "bitsafe_tilde_setup"
+      ],
+      "bitshift~": [
+        "CYCLONE_OBJ_API void bitshift_tilde_setup(void)",
+        "bitshift_tilde_setup"
+      ],
+      "bitxor~": [
+        "CYCLONE_OBJ_API void bitxor_tilde_setup(void)",
+        "bitxor_tilde_setup"
+      ],
+      "bondo": [
+        "CYCLONE_OBJ_API void bondo_setup(void)",
+        "bondo_setup"
+      ],
+      "borax": [
+        "CYCLONE_OBJ_API void borax_setup(void)",
+        "borax_setup"
+      ],
+      "bucket": [
+        "CYCLONE_OBJ_API void bucket_setup(void)",
+        "bucket_setup"
+      ],
+      "buddy": [
+        "CYCLONE_OBJ_API void buddy_setup(void)",
+        "buddy_setup"
+      ],
+      "buffir~": [
+        "CYCLONE_OBJ_API void buffir_tilde_setup(void)",
+        "buffir_tilde_setup"
+      ],
+      "capture": [
+        "CYCLONE_OBJ_API void capture_setup(void)",
+        "capture_setup"
+      ],
+      "capture~": [
+        "CYCLONE_OBJ_API void capture_tilde_setup(void)",
+        "capture_tilde_setup"
+      ],
+      "cartopol": [
+        "CYCLONE_OBJ_API void cartopol_setup(void)",
+        "cartopol_setup"
+      ],
+      "cartopol~": [
+        "CYCLONE_OBJ_API void cartopol_tilde_setup(void)",
+        "cartopol_tilde_setup"
+      ],
+      "change~": [
+        "CYCLONE_OBJ_API void change_tilde_setup(void)",
+        "change_tilde_setup"
+      ],
+      "click~": [
+        "CYCLONE_OBJ_API void click_tilde_setup(void)",
+        "click_tilde_setup"
+      ],
+      "coll": [
+        "CYCLONE_OBJ_API void coll_setup(void)",
+        "coll_setup"
+      ],
+      "comb~": [
+        "CYCLONE_OBJ_API void comb_tilde_setup(void)",
+        "comb_tilde_setup"
+      ],
+      "comment": [
+        "CYCLONE_OBJ_API void comment_setup(void)",
+        "comment_setup"
+      ],
+      "cosh": [
+        "CYCLONE_OBJ_API void cosh_setup(void)",
+        "cosh_setup"
+      ],
+      "cosh~": [
+        "CYCLONE_OBJ_API void cosh_tilde_setup(void)",
+        "cosh_tilde_setup"
+      ],
+      "cosx~": [
+        "CYCLONE_OBJ_API void cosx_tilde_setup(void)",
+        "cosx_tilde_setup"
+      ],
+      "counter": [
+        "CYCLONE_OBJ_API void counter_setup(void)",
+        "counter_setup"
+      ],
+      "count~": [
+        "CYCLONE_OBJ_API void count_tilde_setup(void)",
+        "count_tilde_setup"
+      ],
+      "cross~": [
+        "CYCLONE_OBJ_API void cross_tilde_setup(void)",
+        "cross_tilde_setup"
+      ],
+      "curve~": [
+        "CYCLONE_OBJ_API void curve_tilde_setup(void)",
+        "curve_tilde_setup"
+      ],
+      "cycle": [
+        "CYCLONE_OBJ_API void cycle_setup(void)",
+        "cycle_setup"
+      ],
+      "cycle~": [
+        "CYCLONE_OBJ_API void cycle_tilde_setup(void)",
+        "cycle_tilde_setup"
+      ],
+      "cyclone": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/!-": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/!-~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/!/": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/!/~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/!=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/%~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/+=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/<=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/<~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/==~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/>=~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/>~": [
+        "CYCLONE_API void cyclone_setup(void)",
+        "cyclone_setup"
+      ],
+      "cyclone/append": [
+        "CYCLONE_OBJ_API void append_setup(void)",
+        "append_setup"
+      ],
+      "cyclone/clip": [
+        "CYCLONE_OBJ_API void clip_setup(void)",
+        "clip_setup"
+      ],
+      "cyclone/clip~": [
+        "CYCLONE_OBJ_API void clip_tilde_setup(void)",
+        "clip_tilde_setup"
+      ],
+      "cyclone/line~": [
+        "CYCLONE_OBJ_API void line_tilde_setup(void)",
+        "line_tilde_setup"
+      ],
+      "cyclone/pow~": [
+        "CYCLONE_OBJ_API void pow_tilde_setup(void)",
+        "pow_tilde_setup"
+      ],
+      "cyclone/snapshot~": [
+        "CYCLONE_OBJ_API void snapshot_tilde_setup(void)",
+        "snapshot_tilde_setup"
+      ],
+      "cyclone/table": [
+        "CYCLONE_OBJ_API void table_setup(void)",
+        "table_setup"
+      ],
+      "dbtoa": [
+        "CYCLONE_OBJ_API void dbtoa_setup(void)",
+        "dbtoa_setup"
+      ],
+      "dbtoa~": [
+        "CYCLONE_OBJ_API void dbtoa_tilde_setup(void)",
+        "dbtoa_tilde_setup"
+      ],
+      "decide": [
+        "CYCLONE_OBJ_API void decide_setup(void)",
+        "decide_setup"
+      ],
+      "decode": [
+        "CYCLONE_OBJ_API void decode_setup(void)",
+        "decode_setup"
+      ],
+      "degrade~": [
+        "CYCLONE_OBJ_API void degrade_tilde_setup(void)",
+        "degrade_tilde_setup"
+      ],
+      "delay~": [
+        "CYCLONE_OBJ_API void delay_tilde_setup(void)",
+        "delay_tilde_setup"
+      ],
+      "deltaclip~": [
+        "CYCLONE_OBJ_API void deltaclip_tilde_setup(void)",
+        "deltaclip_tilde_setup"
+      ],
+      "delta~": [
+        "CYCLONE_OBJ_API void delta_tilde_setup(void)",
+        "delta_tilde_setup"
+      ],
+      "downsamp~": [
+        "CYCLONE_OBJ_API void downsamp_tilde_setup(void)",
+        "downsamp_tilde_setup"
+      ],
+      "drunk": [
+        "CYCLONE_OBJ_API void drunk_setup(void)",
+        "drunk_setup"
+      ],
+      "edge~": [
+        "CYCLONE_OBJ_API void edge_tilde_setup(void)",
+        "edge_tilde_setup"
+      ],
+      "equals~": [
+        "CYCLONE_OBJ_API void equals_tilde_setup(void)",
+        "equals_tilde_setup"
+      ],
+      "flush": [
+        "CYCLONE_OBJ_API void flush_setup(void)",
+        "flush_setup"
+      ],
+      "forward": [
+        "CYCLONE_OBJ_API void forward_setup(void)",
+        "forward_setup"
+      ],
+      "frameaccum~": [
+        "CYCLONE_OBJ_API void frameaccum_tilde_setup(void)",
+        "frameaccum_tilde_setup"
+      ],
+      "framedelta~": [
+        "CYCLONE_OBJ_API void framedelta_tilde_setup(void)",
+        "framedelta_tilde_setup"
+      ],
+      "fromsymbol": [
+        "CYCLONE_OBJ_API void fromsymbol_setup(void)",
+        "fromsymbol_setup"
+      ],
+      "funbuff": [
+        "CYCLONE_OBJ_API void funbuff_setup(void)",
+        "funbuff_setup"
+      ],
+      "funbuffcom": [
+        "CYCLONE_OBJ_API void funbuff_setup(void)",
+        "funbuff_setup"
+      ],
+      "funnel": [
+        "CYCLONE_OBJ_API void funnel_setup(void)",
+        "funnel_setup"
+      ],
+      "gate": [
+        "CYCLONE_OBJ_API void gate_setup(void)",
+        "gate_setup"
+      ],
+      "gate~": [
+        "CYCLONE_OBJ_API void gate_tilde_setup(void)",
+        "gate_tilde_setup"
+      ],
+      "greaterthaneq~": [
+        "CYCLONE_OBJ_API void greaterthaneq_tilde_setup(void)",
+        "greaterthaneq_tilde_setup"
+      ],
+      "greaterthan~": [
+        "CYCLONE_OBJ_API void greaterthan_tilde_setup(void)",
+        "greaterthan_tilde_setup"
+      ],
+      "histo": [
+        "CYCLONE_OBJ_API void histo_setup(void)",
+        "histo_setup"
+      ],
+      "index~": [
+        "CYCLONE_OBJ_API void index_tilde_setup(void)",
+        "index_tilde_setup"
+      ],
+      "iter": [
+        "CYCLONE_OBJ_API void iter_setup(void)",
+        "iter_setup"
+      ],
+      "join": [
+        "extern CYCLONE_OBJ_API void join_setup(void)",
+        "join_setup"
+      ],
+      "join-inlet": [
+        "extern CYCLONE_OBJ_API void join_setup(void)",
+        "join_setup"
+      ],
+      "kink~": [
+        "CYCLONE_OBJ_API void kink_tilde_setup(void)",
+        "kink_tilde_setup"
+      ],
+      "lessthaneq~": [
+        "CYCLONE_OBJ_API void lessthaneq_tilde_setup(void)",
+        "lessthaneq_tilde_setup"
+      ],
+      "lessthan~": [
+        "CYCLONE_OBJ_API void lessthan_tilde_setup(void)",
+        "lessthan_tilde_setup"
+      ],
+      "linedrive": [
+        "CYCLONE_OBJ_API void linedrive_setup(void)",
+        "linedrive_setup"
+      ],
+      "listfunnel": [
+        "CYCLONE_OBJ_API void listfunnel_setup(void)",
+        "listfunnel_setup"
+      ],
+      "loadmess": [
+        "CYCLONE_OBJ_API void loadmess_setup(void)",
+        "loadmess_setup"
+      ],
+      "lookup~": [
+        "CYCLONE_OBJ_API void lookup_tilde_setup(void)",
+        "lookup_tilde_setup"
+      ],
+      "lores~": [
+        "CYCLONE_OBJ_API void lores_tilde_setup(void)",
+        "lores_tilde_setup"
+      ],
+      "match": [
+        "CYCLONE_OBJ_API void match_setup(void)",
+        "match_setup"
+      ],
+      "matrix~": [
+        "CYCLONE_OBJ_API void matrix_tilde_setup(void)",
+        "matrix_tilde_setup"
+      ],
+      "maximum": [
+        "CYCLONE_OBJ_API void maximum_setup(void)",
+        "maximum_setup"
+      ],
+      "maximum~": [
+        "CYCLONE_OBJ_API void maximum_tilde_setup(void)",
+        "maximum_tilde_setup"
+      ],
+      "mean": [
+        "CYCLONE_OBJ_API void mean_setup(void)",
+        "mean_setup"
+      ],
+      "midiflush": [
+        "CYCLONE_OBJ_API void midiflush_setup(void)",
+        "midiflush_setup"
+      ],
+      "midiformat": [
+        "CYCLONE_OBJ_API void midiformat_setup(void)",
+        "midiformat_setup"
+      ],
+      "midiparse": [
+        "CYCLONE_OBJ_API void midiparse_setup(void)",
+        "midiparse_setup"
+      ],
+      "minimum": [
+        "CYCLONE_OBJ_API void minimum_setup(void)",
+        "minimum_setup"
+      ],
+      "minimum~": [
+        "CYCLONE_OBJ_API void minimum_tilde_setup(void)",
+        "minimum_tilde_setup"
+      ],
+      "minmax~": [
+        "CYCLONE_OBJ_API void minmax_tilde_setup(void)",
+        "minmax_tilde_setup"
+      ],
+      "modulo~": [
+        "CYCLONE_OBJ_API void modulo_tilde_setup(void)",
+        "modulo_tilde_setup"
+      ],
+      "mousefilter": [
+        "CYCLONE_OBJ_API void mousefilter_setup(void)",
+        "mousefilter_setup"
+      ],
+      "mousefilter_proxy": [
+        "static void mousefilter_proxy_setup(void)",
+        "mousefilter_proxy_setup"
+      ],
+      "mousestate": [
+        "CYCLONE_OBJ_API void mousestate_setup(void)",
+        "mousestate_setup"
+      ],
+      "mstosamps~": [
+        "CYCLONE_OBJ_API void mstosamps_tilde_setup(void)",
+        "mstosamps_tilde_setup"
+      ],
+      "mtr": [
+        "CYCLONE_OBJ_API void mtr_setup(void)",
+        "mtr_setup"
+      ],
+      "next": [
+        "CYCLONE_OBJ_API void next_setup(void)",
+        "next_setup"
+      ],
+      "notequals~": [
+        "CYCLONE_OBJ_API void notequals_tilde_setup(void)",
+        "notequals_tilde_setup"
+      ],
+      "offer": [
+        "CYCLONE_OBJ_API void offer_setup(void)",
+        "offer_setup"
+      ],
+      "onebang": [
+        "CYCLONE_OBJ_API void onebang_setup(void)",
+        "onebang_setup"
+      ],
+      "onebang_proxy": [
+        "static void onebang_proxy_setup(void)",
+        "onebang_proxy_setup"
+      ],
+      "onepole~": [
+        "CYCLONE_OBJ_API void onepole_tilde_setup(void)",
+        "onepole_tilde_setup"
+      ],
+      "overdrive~": [
+        "CYCLONE_OBJ_API void overdrive_tilde_setup(void)",
+        "overdrive_tilde_setup"
+      ],
+      "pak": [
+        "CYCLONE_OBJ_API extern void pak_setup(void)",
+        "pak_setup"
+      ],
+      "pak-inlet": [
+        "CYCLONE_OBJ_API extern void pak_setup(void)",
+        "pak_setup"
+      ],
+      "past": [
+        "CYCLONE_OBJ_API void past_setup(void)",
+        "past_setup"
+      ],
+      "peak": [
+        "CYCLONE_OBJ_API void peak_setup(void)",
+        "peak_setup"
+      ],
+      "peakamp~": [
+        "CYCLONE_OBJ_API void peakamp_tilde_setup(void)",
+        "peakamp_tilde_setup"
+      ],
+      "peek~": [
+        "CYCLONE_OBJ_API void peek_tilde_setup(void)",
+        "peek_tilde_setup"
+      ],
+      "phaseshift~": [
+        "CYCLONE_OBJ_API void phaseshift_tilde_setup(void)",
+        "phaseshift_tilde_setup"
+      ],
+      "phasewrap~": [
+        "CYCLONE_OBJ_API void phasewrap_tilde_setup(void)",
+        "phasewrap_tilde_setup"
+      ],
+      "pink~": [
+        "CYCLONE_OBJ_API void pink_tilde_setup(void)",
+        "pink_tilde_setup"
+      ],
+      "play~": [
+        "CYCLONE_OBJ_API void play_tilde_setup(void)",
+        "play_tilde_setup"
+      ],
+      "plusequals~": [
+        "CYCLONE_OBJ_API void plusequals_tilde_setup(void)",
+        "plusequals_tilde_setup"
+      ],
+      "poke~": [
+        "CYCLONE_OBJ_API void poke_tilde_setup(void)",
+        "poke_tilde_setup"
+      ],
+      "poltocar": [
+        "CYCLONE_OBJ_API void poltocar_setup(void)",
+        "poltocar_setup"
+      ],
+      "poltocar~": [
+        "CYCLONE_OBJ_API void poltocar_tilde_setup(void)",
+        "poltocar_tilde_setup"
+      ],
+      "pong": [
+        "CYCLONE_OBJ_API void pong_setup(void)",
+        "pong_setup"
+      ],
+      "pong~": [
+        "CYCLONE_OBJ_API void pong_tilde_setup(void)",
+        "pong_tilde_setup"
+      ],
+      "prepend": [
+        "CYCLONE_OBJ_API void prepend_setup(void)",
+        "prepend_setup"
+      ],
+      "prob": [
+        "CYCLONE_OBJ_API void prob_setup(void)",
+        "prob_setup"
+      ],
+      "pv": [
+        "CYCLONE_OBJ_API void pv_setup(void)",
+        "pv_setup"
+      ],
+      "rampsmooth~": [
+        "CYCLONE_OBJ_API void rampsmooth_tilde_setup(void)",
+        "rampsmooth_tilde_setup"
+      ],
+      "rand~": [
+        "CYCLONE_OBJ_API void rand_tilde_setup(void)",
+        "rand_tilde_setup"
+      ],
+      "rdiv": [
+        "CYCLONE_OBJ_API void rdiv_setup(void)",
+        "rdiv_setup"
+      ],
+      "rdiv~": [
+        "CYCLONE_OBJ_API void rdiv_tilde_setup(void)",
+        "rdiv_tilde_setup"
+      ],
+      "record~": [
+        "CYCLONE_OBJ_API void record_tilde_setup(void)",
+        "record_tilde_setup"
+      ],
+      "reson~": [
+        "CYCLONE_OBJ_API void reson_tilde_setup(void)",
+        "reson_tilde_setup"
+      ],
+      "rminus": [
+        "CYCLONE_OBJ_API void rminus_setup(void)",
+        "rminus_setup"
+      ],
+      "rminus~": [
+        "CYCLONE_OBJ_API void rminus_tilde_setup(void)",
+        "rminus_tilde_setup"
+      ],
+      "round": [
+        "CYCLONE_OBJ_API void round_setup(void)",
+        "round_setup"
+      ],
+      "round~": [
+        "CYCLONE_OBJ_API void round_tilde_setup(void)",
+        "round_tilde_setup"
+      ],
+      "sah~": [
+        "CYCLONE_OBJ_API void sah_tilde_setup(void)",
+        "sah_tilde_setup"
+      ],
+      "sampstoms~": [
+        "CYCLONE_OBJ_API void sampstoms_tilde_setup(void)",
+        "sampstoms_tilde_setup"
+      ],
+      "scale": [
+        "CYCLONE_OBJ_API void scale_setup(void)",
+        "scale_setup"
+      ],
+      "scale~": [
+        "CYCLONE_OBJ_API void scale_tilde_setup(void)",
+        "scale_tilde_setup"
+      ],
+      "scope~": [
+        "CYCLONE_OBJ_API void scope_tilde_setup(void)",
+        "scope_tilde_setup"
+      ],
+      "selector~": [
+        "CYCLONE_OBJ_API void selector_tilde_setup(void)",
+        "selector_tilde_setup"
+      ],
+      "seq": [
+        "CYCLONE_OBJ_API void seq_setup(void)",
+        "seq_setup"
+      ],
+      "sinh": [
+        "CYCLONE_OBJ_API void sinh_setup(void)",
+        "sinh_setup"
+      ],
+      "sinh~": [
+        "CYCLONE_OBJ_API void sinh_tilde_setup(void)",
+        "sinh_tilde_setup"
+      ],
+      "sinx~": [
+        "CYCLONE_OBJ_API void sinx_tilde_setup(void)",
+        "sinx_tilde_setup"
+      ],
+      "slide~": [
+        "CYCLONE_OBJ_API void slide_tilde_setup(void)",
+        "slide_tilde_setup"
+      ],
+      "speedlim": [
+        "CYCLONE_OBJ_API void speedlim_setup(void)",
+        "speedlim_setup"
+      ],
+      "spell": [
+        "CYCLONE_OBJ_API void spell_setup(void)",
+        "spell_setup"
+      ],
+      "spike~": [
+        "CYCLONE_OBJ_API void spike_tilde_setup(void)",
+        "spike_tilde_setup"
+      ],
+      "split": [
+        "CYCLONE_OBJ_API void split_setup(void)",
+        "split_setup"
+      ],
+      "spray": [
+        "CYCLONE_OBJ_API void spray_setup(void)",
+        "spray_setup"
+      ],
+      "sprintf": [
+        "CYCLONE_OBJ_API void sprintf_setup(void)",
+        "sprintf_setup"
+      ],
+      "substitute": [
+        "CYCLONE_OBJ_API void substitute_setup(void)",
+        "substitute_setup"
+      ],
+      "sustain": [
+        "CYCLONE_OBJ_API void sustain_setup(void)",
+        "sustain_setup"
+      ],
+      "svf~": [
+        "CYCLONE_OBJ_API void svf_tilde_setup(void)",
+        "svf_tilde_setup"
+      ],
+      "switch": [
+        "CYCLONE_OBJ_API void switch_setup(void)",
+        "switch_setup"
+      ],
+      "tanh": [
+        "CYCLONE_OBJ_API void tanh_setup(void)",
+        "tanh_setup"
+      ],
+      "tanh~": [
+        "CYCLONE_OBJ_API void tanh_tilde_setup(void)",
+        "tanh_tilde_setup"
+      ],
+      "tanx~": [
+        "CYCLONE_OBJ_API void tanx_tilde_setup(void)",
+        "tanx_tilde_setup"
+      ],
+      "teeth~": [
+        "CYCLONE_OBJ_API void teeth_tilde_setup(void)",
+        "teeth_tilde_setup"
+      ],
+      "thresh": [
+        "CYCLONE_OBJ_API void thresh_setup(void)",
+        "thresh_setup"
+      ],
+      "thresh~": [
+        "CYCLONE_OBJ_API void thresh_tilde_setup(void)",
+        "thresh_tilde_setup"
+      ],
+      "togedge": [
+        "CYCLONE_OBJ_API void togedge_setup(void)",
+        "togedge_setup"
+      ],
+      "tosymbol": [
+        "CYCLONE_OBJ_API void tosymbol_setup(void)",
+        "tosymbol_setup"
+      ],
+      "train~": [
+        "CYCLONE_OBJ_API void train_tilde_setup(void)",
+        "train_tilde_setup"
+      ],
+      "trapezoid~": [
+        "CYCLONE_OBJ_API void trapezoid_tilde_setup(void)",
+        "trapezoid_tilde_setup"
+      ],
+      "triangle~": [
+        "CYCLONE_OBJ_API void triangle_tilde_setup(void)",
+        "triangle_tilde_setup"
+      ],
+      "trough": [
+        "CYCLONE_OBJ_API void trough_setup(void)",
+        "trough_setup"
+      ],
+      "trunc~": [
+        "CYCLONE_OBJ_API void trunc_tilde_setup(void)",
+        "trunc_tilde_setup"
+      ],
+      "universal": [
+        "CYCLONE_OBJ_API void universal_setup(void)",
+        "universal_setup"
+      ],
+      "unjoin": [
+        "CYCLONE_OBJ_API void unjoin_setup(void)",
+        "unjoin_setup"
+      ],
+      "urn": [
+        "CYCLONE_OBJ_API void urn_setup(void)",
+        "urn_setup"
+      ],
+      "uzi": [
+        "CYCLONE_OBJ_API void uzi_setup(void)",
+        "uzi_setup"
+      ],
+      "vectral~": [
+        "CYCLONE_OBJ_API void vectral_tilde_setup(void)",
+        "vectral_tilde_setup"
+      ],
+      "wave~": [
+        "CYCLONE_OBJ_API void wave_tilde_setup(void)",
+        "wave_tilde_setup"
+      ],
+      "xbendin": [
+        "CYCLONE_OBJ_API void xbendin_setup(void)",
+        "xbendin_setup"
+      ],
+      "xbendin2": [
+        "CYCLONE_OBJ_API void xbendin2_setup(void)",
+        "xbendin2_setup"
+      ],
+      "xbendout": [
+        "CYCLONE_OBJ_API void xbendout_setup(void)",
+        "xbendout_setup"
+      ],
+      "xbendout2": [
+        "CYCLONE_OBJ_API void xbendout2_setup(void)",
+        "xbendout2_setup"
+      ],
+      "xnotein": [
+        "CYCLONE_OBJ_API void xnotein_setup(void)",
+        "xnotein_setup"
+      ],
+      "xnoteout": [
+        "CYCLONE_OBJ_API void xnoteout_setup(void)",
+        "xnoteout_setup"
+      ],
+      "zerox~": [
+        "CYCLONE_OBJ_API void zerox_tilde_setup(void)",
+        "zerox_tilde_setup"
+      ],
+      "zl": [
+        "CYCLONE_OBJ_API void zl_setup(void)",
+        "zl_setup"
+      ]
+    }
+  },
   "else": {
     "abstractions": {
       "!test": [

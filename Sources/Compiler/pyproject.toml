@@ -1,0 +1,27 @@
+[project]
+name = "pd4web"
+version = "2.4.0"
+description = "pd4web compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
+authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
+readme = "../../README.md"
+license = { text = "GPL3" }
+requires-python = ">=3.10"
+
+[project.scripts]
+pd4web = "pd4web:main"
+
+[build-system]
+requires = ["scikit-build-core", "pybind11", "cmake"]
+
+build-backend = "scikit_build_core.build"
+[tool.scikit-build]
+build-dir = "build"
+wheel.packages = ["pd4web"]
+
+cmake.minimum-version = "3.13"
+cmake.verbose = true
+cmake.args = [
+  "-DPD4WEB_BUILD_COMPILER=OFF",
+  "-DPD4WEB_BUILD_PYBIND11=ON"
+]
+

@@ -7,12 +7,24 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(BUILD_SHARED_LIBS OFF)
-
 option(PD4WEB_BUILD_COMPILER ON)
 
-# ──────────────────────────────────────────────────────────────────
-# YAML (fkYAML)
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │              httplib.h               │
+# ╰──────────────────────────────────────╯
+set(HTTPLIB_FILE ${CMAKE_BINARY_DIR}/httplib.h)
+set(HTTPLIB_VERSION "v0.22.0")
+if(NOT EXISTS "${HTTPLIB_FILE}")
+    file(
+        DOWNLOAD
+        "https://raw.githubusercontent.com/yhirose/cpp-httplib/refs/tags/${HTTPLIB_VERSION}/httplib.h"
+        SHOW_PROGRESS
+        ${HTTPLIB_FILE})
+endif()
+
+# ╭──────────────────────────────────────╮
+# │            YAML (fkYAML)             │
+# ╰──────────────────────────────────────╯
 set(YAML_FILE ${CMAKE_BINARY_DIR}/yaml.hpp)
 set(YAML_VERSION "v0.4.2")
 if(NOT EXISTS "${YAML_FILE}")
@@ -23,9 +35,9 @@ if(NOT EXISTS "${YAML_FILE}")
         ${YAML_FILE})
 endif()
 
-# ──────────────────────────────────────────────────────────────────
-# libtreesitter-cpp
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │          libtreesitter-cpp           │
+# ╰──────────────────────────────────────╯
 set(BUILD_SHARED_LIBS OFF)
 set(TREESITTER_URL https://github.com/tree-sitter/tree-sitter/archive/refs/tags/v0.25.6.tar.gz)
 set(TREESITTER_TAR ${CMAKE_BINARY_DIR}/tree-sitter.tar.gz)
@@ -35,7 +47,6 @@ if(NOT EXISTS ${TREESITTER_TAR})
     file(DOWNLOAD ${TREESITTER_URL} ${TREESITTER_TAR} SHOW_PROGRESS)
 endif()
 
-# 1. Extrair o tarball
 if(NOT EXISTS ${TREESITTER_SRC_DIR})
     message(STATUS "Extracting tree-sitter-cpp...")
     file(ARCHIVE_EXTRACT INPUT ${TREESITTER_TAR} DESTINATION ${CMAKE_BINARY_DIR})
@@ -56,12 +67,12 @@ if(NOT EXISTS ${TREESITTER_C_TAR})
     file(DOWNLOAD ${TREESITTER_C_URL} ${TREESITTER_C_TAR} SHOW_PROGRESS)
 endif()
 
-# 1. Extrair o tarball
 if(NOT EXISTS ${TREESITTER_C_SRC_DIR})
     message(STATUS "Extracting tree-sitter-c...")
     file(ARCHIVE_EXTRACT INPUT ${TREESITTER_C_TAR} DESTINATION ${CMAKE_BINARY_DIR})
 endif()
 add_library(tree-sitter-c STATIC "${TREESITTER_C_SRC_DIR}/src/parser.c")
+set_target_properties(tree-sitter-c PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ╭──────────────────────────────────────╮
 # │         1. Baixar parser C++         │
@@ -76,19 +87,18 @@ if(NOT EXISTS ${TREESITTER_CPP_TAR})
     file(DOWNLOAD ${TREESITTER_CPP_URL} ${TREESITTER_CPP_TAR} SHOW_PROGRESS)
 endif()
 
-# 1. Extrair o tarball
 if(NOT EXISTS ${TREESITTER_CPP_SRC_DIR})
     message(STATUS "Extracting tree-sitter-cpp...")
     file(ARCHIVE_EXTRACT INPUT ${TREESITTER_CPP_TAR} DESTINATION ${CMAKE_BINARY_DIR})
 endif()
 
-# 1. Adicionar como subdiretório
 add_library(tree-sitter-cpp STATIC "${TREESITTER_CPP_SRC_DIR}/src/parser.c"
                                    "${TREESITTER_CPP_SRC_DIR}/src/scanner.c")
+set_target_properties(tree-sitter-cpp PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-# ──────────────────────────────────────────────────────────────────
-# cxxopts
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │               cxxopts                │
+# ╰──────────────────────────────────────╯
 set(CXXOPTS_FILE ${CMAKE_BINARY_DIR}/cxxopts.hpp)
 set(CXXOPTS_VERSION "v3.3.1")
 if(NOT EXISTS "${CXXOPTS_FILE}")
@@ -99,9 +109,9 @@ if(NOT EXISTS "${CXXOPTS_FILE}")
         ${CXXOPTS_FILE})
 endif()
 
-# ──────────────────────────────────────────────────────────────────
-# json
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │                 json                 │
+# ╰──────────────────────────────────────╯
 set(JSON_FILE ${CMAKE_BINARY_DIR}/json.hpp)
 set(JSON_VERSION "v3.12.0")
 if(NOT EXISTS "${JSON_FILE}")
@@ -112,9 +122,11 @@ if(NOT EXISTS "${JSON_FILE}")
         ${JSON_FILE})
 endif()
 
-# ──────────────────────────────────────────────────────────────────
-# Download e extração do libgit2
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │    Download e extração do libgit2    │
+# ╰──────────────────────────────────────╯
+set(LIBGIT2_USE_ZLIB_FROM_SYSTEM ON) # força uso de libz.so do sistema
+set(ZLIB_LIBRARY /usr/lib/libz.so) # ajuste o path se necessário
 set(GIT_FILE ${CMAKE_BINARY_DIR}/libgit2.tar.gz)
 if(NOT EXISTS ${GIT_FILE})
     message(STATUS "Downloading libgit2")
@@ -124,17 +136,17 @@ endif()
 file(ARCHIVE_EXTRACT INPUT ${GIT_FILE} DESTINATION ${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_BINARY_DIR}/libgit2-1.9.1/include)
 
-# ──────────────────────────────────────────────────────────────────
-# libgit2 (compilação estática com OpenSSL)
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │               libgit2                │
+# ╰──────────────────────────────────────╯
 set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(BUILD_CLAR OFF)
 add_subdirectory(${CMAKE_BINARY_DIR}/libgit2-1.9.1 EXCLUDE_FROM_ALL)
 
-# ──────────────────────────────────────────────────────────────────
-# pd4web_compiler (biblioteca principal)
-# ──────────────────────────────────────────────────────────────────
+# ╭──────────────────────────────────────╮
+# │           pd4web_compiler            │
+# ╰──────────────────────────────────────╯
 add_library(
     pd4web_compiler STATIC
     "${CMAKE_CURRENT_SOURCE_DIR}/git.cpp"
@@ -149,14 +161,28 @@ add_library(
 target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR})
 target_link_libraries(pd4web_compiler PUBLIC libgit2package tree-sitter tree-sitter-cpp
                                              tree-sitter-c)
+set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
+# ╭──────────────────────────────────────╮
+# │               pybind11               │
+# ╰──────────────────────────────────────╯
+if(PD4WEB_BUILD_PYBIND11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
+    set(PYBIND11_FINDPYTHON ON)
+    find_package(pybind11 REQUIRED)
+    add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
+    target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler tree-sitter-cpp
+                                           tree-sitter-c)
+    set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
+    install(TARGETS pypd4web DESTINATION ./pd4web)
 
-# ──────────────────────────────────────────────────────────────────
-# Executável final
-# ──────────────────────────────────────────────────────────────────
-add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp tree-sitter-c)
-target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
-install(TARGETS pd4web
-        RUNTIME DESTINATION bin)
+endif()
 
-
+# ╭──────────────────────────────────────╮
+# │           Executável final           │
+# ╰──────────────────────────────────────╯
+if(PD4WEB_BUILD_COMPILER)
+    add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+    target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp tree-sitter-c)
+    target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
+    install(TARGETS pd4web RUNTIME DESTINATION bin)
+endif()
