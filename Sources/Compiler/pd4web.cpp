@@ -2,6 +2,13 @@
 
 Pd4Web::Pd4Web(std::string pathHome) {
     LOG(__PRETTY_FUNCTION__);
+    m_Init = false;
+    m_Error = false;
+
+    if (pathHome.empty()) {
+        print("Provide a valid .pd patch to be compiled", Pd4WebColor::RED);
+        return;
+    }
 
     print("Initializing pd4web", Pd4WebColor::BLUE);
     m_Pd4WebRoot = pathHome;
@@ -43,6 +50,7 @@ Pd4Web::Pd4Web(std::string pathHome) {
             return;
         }
     }
+    m_Init = true;
 }
 
 // ─────────────────────────────────────
@@ -50,13 +58,39 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     LOG(__PRETTY_FUNCTION__);
     cxxopts::Options options("pd4web", "Compile Pure Data externals for the web");
 
-    options.add_options()("v,verbose", "Enable verbose")(
-        "m,initial-memory", "Initial memory size (in MB)", cxxopts::value<int>(m_Memory))(
-        "nogui", "Disable GUI", cxxopts::value<bool>(m_RenderGui)->default_value("true"))(
-        "z,patch-zoom", "Patch zoom", cxxopts::value<float>(m_PatchZoom)->default_value("1"))(
-        "patch_file", "Patch file to be compiled", cxxopts::value<std::string>(m_PatchFile))(
-        "template", "Template ID",
-        cxxopts::value<int>(m_TemplateId))("debug", "Debug mode", cxxopts::value<bool>(m_Debug));
+    // clang-format off
+    options.add_options()
+        // TODO:
+        ("v,verbose", "Enable verbose",
+            cxxopts::value<bool>(m_Verbose)->default_value("false"))
+
+        // TODO:
+        ("m,initial-memory", "Initial memory size (in MB)", 
+            cxxopts::value<int>(m_Memory))
+
+        // TODO:
+        ("nogui", "Disable GUI", 
+            cxxopts::value<bool>(m_RenderGui)->default_value("true"))
+
+        // TODO:
+        ("z,patch-zoom", "Patch zoom", 
+            cxxopts::value<float>(m_PatchZoom)->default_value("1"))
+
+        // TODO:
+        ("o,output-folder", "Output folder", 
+            cxxopts::value<std::string>(m_OutputFolder))
+
+        ("patch_file", "Patch file to be compiled", 
+            cxxopts::value<std::string>(m_PatchFile))
+
+        // TODO:
+        ("t,template-id", "Activate debug compilation (faster compilation slower execution)", 
+            cxxopts::value<int>(m_TemplateId))
+
+        ("d,debug", "Debug mode", 
+            cxxopts::value<bool>(m_Debug));
+
+    // clang-format on
 
     options.parse_positional({"patch_file"});
     auto result = options.parse(argc, argv);

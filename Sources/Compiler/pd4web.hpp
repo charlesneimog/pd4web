@@ -39,7 +39,7 @@ enum Pd4WebColor {
 
 // ──────────────────────────────────────────
 struct PatchLine {
-    enum PatchTokenType { DECLARE = 0, OBJ, CONNECTION, CANVAS, RESTORE, MSG, INVALID };
+    enum PatchTokenType { DECLARE = 0, OBJ, CONNECTION, CANVAS, RESTORE, MSG, TEXT, INVALID };
     PatchTokenType Type;
     std::vector<std::string> OriginalTokens;
     std::vector<std::string> ModifiedTokens;
@@ -51,15 +51,19 @@ struct PatchLine {
 
     std::string Name;
     std::string Lib;
+    std::string CloneAbs;
 };
 
 // ──────────────────────────────────────────
 struct Patch {
-    fs::path Path;
-    fs::path Root;
+    fs::path PathFile;
+    fs::path PatchFolder;
+    fs::path WebPatchFolder;
+
     fs::path Pd4WebRoot;
     fs::path mainRoot;
     std::string ProjectName;
+
     int MemorySize = 64;
     int Zoom = 1;
     std::vector<PatchLine> PatchLines;
@@ -70,7 +74,7 @@ struct Patch {
     // Objects
     std::vector<PatchLine> ExternalObjects;
     std::vector<std::string> DeclaredPaths;
-    std::vector<std::string> UsedLibs;
+    std::vector<std::string> DeclaredLibs;
     std::vector<std::string> ValidObjectNames;
     std::vector<std::string> ValidLuaObjects;
 
@@ -108,7 +112,10 @@ class Pd4Web {
     bool processPatch();
 
   private:
+    bool m_Init;
+    bool m_Error;
     std::string m_Pd4WebRoot;
+    std::string m_OutputFolder;
 
     std::string m_PatchFile;
     std::string m_LibrariesPath;
@@ -157,8 +164,9 @@ class Pd4Web {
     // Patch
     bool openPatch(std::shared_ptr<Patch> &Patch);
     bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl);
-    bool processSubpatch(std::shared_ptr<Patch> &Patch);
-    fs::path getAbsPath(std::shared_ptr<Patch> &Patch, std::string Abs);
+    bool processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p);
+
+    fs::path getAbsPath(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     std::string getObjName(std::string &ObjToken);
     std::string getObjLib(std::string &ObjToken);
 
@@ -168,6 +176,7 @@ class Pd4Web {
     void isPdObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExternalLibObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
+    void isAbstraction(std::shared_ptr<Patch> &Patch, PatchLine &pl);
 
     void isMidiObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isCloneObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
@@ -211,6 +220,7 @@ class Pd4Web {
     std::string m_MainCmake;
     void configureProjectToCompile(std::shared_ptr<Patch> &p);
     void createConfigFile(std::shared_ptr<Patch> &p);
+    void copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string Lib);
     void createMainCmake(std::shared_ptr<Patch> &p);
     void createExternalsCppFile(std::shared_ptr<Patch> &p);
     void copySources(std::shared_ptr<Patch> &p);

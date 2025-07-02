@@ -156,3 +156,7 @@ target_link_libraries(pd4web_compiler PUBLIC libgit2package tree-sitter tree-sit
 add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp tree-sitter-c)
 target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
+install(TARGETS pd4web
+        RUNTIME DESTINATION bin)
+
+

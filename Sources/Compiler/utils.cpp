@@ -66,6 +66,7 @@ void Pd4Web::print(std::string msg, enum Pd4WebColor color, int level) {
     switch (color) {
     case Pd4WebColor::RED: {
         std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
+        m_Error = true;
         break;
     }
     case Pd4WebColor::YELLOW: {

@@ -48,7 +48,7 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
         m_Libraries.push_back(newLib);
     }
 
-    for (const std::string &declared : Patch->UsedLibs) {
+    for (const std::string &declared : Patch->DeclaredLibs) {
         if (supportedLibraries.find(declared) == supportedLibraries.end()) {
             LOG("Library '" + declared + "' is not supported")
             return false;
@@ -110,9 +110,53 @@ std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::
 std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch> &p,
                                                            std::string Lib) {
     std::vector<std::string> absNames;
+    const std::string jsonFile = "/home/neimog/Documents/Git/pd4web/Sources/Compiler/objects.json";
+    json full_json;
+    std::ifstream in(jsonFile);
+    if (in.is_open()) {
+        in >> full_json;
+        in.close();
+        if (full_json.contains(Lib)) {
+            if (full_json[Lib].contains("abstractions")) {
+                const auto &libEntry = full_json[Lib]["abstractions"];
+                std::vector<std::string> keys;
+                for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
+                    keys.push_back(it.key());
+                }
+                p->ExternalObjectsJson = full_json;
+                return keys;
+            }
+        }
+    }
 
-    // TODO:
-    return absNames;
+    std::string completPath = m_Pd4WebRoot + Lib;
+    print("Listing all Abstractions inside '" + Lib +
+              "'. This is done once for library and will take a while",
+          Pd4WebColor::GREEN, p->printLevel + 1);
+
+    std::vector<std::string> patchNames;
+    std::vector<std::string> patchPath;
+
+    for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
+        std::string ext = entry.path().extension().string();
+        if (ext == ".pd") {
+            std::string name = entry.path().stem().string();
+            std::string path = entry.path().string();
+            patchNames.push_back(name);
+            patchPath.push_back(path);
+        }
+    }
+
+    for (size_t i = 0; i < patchNames.size(); ++i) {
+        full_json[Lib]["abstractions"][patchNames[i]] = {patchNames[i], patchPath[i]};
+    }
+
+    std::ofstream out(jsonFile);
+    out << full_json.dump(2);
+    out.close();
+    p->ExternalObjectsJson = full_json;
+
+    return patchNames;
 }
 
 // ─────────────────────────────────────
@@ -249,23 +293,27 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
         return objectNames;
     }
 
+    // TODO: Fix this path
     const std::string jsonFile = "/home/neimog/Documents/Git/pd4web/Sources/Compiler/objects.json";
     json full_json;
     std::ifstream in(jsonFile);
-    in >> full_json;
-    in.close();
-
-    if (full_json.contains(Lib)) {
-        const auto &libEntry = full_json[Lib];
-        std::vector<std::string> keys;
-        for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
-            keys.push_back(it.key());
+    if (in.is_open()) {
+        in >> full_json;
+        in.close();
+        if (full_json.contains(Lib)) {
+            if (full_json[Lib].contains("objects")) {
+                const auto &libEntry = full_json[Lib]["objects"];
+                std::vector<std::string> keys;
+                for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
+                    keys.push_back(it.key());
+                }
+                p->ExternalObjectsJson = full_json;
+                return keys;
+            }
         }
-        p->ExternalObjectsJson = full_json;
-        return keys;
     }
 
-    print("Listing all Objects and Abstractions inside '" + Lib +
+    print("Listing all Objects inside '" + Lib +
               "'. This is done once for library and will take a while",
           Pd4WebColor::GREEN, p->printLevel + 1);
 
@@ -303,7 +351,7 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
 
     if (objSize == sigSize && sigSize == nameSize) {
         for (size_t i = 0; i < objSize; ++i) {
-            full_json[Lib][objectNames[i]] = {setupSignatures[i], setupNames[i]};
+            full_json[Lib]["objects"][objectNames[i]] = {setupSignatures[i], setupNames[i]};
         }
     } else {
         print("This should not happend please report", Pd4WebColor::RED);
