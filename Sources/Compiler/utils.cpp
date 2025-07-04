@@ -1,4 +1,4 @@
-#include "pd4web.hpp"
+#include "pd4web_compiler.hpp"
 
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {
@@ -67,6 +67,9 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
     case Pd4WebLogLevel::ERROR: {
         std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
         m_Error = true;
+        if (m_FailFast) {
+            throw std::runtime_error(msg);
+        }
         break;
     }
     case Pd4WebLogLevel::WARNING: {

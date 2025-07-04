@@ -1,4 +1,4 @@
-#include "pd4web.hpp"
+#include "pd4web_compiler.hpp"
 
 #include <cctype>
 #include <filesystem>
@@ -57,6 +57,8 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         pl.Type = PatchLine::CONNECTION;
     } else if (Line[1] == "text") {
         pl.Type = PatchLine::TEXT;
+    } else if (Line[1] == "coords") {
+        pl.Type = PatchLine::COORDS;
     } else {
         print("Class unknown " + Line[1], Pd4WebLogLevel::ERROR);
     }
@@ -590,6 +592,8 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     p->DeclaredLibs = f->DeclaredLibs;
     p->printLevel = p->printLevel + 1;
     p->WebPatchFolder = f->WebPatchFolder;
+    p->Pd4WebFiles = f->Pd4WebFiles;
+
     f->Childs.push_back(p);
 
     bool ok = openPatch(p);
@@ -666,6 +670,12 @@ bool Pd4Web::processPatch() {
     p->PathFile = fs::path(m_PatchFile);
     p->PatchFolder = p->PathFile.parent_path();
     p->mainRoot = p->PatchFolder;
+
+    if (m_Pd4WebFiles == "") {
+        print("m_Pd4WebFiles not set", Pd4WebLogLevel::ERROR);
+        return false;
+    }
+
     p->Pd4WebFiles = m_Pd4WebFiles;
 
     if (m_OutputFolder != "") {

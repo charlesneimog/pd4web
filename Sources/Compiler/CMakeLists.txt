@@ -142,6 +142,7 @@ include_directories(${CMAKE_BINARY_DIR}/libgit2-1.9.1/include)
 set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(BUILD_CLAR OFF)
+set(BUILD_SHARED_LIBS OFF)
 add_subdirectory(${CMAKE_BINARY_DIR}/libgit2-1.9.1 EXCLUDE_FROM_ALL)
 
 # ╭──────────────────────────────────────╮
@@ -156,7 +157,7 @@ add_library(
     "${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmd.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/builder.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp")
+    "${CMAKE_CURRENT_SOURCE_DIR}/pd4web_compiler.cpp")
 
 target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR})
 target_link_libraries(pd4web_compiler PUBLIC libgit2package tree-sitter tree-sitter-cpp

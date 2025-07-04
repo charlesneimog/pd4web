@@ -1,4 +1,4 @@
-#include "pd4web.hpp"
+#include "pd4web_compiler.hpp"
 
 // ─────────────────────────────────────
 bool Pd4Web::libIsSupported(std::string libName) {
@@ -33,6 +33,7 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
     m_Libraries.clear();
 
     std::ifstream file(Patch->Pd4WebFiles / "Libraries" / "Libraries.yaml");
+
     if (!file) {
         print("Failed to open libraries file", Pd4WebLogLevel::ERROR);
         return false;

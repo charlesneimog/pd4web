@@ -48,7 +48,17 @@ enum Pd4WebLogLevel {
 
 // ──────────────────────────────────────────
 struct PatchLine {
-    enum PatchTokenType { DECLARE = 0, OBJ, CONNECTION, CANVAS, RESTORE, MSG, TEXT, INVALID };
+    enum PatchTokenType {
+        DECLARE = 0,
+        OBJ,
+        CONNECTION,
+        CANVAS,
+        RESTORE,
+        MSG,
+        COORDS,
+        TEXT,
+        INVALID
+    };
     PatchTokenType Type = INVALID;
     std::vector<std::string> OriginalTokens;
     std::vector<std::string> ModifiedTokens;
@@ -130,6 +140,7 @@ class Pd4Web {
     void setTemplateId(int id) { m_TemplateId = id; };
     void setDebugMode(bool debug) { m_Debug = debug; };
     void setDevDebugMode(bool debug) { m_DevDebug = debug; };
+    void setFailFast(bool failfast) { m_FailFast = failfast; };
 
     void disableGuiRender() { m_RenderGui = false; };
 
@@ -149,6 +160,7 @@ class Pd4Web {
     std::string m_EmsdkVersion;
     bool m_Debug;
     bool m_DevDebug = false;
+    bool m_FailFast = false;
     int m_Memory;
 
     unsigned m_ChnsOutCount;

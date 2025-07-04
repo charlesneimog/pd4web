@@ -1,4 +1,4 @@
-#include "pd4web.hpp"
+#include "pd4web_compiler.hpp"
 #include <cstdlib>
 #include <filesystem>
 #include <pybind11/pybind11.h>
@@ -61,8 +61,10 @@ PYBIND11_MODULE(pypd4web, m) {
         .def("setInitialMemory", &Pd4Web::setInitialMemory)
         .def("setPatchZoom", &Pd4Web::setPatchZoom)
         .def("setOutputFolder", &Pd4Web::setOutputFolder)
+        .def("setPd4WebFilesFolder", &Pd4Web::setPd4WebFilesFolder)
         .def("setTemplateId", &Pd4Web::setTemplateId)
         .def("setDebugMode", &Pd4Web::setDebugMode)
         .def("setDevDebugMode", &Pd4Web::setDevDebugMode)
+        .def("setFailFast", &Pd4Web::setFailFast)
         .def("disableGuiRender", &Pd4Web::disableGuiRender);
 }

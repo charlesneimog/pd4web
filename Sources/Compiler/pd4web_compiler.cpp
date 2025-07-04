@@ -1,4 +1,4 @@
-#include "pd4web.hpp"
+#include "pd4web_compiler.hpp"
 
 Pd4Web::Pd4Web(std::string pathHome) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
@@ -55,6 +55,7 @@ bool Pd4Web::init() {
         }
     }
     m_Init = true;
+    m_Error = false;
 
     return true;
 }
@@ -66,25 +67,20 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
                                        "Wasm, allowing to run entire patches in web browsers.\n");
 
     bool disableGui = false;
+    bool failFast = false;
 
     // clang-format off
     options.add_options()
         ("h,help", "Print this usage.")
 
-        // // TODO:
-        // ("v,verbose", "Enable verbose.",
-        //     cxxopts::value<bool>(m_Verbose)->default_value("false"))
-
         // TODO:
         ("m,initial-memory", "Initial memory size (in MB).", 
             cxxopts::value<int>(m_Memory)->default_value("32"))
-
 
         // TODO:
         ("z,patch-zoom", "Patch zoom.", 
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
-        // TODO:
         ("o,output-folder", "Output folder.", 
             cxxopts::value<std::string>(m_OutputFolder))
 
@@ -96,9 +92,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<int>(m_TemplateId))
 
 
-        // TODO:
-        // ("server", "Run pd4web server",
-        //     cxxopts::value<int>(m_TemplateId))
+        // TEST:
         ("nogui", "Disable GUI interface.", 
             cxxopts::value<bool>(disableGui))
 
@@ -106,13 +100,17 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<bool>(m_Debug))
 
         ("devdebug", "Activate development debug compilation (print function call).", 
-            cxxopts::value<bool>(m_DevDebug)->default_value("false"));
+            cxxopts::value<bool>(m_DevDebug)->default_value("false"))
+
+        ("failfast", "Fail on first error message.",
+            cxxopts::value<bool>(failFast));
 
     // clang-format on
     options.parse_positional({"patch_file"});
     auto result = options.parse(argc, argv);
 
     m_RenderGui = !disableGui;
+    m_FailFast = failFast;
 
     if (result.count("patch_file")) {
         std::string patchFile = result["patch_file"].as<std::string>();
