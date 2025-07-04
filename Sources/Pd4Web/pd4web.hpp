@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef __EMSCRIPTEN__
+#error "This module requires Emscripten."
+#endif
+
 // strings
 #include <format>
+#include <iostream>
 
 // emscripten
 #include <emscripten.h>
@@ -36,7 +41,6 @@ extern "C" {
 extern lua_State *__L();
 extern int pd4weblua_draw();
 }
-
 #endif
 
 // ╭─────────────────────────────────────╮
@@ -114,6 +118,7 @@ class Pd4Web {
     bool sendFloat(std::string r, float f);
     bool sendSymbol(std::string r, std::string s);
     bool sendBang(std::string r);
+    void midiByte(uint8_t byte1, uint8_t byte2, uint8_t byte3);
 
     bool _startMessage(std::string r, int argc);
     void _addFloat(std::string r, float f);
@@ -191,6 +196,7 @@ EMSCRIPTEN_BINDINGS(WebPd) {
 
         // Midi
         .function("noteOn", &Pd4Web::noteOn)
+        .function("_midibyte", &Pd4Web::midiByte)
 
         // bind list
         .function("bindReceiver", &Pd4Web::bindReceiver)

@@ -273,60 +273,6 @@ EM_JS(void, _JS_suspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 });
 
 //╭─────────────────────────────────────╮
-//│          JS Midi Functions          │
-//╰─────────────────────────────────────╯
-EM_JS(void, _JS_loadMidi, (void), {
-    if (document.getElementById("pd4web-midi") != null){
-        return;
-    }
-    let scripts = document.getElementsByTagName('script');
-    let pd4webPath = null;
-    for (let script of scripts) {
-        if (script.src && script.src.includes('pd4web.js')) {
-            pd4webPath = script.src.substring(0, script.src.lastIndexOf('/') + 1);
-            break;
-        }
-    }
-    
-    var script = document.createElement('script');
-    script.type = "text/javascript";
-    script.src = pd4webPath + "pd4web.midi.js";
-    script.id = "pd4web-midi";
-    script.onload = function() {
-        if (typeof WebMidi != "object") {
-            console.error("Midi: failed to find the 'WebMidi' object");
-            return;
-        }
-        WebMidi.enable(function (err) {
-            if (err) {
-                console.error("Midi: failed to enable midi", err);
-                return;
-            }
-
-            WebMidi.inputs.forEach(input => {
-                console.log(input.channels);
-                input.channels[1].addListener("noteon", function(e) {
-                    if (typeof e.channel === 'undefined') {
-                        Pd4Web.noteOn(1, e.note.number, e.rawVelocity);
-                    } else{
-                        Pd4Web.noteOn(e.channel, e.note.number, e.rawVelocity);
-                    }
-                });
-                input.channels[1].addListener("noteoff", function(e) {
-                    if (typeof e.channel === 'undefined') {
-                        Pd4Web.noteOn(1, e.note.number, 0);
-                    } else{
-                        Pd4Web.noteOn(e.channel, e.note.number, 0);
-                    }
-                });
-            });
-        }, false); 
-
-    };
-    document.head.appendChild(script);
-});
-
-//╭─────────────────────────────────────╮
 //│         JS Receivers Hooks          │
 //╰─────────────────────────────────────╯
 EM_JS(void, _JS_receiveBang, (const char *r),{
@@ -1199,6 +1145,59 @@ void Pd4Web::click(std::string p, int xpix, int ypix) {
 // ╭─────────────────────────────────────╮
 // │            Init Function            │
 // ╰─────────────────────────────────────╯
+void Pd4Web::midiByte(uint8_t byte1, uint8_t byte2, uint8_t byte3) {
+    int channel = byte1 & 0x0F;
+    uint8_t status = byte1 & 0xF0;
+
+    switch (status) {
+    case 0x80:                           // Note Off
+        libpd_noteon(channel, byte2, 0); // velocity 0 means note off in Pd
+        break;
+
+    case 0x90: // Note On
+        libpd_noteon(channel, byte2, byte3);
+        break;
+
+    case 0xA0: // Polyphonic Aftertouch
+        libpd_polyaftertouch(channel, byte2, byte3);
+        break;
+
+    case 0xB0: // Control Change
+        libpd_controlchange(channel, byte2, byte3);
+        break;
+
+    case 0xC0: // Program Change
+        libpd_programchange(channel, byte2);
+        break;
+
+    case 0xD0: // Channel Aftertouch
+        libpd_aftertouch(channel, byte2);
+        break;
+
+    case 0xE0: // Pitch Bend
+    {
+        int value = (byte3 << 7) | byte2; // 14-bit value, MSB byte3, LSB byte2
+        libpd_pitchbend(channel, value);
+    } break;
+
+    default:
+        // System messages, SysEx, or unsupported status
+        if (byte1 >= 0xF8) {
+            libpd_sysrealtime(0, byte1);
+        } else if (byte1 == 0xF0) {
+            // You likely need to handle SysEx as a stream of bytes,
+            // so this function may not fit SysEx processing properly.
+            libpd_sysex(0, byte1);
+            libpd_sysex(0, byte2);
+            libpd_sysex(0, byte3);
+        }
+        break;
+    }
+    libpd_midibyte(0, byte1);
+    libpd_midibyte(0, byte2);
+    libpd_midibyte(0, byte3);
+}
+
 void Pd4Web::init() {
     PD4WEB_INSTANCES++;
     LOG("Pd4Web::init");
@@ -1234,8 +1233,32 @@ void Pd4Web::init() {
         _JS_addSoundToggle();
     }
     m_audioSuspended = false;
+    if (PD4WEB_MIDI) {
+        _JS_post("Loading Midi");
+        // clang-format off
+        EM_ASM({
+            function onMIDISuccess(midiAccess) {
+                for (let input of midiAccess.inputs) {
+                    input[1].onmidimessage = (message) => {
+                        const data = message.data;
+                        Pd4Web._midibyte(data[0], data[1], data[2]);
+                    };
+                }
+            }
 
-    return;
+            function onMIDIFailure() {
+                console.error("Failed to access MIDI devices.");
+            }
+
+            if (navigator.requestMIDIAccess) {
+                console.log("requestMIDIAccess");
+                navigator.requestMIDIAccess().then(onMIDISuccess, onMIDIFailure);
+            } else {
+                alert("Web MIDI API is not supported.");
+            }
+        });
+        // clang-format on
+    }
 }
 
 // ╭─────────────────────────────────────╮
@@ -1305,11 +1328,6 @@ int main() {
         emscripten_set_window_title(PD4WEB_PROJECT_NAME);
     }
     _JS_addAlertOnError();
-
-    if (PD4WEB_MIDI) {
-        _JS_post("Loading Midi");
-        _JS_loadMidi();
-    }
 
     libpd_set_printhook(libpd_print_concatenator);
     libpd_set_concatenated_printhook(&Pd4Web::post);

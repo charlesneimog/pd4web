@@ -9,7 +9,7 @@
 #define PD4WEB_PROJECT_NAME "Test10"
 
 // Audio Config
-#define PD4WEB_CHS_IN 0
+#define PD4WEB_CHS_IN 1
 #define PD4WEB_CHS_OUT 2
 #define PD4WEB_SR 48000
 
