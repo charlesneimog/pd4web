@@ -14,6 +14,7 @@ set(PD4WEB_EXTERNAL_DIR
     CACHE STRING "" FORCE)
 set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")
 
+@PD_SOURCE_DIR@
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")
 @PD_CMAKE_CONTENT@
 
@@ -21,7 +22,7 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 
 add_definitions(-DPDTHREADS)
 add_definitions(-DPD4WEB)
-@PD4WEB_LUA_DEFS@
+@PD_CMAKE_EXTRADEFINITIONS@
 
 # Debug or Release options
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
