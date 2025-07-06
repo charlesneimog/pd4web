@@ -746,6 +746,7 @@ bool Pd4Web::processPatch() {
     print("\n");
     print("Start building Patch", Pd4WebLogLevel::LOG1);
     buildPatch(p);
+    createAppManifest(p);
 
     return true;
 }

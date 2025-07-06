@@ -1,13 +1,21 @@
 cmake_minimum_required(VERSION 3.13)
-cmake_policy(SET CMP0077 NEW)
 project(pd4web-compiler)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
-set(BUILD_SHARED_LIBS OFF)
-option(PD4WEB_BUILD_COMPILER ON)
+
+cmake_policy(SET CMP0077 NEW)
+set(BUILD_SHARED_LIBS
+    OFF
+    CACHE BOOL "Build shared libraries")
+set(BUILD_TESTS
+    OFF
+    CACHE BOOL "Build tests")
+set(BUILD_CLI
+    OFF
+    CACHE BOOL "Build command-line interface")
 
 # ╭──────────────────────────────────────╮
 # │              httplib.h               │
@@ -18,7 +26,6 @@ if(NOT EXISTS "${HTTPLIB_FILE}")
     file(
         DOWNLOAD
         "https://raw.githubusercontent.com/yhirose/cpp-httplib/refs/tags/${HTTPLIB_VERSION}/httplib.h"
-        SHOW_PROGRESS
         ${HTTPLIB_FILE})
 endif()
 
@@ -31,7 +38,6 @@ if(NOT EXISTS "${YAML_FILE}")
     file(
         DOWNLOAD
         "https://raw.githubusercontent.com/fktn-k/fkYAML/refs/tags/${YAML_VERSION}/single_include/fkYAML/node.hpp"
-        SHOW_PROGRESS
         ${YAML_FILE})
 endif()
 
@@ -44,7 +50,7 @@ set(TREESITTER_TAR ${CMAKE_BINARY_DIR}/tree-sitter.tar.gz)
 set(TREESITTER_SRC_DIR ${CMAKE_BINARY_DIR}/tree-sitter-v0.25.6)
 if(NOT EXISTS ${TREESITTER_TAR})
     message(STATUS "Downloading tree-sitter-cpp...")
-    file(DOWNLOAD ${TREESITTER_URL} ${TREESITTER_TAR} SHOW_PROGRESS)
+    file(DOWNLOAD ${TREESITTER_URL} ${TREESITTER_TAR})
 endif()
 
 if(NOT EXISTS ${TREESITTER_SRC_DIR})
@@ -65,7 +71,7 @@ set(TREESITTER_C_SRC_DIR ${CMAKE_BINARY_DIR}/tree-sitter-c-0.24.1)
 
 if(NOT EXISTS ${TREESITTER_C_TAR})
     message(STATUS "Downloading tree-sitter-c...")
-    file(DOWNLOAD ${TREESITTER_C_URL} ${TREESITTER_C_TAR} SHOW_PROGRESS)
+    file(DOWNLOAD ${TREESITTER_C_URL} ${TREESITTER_C_TAR})
 endif()
 
 if(NOT EXISTS ${TREESITTER_C_SRC_DIR})
@@ -85,7 +91,7 @@ set(TREESITTER_CPP_SRC_DIR ${CMAKE_BINARY_DIR}/tree-sitter-cpp-0.23.4)
 
 if(NOT EXISTS ${TREESITTER_CPP_TAR})
     message(STATUS "Downloading tree-sitter-cpp...")
-    file(DOWNLOAD ${TREESITTER_CPP_URL} ${TREESITTER_CPP_TAR} SHOW_PROGRESS)
+    file(DOWNLOAD ${TREESITTER_CPP_URL} ${TREESITTER_CPP_TAR})
 endif()
 
 if(NOT EXISTS ${TREESITTER_CPP_SRC_DIR})
@@ -106,7 +112,6 @@ if(NOT EXISTS "${CXXOPTS_FILE}")
     file(
         DOWNLOAD
         "https://raw.githubusercontent.com/jarro2783/cxxopts/refs/tags/${CXXOPTS_VERSION}/include/cxxopts.hpp"
-        SHOW_PROGRESS
         ${CXXOPTS_FILE})
 endif()
 
@@ -119,7 +124,6 @@ if(NOT EXISTS "${JSON_FILE}")
     file(
         DOWNLOAD
         "https://raw.githubusercontent.com/nlohmann/json/refs/tags/${JSON_VERSION}/single_include/nlohmann/json.hpp"
-        SHOW_PROGRESS
         ${JSON_FILE})
 endif()
 
@@ -131,8 +135,7 @@ set(ZLIB_LIBRARY /usr/lib/libz.so) # ajuste o path se necessário
 set(GIT_FILE ${CMAKE_BINARY_DIR}/libgit2.tar.gz)
 if(NOT EXISTS ${GIT_FILE})
     message(STATUS "Downloading libgit2")
-    file(DOWNLOAD https://github.com/libgit2/libgit2/archive/refs/tags/v1.9.1.tar.gz SHOW_PROGRESS
-         ${GIT_FILE})
+    file(DOWNLOAD https://github.com/libgit2/libgit2/archive/refs/tags/v1.9.1.tar.gz ${GIT_FILE})
 endif()
 file(ARCHIVE_EXTRACT INPUT ${GIT_FILE} DESTINATION ${CMAKE_BINARY_DIR})
 include_directories(${CMAKE_BINARY_DIR}/libgit2-1.9.1/include)

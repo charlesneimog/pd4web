@@ -158,7 +158,16 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
         }
     }
 
-    std::string completPath = m_Pd4WebRoot + Lib;
+    // std::string completPath = m_Pd4WebRoot + Lib;
+    fs::path completPath = p->Pd4WebRoot / Lib;
+    if (!fs::exists(completPath)) {
+        completPath = p->WebPatchFolder / Lib;
+        if (!fs::exists(completPath)) {
+            std::vector<std::string> patchNames;
+            return patchNames;
+        }
+    }
+
     print("Listing all Abstractions inside '" + Lib +
               "'. This is done once for library and will take a while",
           Pd4WebLogLevel::LOG2, p->printLevel + 1);

@@ -266,6 +266,7 @@ class Pd4Web {
     void createExternalsCppFile(std::shared_ptr<Patch> &p);
     void copySources(std::shared_ptr<Patch> &p);
     void buildPatch(std::shared_ptr<Patch> &p);
+    void createAppManifest(std::shared_ptr<Patch> &p);
 
     // Utils
     std::string formatLibUrl(const std::string &format, const std::string &arg1,

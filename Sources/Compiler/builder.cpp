@@ -97,6 +97,13 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
              fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.gui.js", p->WebPatchFolder / "WebPatch" / "pd4web.gui.js",
              fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "pd4web.sw.js", p->WebPatchFolder / "WebPatch" / "pd4web.sw.js",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "icon-512.png", p->WebPatchFolder / "WebPatch" / "icon-512.png",
+             fs::copy_options::skip_existing);
+    fs::copy(p->Pd4WebFiles / "icon-192.png", p->WebPatchFolder / "WebPatch" / "icon-192.png",
+             fs::copy_options::skip_existing);
+
     fs::copy(p->Pd4WebFiles / "pd4web.threads.js",
              p->WebPatchFolder / "WebPatch" / "pd4web.threads.js", fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.style.css",
@@ -430,4 +437,35 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     if (ret != 0) {
         std::cerr << "Build failed\n";
     }
+}
+
+// ─────────────────────────────────────
+void Pd4Web::createAppManifest(std::shared_ptr<Patch> &p) {
+    fs::path webpatch = p->WebPatchFolder / "WebPatch";
+    std::vector<std::string> fileList;
+    for (const auto &entry : fs::directory_iterator(webpatch)) {
+        if (fs::is_regular_file(entry)) {
+            fileList.push_back(entry.path().filename().string());
+        }
+    }
+
+    // Construct PWA manifest
+    json manifest = {
+        {"name", "WebPatch"},
+        {"short_name", "WebPatch"},
+        {"start_url", "index.html"},
+        {"display", "standalone"},
+        {"background_color", "#ffffff"},
+        {"theme_color", "#000000"},
+        {"icons",
+         {{{"src", "icon-192.png"}, {"sizes", "192x192"}, {"type", "image/png"}},
+          {{"src", "icon-512.png"}, {"sizes", "512x512"}, {"type", "image/png"}}}},
+        {"files", fileList} // optional: not part of PWA spec
+    };
+
+    // Write manifest to disk
+    fs::path manifestPath = webpatch / "manifest.json";
+    std::ofstream out(manifestPath);
+    out << manifest.dump(4); // pretty print with indent
+    out.close();
 }
