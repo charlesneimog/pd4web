@@ -7,6 +7,11 @@ if(NOT TARGET lua)
     target_compile_definitions(lua PUBLIC "-DMAKE_LIB")
 endif()
 
+message(STATUS "Downloading pdlua...")
+file(DOWNLOAD
+     https://raw.githubusercontent.com/ben-wes/pd-lua/refs/heads/fix/glist_getrtext/pdlua.c
+     ${LIB_DIR}/pdlua.c)
+
 # ╭──────────────────────────────────────╮
 # │              DEJAVU TTF              │
 # ╰──────────────────────────────────────╯
@@ -36,7 +41,7 @@ add_subdirectory(${NANOVG_DIR} EXCLUDE_FROM_ALL)
 include_directories("${NANOVG_DIR}/src")
 
 include_directories("${LIB_DIR}/lua")
-if (NOT TARGET pdlua)
+if(NOT TARGET pdlua)
     pd_add_external(pdlua "${LIB_DIR}/pdlua.c")
 else()
     target_sources(pdlua PRIVATE "${LIB_DIR}/pdlua.c")
