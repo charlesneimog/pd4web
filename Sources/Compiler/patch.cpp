@@ -500,10 +500,11 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::removePreffix(std::shared_ptr<Patch> &p, bool mainPatch) {
+void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::string editPatch = "";
     for (auto pl : p->PatchLines) {
+
         // tradicional external
         if (pl.isExternal && pl.Type == PatchLine::OBJ) {
             std::string &token = pl.OriginalTokens[4];
@@ -560,6 +561,19 @@ void Pd4Web::removePreffix(std::shared_ptr<Patch> &p, bool mainPatch) {
 
             for (size_t i = 0; i < filteredIndexes.size(); ++i) {
                 pl.OriginalTokens[filteredIndexes[i]] = filtered[i];
+            }
+        }
+
+        // check and replace gui objects
+        if (pl.Type == PatchLine::OBJ) {
+            std::unordered_set<std::string> guiObjs = {"vsl", "hsl", "vradio",   "hradio",
+                                                       "tgl", "bng", "keyboard", "vu"};
+            if (guiObjs.count(pl.Name) && mainPatch) {
+                pl.OriginalTokens[4] = "l." + pl.Name;
+                p->PdLua = true;
+                p->LuaGuiObjects = true;
+                print("Replacing Gui Object '" + pl.Name + "' with 'l." + pl.Name + "'",
+                      Pd4WebLogLevel::LOG2, p->printLevel + 1);
             }
         }
 
@@ -632,7 +646,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         }
     }
 
-    removePreffix(p);
+    updatePatch(p);
 
     return true;
 }
@@ -670,6 +684,7 @@ bool Pd4Web::processPatch() {
     p->PathFile = fs::path(m_PatchFile);
     p->PatchFolder = p->PathFile.parent_path();
     p->mainRoot = p->PatchFolder;
+    p->Zoom = m_PatchZoom;
 
     if (m_Pd4WebFiles == "") {
         print("m_Pd4WebFiles not set", Pd4WebLogLevel::ERROR);
@@ -677,7 +692,6 @@ bool Pd4Web::processPatch() {
     }
 
     p->Pd4WebFiles = m_Pd4WebFiles;
-
     if (m_OutputFolder != "") {
         p->WebPatchFolder = fs::path(m_OutputFolder);
     } else {
@@ -715,10 +729,14 @@ bool Pd4Web::processPatch() {
         i++;
     }
 
-    getSupportedLibraries(p);
-    configureProjectToCompile(p);
+    fs::create_directory(p->WebPatchFolder / "WebPatch");
+    fs::create_directory(p->WebPatchFolder / "Pd4Web");
+    fs::create_directory(p->WebPatchFolder / "Pd4Web" / "Externals");
+    fs::create_directory(p->WebPatchFolder / "Pd4Web" / "Gui");
 
-    removePreffix(p, true);
+    getSupportedLibraries(p);
+    updatePatch(p, true);
+    configureProjectToCompile(p);
 
     if (m_Error) {
         print("Errors found, fix them before compiling!", Pd4WebLogLevel::ERROR);

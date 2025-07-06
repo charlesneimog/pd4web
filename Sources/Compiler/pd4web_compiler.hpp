@@ -30,7 +30,7 @@ const TSLanguage *tree_sitter_c();
 #include <m_pd.h>
 #endif
 
-#define PD_VERSION "0.55-2"
+#define PD_VERSION "0.56-0test1"
 #define EMSDK_VERSION "4.0.10"
 
 using json = nlohmann::json;
@@ -102,6 +102,7 @@ struct Patch {
 
     bool Midi;
     bool PdLua;
+    bool LuaGuiObjects;
     unsigned Input;
     unsigned Output;
     unsigned Sr = 48000;
@@ -221,7 +222,7 @@ class Pd4Web {
     void isDollarObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExtraObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
 
-    void removePreffix(std::shared_ptr<Patch> &p, bool mainPatch = false);
+    void updatePatch(std::shared_ptr<Patch> &p, bool mainPatch = false);
 
     // process
     bool processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl);

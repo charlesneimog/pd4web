@@ -33,6 +33,11 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     replaceAll(configFile, "@PD4WEB_PATCH_ZOOM@", std::to_string(p->Zoom));
     replaceAll(configFile, "@PD4WEB_FPS@", "60");
     replaceAll(configFile, "@PD4WEB_AUTO_THEME@", "1");
+    if (p->PdLua) {
+        replaceAll(configFile, "@PD4WEB_LUA@", "1");
+    } else {
+        replaceAll(configFile, "@PD4WEB_LUA@", "0");
+    }
 
     replaceAll(configFile, "@PD4WEB_MIDI@", std::to_string(p->Midi));
 
@@ -59,6 +64,11 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
 
     // Pd Lua
     if (p->PdLua) {
+        if (!fs::exists(p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua")) {
+            fs::copy(p->Pd4WebRoot / "pdlua", p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua",
+                     fs::copy_options::recursive);
+        }
+
         print("Replacig lua sources from pdlua to pd4web", Pd4WebLogLevel::LOG2, 2);
         fs::copy(p->Pd4WebFiles / "pdlua.h",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua.h",
@@ -66,13 +76,19 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
         fs::copy(p->Pd4WebFiles / "pd4weblua_gfx.c",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua_gfx.h",
                  fs::copy_options::overwrite_existing);
-        fs::copy(p->Pd4WebFiles / "Font" / "DejaVuSans.ttf",
+        fs::copy(p->Pd4WebFiles / "DejaVuSans.ttf",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "DejaVuSans.ttf",
                  fs::copy_options::skip_existing);
     }
 
     writeFile((p->WebPatchFolder / "index.html").string(),
               "<!doctype html><meta http-equiv=\"refresh\" content=\"0;url=WebPatch\">");
+
+    // Lua Gui Objects
+    if (p->LuaGuiObjects) {
+        fs::copy(p->Pd4WebFiles / "Gui", p->WebPatchFolder / "Pd4Web" / "Gui",
+                 fs::copy_options::recursive | fs::copy_options::skip_existing);
+    }
 
     // JavaScript
     fs::copy(p->Pd4WebFiles / "index.html", p->WebPatchFolder / "WebPatch" / "index.html",
@@ -85,12 +101,6 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
              p->WebPatchFolder / "WebPatch" / "pd4web.threads.js", fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.style.css",
              p->WebPatchFolder / "WebPatch" / "pd4web.style.css", fs::copy_options::skip_existing);
-
-    if (p->Midi) {
-        fs::copy(p->Pd4WebFiles / "pd4web.midi.js",
-                 p->WebPatchFolder / "WebPatch" / "pd4web.midi.js",
-                 fs::copy_options::skip_existing);
-    }
 }
 
 // ──────────────────────────────────────────
@@ -112,6 +122,12 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
                      fs::copy_options::skip_existing);
         }
     }
+
+    if (p->PdLua) {
+        fs::copy(p->Pd4WebFiles / "Libraries" / "pdlua.cmake",
+                 p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua.cmake",
+                 fs::copy_options::skip_existing);
+    }
 }
 
 // ─────────────────────────────────────
@@ -127,6 +143,10 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     }
     for (auto Lib : p->DeclaredPaths) {
         copyCmakeLibFiles(p, Lib);
+    }
+
+    if (p->PdLua) {
+        copyCmakeLibFiles(p, "pdlua");
     }
 
     std::string cmakeTemplate = readFile(p->Pd4WebFiles / "Libraries" / "pd4web.in.cmake");
@@ -172,14 +192,26 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         }
     }
 
+    // pdlua is separeted to avoid conflict with else
     if (p->PdLua) {
         LibrariesInclude +=
             "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake\")\n";
     }
     replaceAll(cmakeTemplate, "@LIBRARIES_SCRIPT_INCLUDE@", LibrariesInclude);
 
-    // externals objects targets
+    std::string pdsource =
+        "set(PD_SOURCE_DIR \"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/\")";
+    replaceAll(cmakeTemplate, "@PD_SOURCE_DIR@", pdsource);
 
+    // extra definitions
+    if (m_Debug && m_DevDebug) {
+        replaceAll(cmakeTemplate, "@PD_CMAKE_EXTRADEFINITIONS@", "");
+    } else {
+        std::string extra = "add_compile_options(-Wno-everything)\n";
+        replaceAll(cmakeTemplate, "@PD_CMAKE_EXTRADEFINITIONS@", extra);
+    }
+
+    // externals objects targets
     std::string externalTargets = "";
     if (p->PdLua) {
         externalTargets += "\n" + std::string(32, ' ') + "pdlua";
@@ -212,15 +244,19 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         {".tmp", "/Libs/"},
         {"Audios", "/Audios/"},
         {"Extras", "/Extras/"},
-        {"WebPatch/index.pd", "index.pd"}};
+    };
 
     std::string preloadFlags;
-    preloadFlags += " --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd";
+    preloadFlags += "\n --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd";
     for (const auto &[srcRel, dstRel] : preloadMap) {
         fs::path fullSrc = fs::path(baseDir) / srcRel;
         if (fs::exists(fullSrc)) {
             preloadFlags += " --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/" + srcRel + "@" + dstRel;
         }
+    }
+
+    if (p->LuaGuiObjects) {
+        preloadFlags += " --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Gui@/Gui/";
     }
 
     // Generate the full CMake snippet
@@ -242,10 +278,6 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
 
     std::string Declaration = "";
     std::string Call = "";
-    if (p->PdLua) {
-        Declaration += "extern \"C\" void pdlua_setup(void);\n";
-        Call += "    pdlua_setup();\n";
-    }
 
     std::string extraDefinitions = "";
     for (std::string Lib : p->DeclaredLibs) {

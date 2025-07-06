@@ -52,7 +52,8 @@ if(NOT EXISTS ${TREESITTER_SRC_DIR})
     file(ARCHIVE_EXTRACT INPUT ${TREESITTER_TAR} DESTINATION ${CMAKE_BINARY_DIR})
 endif()
 
-add_subdirectory(${CMAKE_BINARY_DIR}/tree-sitter-0.25.6/lib EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_BINARY_DIR}/tree-sitter-0.25.6/lib ${CMAKE_BINARY_DIR}/tree-sitter
+                 EXCLUDE_FROM_ALL)
 include_directories("${CMAKE_BINARY_DIR}/tree-sitter-0.25.6/lib/include/")
 
 # ╭──────────────────────────────────────╮
@@ -143,7 +144,7 @@ set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(BUILD_CLAR OFF)
 set(BUILD_SHARED_LIBS OFF)
-add_subdirectory(${CMAKE_BINARY_DIR}/libgit2-1.9.1 EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_BINARY_DIR}/libgit2-1.9.1 ${CMAKE_BINARY_DIR}/libgit2 EXCLUDE_FROM_ALL)
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
@@ -175,15 +176,12 @@ if(PD4WEB_BUILD_PYBIND11)
                                            tree-sitter-c)
     set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
     install(TARGETS pypd4web DESTINATION ./pd4web)
-
 endif()
 
 # ╭──────────────────────────────────────╮
 # │           Executável final           │
 # ╰──────────────────────────────────────╯
-if(PD4WEB_BUILD_COMPILER)
-    add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-    target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp tree-sitter-c)
-    target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
-    install(TARGETS pd4web RUNTIME DESTINATION bin)
-endif()
+add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp tree-sitter-c)
+target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
+install(TARGETS pd4web RUNTIME DESTINATION bin)
