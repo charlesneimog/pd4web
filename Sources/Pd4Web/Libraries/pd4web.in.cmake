@@ -53,14 +53,17 @@ target_link_options(
     -sPTHREAD_POOL_SIZE=4
     -sWASMFS=1
     -sWASM=1
-    --closure
-    0
     -sWASM_WORKERS=1
     -sAUDIO_WORKLET=1
+    -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
     -sMIN_WEBGL_VERSION=2
-    --pre-js
-    "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/pd4web.gui.js")
+    
+    # optimizations
+    #-flto
+    #-g0
+    #-O3
+    )
 
 # Externals includes
 @LIBRARIES_SCRIPT_INCLUDE@
