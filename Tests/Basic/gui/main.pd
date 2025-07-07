@@ -1,4 +1,4 @@
-#N canvas 644 37 632 891 8;
+#N canvas 965 30 938 1001 8;
 #X obj 2 8 tgl 35 0 s-tgl1 r-tgl1 empty 0 -8 0 8 #fcfcfc #000000 #000000 0 1;
 #N canvas 494 37 931 891 gui 0;
 #X obj 1 10 loadbang;
@@ -60,7 +60,7 @@
 #X obj 457 117 else/plaits~ -model 11 -midi;
 #X msg 513 76 tr_active 1;
 #X obj 513 57 loadbang;
-#X obj 3 165 cnv 19 126 80 s-cnv1 r-cnv1 empty 20 12 0 12 #0f0a2f #404040 0;
+#X obj 3 165 cnv 19 126 80 s-cnv1 r-cnv1 empty 20 12 0 12 #5c4f57 #404040 0;
 #X obj 170 329 loadbang;
 #X obj 170 360 metro 1000;
 #X obj 408 714 s r-cnv1;
@@ -118,6 +118,7 @@
 #X obj 473 245 nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000 0 256;
 #X obj 360 77 vu 10 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0;
 #X obj 346 77 vu 10 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0;
+#X obj 138 165 else/keyboard 17 80 2 4 0 0 empty empty;
 #X connect 9 0 10 0;
 #X connect 10 0 8 0;
 #X connect 10 0 23 0;
