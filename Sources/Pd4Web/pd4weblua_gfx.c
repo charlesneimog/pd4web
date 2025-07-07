@@ -72,6 +72,9 @@ typedef struct {
     int drawed;
     char current_color[128];
     char layer_id[128];
+    int objx;
+    int objy;
+
     float x;
     float y;
     float width;
@@ -99,6 +102,7 @@ typedef struct {
     GuiCommand *commands;
     size_t size;
     size_t capacity;
+    bool dirty;
 } LayerIndex;
 
 // ─────────────────────────────────────
@@ -157,6 +161,7 @@ int create_new_layer(const char *layer_id) {
 
     node = malloc(sizeof(LayerNode));
     if (!node) {
+        printf("failed to malloc LayerNode\n");
         return -1;
     }
 
@@ -417,6 +422,7 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
 #define MAX_LAYERS 128
 
 typedef struct {
+    bool redraw;
     const char *layer_id; // apontando para string persistente
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webgl_ctx;
     NVGcontext *vg;
@@ -431,7 +437,6 @@ LayerCtx *get_layer_ctx(const char *layer_id, float canvas_width, float canvas_h
     for (int i = 0; i < MAX_LAYERS; i++) {
         if (layer_contexts[i].in_use && strcmp(layer_contexts[i].layer_id, layer_id) == 0) {
             emscripten_webgl_make_context_current(layer_contexts[i].webgl_ctx);
-            glDisable(GL_BLEND);
             return &layer_contexts[i];
         }
     }
@@ -455,8 +460,8 @@ LayerCtx *get_layer_ctx(const char *layer_id, float canvas_width, float canvas_h
             layer_contexts[i].webgl_ctx = ctx;
             layer_contexts[i].vg = vg;
             layer_contexts[i].in_use = 1;
-
             layer_contexts[i].font_handler = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
+
             if (layer_contexts[i].font_handler == -1) {
                 fprintf(stderr, "Failed to create font\n");
                 return NULL;
@@ -492,10 +497,16 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
     case FILL_ALL: {
         nvgBeginPath(vg);
         nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
+        nvgRect(vg, cmd->objx, cmd->objy, cmd->canvas_width, cmd->canvas_height);
         nvgFill(vg);
+        nvgStrokeWidth(vg, 1);
+        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgRect(vg, cmd->objx, cmd->objy, cmd->canvas_width, cmd->canvas_height);
+        nvgStroke(vg);
+
         break;
     }
+
     case FILL_RECT: {
         float x = cmd->x1;
         float y = cmd->y1;
@@ -503,7 +514,7 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float height = cmd->height;
         nvgBeginPath(vg);
         nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, x, y, width, height);
+        nvgRect(vg, x + cmd->objx, y + cmd->objy, width, height);
         nvgFill(vg);
         break;
     }
@@ -516,7 +527,7 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         nvgBeginPath(vg);
         nvgStrokeWidth(vg, thickness);
         nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, x, y, width, height);
+        nvgRect(vg, x + cmd->objx, y + cmd->objy, width, height);
         nvgStroke(vg);
         break;
     }
@@ -525,8 +536,8 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float y = cmd->y1;
         float width = cmd->width;
         float height = cmd->height;
-        float cx = x + width * 0.5f;
-        float cy = y + height * 0.5f;
+        float cx = x + width * 0.5f + cmd->objx;
+        float cy = y + height * 0.5f + cmd->objy;
         float rx = width * 0.5f;
         float ry = height * 0.5f;
         nvgBeginPath(vg);
@@ -541,8 +552,8 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float width = cmd->width;
         float height = cmd->height;
         float line_width = cmd->line_width;
-        float cx = x + width * 0.5f;
-        float cy = y + height * 0.5f;
+        float cx = x + width * 0.5f + cmd->objx;
+        float cy = y + height * 0.5f + cmd->objy;
         float rx = width * 0.5f;
         float ry = height * 0.5f;
         nvgBeginPath(vg);
@@ -561,7 +572,7 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float radius = cmd->radius;
         nvgBeginPath(vg);
         nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x, y, width, height, radius);
+        nvgRoundedRect(vg, x + cmd->objx, y + cmd->objy, width, height, radius);
         nvgFill(vg);
         break;
     }
@@ -577,17 +588,17 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float canvas_height = cmd->canvas_height;
         nvgBeginPath(vg);
         nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x, y, width, height, radius);
+        nvgRoundedRect(vg, x + cmd->objx, y + cmd->objy, width, height, radius);
         nvgStrokeWidth(vg, thickness);
         nvgStroke(vg);
         break;
     }
 
     case DRAW_LINE: {
-        float x1 = cmd->x1;
-        float y1 = cmd->y1;
-        float x2 = cmd->x2;
-        float y2 = cmd->y2;
+        float x1 = cmd->x1 + cmd->objx;
+        float y1 = cmd->y1 + cmd->objy;
+        float x2 = cmd->x2 + cmd->objx;
+        float y2 = cmd->y2 + cmd->objy;
         float line_width = cmd->line_width;
         float canvas_width = cmd->canvas_width;
         float canvas_height = cmd->canvas_height;
@@ -610,9 +621,9 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         nvgStrokeWidth(vg, line_width);
         nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
         if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0], coords[1]);
+            nvgMoveTo(vg, coords[0] + cmd->objx, coords[1] + cmd->objy);
             for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                nvgLineTo(vg, coords[i * 2] + cmd->objx, coords[i * 2 + 1] + cmd->objy);
             }
         }
         nvgStroke(vg);
@@ -625,9 +636,9 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float canvas_height = cmd->canvas_height;
         nvgBeginPath(vg);
         if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0], coords[1]);
+            nvgMoveTo(vg, coords[0] + cmd->objx, coords[1] + cmd->objy);
             for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                nvgLineTo(vg, coords[i * 2] + cmd->objx, coords[i * 2 + 1] + cmd->objy);
             }
             nvgClosePath(vg);
         }
@@ -650,7 +661,7 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
             nvgFontSize(vg, fontSize);
             nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
             nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgTextBox(vg, x, y, maxWidth, text, NULL);
+            nvgTextBox(vg, x + cmd->objx, y + cmd->objy, maxWidth, text, NULL);
         } else {
             printf("No font loaded!\n");
         }
@@ -661,7 +672,33 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
 
 // ─────────────────────────────────────
 int pd4weblua_draw() {
-    float devicePixelRatio = PD4WEB_PATCH_ZOOM * emscripten_get_device_pixel_ratio();
+    int canvas_width, canvas_height;
+    emscripten_get_canvas_element_size("#Pd4WebCanvas", &canvas_width, &canvas_height);
+    LayerCtx *ctx = get_layer_ctx("Pd4WebCanvas", canvas_width, canvas_height);
+    if (!ctx) {
+        return -1;
+    }
+
+    if (!ctx->redraw) {
+        return 0;
+    }
+
+    float devicePixelRatio = emscripten_get_device_pixel_ratio();
+
+    glDisable(GL_SCISSOR_TEST);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_SCISSOR_TEST);
+    glViewport(0, 0, canvas_width, canvas_height);
+
+    int logical_width = canvas_width / PD4WEB_PATCH_ZOOM;
+    int logical_height = canvas_height / PD4WEB_PATCH_ZOOM;
+
+    // Início do frame NanoVG com dimensões lógicas
+    glViewport(0, 0, canvas_width, canvas_height);
+    NVGcontext *vg = ctx->vg;
+    nvgBeginFrame(vg, logical_width, logical_height,
+                  PD4WEB_PATCH_ZOOM * devicePixelRatio); // aplica nitidez/dpi no desenho
 
     for (int i = 0; i < HASH_TABLE_SIZE; i++) {
         LayerNode *node = global_hash_table->buckets[i];
@@ -669,27 +706,9 @@ int pd4weblua_draw() {
             continue;
         }
 
-        char canvas_id[64];
-        pd_snprintf(canvas_id, 64, "#%s", node->layer_id);
-
-        LayerCtx *ctx = get_layer_ctx(node->layer_id, node->width, node->height);
-        if (!ctx) {
-            printf("Failed to get layer context for layer %s\n", node->layer_id);
-            continue;
-        }
-
-        glDisable(GL_SCISSOR_TEST);
-        glClearColor(0, 0, 0, 0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        glEnable(GL_SCISSOR_TEST);
-
-        NVGcontext *vg = ctx->vg;
-        nvgBeginFrame(vg, node->width, node->height, devicePixelRatio);
-
         while (node) {
             const char *layer_id = node->layer_id;
             LayerIndexMap *map = &node->index_map;
-
             for (size_t j = 0; j < map->size; j++) {
                 int index = map->entries[j].index;
                 GuiCommand *cmds = map->entries[j].commands;
@@ -701,9 +720,9 @@ int pd4weblua_draw() {
             }
             node = node->next;
         }
-        nvgEndFrame(vg);
     }
-
+    nvgEndFrame(vg);
+    ctx->redraw = false;
     return 0;
 }
 
@@ -762,10 +781,6 @@ void pdlua_gfx_repaint(t_pdlua *o, int firsttime) {
         mylua_error(__L(), o, "repaint");
     }
     lua_pop(__L(), 1); /* pop the global "pd" */
-
-    // int x = text_xpix((t_object *)o, o->canvas);
-    // int y = text_ypix((t_object *)o, o->canvas);
-
     o->gfx.first_draw = 0;
 }
 
@@ -799,92 +814,6 @@ void pdlua_gfx_mouse_down(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x
 void pdlua_gfx_mouse_up(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 1); }
 void pdlua_gfx_mouse_move(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 2); }
 void pdlua_gfx_mouse_drag(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 3); }
-
-// ─────────────────────────────────────
-typedef struct {
-    t_pdlua *obj;
-    t_pdlua_gfx *gfx;
-    bool dragging;
-} mouse_data;
-
-// ──────────────────────────────────────────
-EM_BOOL mouse_down_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-    float x = e->targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->targetY / PD4WEB_PATCH_ZOOM;
-    data->dragging = true;
-    pdlua_gfx_mouse_event(data->obj, x, y, 0);
-    return EM_TRUE;
-}
-
-// ──────────────────────────────────────────
-EM_BOOL mouse_up_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-    float x = e->targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->targetY / PD4WEB_PATCH_ZOOM;
-    data->dragging = false;
-    pdlua_gfx_mouse_event(data->obj, x, y, 1);
-    return EM_TRUE;
-}
-
-// ──────────────────────────────────────────
-EM_BOOL mouse_move_cb(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-    float x = e->targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->targetY / PD4WEB_PATCH_ZOOM;
-    if (!data->dragging) {
-        pdlua_gfx_mouse_event(data->obj, x, y, 2);
-    } else {
-        pdlua_gfx_mouse_event(data->obj, x, y, 3);
-    }
-    return EM_TRUE;
-}
-
-// ──────────────────────────────────────────
-EM_BOOL touch_start_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-
-    if (e->numTouches < 1)
-        return EM_FALSE;
-
-    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
-
-    data->dragging = true;
-    pdlua_gfx_mouse_event(data->obj, x, y, 0); // 0 = mouse down equivalent
-    return EM_TRUE;
-}
-
-// ──────────────────────────────────────────
-EM_BOOL touch_end_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-
-    // Use last known position if needed; touchend often lacks valid coordinates
-    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
-
-    data->dragging = false;
-    pdlua_gfx_mouse_event(data->obj, x, y, 1); // 1 = mouse up equivalent
-    return EM_TRUE;
-}
-
-// ──────────────────────────────────────────
-EM_BOOL touch_move_cb(int eventType, const EmscriptenTouchEvent *e, void *userData) {
-    mouse_data *data = (mouse_data *)userData;
-
-    if (e->numTouches < 1)
-        return EM_FALSE;
-
-    float x = e->touches[0].targetX / PD4WEB_PATCH_ZOOM;
-    float y = e->touches[0].targetY / PD4WEB_PATCH_ZOOM;
-
-    if (!data->dragging) {
-        pdlua_gfx_mouse_event(data->obj, x, y, 2); // 2 = hover
-    } else {
-        pdlua_gfx_mouse_event(data->obj, x, y, 3); // 3 = drag
-    }
-    return EM_TRUE;
-}
 
 // ─────────────────────────────────────
 typedef struct _path_state {
@@ -1062,6 +991,7 @@ static int set_size(lua_State *L) {
 static int start_paint(lua_State *L) {
     if (!lua_islightuserdata(L, 1)) {
         lua_pushnil(L);
+        printf("running tag is NULL\n");
         return 1;
     }
 
@@ -1070,7 +1000,7 @@ static int start_paint(lua_State *L) {
 
     if (gfx->object_tag[0] == '\0') {
         lua_pushnil(L);
-        isDrawing = 0;
+        printf("running tag is NULL\n");
         return 1;
     }
 
@@ -1078,6 +1008,7 @@ static int start_paint(lua_State *L) {
     gfx->current_layer = layer;
 
     if (layer > gfx->num_layers) {
+        printf("repaint wrong layer\n");
         pdlua_gfx_repaint(obj, 0);
         lua_pushnil(L);
         return 1;
@@ -1089,12 +1020,14 @@ static int start_paint(lua_State *L) {
                                       sizeof(char *) * new_num_layers);
         if (!new_tags) {
             lua_pushnil(L);
+            printf("failed to resize\n");
             return 1;
         }
         gfx->layer_tags = new_tags;
     } else {
         gfx->layer_tags = getbytes(sizeof(char *) * new_num_layers);
         if (!gfx->layer_tags) {
+            printf("failed to alloc\n");
             lua_pushnil(L);
             return 1;
         }
@@ -1106,86 +1039,32 @@ static int start_paint(lua_State *L) {
     }
 
     gfx->num_layers = new_num_layers;
-
-    if (gfx->first_draw) {
-        // Allocate layer tag string
-        gfx->layer_tags[layer] = getbytes(64);
-        if (!gfx->layer_tags[layer]) {
-            lua_pushnil(L);
-            return 1;
-        }
-        snprintf(gfx->layer_tags[layer], 64, "layer_%p", obj);
-
-        int x = text_xpix((t_object *)obj, obj->canvas);
-        int y = text_ypix((t_object *)obj, obj->canvas);
-        create_new_layer(gfx->layer_tags[layer]);
-
-        EM_ASM(
-            {
-                let layer_id = UTF8ToString($0);
-                let x_pos = $1;
-                let y_pos = $2;
-                let width = $3;
-                let height = $4;
-                let zoom = $5;
-                let layer = $6;
-                let dpr = window.devicePixelRatio || 1;
-                let scale = zoom * dpr;
-
-                const container = document.getElementById("Pd4WebPatchDiv");
-                let item = document.getElementById(layer_id);
-                if (!item) {
-                    item = document.createElement("canvas");
-                    container.appendChild(item);
-                }
-
-                item.id = layer_id;
-                item.width = width * scale;
-                item.height = height * scale;
-
-                item.style.width = (width * zoom) + "px";
-                item.style.height = (height * zoom) + "px";
-
-                item.style.position = "absolute";
-                item.style.border = zoom + "px solid #000";
-                item.style.boxShadow = "1px 1px 2px rgba(0, 0, 0, 0.2)";
-                item.style.left = (x_pos * zoom) + "px";
-                item.style.top = (y_pos * zoom) + "px";
-            },
-            gfx->layer_tags[layer], x, y, gfx->width, gfx->height, PD4WEB_PATCH_ZOOM, layer);
-
-        // Allocate selector string dynamically to persist
-        char *selector = getbytes(64);
-        if (!selector) {
-            lua_pushnil(L);
-            return 1;
-        }
-        snprintf(selector, 64, "#layer_%p", obj);
-
-        mouse_data *data = malloc(sizeof(mouse_data));
-        if (!data) {
-            freebytes(selector, 64);
-            lua_pushnil(L);
-            return 1;
-        }
-
-        data->obj = obj;
-        data->gfx = gfx;
-        data->dragging = false;
-
-        // Optionally store selector pointer in gfx to allow future cleanup
-        gfx->current_layer_tag = gfx->layer_tags[layer];
-        gfx->current_layer = layer;
-
-        emscripten_set_mousedown_callback(selector, data, EM_FALSE, mouse_down_cb);
-        emscripten_set_mouseup_callback(selector, data, EM_FALSE, mouse_up_cb);
-        emscripten_set_mousemove_callback(selector, data, EM_FALSE, mouse_move_cb);
-        emscripten_set_touchstart_callback(selector, data, EM_FALSE, touch_start_cb);
-        emscripten_set_touchend_callback(selector, data, EM_FALSE, touch_end_cb);
-        emscripten_set_touchmove_callback(selector, data, EM_FALSE, touch_move_cb);
-
-        gfx->first_draw = 0;
+    gfx->layer_tags[layer] = getbytes(64);
+    if (!gfx->layer_tags[layer]) {
+        printf("failed to alloc for tags\n");
+        lua_pushnil(L);
+        return 1;
     }
+
+    int canvas_width, canvas_height;
+    emscripten_get_canvas_element_size("#Pd4WebCanvas", &canvas_width, &canvas_height);
+    LayerCtx *ctx = get_layer_ctx("Pd4WebCanvas", canvas_width, canvas_height);
+    ctx->redraw = true;
+
+    snprintf(gfx->layer_tags[layer], 64, "layer_%p", obj);
+    create_new_layer(gfx->layer_tags[layer]);
+    gfx->current_layer_tag = gfx->layer_tags[layer];
+    gfx->current_layer = layer;
+
+    // emscripten_set_mousedown_callback(selector, data, EM_FALSE, mouse_down_cb);
+    // emscripten_set_mouseup_callback(selector, data, EM_FALSE, mouse_up_cb);
+    // emscripten_set_mousemove_callback(selector, data, EM_FALSE, mouse_move_cb);
+    // emscripten_set_touchstart_callback(selector, data, EM_FALSE, touch_start_cb);
+    // emscripten_set_touchend_callback(selector, data, EM_FALSE, touch_end_cb);
+    // emscripten_set_touchmove_callback(selector, data, EM_FALSE, touch_move_cb);
+    // TODO: ADD KEYDOWN/KEYUP FOR NUMBER
+
+    gfx->first_draw = 0;
 
     char layer_id[64];
     snprintf(layer_id, 64, "layer_%p", obj);
@@ -1271,6 +1150,8 @@ static int fill_ellipse(lua_State *L) {
     cmd.height = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1296,6 +1177,8 @@ static int stroke_ellipse(lua_State *L) {
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.line_width = luaL_checknumber(L, 5);
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1315,6 +1198,8 @@ static int fill_all(lua_State *L) {
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1341,6 +1226,8 @@ static int fill_rect(lua_State *L) {
     cmd.height = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1367,6 +1254,8 @@ static int stroke_rect(lua_State *L) {
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.line_width = luaL_checknumber(L, 5);
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1395,6 +1284,8 @@ static int fill_rounded_rect(lua_State *L) {
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.radius = luaL_checknumber(L, 5);
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1423,6 +1314,8 @@ static int stroke_rounded_rect(lua_State *L) {
     cmd.canvas_height = gfx->height;
     cmd.radius = luaL_checknumber(L, 5);
     cmd.line_width = luaL_checknumber(L, 6);
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1450,6 +1343,8 @@ static int draw_line(lua_State *L) {
     cmd.line_width = luaL_checknumber(L, 5);
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1467,7 +1362,7 @@ static int draw_text(lua_State *L) {
     int x = luaL_checknumber(L, 2);
     int y = luaL_checknumber(L, 3);
     int w = luaL_checknumber(L, 4);
-    int font_height = luaL_checknumber(L, 5) ;
+    int font_height = luaL_checknumber(L, 5);
 
     transform_point(gfx, &x, &y);
     transform_size(gfx, &w, &font_height);
@@ -1488,6 +1383,8 @@ static int draw_text(lua_State *L) {
     cmd.y1 = y;
     cmd.width = w;
     cmd.font_size = font_height;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -1575,6 +1472,8 @@ static int stroke_path(lua_State *L) {
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.line_width = luaL_checknumber(L, 2);
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     cmd.path_coords = malloc(path->num_path_segments * 2 * sizeof(t_float));
     cmd.path_size = path->num_path_segments;
@@ -1617,6 +1516,8 @@ static int fill_path(lua_State *L) {
         cmd.path_coords[i * 2] = x;
         cmd.path_coords[i * 2 + 1] = y;
     }
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);

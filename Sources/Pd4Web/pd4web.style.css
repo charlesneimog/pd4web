@@ -241,24 +241,17 @@ body {
     background-color: var(--bg);
 }
 
-#Pd4WebPatchDiv {
+#Pd4WebCanvas {
     margin: auto;
     display: flex;
     position: relative;
     justify-content: center;
     align-items: center;
-    width: 20px;
-    height: 20px;
     border-radius: 4px;
     margin-top: 1%;
     box-shadow:
         rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
         rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-}
-
-#Pd4WebCanvas {
-    outline: none;
-    box-shadow: none;
 }
 
 #Pd4WebCanvas:focus {
