@@ -1,32 +1,26 @@
-[tool.poetry]
+[project]
 name = "pd4web"
-version = "2.4.0dev1"
+version = "2.4.0"
 description = "pd4web compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
-authors = ["Charles K. Neimog <charlesneimog@outlook.com>"]
+authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"
-homepage = "https://charlesneimog.github.io/pd4web"
-repository = "https://github.com/charlesneimog/pd4web"
-documentation = "https://www.charlesneimog.github.io/pd4web"
-packages = [
-	{include = "**/*", from = "Sources", to="pd4web" },
-]
+license = { text = "GPL3" }
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.9"
-pyyaml = "^6.0.0"
-requests = "^2.31.0"
-cmake = "^3.21.4"
-ninja = "^1.10.2"
-pygit2 = "^1.15.1"
-beautifulsoup4 = "^4.13.4"
-
-[build-system]
-requires = ["poetry-core>=1.0.0", "setuptools", "wheel"]
-build-backend = "poetry.core.masonry.api"
-
-[tool.poetry.scripts]
+[project.scripts]
 pd4web = "pd4web:main"
 
-[tool.black]
-line-length = 120
+[build-system]
+requires = ["scikit-build-core", "pybind11"]
+
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+build-dir = "build"
+packages = ["pd4web"]
+package-dir = {"" = "Sources/Compiler"}
+cmake.args = [
+  "-DPD4WEB_BUILD_COMPILER=OFF",
+  "-DPD4WEB_BUILD_PYBIND11=ON"
+]
 
