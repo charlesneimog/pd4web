@@ -3,21 +3,25 @@
     <head>
         <title>Pd4Web</title>
         <meta charset="UTF-8" />
+        <!-- WebApp manifest -->
+        <link rel="manifest" href="manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="apple-touch-icon" href="icon-192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
         <!-- pd4web.threads.js can help if you can't active Cross-Origin Resource Sharing (CORS) from server side -->
         <script src="./pd4web.threads.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/8.6.6/pixi.min.js"></script>
         <script src="./pd4web.js"></script>
     </head>
     <body>
         <!-- All the styles are in the pd4web.style.css file loaded by pd4web.js -->
         <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
-        <div id="Pd4WebPatchDiv" class="Pd4WebPatchDiv">
-            <svg id="Pd4WebCanvas"></svg>
-        </div>
+        <canvas id="Pd4WebCanvas" class="Pd4WebCanvas"></canvas>
         <script>
             var Pd4Web = null; // Pd4Web object must be declared in the global scope
             Pd4WebModule().then((Pd4WebModulePromise) => {
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
+                Pd4Web.openPatch("index.pd");
             });
 
             document.getElementById("Pd4WebAudioSwitch").addEventListener(
@@ -28,6 +32,14 @@
                 },
                 { once: true },
             );
+        </script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                navigator.serviceWorker
+                    .register("pd4web.sw.js")
+                    .then(() => console.log("Service Worker registered"))
+                    .catch((err) => console.error("Service Worker registration failed:", err));
+            }
         </script>
     </body>
 </html>
