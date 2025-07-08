@@ -277,6 +277,7 @@ body {
     width: 24px;
     height: 24px;
     margin: 0 auto;
+    transform: none;
 }
 
 svg text {
@@ -305,6 +306,10 @@ svg text {
     100% {
         transform: scale(1);
     }
+}
+
+.pulse-icon {
+    animation: pulse 1s infinite;
 }
 
 /*

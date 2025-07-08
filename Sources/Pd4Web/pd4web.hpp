@@ -45,6 +45,42 @@ extern void pdlua_setup();
 }
 #endif
 
+#define ICON_SOUND_OFF                                                                             \
+    "data:image/"                                                                                  \
+    "svg+xml;base64,"                                                                              \
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZv" \
+    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu" \
+    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ" \
+    "bmMuLS0+"                                                                                     \
+    "PHBhdGggZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTgu" \
+    "OSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMw" \
+    "LTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1" \
+    "IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1" \
+    "YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYg" \
+    "OS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42" \
+    "LTkuNCAzMy45IDB6Ii8+PC9zdmc+"
+
+#define ICON_SOUND_ON                                                                              \
+    "data:image/"                                                                                  \
+    "svg+xml;base64,"                                                                              \
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZv" \
+    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu" \
+    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ" \
+    "bmMuLS0+"                                                                                     \
+    "PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEu" \
+    "NSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1" \
+    "Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMu" \
+    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5" \
+    "cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhD" \
+    "NDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIz" \
+    "LjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDgg" \
+    "MjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMz" \
+    "LjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMu" \
+    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAg" \
+    "Mzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAw" \
+    "LTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIy" \
+    "LjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4="
+
 // ╭─────────────────────────────────────╮
 // │            Gui Interface            │
 // ╰─────────────────────────────────────╯
@@ -66,11 +102,8 @@ struct Pd4WebGuiConnector {
     t_atom *Atoms;
 };
 
-struct UserData {
-    int instance;
-};
-
 using Pd4WebGuiReceiverList = std::vector<Pd4WebGuiConnector>;
+void mainLoop(void *userData);
 
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
@@ -86,7 +119,7 @@ class Pd4Web {
     void suspendAudio();
     void resumeAudio();
     void soundToggle();
-    void openPatch(std::string PatchName);
+    void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
 
     static void post(const char *message);
 
@@ -99,7 +132,6 @@ class Pd4Web {
 
     // Gui
     static void guiLoop();
-    UserData *m_SharedData;
 
     // Receivers
     static void receivedBang(const char *r);
@@ -135,11 +167,13 @@ class Pd4Web {
 
     std::string _getMessageSelector(std::string r);
 
+    EMSCRIPTEN_WEBAUDIO_T m_Context;
+    t_pdinstance *m_NewPdInstance;
+
   private:
     // void bindGuiReceivers();
 
     bool m_Pd4WebInit = false;
-    EMSCRIPTEN_WEBAUDIO_T m_Context;
     bool m_PdInit = false;
     bool m_audioSuspended = false;
 
@@ -148,18 +182,23 @@ class Pd4Web {
     std::vector<std::string> m_Receivers;
 };
 
-EM_JS(void, _JS_post2, (const char *msg), { console.log(UTF8ToString(msg)); });
+// ──────────────────────────────────────────
+struct Pd4WebUserData {
+    Pd4Web *pd4web;
+    t_pdinstance *libpd;
 
-// ╭─────────────────────────────────────╮
-// │            Log Functions            │
-// ╰─────────────────────────────────────╯
-#if PD4WEB_DEBUG
-#define LOG(message, ...)                                                                          \
-    // std::stringstream ss;                                                                          \
-    // ss << "Pd4Web: " << __FILE__ << ":" << __LINE__ << " " << message;                             \
-    // std::string mys = ss.str();                                                                    \
-    // _JS_post2(mys.c_str());
-#endif
+    bool soundInit;
+    bool soundSuspended;
+    std::string soundToggleSel;
+
+    // mouse
+    bool mousedown;
+    bool doit;
+    int xpos;
+    int ypos;
+    t_gobj *obj;
+    t_canvas *canvas;
+};
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
@@ -194,13 +233,5 @@ EMSCRIPTEN_BINDINGS(WebPd) {
         .function("_getMessageSelector", &Pd4Web::_getMessageSelector)
 
         // Gui
-
-        // Midi
-        // .function("noteOn", &Pd4Web::noteOn)
         .function("_midibyte", &Pd4Web::midiByte);
-
-    // bind list
-    // .function("bindReceiver", &Pd4Web::bindReceiver)
-    // .function("addGuiReceiver", &Pd4Web::addGuiReceiver)
-    // .function("unbindReceiver", &Pd4Web::unbindReceiver);
 }

@@ -9,7 +9,8 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="apple-touch-icon" href="icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <!-- pd4web.threads.js can help if you can't active Cross-Origin Resource Sharing (CORS) from server side -->
+        <!-- Style -->
+        <link href="./pd4web.style.css" rel="stylesheet" />
         <script src="./pd4web.threads.js"></script>
         <script src="./pd4web.js"></script>
     </head>
@@ -21,17 +22,8 @@
             var Pd4Web = null; // Pd4Web object must be declared in the global scope
             Pd4WebModule().then((Pd4WebModulePromise) => {
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
-                Pd4Web.openPatch("index.pd");
+                Pd4Web.openPatch("index.pd", "Pd4WebCanvas", "Pd4WebAudioSwitch");
             });
-
-            document.getElementById("Pd4WebAudioSwitch").addEventListener(
-                "click",
-                async () => {
-                    // Pd4Web.init(), when using audio input, must be called after a user gesture
-                    Pd4Web.init();
-                },
-                { once: true },
-            );
         </script>
         <script>
             if ("serviceWorker" in navigator) {

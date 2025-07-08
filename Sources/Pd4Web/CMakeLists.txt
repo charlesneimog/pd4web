@@ -119,6 +119,8 @@ add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp
                       ${CMAKE_CURRENT_SOURCE_DIR}/externals.cpp)
 
 add_definitions(-DPDTHREADS)
+add_definitions(-DPDINSTANCE)
+
 target_link_libraries(pd4web PRIVATE embind libpd pdlua)
 target_link_options(
     pd4web
@@ -132,6 +134,8 @@ target_link_options(
     # wasm and audio worklet
     -sAUDIO_WORKLET=1
     -sWASM_WORKERS=1
+    #
+    -g
     # webgl
     -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
@@ -152,8 +156,16 @@ add_custom_command(
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.threads.js"
             "$<TARGET_FILE_DIR:pd4web>/pd4web.threads.js"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.sw.js"
+            "$<TARGET_FILE_DIR:pd4web>/pd4web.sw.js"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/index.html"
             "$<TARGET_FILE_DIR:pd4web>/index.html"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.style.css"
+            "$<TARGET_FILE_DIR:pd4web>/pd4web.style.css"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/icon-192.png"
+            "$<TARGET_FILE_DIR:pd4web>/icon-192.png"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/favicon.ico"
+            "$<TARGET_FILE_DIR:pd4web>/favicon.ico"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.style.css"
             "$<TARGET_FILE_DIR:pd4web>/pd4web.style.css"
     COMMENT "Copying extra files to build output directory")
