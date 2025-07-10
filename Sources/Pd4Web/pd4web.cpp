@@ -934,51 +934,75 @@ void loop(void *userData) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
 
+        // Find the highest layer index that needs redraw
+        int max_redraw_layer = -1;
         for (auto &layer_pair : obj_layers) {
             int layer_num = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (layer.objw < 1 || layer.objh < 1 || !layer.need_redraw || layer.drawing) {
-                continue;
+            if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
+                max_redraw_layer = std::max(max_redraw_layer, layer_num);
             }
+        }
 
-            has_updates = true;
-            
-            // Apply zoom to framebuffer size
-            int zoomed_width = layer.objw * zoom;
-            int zoomed_height = layer.objh * zoom;
-
-            if (!layer.fb || layer.last_zoom != zoom) {
-                // Delete old framebuffer if zoom changed
-                if (layer.fb && layer.last_zoom != zoom) {
-                    nvgluDeleteFramebuffer(layer.fb);
-                    layer.fb = nullptr;
+        // If any layer needs redraw, redraw all layers from 0 to max_redraw_layer
+        if (max_redraw_layer >= 0) {
+            // Create a sorted vector of layer numbers to ensure ascending order
+            std::vector<int> layer_nums_to_redraw;
+            for (int i = 0; i <= max_redraw_layer; i++) {
+                if (obj_layers.find(i) != obj_layers.end()) {
+                    layer_nums_to_redraw.push_back(i);
                 }
+            }
+            
+            // Sort to ensure ascending order (should already be sorted, but being explicit)
+            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
+            
+            // Redraw layers in ascending order
+            for (int layer_num : layer_nums_to_redraw) {
+                PdLuaObjGuiLayer &layer = obj_layers[layer_num];
+                if (layer.objw < 1 || layer.objh < 1 || layer.drawing) {
+                    continue;
+                }
+
+                has_updates = true;
                 
-                // Create framebuffer with zoom applied
-                layer.fb = nvgluCreateFramebuffer(vg, zoomed_width, zoomed_height, NVG_IMAGE_PREMULTIPLIED);
-                layer.last_zoom = zoom;
+                // Apply zoom to framebuffer size
+                int zoomed_width = layer.objw * zoom;
+                int zoomed_height = layer.objh * zoom;
+
+                if (!layer.fb || layer.last_zoom != zoom) {
+                    // Delete old framebuffer if zoom changed
+                    if (layer.fb && layer.last_zoom != zoom) {
+                        nvgluDeleteFramebuffer(layer.fb);
+                        layer.fb = nullptr;
+                    }
+                    
+                    // Create framebuffer with zoom applied
+                    layer.fb = nvgluCreateFramebuffer(vg, zoomed_width, zoomed_height, NVG_IMAGE_PREMULTIPLIED);
+                    layer.last_zoom = zoom;
+                }
+
+                // Render to the offscreen framebuffer
+                nvgluBindFramebuffer(layer.fb);
+                glViewport(0, 0, zoomed_width, zoomed_height);
+                nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
+                glClearColor(1, 1, 1, 1);
+                glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+                // Apply zoom scaling to all drawing operations
+                nvgSave(vg);
+                nvgScale(vg, zoom, zoom);
+
+                // Draw something in the framebuffer, e.g., a red rectangle
+                for (GuiCommand &cmd : layer.gui_commands) {
+                    pd4webdraw_command(vg, &cmd, font_handler);
+                }
+
+                nvgRestore(vg);
+                nvgEndFrame(vg);
+                nvgluBindFramebuffer(nullptr);
+                layer.need_redraw = false;
             }
-
-            // Render to the offscreen framebuffer
-            nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, zoomed_width, zoomed_height);
-            nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
-            glClearColor(1, 1, 1, 1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-            // Apply zoom scaling to all drawing operations
-            nvgSave(vg);
-            nvgScale(vg, zoom, zoom);
-
-            // Draw something in the framebuffer, e.g., a red rectangle
-            for (GuiCommand &cmd : layer.gui_commands) {
-                pd4webdraw_command(vg, &cmd, font_handler);
-            }
-
-            nvgRestore(vg);
-            nvgEndFrame(vg);
-            nvgluBindFramebuffer(nullptr);
-            layer.need_redraw = false;
         }
     }
 
@@ -998,8 +1022,16 @@ void loop(void *userData) {
             for (auto &obj_pair : pdlua_objs) {
                 std::string layer_id = obj_pair.first;
                 PdLuaObjLayers &obj_layers = obj_pair.second;
-                for (size_t i = 0; i < obj_layers.size(); ++i) {
-                    PdLuaObjGuiLayer &layer = obj_layers[i];
+                
+                // Create sorted vector of layer numbers for clearing
+                std::vector<int> layer_nums;
+                for (auto &layer_pair : obj_layers) {
+                    layer_nums.push_back(layer_pair.first);
+                }
+                std::sort(layer_nums.begin(), layer_nums.end());
+                
+                for (int layer_num : layer_nums) {
+                    PdLuaObjGuiLayer &layer = obj_layers[layer_num];
                     if (!layer.fb)
                         continue;
                     
@@ -1028,8 +1060,16 @@ void loop(void *userData) {
         for (auto &obj_pair : pdlua_objs) {
             std::string layer_id = obj_pair.first;
             PdLuaObjLayers &obj_layers = obj_pair.second;
-            for (size_t i = 0; i < obj_layers.size(); ++i) {
-                PdLuaObjGuiLayer &layer = obj_layers[i];
+            
+            // Create sorted vector of layer numbers for drawing in ascending order
+            std::vector<int> layer_nums;
+            for (auto &layer_pair : obj_layers) {
+                layer_nums.push_back(layer_pair.first);
+            }
+            std::sort(layer_nums.begin(), layer_nums.end());
+            
+            for (int layer_num : layer_nums) {
+                PdLuaObjGuiLayer &layer = obj_layers[layer_num];
                 if (!layer.fb)
                     continue;
                 
