@@ -860,7 +860,7 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
     }
 
     case STROKE_PATH: {
-        float line_width = cmd->line_width / PD4WEB_PATCH_ZOOM;
+        float line_width = cmd->line_width;
         float *coords = cmd->path_coords;
         int coords_len = cmd->path_size;
         nvgBeginPath(vg);
@@ -924,7 +924,12 @@ void loop(void *userData) {
         return;
     }
 
+    float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    
+    // Track areas that need redrawing to avoid full canvas clear
+    bool has_updates = false;
+    
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
@@ -936,54 +941,114 @@ void loop(void *userData) {
                 continue;
             }
 
-            if (!layer.fb) {
-                // also just created in the first frame
-                layer.fb = nvgluCreateFramebuffer(vg, layer.objw, layer.objh, NVG_IMAGE_PREMULTIPLIED);
+            has_updates = true;
+            
+            // Apply zoom to framebuffer size
+            int zoomed_width = layer.objw * zoom;
+            int zoomed_height = layer.objh * zoom;
+
+            if (!layer.fb || layer.last_zoom != zoom) {
+                // Delete old framebuffer if zoom changed
+                if (layer.fb && layer.last_zoom != zoom) {
+                    nvgluDeleteFramebuffer(layer.fb);
+                    layer.fb = nullptr;
+                }
+                
+                // Create framebuffer with zoom applied
+                layer.fb = nvgluCreateFramebuffer(vg, zoomed_width, zoomed_height, NVG_IMAGE_PREMULTIPLIED);
+                layer.last_zoom = zoom;
             }
 
             // Render to the offscreen framebuffer
             nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, layer.objw, layer.objh);
-            nvgBeginFrame(vg, layer.objw, layer.objh, ud->devicePixelRatio); // TODO: Check zoom
+            glViewport(0, 0, zoomed_width, zoomed_height);
+            nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            // Apply zoom scaling to all drawing operations
+            nvgSave(vg);
+            nvgScale(vg, zoom, zoom);
 
             // Draw something in the framebuffer, e.g., a red rectangle
             for (GuiCommand &cmd : layer.gui_commands) {
                 pd4webdraw_command(vg, &cmd, font_handler);
             }
 
+            nvgRestore(vg);
             nvgEndFrame(vg);
             nvgluBindFramebuffer(nullptr);
             layer.need_redraw = false;
         }
     }
 
-    // size of main canvas
-    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-    nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+    // Only redraw main canvas if there are updates or first frame
+    if (has_updates || ud->first_frame) {
+        // size of main canvas
+        glViewport(0, 0, ud->canvas_width, ud->canvas_height);
+        nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
-    glClearColor(1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    for (auto &obj_pair : pdlua_objs) {
-        std::string layer_id = obj_pair.first;
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-        for (size_t i = 0; i < obj_layers.size(); ++i) {
-            PdLuaObjGuiLayer &layer = obj_layers[i];
-            if (!layer.fb)
-                continue;
-            int x = layer.objx;
-            int y = layer.objy;
-            int fbImage = layer.fb->image;
-            NVGpaint paint = nvgImagePattern(vg, x, y, layer.objw, layer.objh, 0, fbImage, 1.0f);
-            nvgBeginPath(vg);
-            nvgRect(vg, x, y, layer.objw, layer.objh);
-            nvgFillPaint(vg, paint);
-            nvgFill(vg);
+        // Only clear areas that need updating using scissor, or full canvas on first frame
+        if (ud->first_frame) {
+            // Clear entire canvas only on first frame
+            glClearColor(1, 1, 1, 1);
+            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+            ud->first_frame = false;
+        } else if (has_updates) {
+            for (auto &obj_pair : pdlua_objs) {
+                std::string layer_id = obj_pair.first;
+                PdLuaObjLayers &obj_layers = obj_pair.second;
+                for (size_t i = 0; i < obj_layers.size(); ++i) {
+                    PdLuaObjGuiLayer &layer = obj_layers[i];
+                    if (!layer.fb)
+                        continue;
+                    
+                    // Apply zoom to position and size
+                    int x = layer.objx * zoom;
+                    int y = layer.objy * zoom;
+                    int w = layer.objw * zoom;
+                    int h = layer.objh * zoom;
+                    
+                    // Use scissor to only clear the specific area
+                    nvgSave(vg);
+                    nvgScissor(vg, x, y, w, h);
+                    
+                    // Clear background for this layer
+                    nvgBeginPath(vg);
+                    nvgRect(vg, x, y, w, h);
+                    nvgFillColor(vg, nvgRGBA(255, 255, 255, 255));
+                    nvgFill(vg);
+                    
+                    nvgRestore(vg);
+                }
+            }
         }
+        
+        // Draw all layers with zoom applied
+        for (auto &obj_pair : pdlua_objs) {
+            std::string layer_id = obj_pair.first;
+            PdLuaObjLayers &obj_layers = obj_pair.second;
+            for (size_t i = 0; i < obj_layers.size(); ++i) {
+                PdLuaObjGuiLayer &layer = obj_layers[i];
+                if (!layer.fb)
+                    continue;
+                
+                // Apply zoom to position and size
+                int x = layer.objx * zoom;
+                int y = layer.objy * zoom;
+                int w = layer.objw * zoom;
+                int h = layer.objh * zoom;
+                
+                int fbImage = layer.fb->image;
+                NVGpaint paint = nvgImagePattern(vg, x, y, w, h, 0, fbImage, 1.0f);
+                nvgBeginPath(vg);
+                nvgRect(vg, x, y, w, h);
+                nvgFillPaint(vg, paint);
+                nvgFill(vg);
+            }
+        }
+        nvgEndFrame(vg);
     }
-    nvgEndFrame(vg);
-
 }
 
 // ╭─────────────────────────────────────╮

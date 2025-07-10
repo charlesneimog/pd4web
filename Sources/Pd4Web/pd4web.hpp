@@ -122,6 +122,9 @@ struct Pd4WebUserData {
     float devicePixelRatio;
     t_gobj *obj;
     t_canvas *canvas;
+    
+    // rendering optimization
+    bool first_frame = true;
 };
 
 void loop(void *userData);
@@ -142,6 +145,7 @@ struct PdLuaObjGuiLayer {
     int objw;
     int objh;
     NVGLUframebuffer *fb = nullptr;
+    float last_zoom = 0;  // Track last zoom to detect changes
 };
 // layer
 using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
