@@ -11,7 +11,9 @@
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <!-- Style -->
         <link href="./pd4web.style.css" rel="stylesheet" />
+        <!-- Always before pd4web.js -->
         <script src="./pd4web.threads.js"></script>
+        <!-- Main modules -->
         <script src="./pd4web.js"></script>
     </head>
     <body>
@@ -26,6 +28,7 @@
             });
         </script>
         <script>
+            // Just required for create an App (installable using PWA ( https://en.wikipedia.org/wiki/Progressive_web_app ))
             if ("serviceWorker" in navigator) {
                 navigator.serviceWorker
                     .register("pd4web.sw.js")

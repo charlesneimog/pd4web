@@ -134,15 +134,12 @@ target_link_options(
     # wasm and audio worklet
     -sAUDIO_WORKLET=1
     -sWASM_WORKERS=1
-    #
-    -g
+    -sWASM=1
     # webgl
     -sUSE_WEBGL2=1
-    -sMAX_WEBGL_VERSION=2
     -sMIN_WEBGL_VERSION=2
-    -sMIN_WEBGL_VERSION=2
-    # wasm
-    -sWASM=1)
+    # assertgions -sASSERTIONS=2)
+)
 
 # Include
 include_directories("${NANOVG_DIR}/src")

@@ -35,696 +35,12 @@
 #include <emscripten/html5_webgl.h>
 #include <emscripten/threading.h>
 
-#include <GLES3/gl3.h>
-#include <nanovg.h>
-#define NANOVG_GLES3_IMPLEMENTATION
-#include <nanovg_gl.h> // or nanovg_gl3.h depending on your setup
-
 #include <config.h>
-#include <g_canvas.h>
+
 #include <m_pd.h>
+
+#include <g_canvas.h>
 #include <s_stuff.h>
-
-// PD4WEB
-enum LuaGuiCommands {
-    FILL_ELLIPSE = 0,
-    STROKE_ELLIPSE,
-    FILL_RECT,
-    STROKE_RECT,
-    FILL_ROUNDED_RECT,
-    STROKE_ROUNDED_RECT,
-    DRAW_LINE,
-    DRAW_TEXT,
-    // DRAW_SVG, // TODO: implement this
-    STROKE_PATH,
-    FILL_PATH,
-    FILL_ALL,
-    // CLEAR_CANVAS,
-};
-
-// ╭─────────────────────────────────────╮
-// │      Hash Table para Commandos      │
-// ╰─────────────────────────────────────╯
-#define HASH_TABLE_SIZE 128
-
-typedef struct {
-    enum LuaGuiCommands command;
-    int drawed;
-    char current_color[128];
-    char layer_id[128];
-    int objx;
-    int objy;
-
-    float x;
-    float y;
-    float width;
-    float height;
-    float w;
-    float h;
-    float line_width;
-    float radius;
-    float x1;
-    float y1;
-    float x2;
-    float y2;
-    char text[1024];
-    float font_size;
-    float stroke_width;
-    float canvas_width;
-    float canvas_height;
-    float *path_coords;
-    int path_size;
-} GuiCommand;
-
-// ─────────────────────────────────────
-typedef struct {
-    int index;
-    GuiCommand *commands;
-    size_t size;
-    size_t capacity;
-    bool dirty;
-} LayerIndex;
-
-// ─────────────────────────────────────
-typedef struct {
-    LayerIndex *entries;
-    size_t size;
-    size_t capacity;
-} LayerIndexMap;
-
-// ─────────────────────────────────────
-typedef struct LayerNode {
-    char *layer_id;
-    LayerIndexMap index_map;
-    int width;
-    int height;
-    int isDrawing;
-    struct LayerNode *next;
-} LayerNode;
-
-// ─────────────────────────────────────
-typedef struct {
-    LayerNode *buckets[HASH_TABLE_SIZE];
-} GuiLayers;
-
-GuiLayers *global_hash_table = NULL;
-
-// ─────────────────────────────────────
-unsigned int hash_string(const char *str) {
-    unsigned int hash = 5381;
-    while (*str) {
-        hash = ((hash << 5) + hash) + (unsigned char)(*str++);
-    }
-    return hash % HASH_TABLE_SIZE;
-}
-
-// ─────────────────────────────────────
-void init_global_hash_table() {
-    global_hash_table = malloc(sizeof(GuiLayers));
-    if (!global_hash_table) {
-        exit(1);
-    }
-    memset(global_hash_table->buckets, 0, sizeof(global_hash_table->buckets));
-}
-
-// ─────────────────────────────────────
-int create_new_layer(const char *layer_id) {
-    unsigned int idx = hash_string(layer_id);
-    LayerNode *node = global_hash_table->buckets[idx];
-
-    while (node) {
-        if (strcmp(node->layer_id, layer_id) == 0) {
-            return 0;
-        }
-        node = node->next;
-    }
-
-    node = malloc(sizeof(LayerNode));
-    if (!node) {
-        printf("failed to malloc LayerNode\n");
-        return -1;
-    }
-
-    node->layer_id = strdup(layer_id);
-    node->index_map.entries = NULL;
-    node->index_map.size = 0;
-    node->index_map.capacity = 0;
-    node->next = global_hash_table->buckets[idx];
-    global_hash_table->buckets[idx] = node;
-
-    return 1;
-}
-
-// ─────────────────────────────────────
-static LayerNode *get_layer_node(const char *layer_id) {
-    unsigned int idx = hash_string(layer_id);
-    LayerNode *node = global_hash_table->buckets[idx];
-
-    while (node) {
-        if (strcmp(node->layer_id, layer_id) == 0) {
-            return node;
-        }
-        node = node->next;
-    }
-    return NULL;
-}
-
-// ─────────────────────────────────────
-static void update_layer_node_width_and_height(const char *layer_id, int width, int height) {
-    unsigned int idx = hash_string(layer_id);
-    LayerNode *node = global_hash_table->buckets[idx];
-
-    while (node) {
-        if (strcmp(node->layer_id, layer_id) == 0) {
-            node->width = width;
-            node->height = height;
-            node->isDrawing = 1;
-            return;
-        }
-        node = node->next;
-    }
-    return;
-}
-
-// ─────────────────────────────────────
-static void finish_layer_node(const char *layer_id) {
-    unsigned int idx = hash_string(layer_id);
-    LayerNode *node = global_hash_table->buckets[idx];
-
-    while (node) {
-        if (strcmp(node->layer_id, layer_id) == 0) {
-            node->isDrawing = 0;
-            return;
-        }
-        node = node->next;
-    }
-    return;
-}
-
-// ─────────────────────────────────────
-static LayerIndex *get_or_create_index(LayerIndexMap *map, int index) {
-    if (index < 0) {
-        return NULL;
-    }
-
-    if ((size_t)index >= map->capacity) {
-        size_t new_cap = map->capacity == 0 ? 4 : map->capacity;
-        while (new_cap <= (size_t)index) {
-            new_cap *= 2;
-        }
-        LayerIndex *new_entries = realloc(map->entries, new_cap * sizeof(LayerIndex));
-        if (!new_entries) {
-            return NULL;
-        }
-
-        // Inicializar novas posições
-        for (size_t i = map->capacity; i < new_cap; i++) {
-            new_entries[i].index = (int)i;
-            new_entries[i].commands = NULL;
-            new_entries[i].size = 0;
-            new_entries[i].capacity = 0;
-        }
-
-        map->entries = new_entries;
-        map->capacity = new_cap;
-    }
-
-    // Atualiza size se necessário
-    if ((size_t)index >= map->size) {
-        map->size = index + 1;
-    }
-
-    return &map->entries[index];
-}
-
-// ─────────────────────────────────────
-int add_command_to_layer(const char *layer_id, int index, GuiCommand cmd) {
-    LayerNode *layer = get_layer_node(layer_id);
-    if (!layer) {
-        return -1;
-    }
-
-    LayerIndex *entry = get_or_create_index(&layer->index_map, index);
-    if (!entry) {
-        return -2;
-    }
-
-    if (entry->size == entry->capacity) {
-        size_t new_cap = entry->capacity == 0 ? 4 : entry->capacity * 2;
-        GuiCommand *new_cmds = realloc(entry->commands, new_cap * sizeof(GuiCommand));
-        if (!new_cmds) {
-            return -3;
-        }
-        entry->commands = new_cmds;
-        entry->capacity = new_cap;
-    }
-
-    entry->commands[entry->size++] = cmd;
-    return 0;
-}
-
-// ─────────────────────────────────────
-GuiCommand *get_commands_from_layer(const char *layer_id, int index) {
-    LayerNode *layer = get_layer_node(layer_id);
-    if (!layer) {
-        return NULL;
-    }
-
-    for (size_t i = 0; i < layer->index_map.size; i++) {
-        if (layer->index_map.entries[i].index == index) {
-            return layer->index_map.entries[i].commands;
-        }
-    }
-    return NULL;
-}
-
-// ─────────────────────────────────────
-int get_commands_size_from_layer(const char *layer_id, int index) {
-    LayerNode *layer = get_layer_node(layer_id);
-    if (!layer) {
-        return -1;
-    }
-
-    for (size_t i = 0; i < layer->index_map.size; i++) {
-        if (layer->index_map.entries[i].index == index) {
-            return (int)layer->index_map.entries[i].size;
-        }
-    }
-    return -1;
-}
-
-// ─────────────────────────────────────
-void clear_commands_from_layer(const char *layer_id, int index) {
-    LayerNode *layer = get_layer_node(layer_id);
-    if (!layer) {
-        printf("layer '%s' not found index %d\n", layer_id, index);
-        return;
-    }
-
-    LayerIndexMap *map = &layer->index_map;
-
-    for (size_t i = 0; i < map->size; i++) {
-        if (map->entries[i].index == index) {
-            LayerIndex *entry = &map->entries[i];
-
-            for (size_t k = 0; k < entry->size; k++) {
-                GuiCommand *cmd = &entry->commands[k];
-
-                if ((cmd->command == STROKE_PATH || cmd->command == FILL_PATH) &&
-                    cmd->path_coords) {
-                    free(cmd->path_coords);
-                    cmd->path_coords = NULL;
-                }
-            }
-
-            free(entry->commands);
-            entry->commands = NULL;
-            entry->size = 0;
-            entry->capacity = 0;
-            return;
-        }
-    }
-}
-
-// ─────────────────────────────────────
-void free_hash_table() {
-    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
-        LayerNode *node = global_hash_table->buckets[i];
-        while (node) {
-            LayerNode *next = node->next;
-
-            for (size_t j = 0; j < node->index_map.size; j++) {
-                free(node->index_map.entries[j].commands);
-            }
-            free(node->index_map.entries);
-            free(node->layer_id);
-            free(node);
-
-            node = next;
-        }
-    }
-    free(global_hash_table);
-}
-
-// ╭─────────────────────────────────────╮
-// │  This will be called from the main  │
-// │   thread inside pd4web main loop    │
-// ╰─────────────────────────────────────╯
-EMSCRIPTEN_WEBGL_CONTEXT_HANDLE create_webgl_context_for_layer(char *tag) {
-    EmscriptenWebGLContextAttributes attr;
-    emscripten_webgl_init_context_attributes(&attr);
-    attr.alpha = EM_TRUE;
-    attr.depth = EM_TRUE;
-    attr.stencil = EM_TRUE;
-    attr.antialias = EM_TRUE;
-    attr.majorVersion = 2;
-
-    char selector[128];
-    pd_snprintf(selector, 128, "#%s", tag);
-
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = emscripten_webgl_create_context(selector, &attr);
-    if (ctx == 0) {
-        fprintf(stderr, "Failed to create WebGL context for canvas: %s\n", selector);
-        return 0;
-    }
-
-    if (emscripten_webgl_make_context_current(ctx) != EMSCRIPTEN_RESULT_SUCCESS) {
-        emscripten_webgl_destroy_context(ctx);
-        fprintf(stderr, "Failed to make WebGL context current for canvas: %s\n", selector);
-        return 0;
-    }
-
-    return ctx;
-}
-
-// ─────────────────────────────────────
-static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b) {
-    if (hex[0] == '#') {
-        hex++;
-    }
-
-    char rs[3] = {hex[0], hex[1], '\0'};
-    char gs[3] = {hex[2], hex[3], '\0'};
-    char bs[3] = {hex[4], hex[5], '\0'};
-
-    int ri = (int)strtol(rs, NULL, 16);
-    int gi = (int)strtol(gs, NULL, 16);
-    int bi = (int)strtol(bs, NULL, 16);
-
-    *r = ri / 255.0f;
-    *g = gi / 255.0f;
-    *b = bi / 255.0f;
-}
-
-// ╭─────────────────────────────────────╮
-// │         LAYERS AND CONTEXTS         │
-// ╰─────────────────────────────────────╯
-#define MAX_LAYERS 128
-
-typedef struct {
-    bool redraw;
-    const char *layer_id; // apontando para string persistente
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE webgl_ctx;
-    NVGcontext *vg;
-    int font_handler;
-    int in_use;
-} LayerCtx;
-
-static LayerCtx layer_contexts[MAX_LAYERS];
-
-// ─────────────────────────────────────
-LayerCtx *get_layer_ctx(const char *layer_id, float canvas_width, float canvas_height) {
-    for (int i = 0; i < MAX_LAYERS; i++) {
-        if (layer_contexts[i].in_use && strcmp(layer_contexts[i].layer_id, layer_id) == 0) {
-            emscripten_webgl_make_context_current(layer_contexts[i].webgl_ctx);
-            return &layer_contexts[i];
-        }
-    }
-    for (int i = 0; i < MAX_LAYERS; i++) {
-        if (!layer_contexts[i].in_use) {
-            EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx = create_webgl_context_for_layer((char *)layer_id);
-            if (!ctx) {
-                fprintf(stderr, "Failed to create ctx\n");
-                return NULL;
-            }
-            emscripten_webgl_make_context_current(ctx);
-            NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
-            if (!vg) {
-                fprintf(stderr, "Failed to create NVG context\n");
-                emscripten_webgl_destroy_context(ctx);
-                return NULL;
-            }
-            glDisable(GL_BLEND);
-
-            layer_contexts[i].layer_id = strdup(layer_id); // TODO: Free
-            layer_contexts[i].webgl_ctx = ctx;
-            layer_contexts[i].vg = vg;
-            layer_contexts[i].in_use = 1;
-            layer_contexts[i].font_handler = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
-
-            if (layer_contexts[i].font_handler == -1) {
-                fprintf(stderr, "Failed to create font\n");
-                return NULL;
-            }
-            return &layer_contexts[i];
-        }
-    }
-    return NULL;
-}
-
-// ─────────────────────────────────────
-typedef struct DrawCommandNode {
-    GuiCommand cmd;
-    struct DrawCommandNode *next;
-} DrawCommandNode;
-
-// ─────────────────────────────────────
-typedef struct LayerCommandGroup {
-    char layer_id[64];
-    DrawCommandNode *head;
-    DrawCommandNode *tail;
-    struct LayerCommandGroup *next;
-} LayerCommandGroup;
-
-// ─────────────────────────────────────
-static bool isDrawing = 0;
-
-// ─────────────────────────────────────
-void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
-    float r, g, b;
-    hex_to_rgb_normalized(cmd->current_color, &r, &g, &b);
-    switch (cmd->command) {
-    case FILL_ALL: {
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, cmd->objx, cmd->objy, cmd->canvas_width, cmd->canvas_height);
-        nvgFill(vg);
-        nvgStrokeWidth(vg, 1);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, cmd->objx, cmd->objy, cmd->canvas_width, cmd->canvas_height);
-        nvgStroke(vg);
-
-        break;
-    }
-
-    case FILL_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, x + cmd->objx, y + cmd->objy, width, height);
-        nvgFill(vg);
-        break;
-    }
-    case STROKE_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        float thickness = cmd->line_width;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, thickness);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRect(vg, x + cmd->objx, y + cmd->objy, width, height);
-        nvgStroke(vg);
-        break;
-    }
-    case FILL_ELLIPSE: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        float cx = x + width * 0.5f + cmd->objx;
-        float cy = y + height * 0.5f + cmd->objy;
-        float rx = width * 0.5f;
-        float ry = height * 0.5f;
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgEllipse(vg, cx, cy, rx, ry);
-        nvgFill(vg);
-        break;
-    }
-    case STROKE_ELLIPSE: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        float line_width = cmd->line_width;
-        float cx = x + width * 0.5f + cmd->objx;
-        float cy = y + height * 0.5f + cmd->objy;
-        float rx = width * 0.5f;
-        float ry = height * 0.5f;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgEllipse(vg, cx, cy, rx, ry);
-        nvgStroke(vg);
-        break;
-    }
-
-    case FILL_ROUNDED_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        float radius = cmd->radius;
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x + cmd->objx, y + cmd->objy, width, height, radius);
-        nvgFill(vg);
-        break;
-    }
-
-    case STROKE_ROUNDED_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->width;
-        float height = cmd->height;
-        float radius = cmd->radius;
-        float thickness = cmd->line_width;
-        float canvas_width = cmd->canvas_width;
-        float canvas_height = cmd->canvas_height;
-        nvgBeginPath(vg);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x + cmd->objx, y + cmd->objy, width, height, radius);
-        nvgStrokeWidth(vg, thickness);
-        nvgStroke(vg);
-        break;
-    }
-
-    case DRAW_LINE: {
-        float x1 = cmd->x1 + cmd->objx;
-        float y1 = cmd->y1 + cmd->objy;
-        float x2 = cmd->x2 + cmd->objx;
-        float y2 = cmd->y2 + cmd->objy;
-        float line_width = cmd->line_width;
-        float canvas_width = cmd->canvas_width;
-        float canvas_height = cmd->canvas_height;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgMoveTo(vg, x1, y1);
-        nvgLineTo(vg, x2, y2);
-        nvgStroke(vg);
-        break;
-    }
-
-    case STROKE_PATH: {
-        float line_width = cmd->line_width / PD4WEB_PATCH_ZOOM;
-        float *coords = cmd->path_coords;
-        int coords_len = cmd->path_size;
-        float canvas_width = cmd->canvas_width;
-        float canvas_height = cmd->canvas_height;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0] + cmd->objx, coords[1] + cmd->objy);
-            for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2] + cmd->objx, coords[i * 2 + 1] + cmd->objy);
-            }
-        }
-        nvgStroke(vg);
-        break;
-    }
-    case FILL_PATH: {
-        float *coords = cmd->path_coords;
-        int coords_len = cmd->path_size;
-        float canvas_width = cmd->canvas_width;
-        float canvas_height = cmd->canvas_height;
-        nvgBeginPath(vg);
-        if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0] + cmd->objx, coords[1] + cmd->objy);
-            for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2] + cmd->objx, coords[i * 2 + 1] + cmd->objy);
-            }
-            nvgClosePath(vg);
-        }
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgFill(vg);
-        break;
-    }
-    case DRAW_TEXT: {
-        const char *text = cmd->text;
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float maxWidth = cmd->width;
-        float fontSize = cmd->font_size;
-        if (!text || maxWidth <= 0 || fontSize <= 0) {
-            printf("Bad text command\n");
-            break;
-        }
-        if (font_handler >= 0) {
-            nvgFontFaceId(vg, font_handler);
-            nvgFontSize(vg, fontSize);
-            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-            nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgTextBox(vg, x + cmd->objx, y + cmd->objy, maxWidth, text, NULL);
-        } else {
-            printf("No font loaded!\n");
-        }
-        break;
-    }
-    }
-}
-
-// ─────────────────────────────────────
-int pd4weblua_draw() {
-    int canvas_width, canvas_height;
-    emscripten_get_canvas_element_size("#Pd4WebCanvas", &canvas_width, &canvas_height);
-    LayerCtx *ctx = get_layer_ctx("Pd4WebCanvas", canvas_width, canvas_height);
-    if (!ctx) {
-        return -1;
-    }
-
-    if (!ctx->redraw) {
-        return 0;
-    }
-
-    float devicePixelRatio = emscripten_get_device_pixel_ratio();
-
-    glDisable(GL_SCISSOR_TEST);
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    glEnable(GL_SCISSOR_TEST);
-    glViewport(0, 0, canvas_width, canvas_height);
-
-    int logical_width = canvas_width / PD4WEB_PATCH_ZOOM;
-    int logical_height = canvas_height / PD4WEB_PATCH_ZOOM;
-
-    // Início do frame NanoVG com dimensões lógicas
-    glViewport(0, 0, canvas_width, canvas_height);
-    NVGcontext *vg = ctx->vg;
-    nvgBeginFrame(vg, logical_width, logical_height,
-                  PD4WEB_PATCH_ZOOM * devicePixelRatio); // aplica nitidez/dpi no desenho
-
-    for (int i = 0; i < HASH_TABLE_SIZE; i++) {
-        LayerNode *node = global_hash_table->buckets[i];
-        if (node == NULL || node->isDrawing) {
-            continue;
-        }
-
-        while (node) {
-            const char *layer_id = node->layer_id;
-            LayerIndexMap *map = &node->index_map;
-            for (size_t j = 0; j < map->size; j++) {
-                int index = map->entries[j].index;
-                GuiCommand *cmds = map->entries[j].commands;
-                size_t cmd_count = map->entries[j].size;
-                for (size_t k = 0; k < cmd_count; k++) {
-                    GuiCommand *cmd = &cmds[k];
-                    pd4webdraw_command(vg, cmd, ctx->font_handler);
-                }
-            }
-            node = node->next;
-        }
-    }
-    nvgEndFrame(vg);
-    ctx->redraw = false;
-    return 0;
-}
 
 // ╭─────────────────────────────────────╮
 // │                PDLUA                │
@@ -786,12 +102,7 @@ void pdlua_gfx_repaint(t_pdlua *o, int firsttime) {
 
 // ─────────────────────────────────────
 // Pass mouse events to lua script
-extern int processing_block;
 void pdlua_gfx_mouse_event(t_pdlua *o, int x, int y, int type) {
-    if (processing_block) {
-        return;
-    }
-
     lua_getglobal(__L(), "pd");
     lua_getfield(__L(), -1, "_mouseevent");
     lua_pushlightuserdata(__L(), o);
@@ -882,8 +193,6 @@ int pdlua_gfx_setup(lua_State *L) {
     luaL_newlib(L, gfx_lib);
     lua_setglobal(L, "_gfx_internal");
 
-    init_global_hash_table();
-
     return 1;
 }
 
@@ -967,6 +276,13 @@ static int gfx_initialize(t_pdlua *obj) {
     gfx->num_layers = 0;
     gfx->layer_tags = NULL;
 
+    char id[127];
+    // sprintf(id, "Pd4WebInstance_%p", m_NewPdInstance);
+    // Pd4WebClassBindStruct *x = (Pd4WebClassBindStruct *)getbytes(sizeof(Pd4WebClassBindStruct));
+    // x->id = gensym(id);
+    // pd_bind((t_pd *)x, x->id);
+    // t_pdpy_objptr *x = (t_pdpy_objptr *)pd_findbyclass(s, pdpy_pyobjectout_class);
+
     pdlua_gfx_repaint(obj, 0);
     return 0;
 }
@@ -998,29 +314,28 @@ static int start_paint(lua_State *L) {
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
     t_pdlua_gfx *gfx = &obj->gfx;
 
+    // without object_tar
     if (gfx->object_tag[0] == '\0') {
         lua_pushnil(L);
-        printf("running tag is NULL\n");
         return 1;
     }
 
+    // some layer was missed
     int layer = luaL_checkinteger(L, 2) - 1;
     gfx->current_layer = layer;
-
     if (layer > gfx->num_layers) {
-        printf("repaint wrong layer\n");
         pdlua_gfx_repaint(obj, 0);
         lua_pushnil(L);
         return 1;
     }
 
+    // malloc new layers
     int new_num_layers = layer + 1;
     if (gfx->layer_tags) {
         char **new_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
                                       sizeof(char *) * new_num_layers);
         if (!new_tags) {
             lua_pushnil(L);
-            printf("failed to resize\n");
             return 1;
         }
         gfx->layer_tags = new_tags;
@@ -1046,31 +361,15 @@ static int start_paint(lua_State *L) {
         return 1;
     }
 
-    int canvas_width, canvas_height;
-    emscripten_get_canvas_element_size("#Pd4WebCanvas", &canvas_width, &canvas_height);
-    LayerCtx *ctx = get_layer_ctx("Pd4WebCanvas", canvas_width, canvas_height);
-    ctx->redraw = true;
-
-    snprintf(gfx->layer_tags[layer], 64, "layer_%p", obj);
-    create_new_layer(gfx->layer_tags[layer]);
-    gfx->current_layer_tag = gfx->layer_tags[layer];
-    gfx->current_layer = layer;
-
-    // emscripten_set_mousedown_callback(selector, data, EM_FALSE, mouse_down_cb);
-    // emscripten_set_mouseup_callback(selector, data, EM_FALSE, mouse_up_cb);
-    // emscripten_set_mousemove_callback(selector, data, EM_FALSE, mouse_move_cb);
-    // emscripten_set_touchstart_callback(selector, data, EM_FALSE, touch_start_cb);
-    // emscripten_set_touchend_callback(selector, data, EM_FALSE, touch_end_cb);
-    // emscripten_set_touchmove_callback(selector, data, EM_FALSE, touch_move_cb);
-    // TODO: ADD KEYDOWN/KEYUP FOR NUMBER
-
     gfx->first_draw = 0;
 
-    char layer_id[64];
-    snprintf(layer_id, 64, "layer_%p", obj);
+    int x = text_xpix((t_object *)obj, obj->canvas);
+    int y = text_ypix((t_object *)obj, obj->canvas);
 
-    update_layer_node_width_and_height(layer_id, gfx->width, gfx->height);
-    clear_commands_from_layer(layer_id, layer);
+
+    char obj_layer_id[64];
+    snprintf(obj_layer_id, 64, "layer_%p", obj);
+    clear_layercommand(obj_layer_id, gfx->current_layer, x, y, gfx->width, gfx->height);
 
     lua_pushlightuserdata(L, gfx);
     luaL_setmetatable(L, "GraphicsContext");
@@ -1080,11 +379,12 @@ static int start_paint(lua_State *L) {
 // ─────────────────────────────────────
 static int end_paint(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    t_pdlua *obj = (t_pdlua *)gfx->object;
-    t_canvas *cnv = glist_getcanvas(obj->canvas);
-    char layer_id[64];
-    snprintf(layer_id, 64, "layer_%p", obj);
-    finish_layer_node(layer_id);
+    t_pdlua *obj = gfx->object;
+
+    char obj_layer_id[64];
+    snprintf(obj_layer_id, 64, "layer_%p", obj);
+
+    endpaint_layercommand(obj_layer_id, gfx->current_layer);
     return 0;
 }
 
@@ -1146,8 +446,8 @@ static int fill_ellipse(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
@@ -1155,7 +455,8 @@ static int fill_ellipse(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1172,8 +473,8 @@ static int stroke_ellipse(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.line_width = luaL_checknumber(L, 5);
@@ -1182,7 +483,7 @@ static int stroke_ellipse(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1203,7 +504,7 @@ static int fill_all(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1222,8 +523,8 @@ static int fill_rect(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
@@ -1231,7 +532,7 @@ static int fill_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -1249,8 +550,8 @@ static int stroke_rect(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.line_width = luaL_checknumber(L, 5);
@@ -1259,7 +560,7 @@ static int stroke_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1279,8 +580,8 @@ static int fill_rounded_rect(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.radius = luaL_checknumber(L, 5);
@@ -1289,7 +590,7 @@ static int fill_rounded_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1308,8 +609,8 @@ static int stroke_rounded_rect(lua_State *L) {
     get_bounds_args(L, obj, &x, &y, &width, &height);
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = width;
-    cmd.height = height;
+    cmd.w = width;
+    cmd.h = height;
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
     cmd.radius = luaL_checknumber(L, 5);
@@ -1319,7 +620,7 @@ static int stroke_rounded_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -1348,7 +649,8 @@ static int draw_line(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+
     return 0;
 }
 
@@ -1381,14 +683,14 @@ static int draw_text(lua_State *L) {
 
     cmd.x1 = x;
     cmd.y1 = y;
-    cmd.width = w;
+    cmd.w = w;
     cmd.font_size = font_height;
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -1486,7 +788,7 @@ static int stroke_path(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -1521,7 +823,7 @@ static int fill_path(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_command_to_layer(obj_layer_id, gfx->current_layer, cmd);
+    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
