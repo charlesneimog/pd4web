@@ -963,7 +963,7 @@ void loop(void *userData) {
             nvgluBindFramebuffer(layer.fb);
             glViewport(0, 0, zoomed_width, zoomed_height);
             nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
-            glClearColor(0, 0, 0, 0);
+            glClearColor(1, 1, 1, 1);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             // Apply zoom scaling to all drawing operations
