@@ -962,8 +962,13 @@ void loop(void *userData) {
             continue;
         }
         
-        // Begin rendering only for the dirty area
-        std::sort(dirty_layers.begin(), dirty_layers.end());
+        // Begin rendering for the dirty area
+        std::vector<int> all_layers_to_render;
+        for (auto &layer_pair : obj_layers) {
+            all_layers_to_render.push_back(layer_pair.first);
+        }
+        std::sort(all_layers_to_render.begin(), all_layers_to_render.end());
+        
         nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
         // Apply zoom scaling
@@ -973,8 +978,8 @@ void loop(void *userData) {
         // Step 3: Set scissor rectangle limited to combined dirty area
         nvgScissor(ud->vg, combined_x, combined_y, combined_w, combined_h);
 
-        // Only render layers that actually need redraw
-        for (int layer_index : dirty_layers) {
+        // Render all layers within the scissor area to preserve clean layer content
+        for (int layer_index : all_layers_to_render) {
             PdLuaObjGuiLayer &layer = obj_layers[layer_index];
 
             // Save context and apply object translation
@@ -991,7 +996,7 @@ void loop(void *userData) {
         nvgRestore(ud->vg);
         nvgEndFrame(ud->vg);
         
-        // Step 5: Clear need_redraw flags only after successful rendering
+        // Step 5: Clear need_redraw flags only for dirty layers after successful rendering
         for (int layer_index : dirty_layers) {
             PdLuaObjGuiLayer &layer = obj_layers[layer_index];
             layer.need_redraw = false;
