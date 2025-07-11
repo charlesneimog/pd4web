@@ -917,76 +917,181 @@ void loop(void *userData) {
     libpd_set_instance(ud->libpd);
 
     int font_handler;
-    // this create the canvas if not exist and retrieve if exists, in my test just is created once
     NVGcontext *vg = create_webgl_context_for_layer((char *)ud->canvasSel.c_str(), &font_handler);
     if (vg == nullptr) {
-        fprintf(stderr, "NanoVG context inválido\n");
+        fprintf(stderr, "NanoVG context invalid\n");
         return;
     }
 
     float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+
+    // Initialize or update main framebuffer if needed
+    int zoomed_width = ud->canvas_width * zoom;
+    int zoomed_height = ud->canvas_height * zoom;
     
-    // Simple approach: Check if any layer needs redraw, then redraw everything
-    bool has_updates = false;
-    for (auto &obj_pair : pdlua_objs) {
-        for (auto &layer_pair : obj_pair.second) {
-            if (layer_pair.second.need_redraw) {
-                has_updates = true;
-                break;
-            }
+    if (!ud->main_framebuffer || ud->fb_width != zoomed_width || ud->fb_height != zoomed_height || ud->last_zoom != zoom) {
+        if (ud->main_framebuffer) {
+            nvgluDeleteFramebuffer(ud->main_framebuffer);
         }
-        if (has_updates) break;
+        ud->main_framebuffer = nvgluCreateFramebuffer(vg, zoomed_width, zoomed_height, NVG_IMAGE_PREMULTIPLIED);
+        ud->fb_width = zoomed_width;
+        ud->fb_height = zoomed_height;
+        ud->last_zoom = zoom;
+        ud->first_frame = true; // Force full redraw when framebuffer changes
     }
 
-    // Redraw main canvas if there are updates or first frame
-    if (has_updates || ud->first_frame) {
-        // size of main canvas
-        glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-        nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+    // Clear invalid areas first
+    ud->clearInvalidAreas();
 
-        // Clear entire canvas with white background
-        glClearColor(1, 1, 1, 1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-        
-        if (ud->first_frame) {
-            ud->first_frame = false;
-        }
-        
-        // Apply zoom scaling to all drawing operations
-        nvgSave(vg);
-        nvgScale(vg, zoom, zoom);
-        
-        // Draw all layers directly to main canvas in ascending order
-        for (auto &obj_pair : pdlua_objs) {
-            std::string layer_id = obj_pair.first;
-            PdLuaObjLayers &obj_layers = obj_pair.second;
-            
-            // Create sorted vector of layer numbers for drawing in ascending order
-            std::vector<int> layer_nums;
-            for (auto &layer_pair : obj_layers) {
-                layer_nums.push_back(layer_pair.first);
+    // Find layers that need redraw and collect their invalid areas
+    for (auto &obj_pair : pdlua_objs) {
+        std::string layer_id = obj_pair.first;
+        PdLuaObjLayers &obj_layers = obj_pair.second;
+
+        // Find the highest layer index that needs redraw
+        int max_redraw_layer = -1;
+        for (auto &layer_pair : obj_layers) {
+            int layer_num = layer_pair.first;
+            PdLuaObjGuiLayer &layer = layer_pair.second;
+            if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
+                max_redraw_layer = std::max(max_redraw_layer, layer_num);
             }
-            std::sort(layer_nums.begin(), layer_nums.end());
-            
-            for (int layer_num : layer_nums) {
-                PdLuaObjGuiLayer &layer = obj_layers[layer_num];
-                if (layer.objw < 1 || layer.objh < 1 || layer.drawing) {
-                    continue;
-                }
+        }
 
-                // Draw commands for this layer directly to main canvas
-                for (GuiCommand &cmd : layer.gui_commands) {
-                    pd4webdraw_command(vg, &cmd, font_handler);
+        // If any layer needs redraw, add invalid area for all layers from 0 to max_redraw_layer
+        if (max_redraw_layer >= 0) {
+            // Find the bounding box of all layers that need redraw
+            int min_x = INT_MAX, min_y = INT_MAX, max_x = INT_MIN, max_y = INT_MIN;
+            
+            for (int i = 0; i <= max_redraw_layer; i++) {
+                if (obj_layers.find(i) != obj_layers.end()) {
+                    PdLuaObjGuiLayer &layer = obj_layers[i];
+                    if (layer.objw >= 1 && layer.objh >= 1) {
+                        min_x = std::min(min_x, layer.objx);
+                        min_y = std::min(min_y, layer.objy);
+                        max_x = std::max(max_x, layer.objx + layer.objw);
+                        max_y = std::max(max_y, layer.objy + layer.objh);
+                    }
+                }
+            }
+            
+            if (min_x != INT_MAX) {
+                // Apply zoom to the invalid area
+                int invalid_x = min_x * zoom;
+                int invalid_y = min_y * zoom;
+                int invalid_w = (max_x - min_x) * zoom;
+                int invalid_h = (max_y - min_y) * zoom;
+                ud->addInvalidArea(invalid_x, invalid_y, invalid_w, invalid_h);
+            }
+        }
+    }
+
+    // Add full canvas to invalid areas on first frame
+    if (ud->first_frame) {
+        ud->addInvalidArea(0, 0, zoomed_width, zoomed_height);
+        ud->first_frame = false;
+    }
+
+    // Only render if there are invalid areas
+    if (!ud->invalid_areas.empty()) {
+        // Render to framebuffer
+        nvgluBindFramebuffer(ud->main_framebuffer);
+        glViewport(0, 0, zoomed_width, zoomed_height);
+        nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
+
+        // Process each invalid area with scissor
+        for (const auto &invalid_area : ud->invalid_areas) {
+            nvgSave(vg);
+            
+            // Set scissor to clip to invalid area
+            nvgScissor(vg, invalid_area.x, invalid_area.y, invalid_area.w, invalid_area.h);
+            
+            // Clear only the scissor area with white background
+            nvgBeginPath(vg);
+            nvgRect(vg, invalid_area.x, invalid_area.y, invalid_area.w, invalid_area.h);
+            nvgFillColor(vg, nvgRGBA(255, 255, 255, 255));
+            nvgFill(vg);
+            
+            // Apply zoom scaling
+            nvgScale(vg, zoom, zoom);
+            
+            // Draw all layers that intersect with this invalid area
+            for (auto &obj_pair : pdlua_objs) {
+                std::string layer_id = obj_pair.first;
+                PdLuaObjLayers &obj_layers = obj_pair.second;
+                
+                // Find the highest layer index that needs redraw
+                int max_redraw_layer = -1;
+                for (auto &layer_pair : obj_layers) {
+                    int layer_num = layer_pair.first;
+                    PdLuaObjGuiLayer &layer = layer_pair.second;
+                    if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
+                        max_redraw_layer = std::max(max_redraw_layer, layer_num);
+                    }
                 }
                 
-                // Mark layer as drawn
-                layer.need_redraw = false;
+                if (max_redraw_layer >= 0) {
+                    // Draw layers from 0 to max_redraw_layer in ascending order
+                    for (int layer_num = 0; layer_num <= max_redraw_layer; layer_num++) {
+                        if (obj_layers.find(layer_num) != obj_layers.end()) {
+                            PdLuaObjGuiLayer &layer = obj_layers[layer_num];
+                            if (layer.objw >= 1 && layer.objh >= 1 && !layer.drawing) {
+                                // Check if layer intersects with invalid area (in original coordinates)
+                                int layer_x = layer.objx;
+                                int layer_y = layer.objy;
+                                int layer_w = layer.objw;
+                                int layer_h = layer.objh;
+                                
+                                // Convert invalid area back to original coordinates for intersection test
+                                int inv_x = invalid_area.x / zoom;
+                                int inv_y = invalid_area.y / zoom;
+                                int inv_w = invalid_area.w / zoom;
+                                int inv_h = invalid_area.h / zoom;
+                                
+                                if (layer_x < inv_x + inv_w &&
+                                    layer_x + layer_w > inv_x &&
+                                    layer_y < inv_y + inv_h &&
+                                    layer_y + layer_h > inv_y) {
+                                    
+                                    // Draw commands for this layer
+                                    for (GuiCommand &cmd : layer.gui_commands) {
+                                        pd4webdraw_command(vg, &cmd, font_handler);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            
+            nvgRestore(vg);
         }
         
-        nvgRestore(vg);
         nvgEndFrame(vg);
+        
+        // Blit framebuffer to main canvas
+        nvgluBindFramebuffer(nullptr);
+        glViewport(0, 0, ud->canvas_width, ud->canvas_height);
+        nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+        
+        // Draw the framebuffer to the main canvas
+        int fbImage = ud->main_framebuffer->image;
+        NVGpaint paint = nvgImagePattern(vg, 0, 0, ud->canvas_width, ud->canvas_height, 0, fbImage, 1.0f);
+        
+        nvgBeginPath(vg);
+        nvgRect(vg, 0, 0, ud->canvas_width, ud->canvas_height);
+        nvgFillPaint(vg, paint);
+        nvgFill(vg);
+        
+        nvgEndFrame(vg);
+        
+        // Mark all layers as drawn
+        for (auto &obj_pair : pdlua_objs) {
+            for (auto &layer_pair : obj_pair.second) {
+                layer_pair.second.need_redraw = false;
+            }
+        }
     }
 }
 
