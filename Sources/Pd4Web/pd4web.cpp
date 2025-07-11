@@ -1054,10 +1054,16 @@ void loop(void *userData) {
                                     layer_y < inv_y + inv_h &&
                                     layer_y + layer_h > inv_y) {
                                     
+                                    // Apply translation to object position
+                                    nvgSave(vg);
+                                    nvgTranslate(vg, layer.objx, layer.objy);
+                                    
                                     // Draw commands for this layer
                                     for (GuiCommand &cmd : layer.gui_commands) {
                                         pd4webdraw_command(vg, &cmd, font_handler);
                                     }
+                                    
+                                    nvgRestore(vg);
                                 }
                             }
                         }
