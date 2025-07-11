@@ -124,21 +124,28 @@ add_definitions(-DPDINSTANCE)
 target_link_libraries(pd4web PRIVATE embind libpd pdlua)
 target_link_options(
     pd4web
-    PRIVATE
+    PUBLIC
+    # Core settings
     -sMODULARIZE=1
     -sEXPORT_NAME='Pd4WebModule'
-    -sINITIAL_MEMORY=256mb
-    # threads
-    -sPTHREAD_POOL_SIZE=4
+    -sINITIAL_MEMORY=512mb
+    # Optimization flags -O3 # Maximum optimization level -flto # Link-time optimization Performance
+    # tuning
+    -sFORCE_FILESYSTEM=0 # Disable filesystem if not needed
+    -sTOTAL_STACK=16mb # Optimize stack size
+    # Threading support
     -sUSE_PTHREADS=1
-    # wasm and audio worklet
+    -sPTHREAD_POOL_SIZE=4
+    -sPTHREAD_POOL_SIZE_STRICT=4 # Ensure exactly 4 threads
+    # Audio and graphics
     -sAUDIO_WORKLET=1
     -sWASM_WORKERS=1
     -sWASM=1
-    # webgl
     -sUSE_WEBGL2=1
     -sMIN_WEBGL_VERSION=2
-    # assertgions -sASSERTIONS=2)
+    # Disable debug features in production
+    -sASSERTIONS=0 # Disable assertions
+    -sSTACK_OVERFLOW_CHECK=0 # Disable stack overflow checking
 )
 
 # Include

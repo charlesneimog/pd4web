@@ -463,14 +463,13 @@ EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userDat
 
 // ─────────────────────────────────────
 void setAsyncMainLoop(void *userData) {
-
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
     int canvas_width, canvas_height;
     emscripten_get_canvas_element_size(ud->canvasSel.c_str(), &canvas_width, &canvas_height);
     ud->canvas_width = canvas_width;
     ud->canvas_height = canvas_height;
     ud->devicePixelRatio = emscripten_get_device_pixel_ratio();
-    emscripten_set_main_loop_arg(loop, (void *)userData, 0, 0);
+    emscripten_set_main_loop_arg(loop, (void *)userData, 60, 0);
 }
 
 // ─────────────────────────────────────
@@ -542,6 +541,18 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     // resize canvas
     t_canvas *canvas = pd_getcanvaslist();
+
+    // TODO: read #X text
+    t_binbuf *binbuf = binbuf_new();
+    int ok = binbuf_read_via_canvas(binbuf, PatchPath.c_str(), canvas, 0);
+    if (!ok) {
+        t_atom *atoms = binbuf_getvec(binbuf);
+        int size = binbuf_getnatom(binbuf);
+        for (int i = 0; i < size; i++) {
+            printf("%s ", atom_getsymbol(&atoms[i])->s_name);
+        }
+    }
+
     int canvasWidth = canvas->gl_pixwidth;
     int canvasHeight = canvas->gl_pixheight;
     if (canvasWidth == 0 && canvasHeight == 0) {
@@ -555,6 +566,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     const char *sel = PatchCanvaSel.c_str();
 
     if (PD4WEB_GUI) {
+        // init Gui Interface
         int zoom = PD4WEB_PATCH_ZOOM;
         emscripten_set_canvas_element_size(sel, canvasWidth * zoom, canvasHeight * zoom);
 
@@ -563,7 +575,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
             gobj_vis(obj, canvas, 1);
         }
 
-        m_MouseListener = new Pd4WebUserData(); // delete on Pd4Web destructor
+        m_MouseListener = new Pd4WebUserData(); // deleted on Pd4Web destructor
         m_MouseListener->libpd = m_NewPdInstance;
         m_MouseListener->mousedown = false;
         m_MouseListener->pd4web = this;
@@ -579,7 +591,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_touchmove_callback(sel, (void *)m_MouseListener, EM_FALSE, touch_listener);
         emscripten_set_touchcancel_callback(sel, (void *)m_MouseListener, EM_FALSE, touch_listener);
 
-        // input
+        // TODO: key input (for nbx, floatatom, and similar)
     }
 
     m_MainLoop = new Pd4WebUserData(); // delete on Pd4Web destructor
@@ -611,63 +623,45 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
 }
 
 // ─────────────────────────────────────
-NVGcontext *create_webgl_context_for_layer(char *sel, int *font_handler) {
-    static std::unordered_map<std::string, EMSCRIPTEN_WEBGL_CONTEXT_HANDLE> webGlMap;
-    static std::unordered_map<std::string, NVGcontext *> nanoVgMap;
-    static std::unordered_map<std::string, int> fontMap;
-
-    std::string key(sel);
-
-    // Já existe contexto NanoVG?
-    auto vgContext = nanoVgMap.find(key);
-    auto glContext = webGlMap.find(key);
-    font_handler = &fontMap[key];
-
-    if (vgContext != nanoVgMap.end() && glContext != webGlMap.end()) {
-        emscripten_webgl_make_context_current(glContext->second);
-        return vgContext->second;
+void create_webgl_context(Pd4WebUserData *ud) {
+    if (ud->contextReady) {
+        emscripten_webgl_make_context_current(ud->ctx);
+        return;
     }
 
     // Verifica ou cria o contexto WebGL
-    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE glctx;
-    auto itGl = webGlMap.find(key);
-    if (itGl != webGlMap.end()) {
-        glctx = itGl->second;
-    } else {
-        EmscriptenWebGLContextAttributes attr;
-        emscripten_webgl_init_context_attributes(&attr);
-        attr.alpha = false;
-        attr.depth = true;
-        attr.stencil = false;
-        attr.antialias = false;
-        attr.majorVersion = 2;
-        attr.minorVersion = 0;
+    EmscriptenWebGLContextAttributes attr;
+    emscripten_webgl_init_context_attributes(&attr);
+    attr.alpha = false;
+    attr.depth = true;
+    attr.stencil = false;
+    attr.antialias = false;
+    attr.majorVersion = 2;
+    attr.minorVersion = 0;
 
-        glctx = emscripten_webgl_create_context(sel, &attr);
-        if (glctx <= 0) {
-            return nullptr;
-        }
-
-        webGlMap[key] = glctx;
+    ud->ctx = emscripten_webgl_create_context(ud->canvasSel.c_str(), &attr);
+    if (ud->ctx <= 0) {
+        return;
     }
 
-    emscripten_webgl_make_context_current(glctx);
-
-    NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS);
-    if (!vg) {
+    emscripten_webgl_make_context_current(ud->ctx);
+    ud->vg = nvgCreateGLES3(NVG_ANTIALIAS);
+    if (!ud->vg) {
         fprintf(stderr, "Failed to create NVG context\n");
-        emscripten_webgl_destroy_context(glctx);
-        return nullptr;
+        emscripten_webgl_destroy_context(ud->ctx);
+        return;
     }
 
-    int result_font = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
-    if (result_font == -1) {
+    ud->font_handler = nvgCreateFont(ud->vg, "roboto", "DejaVuSans.ttf");
+    if (ud->font_handler == -1) {
         fprintf(stderr, "Failed to create font\n");
-        return nullptr;
+        return;
     }
-    fontMap[key] = result_font;
-    nanoVgMap[key] = vg;
-    return vg;
+
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+    ud->contextReady = true;
 }
 
 // ╭─────────────────────────────────────╮
@@ -749,26 +743,27 @@ void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
 }
 
 // ─────────────────────────────────────
-void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
+void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
     float r, g, b;
     hex_to_rgb_normalized(cmd->current_color, &r, &g, &b);
-    nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-    nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+    nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+    nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
 
     switch (cmd->command) {
     case FILL_ALL: {
-        nvgBeginPath(vg);
-        nvgRect(vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
-        nvgFill(vg);
-        nvgStrokeColor(vg, nvgRGBAf(0, 0, 0, 1.0f));
-        nvgStrokeWidth(vg, 1);
-        nvgStroke(vg);
+        nvgBeginPath(ud->vg);
+        nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
+        nvgFill(ud->vg);
+
+        nvgStrokeColor(ud->vg, nvgRGBAf(0, 0, 0, 1.0f));
+        nvgStrokeWidth(ud->vg, 1 * PD4WEB_PATCH_ZOOM);
+        nvgStroke(ud->vg);
         break;
     }
     case FILL_RECT: {
-        nvgBeginPath(vg);
-        nvgRect(vg, cmd->x1, cmd->y1, cmd->w, cmd->h);
-        nvgFill(vg);
+        nvgBeginPath(ud->vg);
+        nvgRect(ud->vg, cmd->x1, cmd->y1, cmd->w, cmd->h);
+        nvgFill(ud->vg);
         break;
     }
     case STROKE_RECT: {
@@ -777,10 +772,10 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float width = cmd->w;
         float height = cmd->h;
         float thickness = cmd->line_width;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, thickness);
-        nvgRect(vg, x, y, width, height);
-        nvgStroke(vg);
+        nvgBeginPath(ud->vg);
+        nvgStrokeWidth(ud->vg, thickness);
+        nvgRect(ud->vg, x, y, width, height);
+        nvgStroke(ud->vg);
         break;
     }
     case FILL_ELLIPSE: {
@@ -792,10 +787,10 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float cy = y + height * 0.5f;
         float rx = width * 0.5f;
         float ry = height * 0.5f;
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgEllipse(vg, cx, cy, rx, ry);
-        nvgFill(vg);
+        nvgBeginPath(ud->vg);
+        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgEllipse(ud->vg, cx, cy, rx, ry);
+        nvgFill(ud->vg);
         break;
     }
     case STROKE_ELLIPSE: {
@@ -808,11 +803,11 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float cy = y + height * 0.5f;
         float rx = width * 0.5f;
         float ry = height * 0.5f;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgEllipse(vg, cx, cy, rx, ry);
-        nvgStroke(vg);
+        nvgBeginPath(ud->vg);
+        nvgStrokeWidth(ud->vg, line_width);
+        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgEllipse(ud->vg, cx, cy, rx, ry);
+        nvgStroke(ud->vg);
         break;
     }
 
@@ -822,10 +817,10 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float width = cmd->w;
         float height = cmd->h;
         float radius = cmd->radius;
-        nvgBeginPath(vg);
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x, y, width, height, radius);
-        nvgFill(vg);
+        nvgBeginPath(ud->vg);
+        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgRoundedRect(ud->vg, x, y, width, height, radius);
+        nvgFill(ud->vg);
         break;
     }
 
@@ -836,11 +831,11 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float height = cmd->h;
         float radius = cmd->radius;
         float thickness = cmd->line_width;
-        nvgBeginPath(vg);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(vg, x, y, width, height, radius);
-        nvgStrokeWidth(vg, thickness);
-        nvgStroke(vg);
+        nvgBeginPath(ud->vg);
+        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgRoundedRect(ud->vg, x, y, width, height, radius);
+        nvgStrokeWidth(ud->vg, thickness);
+        nvgStroke(ud->vg);
         break;
     }
 
@@ -850,61 +845,58 @@ void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
         float x2 = cmd->x2;
         float y2 = cmd->y2;
         float line_width = cmd->line_width;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgMoveTo(vg, x1, y1);
-        nvgLineTo(vg, x2, y2);
-        nvgStroke(vg);
+        nvgBeginPath(ud->vg);
+        nvgStrokeWidth(ud->vg, line_width);
+        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgMoveTo(ud->vg, x1, y1);
+        nvgLineTo(ud->vg, x2, y2);
+        nvgStroke(ud->vg);
         break;
     }
 
     case STROKE_PATH: {
-        float line_width = cmd->line_width / PD4WEB_PATCH_ZOOM;
+        float line_width = cmd->line_width;
         float *coords = cmd->path_coords;
         int coords_len = cmd->path_size;
-        nvgBeginPath(vg);
-        nvgStrokeWidth(vg, line_width);
-        nvgStrokeColor(vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgBeginPath(ud->vg);
+        nvgStrokeWidth(ud->vg, line_width);
+        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0], coords[1]);
+            nvgMoveTo(ud->vg, coords[0], coords[1]);
             for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                nvgLineTo(ud->vg, coords[i * 2], coords[i * 2 + 1]);
             }
         }
-        nvgStroke(vg);
+        nvgStroke(ud->vg);
         break;
     }
     case FILL_PATH: {
         float *coords = cmd->path_coords;
         int coords_len = cmd->path_size;
-        nvgBeginPath(vg);
+        nvgBeginPath(ud->vg);
         if (coords_len >= 2) {
-            nvgMoveTo(vg, coords[0], coords[1]);
+            nvgMoveTo(ud->vg, coords[0], coords[1]);
             for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(vg, coords[i * 2], coords[i * 2 + 1]);
+                nvgLineTo(ud->vg, coords[i * 2], coords[i * 2 + 1]);
             }
-            nvgClosePath(vg);
+            nvgClosePath(ud->vg);
         }
-        nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgFill(vg);
+        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgFill(ud->vg);
         break;
     }
     case DRAW_TEXT: {
-        const char *text = cmd->text;
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float maxWidth = cmd->w;
-        float fontSize = cmd->font_size;
-        if (!text || maxWidth <= 0 || fontSize <= 0) {
+        if (cmd->text[0] != '\0' || cmd->w <= 0 || cmd->font_size <= 0) {
             break;
         }
-        if (font_handler >= 0) {
-            nvgFontFaceId(vg, font_handler);
-            nvgFontSize(vg, fontSize);
-            nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
-            nvgTextAlign(vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgTextBox(vg, x, y, maxWidth, text, NULL);
+        if (ud->font_handler >= 0) {
+            nvgBeginPath(ud->vg);
+            nvgFontFaceId(ud->vg, ud->font_handler);
+            nvgFontSize(ud->vg, cmd->font_size);
+            nvgTextAlign(ud->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+            nvgTextBox(ud->vg, cmd->x1, cmd->y1, cmd->w, cmd->text, nullptr);
+        } else {
+            fprintf(stderr, "No font\n");
         }
         break;
     }
@@ -916,74 +908,68 @@ void loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
 
-    int font_handler;
-    // this create the canvas if not exist and retrieve if exists, in my test just is created once
-    NVGcontext *vg = create_webgl_context_for_layer((char *)ud->canvasSel.c_str(), &font_handler);
-    if (vg == nullptr) {
-        fprintf(stderr, "NanoVG context inválido\n");
+    create_webgl_context(ud);
+    if (!ud->contextReady) {
+        fprintf(stderr, "NanoVG context invalid\n");
         return;
     }
 
+    float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
+        std::vector<int> layer_nums_to_redraw;
+        bool need_redraw = false;
+        int layerx = 0;
+        int layery = 0;
+        int layerw = 0;
+        int layerh = 0;
 
         for (auto &layer_pair : obj_layers) {
-            int layer_num = layer_pair.first;
+            int index = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (layer.objw < 1 || layer.objh < 1 || !layer.need_redraw || layer.drawing) {
-                continue;
+            layer_nums_to_redraw.push_back(index);
+            if (layer.need_redraw) {
+                need_redraw = true;
+                layerx = layer.objx;
+                layery = layer.objy;
+                layerw = layer.objw;
+                layerh = layer.objh;
+            }
+        }
+
+        if (need_redraw) {
+            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
+            nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+
+            // Apply zoom scaling
+            nvgSave(ud->vg);
+            nvgScale(ud->vg, zoom, zoom);
+
+            // Set up scissor and coordinate system
+            nvgScissor(ud->vg, layerx, layery, layerw, layerh);
+
+            for (auto layer_index : layer_nums_to_redraw) {
+                PdLuaObjGuiLayer &layer = obj_layers[layer_index];
+
+                // Save context and apply object translation
+                nvgSave(ud->vg);
+                nvgTranslate(ud->vg, layer.objx, layer.objy);
+
+                for (GuiCommand &cmd : layer.gui_commands) {
+                    pd4webdraw_command(ud, &cmd);
+                }
+
+                nvgRestore(ud->vg);
+                layer.need_redraw = false;
             }
 
-            if (!layer.fb) {
-                // also just created in the first frame
-                layer.fb = nvgluCreateFramebuffer(vg, layer.objw, layer.objh, NVG_IMAGE_PREMULTIPLIED);
-            }
-
-            // Render to the offscreen framebuffer
-            nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, layer.objw, layer.objh);
-            nvgBeginFrame(vg, layer.objw, layer.objh, ud->devicePixelRatio); // TODO: Check zoom
-            glClearColor(0, 0, 0, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-            // Draw something in the framebuffer, e.g., a red rectangle
-            for (GuiCommand &cmd : layer.gui_commands) {
-                pd4webdraw_command(vg, &cmd, font_handler);
-            }
-
-            nvgEndFrame(vg);
-            nvgluBindFramebuffer(nullptr);
-            layer.need_redraw = false;
+            nvgRestore(ud->vg);
+            nvgEndFrame(ud->vg);
         }
     }
-
-    // size of main canvas
-    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-    nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-
-    glClearColor(1, 1, 1, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    for (auto &obj_pair : pdlua_objs) {
-        std::string layer_id = obj_pair.first;
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-        for (size_t i = 0; i < obj_layers.size(); ++i) {
-            PdLuaObjGuiLayer &layer = obj_layers[i];
-            if (!layer.fb)
-                continue;
-            int x = layer.objx;
-            int y = layer.objy;
-            int fbImage = layer.fb->image;
-            NVGpaint paint = nvgImagePattern(vg, x, y, layer.objw, layer.objh, 0, fbImage, 1.0f);
-            nvgBeginPath(vg);
-            nvgRect(vg, x, y, layer.objw, layer.objh);
-            nvgFillPaint(vg, paint);
-            nvgFill(vg);
-        }
-    }
-    nvgEndFrame(vg);
-
 }
 
 // ╭─────────────────────────────────────╮
@@ -1017,7 +1003,6 @@ void Pd4Web::init() {
 
     m_audioSuspended = false;
     if (PD4WEB_MIDI) {
-        _JS_post("Loading Midi");
         // clang-format off
         EM_ASM({
             function onMIDISuccess(midiAccess) {

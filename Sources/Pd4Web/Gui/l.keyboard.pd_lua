@@ -66,8 +66,11 @@ end
 
 function keyboard:mouse_up(x, y)
 	if self.active_key then
+		local key = self.keys[self.active_key]
 		self.keys[self.active_key].pressed = false
 		self.active_key = nil
+		key.velocity = 0
+		self:outlet(1, "list", { key.midi, key.velocity })
 	end
 	self:repaint()
 end

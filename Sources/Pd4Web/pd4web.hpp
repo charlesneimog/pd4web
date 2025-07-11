@@ -5,6 +5,7 @@
 #endif
 
 // strings
+#include <algorithm>
 #include <format>
 #include <iostream>
 #include <sstream>
@@ -18,6 +19,8 @@
 // libpd
 #include <z_libpd.h>
 #include <z_print_util.h>
+
+#include <m_pd.h>
 
 #include <g_canvas.h>
 #include <m_imp.h>
@@ -122,6 +125,13 @@ struct Pd4WebUserData {
     float devicePixelRatio;
     t_gobj *obj;
     t_canvas *canvas;
+
+    // rendering optimization
+    bool first_frame = true;
+    int font_handler = 0;
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
+    NVGcontext *vg;
+    bool contextReady = false;
 };
 
 void loop(void *userData);
@@ -142,13 +152,14 @@ struct PdLuaObjGuiLayer {
     int objw;
     int objh;
     NVGLUframebuffer *fb = nullptr;
+    float last_zoom = 0; // Track last zoom to detect changes
 };
 // layer
 using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
 // objid
 using PdLuaObjsGui = std::unordered_map<std::string, PdLuaObjLayers>;
 // libpd gui
-using PdInstanceGui = std::unordered_map<t_pdinstance*, PdLuaObjsGui>;
+using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
@@ -177,20 +188,15 @@ class Pd4Web {
     t_pdinstance *m_NewPdInstance;
 
   private:
+    // TODO: remove pointers
     Pd4WebUserData *m_SoundToggle;
     Pd4WebUserData *m_MouseListener;
     Pd4WebUserData *m_MainLoop;
-
-    // bind symbols
-    // void bindReceiver(std::string s);
-    // void addGuiReceiver(std::string s);
-    // void unbindReceiver();
 
     std::string canvasId;
     bool m_Pd4WebInit = false;
     bool m_PdInit = false;
     bool m_audioSuspended = false;
-    std::vector<std::string> m_Receivers;
 };
 
 // ╭─────────────────────────────────────╮
