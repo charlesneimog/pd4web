@@ -127,6 +127,10 @@ struct Pd4WebUserData {
     
     // rendering optimization
     bool first_frame = true;
+    
+    // webgl context
+    NVGcontext *vg = nullptr;
+    bool contextReady = false;
 };
 
 void loop(void *userData);

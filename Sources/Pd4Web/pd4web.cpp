@@ -611,6 +611,72 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
 }
 
 // ─────────────────────────────────────
+void create_webgl_context(Pd4WebUserData *ud) {
+    static std::unordered_map<std::string, EMSCRIPTEN_WEBGL_CONTEXT_HANDLE> webGlMap;
+    static std::unordered_map<std::string, NVGcontext *> nanoVgMap;
+    static std::unordered_map<std::string, int> fontMap;
+
+    std::string key = ud->canvasSel;
+
+    // Check if context already exists
+    auto vgContext = nanoVgMap.find(key);
+    auto glContext = webGlMap.find(key);
+
+    if (vgContext != nanoVgMap.end() && glContext != webGlMap.end()) {
+        emscripten_webgl_make_context_current(glContext->second);
+        ud->vg = vgContext->second;
+        ud->contextReady = true;
+        return;
+    }
+
+    // Create or get WebGL context
+    EMSCRIPTEN_WEBGL_CONTEXT_HANDLE glctx;
+    auto itGl = webGlMap.find(key);
+    if (itGl != webGlMap.end()) {
+        glctx = itGl->second;
+    } else {
+        EmscriptenWebGLContextAttributes attr;
+        emscripten_webgl_init_context_attributes(&attr);
+        attr.alpha = false;
+        attr.depth = true;
+        attr.stencil = false;
+        attr.antialias = false;
+        attr.majorVersion = 2;
+        attr.minorVersion = 0;
+
+        glctx = emscripten_webgl_create_context(key.c_str(), &attr);
+        if (glctx <= 0) {
+            ud->contextReady = false;
+            return;
+        }
+
+        webGlMap[key] = glctx;
+    }
+
+    emscripten_webgl_make_context_current(glctx);
+
+    NVGcontext *vg = nvgCreateGLES3(NVG_ANTIALIAS);
+    if (!vg) {
+        fprintf(stderr, "Failed to create NVG context\n");
+        emscripten_webgl_destroy_context(glctx);
+        ud->contextReady = false;
+        return;
+    }
+
+    int result_font = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
+    if (result_font == -1) {
+        fprintf(stderr, "Failed to create font\n");
+        ud->contextReady = false;
+        return;
+    }
+
+    fontMap[key] = result_font;
+    nanoVgMap[key] = vg;
+    ud->vg = vg;
+    ud->contextReady = true;
+}
+
+// ─────────────────────────────────────
 NVGcontext *create_webgl_context_for_layer(char *sel, int *font_handler) {
     static std::unordered_map<std::string, EMSCRIPTEN_WEBGL_CONTEXT_HANDLE> webGlMap;
     static std::unordered_map<std::string, NVGcontext *> nanoVgMap;
@@ -749,7 +815,19 @@ void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
 }
 
 // ─────────────────────────────────────
-void pd4webdraw_command(NVGcontext *vg, GuiCommand *cmd, int font_handler) {
+void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
+    static std::unordered_map<std::string, int> fontMap;
+    
+    NVGcontext *vg = ud->vg;
+    if (!vg) return;
+    
+    // Get font handler for this context
+    int font_handler = fontMap[ud->canvasSel];
+    if (font_handler == 0) {
+        font_handler = nvgCreateFont(vg, "roboto", "DejaVuSans.ttf");
+        fontMap[ud->canvasSel] = font_handler;
+    }
+    
     float r, g, b;
     hex_to_rgb_normalized(cmd->current_color, &r, &g, &b);
     nvgFillColor(vg, nvgRGBAf(r, g, b, 1.0f));
@@ -916,123 +994,72 @@ void loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
 
-    int font_handler;
-    NVGcontext *vg = create_webgl_context_for_layer((char *)ud->canvasSel.c_str(), &font_handler);
-    if (vg == nullptr) {
+    create_webgl_context(ud);
+    if (!ud->contextReady) {
         fprintf(stderr, "NanoVG context invalid\n");
         return;
     }
 
     float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
-
-    // Check if there are any layers that need redraw
-    bool has_updates = false;
+    
     for (auto &obj_pair : pdlua_objs) {
+        std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
+        std::vector<int> layer_nums_to_redraw;
+        bool need_redraw = false;
+        int layerx = 0;
+        int layery = 0;
+        int layerw = 0;
+        int layerh = 0;
+
         for (auto &layer_pair : obj_layers) {
+            int index = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
-                has_updates = true;
-                break;
+            layer_nums_to_redraw.push_back(index);
+            if (layer.need_redraw) {
+                need_redraw = true;
+                layerx = layer.objx;
+                layery = layer.objy;
+                layerw = layer.objw;
+                layerh = layer.objh;
             }
         }
-        if (has_updates) break;
-    }
-
-    // Only render if there are updates or first frame
-    if (has_updates || ud->first_frame) {
-        // Clear and setup main canvas
-        glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-        nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
         
-        // Clear canvas with white background only on first frame
-        if (ud->first_frame) {
-            glClearColor(1, 1, 1, 1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-            ud->first_frame = false;
-        }
+        if (need_redraw) {
+            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
+            nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+            
+            // Apply zoom scaling
+            nvgSave(ud->vg);
+            nvgScale(ud->vg, zoom, zoom);
+            
+            // Set up scissor and coordinate system
+            nvgScissor(ud->vg, layerx, layery, layerw, layerh);
+            
+            // Clear the scissor area with white background
+            nvgBeginPath(ud->vg);
+            nvgRect(ud->vg, layerx, layery, layerw, layerh);
+            nvgFillColor(ud->vg, nvgRGBA(255, 255, 255, 255));
+            nvgFill(ud->vg);
 
-        // Apply zoom scaling once at the beginning
-        nvgSave(vg);
-        nvgScale(vg, zoom, zoom);
-
-        // Draw all layers that need redraw
-        for (auto &obj_pair : pdlua_objs) {
-            std::string layer_id = obj_pair.first;
-            PdLuaObjLayers &obj_layers = obj_pair.second;
-
-            // Find the highest layer index that needs redraw
-            int max_redraw_layer = -1;
-            for (auto &layer_pair : obj_layers) {
-                int layer_num = layer_pair.first;
-                PdLuaObjGuiLayer &layer = layer_pair.second;
-                if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
-                    max_redraw_layer = std::max(max_redraw_layer, layer_num);
-                }
-            }
-
-            // If any layer needs redraw, redraw all layers from 0 to max_redraw_layer
-            if (max_redraw_layer >= 0) {
-                // Use scissor to optimize rendering to only the affected area
-                int min_x = INT_MAX, min_y = INT_MAX, max_x = INT_MIN, max_y = INT_MIN;
+            for (auto layer_index : layer_nums_to_redraw) {
+                PdLuaObjGuiLayer &layer = obj_layers[layer_index];
                 
-                // Find bounding box of all layers that need redraw
-                for (int i = 0; i <= max_redraw_layer; i++) {
-                    if (obj_layers.find(i) != obj_layers.end()) {
-                        PdLuaObjGuiLayer &layer = obj_layers[i];
-                        if (layer.objw >= 1 && layer.objh >= 1) {
-                            min_x = std::min(min_x, layer.objx);
-                            min_y = std::min(min_y, layer.objy);
-                            max_x = std::max(max_x, layer.objx + layer.objw);
-                            max_y = std::max(max_y, layer.objy + layer.objh);
-                        }
-                    }
+                // Save context and apply object translation
+                nvgSave(ud->vg);
+                nvgTranslate(ud->vg, layer.objx, layer.objy);
+                
+                for (GuiCommand &cmd : layer.gui_commands) {
+                    pd4webdraw_command(ud, &cmd);
                 }
                 
-                // Apply scissor to the bounding box (zoom-scaled)
-                if (min_x != INT_MAX) {
-                    nvgSave(vg);
-                    nvgScissor(vg, min_x * zoom, min_y * zoom, (max_x - min_x) * zoom, (max_y - min_y) * zoom);
-                    
-                    // Clear only the scissor area with white background
-                    nvgBeginPath(vg);
-                    nvgRect(vg, min_x * zoom, min_y * zoom, (max_x - min_x) * zoom, (max_y - min_y) * zoom);
-                    nvgFillColor(vg, nvgRGBA(255, 255, 255, 255));
-                    nvgFill(vg);
-                    
-                    // Draw layers from 0 to max_redraw_layer in ascending order
-                    for (int layer_num = 0; layer_num <= max_redraw_layer; layer_num++) {
-                        if (obj_layers.find(layer_num) != obj_layers.end()) {
-                            PdLuaObjGuiLayer &layer = obj_layers[layer_num];
-                            if (layer.objw >= 1 && layer.objh >= 1 && !layer.drawing) {
-                                // Apply translation to object position
-                                nvgSave(vg);
-                                nvgTranslate(vg, layer.objx, layer.objy);
-                                
-                                // Draw commands for this layer
-                                for (GuiCommand &cmd : layer.gui_commands) {
-                                    pd4webdraw_command(vg, &cmd, font_handler);
-                                }
-                                
-                                nvgRestore(vg);
-                            }
-                        }
-                    }
-                    
-                    nvgRestore(vg);
-                }
+                nvgRestore(ud->vg);
+                layer.need_redraw = false;
             }
-        }
-        
-        nvgRestore(vg);
-        nvgEndFrame(vg);
-        
-        // Mark all layers as drawn
-        for (auto &obj_pair : pdlua_objs) {
-            for (auto &layer_pair : obj_pair.second) {
-                layer_pair.second.need_redraw = false;
-            }
+            
+            nvgRestore(ud->vg);
+            nvgEndFrame(ud->vg);
         }
     }
 }
