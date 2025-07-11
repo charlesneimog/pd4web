@@ -1,4 +1,5 @@
 #include "pd4web.hpp"
+#include <climits>
 
 // ╭─────────────────────────────────────╮
 // │        JavaScript Functions         │
@@ -920,54 +921,80 @@ void loop(void *userData) {
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
-        std::vector<int> layer_nums_to_redraw;
-        bool need_redraw = false;
-        int layerx = 0;
-        int layery = 0;
-        int layerw = 0;
-        int layerh = 0;
-
+        
+        // Step 1: Check which layers actually need redraw and collect them
+        std::vector<int> dirty_layers;
+        bool any_layer_needs_redraw = false;
+        
         for (auto &layer_pair : obj_layers) {
             int index = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
-            layer_nums_to_redraw.push_back(index);
             if (layer.need_redraw) {
-                need_redraw = true;
-                layerx = layer.objx;
-                layery = layer.objy;
-                layerw = layer.objw;
-                layerh = layer.objh;
+                dirty_layers.push_back(index);
+                any_layer_needs_redraw = true;
             }
         }
+        
+        // Step 4: Skip rendering altogether if no layer requires redraw
+        if (!any_layer_needs_redraw) {
+            continue;
+        }
+        
+        // Step 2: Calculate combined bounding box of all dirty layers
+        int combined_x = INT_MAX;
+        int combined_y = INT_MAX;
+        int combined_x2 = INT_MIN;
+        int combined_y2 = INT_MIN;
+        
+        for (int layer_index : dirty_layers) {
+            PdLuaObjGuiLayer &layer = obj_layers[layer_index];
+            combined_x = std::min(combined_x, layer.objx);
+            combined_y = std::min(combined_y, layer.objy);
+            combined_x2 = std::max(combined_x2, layer.objx + layer.objw);
+            combined_y2 = std::max(combined_y2, layer.objy + layer.objh);
+        }
+        
+        int combined_w = combined_x2 - combined_x;
+        int combined_h = combined_y2 - combined_y;
+        
+        // Ensure valid scissor rectangle
+        if (combined_w <= 0 || combined_h <= 0) {
+            continue;
+        }
+        
+        // Begin rendering only for the dirty area
+        std::sort(dirty_layers.begin(), dirty_layers.end());
+        nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
-        if (need_redraw) {
-            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
-            nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+        // Apply zoom scaling
+        nvgSave(ud->vg);
+        nvgScale(ud->vg, zoom, zoom);
 
-            // Apply zoom scaling
+        // Step 3: Set scissor rectangle limited to combined dirty area
+        nvgScissor(ud->vg, combined_x, combined_y, combined_w, combined_h);
+
+        // Only render layers that actually need redraw
+        for (int layer_index : dirty_layers) {
+            PdLuaObjGuiLayer &layer = obj_layers[layer_index];
+
+            // Save context and apply object translation
             nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom, zoom);
+            nvgTranslate(ud->vg, layer.objx, layer.objy);
 
-            // Set up scissor and coordinate system
-            nvgScissor(ud->vg, layerx, layery, layerw, layerh);
-
-            for (auto layer_index : layer_nums_to_redraw) {
-                PdLuaObjGuiLayer &layer = obj_layers[layer_index];
-
-                // Save context and apply object translation
-                nvgSave(ud->vg);
-                nvgTranslate(ud->vg, layer.objx, layer.objy);
-
-                for (GuiCommand &cmd : layer.gui_commands) {
-                    pd4webdraw_command(ud, &cmd);
-                }
-
-                nvgRestore(ud->vg);
-                layer.need_redraw = false;
+            for (GuiCommand &cmd : layer.gui_commands) {
+                pd4webdraw_command(ud, &cmd);
             }
 
             nvgRestore(ud->vg);
-            nvgEndFrame(ud->vg);
+        }
+
+        nvgRestore(ud->vg);
+        nvgEndFrame(ud->vg);
+        
+        // Step 5: Clear need_redraw flags only after successful rendering
+        for (int layer_index : dirty_layers) {
+            PdLuaObjGuiLayer &layer = obj_layers[layer_index];
+            layer.need_redraw = false;
         }
     }
 }
