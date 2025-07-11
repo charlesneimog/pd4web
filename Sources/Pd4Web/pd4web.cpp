@@ -645,7 +645,7 @@ void create_webgl_context(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateGLES3(NVG_ANTIALIAS);
+    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
     if (!ud->vg) {
         fprintf(stderr, "Failed to create NVG context\n");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -886,7 +886,7 @@ void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
         break;
     }
     case DRAW_TEXT: {
-        if (cmd->text[0] != '\0' || cmd->w <= 0 || cmd->font_size <= 0) {
+        if (cmd->text[0] == '\0' || cmd->w <= 0 || cmd->font_size <= 0) {
             break;
         }
         if (ud->font_handler >= 0) {
@@ -909,67 +909,71 @@ void loop(void *userData) {
     libpd_set_instance(ud->libpd);
 
     create_webgl_context(ud);
-    if (!ud->contextReady) {
-        fprintf(stderr, "NanoVG context invalid\n");
+    if (ud->vg == nullptr) {
+        fprintf(stderr, "NanoVG context inválido\n");
         return;
     }
 
-    float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
-
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
-        std::vector<int> layer_nums_to_redraw;
-        bool need_redraw = false;
-        int layerx = 0;
-        int layery = 0;
-        int layerw = 0;
-        int layerh = 0;
 
         for (auto &layer_pair : obj_layers) {
-            int index = layer_pair.first;
+            int layer_num = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
-            layer_nums_to_redraw.push_back(index);
-            if (layer.need_redraw) {
-                need_redraw = true;
-                layerx = layer.objx;
-                layery = layer.objy;
-                layerw = layer.objw;
-                layerh = layer.objh;
-            }
-        }
-
-        if (need_redraw) {
-            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
-            nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-
-            // Apply zoom scaling
-            nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom, zoom);
-
-            // Set up scissor and coordinate system
-            nvgScissor(ud->vg, layerx, layery, layerw, layerh);
-
-            for (auto layer_index : layer_nums_to_redraw) {
-                PdLuaObjGuiLayer &layer = obj_layers[layer_index];
-
-                // Save context and apply object translation
-                nvgSave(ud->vg);
-                nvgTranslate(ud->vg, layer.objx, layer.objy);
-
-                for (GuiCommand &cmd : layer.gui_commands) {
-                    pd4webdraw_command(ud, &cmd);
-                }
-
-                nvgRestore(ud->vg);
-                layer.need_redraw = false;
+            if (layer.objw < 1 || layer.objh < 1 || !layer.need_redraw || layer.drawing) {
+                continue;
             }
 
-            nvgRestore(ud->vg);
+            if (!layer.fb) {
+                layer.fb =
+                    nvgluCreateFramebuffer(ud->vg, layer.objw, layer.objh, NVG_IMAGE_PREMULTIPLIED);
+            }
+
+            // Render to the offscreen framebuffer
+            nvgluBindFramebuffer(layer.fb);
+            glViewport(0, 0, layer.objw, layer.objh);
+            nvgBeginFrame(ud->vg, layer.objw, layer.objh, ud->devicePixelRatio); // TODO: Check zoom
+            glClearColor(0, 0, 0, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            // Draw something in the framebuffer, e.g., a red rectangle
+            for (GuiCommand &cmd : layer.gui_commands) {
+                pd4webdraw_command(ud, &cmd);
+            }
+
             nvgEndFrame(ud->vg);
+            nvgluBindFramebuffer(nullptr);
+            layer.need_redraw = false;
         }
     }
+
+    // size of main canvas
+    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+
+    glClearColor(1, 1, 1, 1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    for (auto &obj_pair : pdlua_objs) {
+        std::string layer_id = obj_pair.first;
+        PdLuaObjLayers &obj_layers = obj_pair.second;
+        for (size_t i = 0; i < obj_layers.size(); ++i) {
+            PdLuaObjGuiLayer &layer = obj_layers[i];
+            if (!layer.fb)
+                continue;
+            int x = layer.objx;
+            int y = layer.objy;
+            int fbImage = layer.fb->image;
+            NVGpaint paint =
+                nvgImagePattern(ud->vg, x, y, layer.objw, layer.objh, 0, fbImage, 1.0f);
+            nvgBeginPath(ud->vg);
+            nvgRect(ud->vg, x, y, layer.objw, layer.objh);
+            nvgFillPaint(ud->vg, paint);
+            nvgFill(ud->vg);
+        }
+    }
+    nvgEndFrame(ud->vg);
 }
 
 // ╭─────────────────────────────────────╮

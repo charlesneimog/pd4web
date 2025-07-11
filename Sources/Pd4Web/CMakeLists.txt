@@ -78,8 +78,11 @@ set(NANOVG_ZIP "${CMAKE_CURRENT_BINARY_DIR}/nanovg.zip")
 if(NOT EXISTS ${NANOVG_DIR})
     message(STATUS "Downloading NanoVG...")
     file(
-        DOWNLOAD https://github.com/rgb2hsv/nanovg/archive/refs/heads/development.zip ${NANOVG_ZIP}
-        SHOW_PROGRESS
+        # DOWNLOAD https://github.com/rgb2hsv/nanovg/archive/refs/heads/development.zip
+        # ${NANOVG_ZIP}
+        DOWNLOAD
+        https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
+        ${NANOVG_ZIP}
         STATUS DOWNLOAD_STATUS)
 
     message(STATUS "Unzipping NanoVG...")
