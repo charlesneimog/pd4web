@@ -986,14 +986,16 @@ void loop(void *userData) {
                 nvgluBindFramebuffer(layer.fb);
                 glViewport(0, 0, zoomed_width, zoomed_height);
                 nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
-                glClearColor(1, 1, 1, 1);
+                
+                // Clear with transparent background to allow layer composition
+                glClearColor(0, 0, 0, 0);
                 glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
                 // Apply zoom scaling to all drawing operations
                 nvgSave(vg);
                 nvgScale(vg, zoom, zoom);
 
-                // Draw something in the framebuffer, e.g., a red rectangle
+                // Draw commands for this layer
                 for (GuiCommand &cmd : layer.gui_commands) {
                     pd4webdraw_command(vg, &cmd, font_handler);
                 }
@@ -1012,51 +1014,15 @@ void loop(void *userData) {
         glViewport(0, 0, ud->canvas_width, ud->canvas_height);
         nvgBeginFrame(vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
-        // Only clear areas that need updating using scissor, or full canvas on first frame
+        // Clear entire canvas with white background
+        glClearColor(1, 1, 1, 1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+        
         if (ud->first_frame) {
-            // Clear entire canvas only on first frame
-            glClearColor(1, 1, 1, 1);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
             ud->first_frame = false;
-        } else if (has_updates) {
-            for (auto &obj_pair : pdlua_objs) {
-                std::string layer_id = obj_pair.first;
-                PdLuaObjLayers &obj_layers = obj_pair.second;
-                
-                // Create sorted vector of layer numbers for clearing
-                std::vector<int> layer_nums;
-                for (auto &layer_pair : obj_layers) {
-                    layer_nums.push_back(layer_pair.first);
-                }
-                std::sort(layer_nums.begin(), layer_nums.end());
-                
-                for (int layer_num : layer_nums) {
-                    PdLuaObjGuiLayer &layer = obj_layers[layer_num];
-                    if (!layer.fb)
-                        continue;
-                    
-                    // Apply zoom to position and size
-                    int x = layer.objx * zoom;
-                    int y = layer.objy * zoom;
-                    int w = layer.objw * zoom;
-                    int h = layer.objh * zoom;
-                    
-                    // Use scissor to only clear the specific area
-                    nvgSave(vg);
-                    nvgScissor(vg, x, y, w, h);
-                    
-                    // Clear background for this layer
-                    nvgBeginPath(vg);
-                    nvgRect(vg, x, y, w, h);
-                    nvgFillColor(vg, nvgRGBA(255, 255, 255, 255));
-                    nvgFill(vg);
-                    
-                    nvgRestore(vg);
-                }
-            }
         }
         
-        // Draw all layers with zoom applied
+        // Draw all layers with zoom applied in ascending order
         for (auto &obj_pair : pdlua_objs) {
             std::string layer_id = obj_pair.first;
             PdLuaObjLayers &obj_layers = obj_pair.second;
@@ -1079,8 +1045,10 @@ void loop(void *userData) {
                 int w = layer.objw * zoom;
                 int h = layer.objh * zoom;
                 
+                // Create image pattern with proper alpha blending
                 int fbImage = layer.fb->image;
                 NVGpaint paint = nvgImagePattern(vg, x, y, w, h, 0, fbImage, 1.0f);
+                
                 nvgBeginPath(vg);
                 nvgRect(vg, x, y, w, h);
                 nvgFillPaint(vg, paint);
