@@ -127,29 +127,6 @@ struct Pd4WebUserData {
     
     // rendering optimization
     bool first_frame = true;
-    
-    // scissor-based rendering
-    NVGLUframebuffer* main_framebuffer = nullptr;
-    int fb_width = 0;
-    int fb_height = 0;
-    float last_zoom = 0;
-    
-    // Invalid area tracking
-    struct InvalidRect {
-        int x, y, w, h;
-        bool operator==(const InvalidRect& other) const {
-            return x == other.x && y == other.y && w == other.w && h == other.h;
-        }
-    };
-    std::vector<InvalidRect> invalid_areas;
-    
-    void addInvalidArea(int x, int y, int w, int h) {
-        invalid_areas.push_back({x, y, w, h});
-    }
-    
-    void clearInvalidAreas() {
-        invalid_areas.clear();
-    }
 };
 
 void loop(void *userData);
