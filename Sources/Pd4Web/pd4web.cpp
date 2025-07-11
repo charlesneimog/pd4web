@@ -927,88 +927,19 @@ void loop(void *userData) {
     float zoom = PD4WEB_PATCH_ZOOM;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
     
-    // Track areas that need redrawing to avoid full canvas clear
+    // Simple approach: Check if any layer needs redraw, then redraw everything
     bool has_updates = false;
-    
     for (auto &obj_pair : pdlua_objs) {
-        std::string layer_id = obj_pair.first;
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-
-        // Find the highest layer index that needs redraw
-        int max_redraw_layer = -1;
-        for (auto &layer_pair : obj_layers) {
-            int layer_num = layer_pair.first;
-            PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (layer.objw >= 1 && layer.objh >= 1 && layer.need_redraw && !layer.drawing) {
-                max_redraw_layer = std::max(max_redraw_layer, layer_num);
-            }
-        }
-
-        // If any layer needs redraw, redraw all layers from 0 to max_redraw_layer
-        if (max_redraw_layer >= 0) {
-            // Create a sorted vector of layer numbers to ensure ascending order
-            std::vector<int> layer_nums_to_redraw;
-            for (int i = 0; i <= max_redraw_layer; i++) {
-                if (obj_layers.find(i) != obj_layers.end()) {
-                    layer_nums_to_redraw.push_back(i);
-                }
-            }
-            
-            // Sort to ensure ascending order (should already be sorted, but being explicit)
-            std::sort(layer_nums_to_redraw.begin(), layer_nums_to_redraw.end());
-            
-            // Redraw layers in ascending order
-            for (int layer_num : layer_nums_to_redraw) {
-                PdLuaObjGuiLayer &layer = obj_layers[layer_num];
-                if (layer.objw < 1 || layer.objh < 1 || layer.drawing) {
-                    continue;
-                }
-
+        for (auto &layer_pair : obj_pair.second) {
+            if (layer_pair.second.need_redraw) {
                 has_updates = true;
-                
-                // Apply zoom to framebuffer size
-                int zoomed_width = layer.objw * zoom;
-                int zoomed_height = layer.objh * zoom;
-
-                if (!layer.fb || layer.last_zoom != zoom) {
-                    // Delete old framebuffer if zoom changed
-                    if (layer.fb && layer.last_zoom != zoom) {
-                        nvgluDeleteFramebuffer(layer.fb);
-                        layer.fb = nullptr;
-                    }
-                    
-                    // Create framebuffer with zoom applied
-                    layer.fb = nvgluCreateFramebuffer(vg, zoomed_width, zoomed_height, NVG_IMAGE_PREMULTIPLIED);
-                    layer.last_zoom = zoom;
-                }
-
-                // Render to the offscreen framebuffer
-                nvgluBindFramebuffer(layer.fb);
-                glViewport(0, 0, zoomed_width, zoomed_height);
-                nvgBeginFrame(vg, zoomed_width, zoomed_height, ud->devicePixelRatio);
-                
-                // Clear with transparent background to allow layer composition
-                glClearColor(0, 0, 0, 0);
-                glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-                // Apply zoom scaling to all drawing operations
-                nvgSave(vg);
-                nvgScale(vg, zoom, zoom);
-
-                // Draw commands for this layer
-                for (GuiCommand &cmd : layer.gui_commands) {
-                    pd4webdraw_command(vg, &cmd, font_handler);
-                }
-
-                nvgRestore(vg);
-                nvgEndFrame(vg);
-                nvgluBindFramebuffer(nullptr);
-                layer.need_redraw = false;
+                break;
             }
         }
+        if (has_updates) break;
     }
 
-    // Only redraw main canvas if there are updates or first frame
+    // Redraw main canvas if there are updates or first frame
     if (has_updates || ud->first_frame) {
         // size of main canvas
         glViewport(0, 0, ud->canvas_width, ud->canvas_height);
@@ -1022,7 +953,11 @@ void loop(void *userData) {
             ud->first_frame = false;
         }
         
-        // Draw all layers with zoom applied in ascending order
+        // Apply zoom scaling to all drawing operations
+        nvgSave(vg);
+        nvgScale(vg, zoom, zoom);
+        
+        // Draw all layers directly to main canvas in ascending order
         for (auto &obj_pair : pdlua_objs) {
             std::string layer_id = obj_pair.first;
             PdLuaObjLayers &obj_layers = obj_pair.second;
@@ -1036,25 +971,21 @@ void loop(void *userData) {
             
             for (int layer_num : layer_nums) {
                 PdLuaObjGuiLayer &layer = obj_layers[layer_num];
-                if (!layer.fb)
+                if (layer.objw < 1 || layer.objh < 1 || layer.drawing) {
                     continue;
+                }
+
+                // Draw commands for this layer directly to main canvas
+                for (GuiCommand &cmd : layer.gui_commands) {
+                    pd4webdraw_command(vg, &cmd, font_handler);
+                }
                 
-                // Apply zoom to position and size
-                int x = layer.objx * zoom;
-                int y = layer.objy * zoom;
-                int w = layer.objw * zoom;
-                int h = layer.objh * zoom;
-                
-                // Create image pattern with proper alpha blending
-                int fbImage = layer.fb->image;
-                NVGpaint paint = nvgImagePattern(vg, x, y, w, h, 0, fbImage, 1.0f);
-                
-                nvgBeginPath(vg);
-                nvgRect(vg, x, y, w, h);
-                nvgFillPaint(vg, paint);
-                nvgFill(vg);
+                // Mark layer as drawn
+                layer.need_redraw = false;
             }
         }
+        
+        nvgRestore(vg);
         nvgEndFrame(vg);
     }
 }

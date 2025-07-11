@@ -140,13 +140,11 @@ struct PdLuaObjGuiLayer {
     std::string layer_id;
     std::vector<GuiCommand> gui_commands;
 
-    // framebuffer
+    // object dimensions (for zoom calculation)
     int objx;
     int objy;
     int objw;
     int objh;
-    NVGLUframebuffer *fb = nullptr;
-    float last_zoom = 0;  // Track last zoom to detect changes
 };
 // layer
 using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
