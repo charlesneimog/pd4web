@@ -315,8 +315,8 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
         return EM_TRUE;
 
     // Use o primeiro toque apenas (pode ser estendido para multitouch se necessário)
-    int xpos = round((float)e->touches[0].targetX / PD4WEB_PATCH_ZOOM);
-    int ypos = round((float)e->touches[0].targetY / PD4WEB_PATCH_ZOOM);
+    int xpos = e->touches[0].targetX;
+    int ypos = e->touches[0].targetY;
 
     data->xpos = xpos;
     data->ypos = ypos;
@@ -373,8 +373,8 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
         return EM_TRUE;
     }
 
-    int xpos = round((float)e->targetX / PD4WEB_PATCH_ZOOM);
-    int ypos = round((float)e->targetY / PD4WEB_PATCH_ZOOM);
+    int xpos = e->targetX;
+    int ypos = e->targetY;
     // int shift = e->shiftKey;
     // int alt = e->altKey;
 
@@ -566,9 +566,8 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     const char *sel = PatchCanvaSel.c_str();
 
     if (PD4WEB_GUI) {
-        // init Gui Interface
-        int zoom = PD4WEB_PATCH_ZOOM;
-        emscripten_set_canvas_element_size(sel, canvasWidth * zoom, canvasHeight * zoom);
+        // init Gui Interface - keep canvas at original size but render internally at higher resolution
+        emscripten_set_canvas_element_size(sel, canvasWidth, canvasHeight);
 
         t_canvas *canvas = pd_getcanvaslist();
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
