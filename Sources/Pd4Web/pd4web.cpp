@@ -913,7 +913,6 @@ void loop(void *userData) {
         fprintf(stderr, "NanoVG context inválido\n");
         return;
     }
-
     float zoom = PD4WEB_PATCH_ZOOM;
 
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
@@ -928,8 +927,8 @@ void loop(void *userData) {
                 continue;
             }
 
-            int fbw = static_cast<int>(layer.objw * zoom);
-            int fbh = static_cast<int>(layer.objh * zoom);
+            int fbw = layer.objw * zoom;
+            int fbh = layer.objh * zoom;
 
             if (!layer.fb) {
                 layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
@@ -942,28 +941,28 @@ void loop(void *userData) {
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            // Apply inverse scale so drawing logic doesn't change
+            // Draw something in the framebuffer, e.g., a red rectangle
             nvgSave(ud->vg);
             nvgScale(ud->vg, zoom, zoom);
-
             for (GuiCommand &cmd : layer.gui_commands) {
                 pd4webdraw_command(ud, &cmd);
             }
 
-            nvgRestore(ud->vg);
+            nvgRestore(ud->vg); // desfaz o scale
             nvgEndFrame(ud->vg);
             nvgluBindFramebuffer(nullptr);
             layer.need_redraw = false;
         }
     }
 
-    // Render main canvas
+    // size of main canvas
     glViewport(0, 0, ud->canvas_width, ud->canvas_height);
     nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
+    nvgSave(ud->vg);
+    nvgScale(ud->vg, zoom, zoom);
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
@@ -971,13 +970,11 @@ void loop(void *userData) {
             PdLuaObjGuiLayer &layer = obj_layers[i];
             if (!layer.fb)
                 continue;
-
             int x = layer.objx;
             int y = layer.objy;
             int w = layer.objw;
             int h = layer.objh;
             int fbImage = layer.fb->image;
-
             NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
             nvgBeginPath(ud->vg);
             nvgRect(ud->vg, x, y, w, h);
@@ -985,7 +982,7 @@ void loop(void *userData) {
             nvgFill(ud->vg);
         }
     }
-
+    nvgRestore(ud->vg);
     nvgEndFrame(ud->vg);
 }
 
