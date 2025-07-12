@@ -74,6 +74,7 @@ function bng:mouse_down(x, y)
 	self:repaint()
 	self.clock:delay(1)
 	self.blink_delay = 0
+	self:outlet(1, "bang", {})
 end
 
 -- ──────────────────────────────────────────

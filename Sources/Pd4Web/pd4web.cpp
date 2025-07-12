@@ -914,6 +914,8 @@ void loop(void *userData) {
         return;
     }
 
+    float zoom = PD4WEB_PATCH_ZOOM;
+
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
@@ -926,35 +928,42 @@ void loop(void *userData) {
                 continue;
             }
 
+            int fbw = static_cast<int>(layer.objw * zoom);
+            int fbh = static_cast<int>(layer.objh * zoom);
+
             if (!layer.fb) {
-                layer.fb =
-                    nvgluCreateFramebuffer(ud->vg, layer.objw, layer.objh, NVG_IMAGE_PREMULTIPLIED);
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
             }
 
             // Render to the offscreen framebuffer
             nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, layer.objw, layer.objh);
-            nvgBeginFrame(ud->vg, layer.objw, layer.objh, ud->devicePixelRatio); // TODO: Check zoom
+            glViewport(0, 0, fbw, fbh);
+            nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-            // Draw something in the framebuffer, e.g., a red rectangle
+            // Apply inverse scale so drawing logic doesn't change
+            nvgSave(ud->vg);
+            nvgScale(ud->vg, zoom, zoom);
+
             for (GuiCommand &cmd : layer.gui_commands) {
                 pd4webdraw_command(ud, &cmd);
             }
 
+            nvgRestore(ud->vg);
             nvgEndFrame(ud->vg);
             nvgluBindFramebuffer(nullptr);
             layer.need_redraw = false;
         }
     }
 
-    // size of main canvas
+    // Render main canvas
     glViewport(0, 0, ud->canvas_width, ud->canvas_height);
     nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
     glClearColor(1, 1, 1, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
     for (auto &obj_pair : pdlua_objs) {
         std::string layer_id = obj_pair.first;
         PdLuaObjLayers &obj_layers = obj_pair.second;
@@ -962,17 +971,21 @@ void loop(void *userData) {
             PdLuaObjGuiLayer &layer = obj_layers[i];
             if (!layer.fb)
                 continue;
+
             int x = layer.objx;
             int y = layer.objy;
+            int w = layer.objw;
+            int h = layer.objh;
             int fbImage = layer.fb->image;
-            NVGpaint paint =
-                nvgImagePattern(ud->vg, x, y, layer.objw, layer.objh, 0, fbImage, 1.0f);
+
+            NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
             nvgBeginPath(ud->vg);
-            nvgRect(ud->vg, x, y, layer.objw, layer.objh);
+            nvgRect(ud->vg, x, y, w, h);
             nvgFillPaint(ud->vg, paint);
             nvgFill(ud->vg);
         }
     }
+
     nvgEndFrame(ud->vg);
 }
 
