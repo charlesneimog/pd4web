@@ -9,6 +9,8 @@
 #include <format>
 #include <iostream>
 #include <sstream>
+#include <mutex>
+#include <condition_variable>
 
 // emscripten
 #include <emscripten.h>
@@ -47,40 +49,40 @@ extern void pdlua_setup();
 }
 #endif
 
-#define ICON_SOUND_OFF                                                                             \
-    "data:image/"                                                                                  \
-    "svg+xml;base64,"                                                                              \
-    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZv" \
-    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu" \
-    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ" \
-    "bmMuLS0+"                                                                                     \
-    "PHBhdGggZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTgu" \
-    "OSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMw" \
-    "LTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1" \
-    "IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1" \
-    "YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYg" \
-    "OS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42" \
+#define ICON_SOUND_OFF                                                                                                 \
+    "data:image/"                                                                                                      \
+    "svg+xml;base64,"                                                                                                  \
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZv"                     \
+    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu"                     \
+    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ"                     \
+    "bmMuLS0+"                                                                                                         \
+    "PHBhdGggZD0iTTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAgMzg0YzAgMTIuNi03LjQgMjQtMTgu"                     \
+    "OSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAwLTY0LTI4LjctNjQtNjRsMC02NGMw"                     \
+    "LTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIyLjktMTAuNCAzNC40LTUuM3pNNDI1"                     \
+    "IDE2N2w1NSA1NSA1NS01NWM5LjQtOS40IDI0LjYtOS40IDMzLjkgMHM5LjQgMjQuNiAwIDMzLjlsLTU1IDU1IDU1IDU1"                     \
+    "YzkuNCA5LjQgOS40IDI0LjYgMCAzMy45cy0yNC42IDkuNC0zMy45IDBsLTU1LTU1LTU1IDU1Yy05LjQgOS40LTI0LjYg"                     \
+    "OS40LTMzLjkgMHMtOS40LTI0LjYgMC0zMy45bDU1LTU1LTU1LTU1Yy05LjQtOS40LTkuNC0yNC42IDAtMzMuOXMyNC42"                     \
     "LTkuNCAzMy45IDB6Ii8+PC9zdmc+"
 
-#define ICON_SOUND_ON                                                                              \
-    "data:image/"                                                                                  \
-    "svg+xml;base64,"                                                                              \
-    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZv" \
-    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu" \
-    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ" \
-    "bmMuLS0+"                                                                                     \
-    "PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEu" \
-    "NSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1" \
-    "Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMu" \
-    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5" \
-    "cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhD" \
-    "NDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIz" \
-    "LjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDgg" \
-    "MjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMz" \
-    "LjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMu" \
-    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAg" \
-    "Mzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAw" \
-    "LTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIy" \
+#define ICON_SOUND_ON                                                                                                  \
+    "data:image/"                                                                                                      \
+    "svg+xml;base64,"                                                                                                  \
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NDAgNTEyIj48IS0tIUZv"                     \
+    "bnQgQXdlc29tZSBGcmVlIDYuNi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu"                     \
+    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjQgRm9udGljb25zLCBJ"                     \
+    "bmMuLS0+"                                                                                                         \
+    "PHBhdGggZmlsbD0iIzAwMDAwMCIgZD0iTTUzMy42IDMyLjVDNTk4LjUgODUuMiA2NDAgMTY1LjggNjQwIDI1NnMtNDEu"                     \
+    "NSAxNzAuNy0xMDYuNCAyMjMuNWMtMTAuMyA4LjQtMjUuNCA2LjgtMzMuOC0zLjVzLTYuOC0yNS40IDMuNS0zMy44QzU1"                     \
+    "Ny41IDM5OC4yIDU5MiAzMzEuMiA1OTIgMjU2cy0zNC41LTE0Mi4yLTg4LjctMTg2LjNjLTEwLjMtOC40LTExLjgtMjMu"                     \
+    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTQ3My4xIDEwN2M0My4yIDM1LjIgNzAuOSA4OC45IDcwLjkgMTQ5"                     \
+    "cy0yNy43IDExMy44LTcwLjkgMTQ5Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMzLjhD"                     \
+    "NDc1LjMgMzQxLjMgNDk2IDMwMS4xIDQ5NiAyNTZzLTIwLjctODUuMy01My4yLTExMS44Yy0xMC4zLTguNC0xMS44LTIz"                     \
+    "LjUtMy41LTMzLjhzMjMuNS0xMS44IDMzLjgtMy41em0tNjAuNSA3NC41QzQzNC4xIDE5OS4xIDQ0OCAyMjUuOSA0NDgg"                     \
+    "MjU2cy0xMy45IDU2LjktMzUuNCA3NC41Yy0xMC4zIDguNC0yNS40IDYuOC0zMy44LTMuNXMtNi44LTI1LjQgMy41LTMz"                     \
+    "LjhDMzkzLjEgMjg0LjQgNDAwIDI3MSA0MDAgMjU2cy02LjktMjguNC0xNy43LTM3LjNjLTEwLjMtOC40LTExLjgtMjMu"                     \
+    "NS0zLjUtMzMuOHMyMy41LTExLjggMzMuOC0zLjV6TTMwMS4xIDM0LjhDMzEyLjYgNDAgMzIwIDUxLjQgMzIwIDY0bDAg"                     \
+    "Mzg0YzAgMTIuNi03LjQgMjQtMTguOSAyOS4ycy0yNSAzLjEtMzQuNC01LjNMMTMxLjggMzUyIDY0IDM1MmMtMzUuMyAw"                     \
+    "LTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIy"                     \
     "LjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4="
 
 // ╭─────────────────────────────────────╮
@@ -93,9 +95,6 @@ extern void pdlua_setup();
 #include <nanovg_gl_utils.h>
 
 class Pd4Web;
-using GuiCommandMap = std::unordered_map<
-    std::string,
-    std::unordered_map<std::string, std::unordered_map<int, std::vector<GuiCommand *>>>>;
 
 enum Pd4WebSenderType { BANG = 0, FLOAT, SYMBOL, LIST, MESSAGE };
 struct Pd4WebUserData {
@@ -139,14 +138,16 @@ void loop(void *userData);
 void create_webgl_context(Pd4WebUserData *ud);
 
 // ╭─────────────────────────────────────╮
-// │                                     │
+// │           PdLua Graphics            │
 // ╰─────────────────────────────────────╯
 struct PdLuaObjGuiLayer {
-    bool drawing = false;
     bool dirty = false;
-    int size;
+    bool drawing = false;
+
+    // pdlua
     std::string layer_id;
     std::vector<GuiCommand> gui_commands;
+    int size;
 
     // framebuffer
     int objx;
@@ -156,19 +157,13 @@ struct PdLuaObjGuiLayer {
     NVGLUframebuffer *fb = nullptr;
     float last_zoom = 0; // Track last zoom to detect changes
 };
-// layer
 using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
-// objid
 using PdLuaObjsGui = std::unordered_map<std::string, PdLuaObjLayers>;
-// libpd gui
 using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
 // ╰─────────────────────────────────────╯
-using PdAtom = std::variant<float, std::string>;
-using PdListAtoms = std::vector<PdAtom>;
-
 class Pd4Web {
   public:
     ~Pd4Web() {
@@ -200,7 +195,7 @@ class Pd4Web {
     void midiByte(uint8_t byte1, uint8_t byte2, uint8_t byte3);
 
     // bind
-    void bind(std::string r);
+    void bind(std::string r, std::string func);
     void unbind(std::string r);
 
     // TODO: make private

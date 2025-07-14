@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(pd4web)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ╭──────────────────────────────────────╮
@@ -38,10 +38,6 @@ if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/pd-lua)
 endif()
 
 # for now, it is necessary to replace glist_getrtext
-file(DOWNLOAD
-     https://raw.githubusercontent.com/ben-wes/pd-lua/refs/heads/fix/glist_getrtext/pdlua.c
-     ${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.c)
-
 add_library(lua "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/lua/onelua.c")
 target_compile_definitions(lua PUBLIC "-DMAKE_LIB")
 
@@ -49,10 +45,13 @@ add_custom_target(
     update_gfw
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua_gfx.c"
             "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua_gfx.h"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pdlua.h"
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.h"
             "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.h"
-    COMMENT "Updating pdlua_gfx.h and pdlua.h")
+    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.c"
+            "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.c"
+    COMMENT "Updating pdlua.c, pdlua.h and pdlua_gfx.h")
 
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/pd-lua")
 add_dependencies(lua update_gfw)
 target_compile_definitions(lua PUBLIC PD4WEB_LUA)
 

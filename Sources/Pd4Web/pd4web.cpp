@@ -119,7 +119,6 @@ void Pd4Web::sendSymbol(std::string s, std::string thing) {
 
 // ─────────────────────────────────────
 void Pd4Web::sendList(const std::string &r, emscripten::val jsArray) {
-    PdListAtoms atoms;
     const unsigned len = jsArray["length"].as<unsigned>();
     if (libpd_start_message(len)) {
         _JS_alert("Failed to start message for sendList");
@@ -179,21 +178,30 @@ void receivedBang(const char *r) {
     if (functionName.empty()) {
         return;
     }
+
+    // clang-format off
     EM_ASM(
         {
             const receiver = UTF8ToString($0);
             const func = UTF8ToString($1);
-            if (typeof window[func] == = 'function') {
+            if (typeof window[func] === 'function') {
                 window[func](receiver);
             } else {
                 console.warn("Function not found:", func);
             }
         },
         r, functionName.c_str());
+    // clang-format on
 }
 
 // ─────────────────────────────────────
-void Pd4Web::receivedFloat(const char *r, float f) {}
+void Pd4Web::receivedFloat(const char *r, float f) {
+    std::string functionName = bindedReceivers[r];
+    if (functionName.empty()) {
+        return;
+    }
+}
+
 // ─────────────────────────────────────
 void Pd4Web::receivedSymbol(const char *r, const char *s) {}
 // ─────────────────────────────────────
@@ -441,17 +449,13 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHEND:
-    case EMSCRIPTEN_EVENT_TOUCHCANCEL: // Cancela interação se o toque for interrompido
+    case EMSCRIPTEN_EVENT_TOUCHCANCEL:
         data->mousedown = false;
         data->doit = false;
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHMOVE:
-        if (data->mousedown) {
-            data->doit = true;
-        } else {
-            data->doit = false;
-        }
+        data->doit = data->mousedown;
         break;
     }
 
@@ -486,13 +490,10 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
 
     int xpos = round((float)e->targetX / PD4WEB_PATCH_ZOOM);
     int ypos = round((float)e->targetY / PD4WEB_PATCH_ZOOM);
-    // int shift = e->shiftKey;
-    // int alt = e->altKey;
 
     data->xpos = xpos;
     data->ypos = ypos;
     data->canvas = canvas;
-    data->doit = false;
 
     switch (eventType) {
     case EMSCRIPTEN_EVENT_MOUSEDOWN:
@@ -506,11 +507,7 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
         break;
 
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
-        if (data->mousedown) {
-            data->doit = true;
-        } else {
-            data->doit = false;
-        }
+        data->doit = data->mousedown; // Always process mousemove events
         break;
     }
 
@@ -522,7 +519,8 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
             d->canvas = canvas;
             d->xpos = xpos;
             d->ypos = ypos;
-            d->doit = data->doit;
+            d->doit = data->doit;           // Use the doit value we determined above
+            d->mousedown = data->mousedown; // Pass mousedown state separately
             d->libpd = data->libpd;
             pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, pd4web_queue_mouseclick);
             break;
@@ -1119,6 +1117,7 @@ void loop(void *userData) {
     nvgRestore(ud->vg);
     nvgEndFrame(ud->vg);
 
+    // TODO:
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 }
