@@ -67,7 +67,7 @@
 #X text 361 189 source <source_index> <azi> <ele>;
 #X obj 3 170 list;
 #X obj 3 93 nbx 5 16 -180 180 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 256;
-#X obj 24 147 nbx 5 16 -90 90 0 1 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 -40 256;
+#X obj 24 147 nbx 5 16 -90 90 0 1 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 -334 256;
 #N canvas 1442 550 472 489 (subpatch) 0;
 #X obj 11 51 tgl 28 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 11 106 int;
@@ -183,6 +183,9 @@
 #X obj 281 8 l.vsl 18 135 0 1 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1;
 #X obj 224 363 expr random(100 \, 1000);
 #X msg 589 347 \; pd dsp 1;
+#X obj 432 477 r test;
+#X obj 432 500 print;
+#X obj 429 378 midiin;
 #X connect 2 0 8 0;
 #X connect 2 1 8 1;
 #X connect 3 0 7 1;
@@ -254,4 +257,7 @@
 #X connect 65 0 41 0;
 #X connect 66 0 60 1;
 #X connect 67 0 41 0;
+#X connect 69 0 70 0;
+#X connect 71 0 8 0;
+#X connect 71 1 8 1;
 #X coords 0 -1 1 1 510 350 1 1 1;

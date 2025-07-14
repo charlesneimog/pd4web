@@ -19,6 +19,7 @@
 // libpd
 #include <z_libpd.h>
 #include <z_print_util.h>
+#include <z_queued.h>
 
 #include <m_pd.h>
 
@@ -135,13 +136,14 @@ struct Pd4WebUserData {
 };
 
 void loop(void *userData);
+void create_webgl_context(Pd4WebUserData *ud);
 
 // ╭─────────────────────────────────────╮
 // │                                     │
 // ╰─────────────────────────────────────╯
 struct PdLuaObjGuiLayer {
     bool drawing = false;
-    bool need_redraw = false;
+    bool dirty = false;
     int size;
     std::string layer_id;
     std::vector<GuiCommand> gui_commands;
@@ -164,6 +166,9 @@ using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
 // ╰─────────────────────────────────────╯
+using PdAtom = std::variant<float, std::string>;
+using PdListAtoms = std::vector<PdAtom>;
+
 class Pd4Web {
   public:
     ~Pd4Web() {
@@ -176,18 +181,35 @@ class Pd4Web {
     // Main
     void init();
     void suspendAudio();
-    void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
+    void openPatchJS(const std::string &patchPath, emscripten::val options);
 
     // send Messages
     void sendFloat(std::string r, float f);
     void sendSymbol(std::string r, std::string s);
     void sendBang(std::string r);
+    void sendList(const std::string &r, emscripten::val jsArray);
+    void sendMessage(const std::string &r, const std::string &s, emscripten::val jsArray);
+
+    // receive
+    void receivedFloat(const char *r, float f);
+    void receivedSymbol(const char *r, const char *s);
+    void receivedList(const char *r, int argc, t_atom *argv);
+    void receivedMessage(const char *r, const char *s, int argc, t_atom *argv);
+
+    // midi
     void midiByte(uint8_t byte1, uint8_t byte2, uint8_t byte3);
 
+    // bind
+    void bind(std::string r);
+    void unbind(std::string r);
+
+    // TODO: make private
     EMSCRIPTEN_WEBAUDIO_T m_Context;
-    t_pdinstance *m_NewPdInstance;
 
   private:
+    void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
+    void startMidi();
+
     // TODO: remove pointers
     Pd4WebUserData *m_SoundToggle;
     Pd4WebUserData *m_MouseListener;
@@ -197,6 +219,8 @@ class Pd4Web {
     bool m_Pd4WebInit = false;
     bool m_PdInit = false;
     bool m_audioSuspended = false;
+
+    t_pdinstance *m_NewPdInstance;
 };
 
 // ╭─────────────────────────────────────╮
@@ -206,15 +230,19 @@ EMSCRIPTEN_BINDINGS(WebPd) {
     emscripten::class_<Pd4Web>("Pd4Web")
         .constructor<>() // Default constructor
         .function("init", &Pd4Web::init)
-        .function("openPatch", &Pd4Web::openPatch)
+        .function("openPatch", &Pd4Web::openPatchJS)
         .function("suspendAudio", &Pd4Web::suspendAudio)
 
         // senders
         .function("sendBang", &Pd4Web::sendBang)
         .function("sendFloat", &Pd4Web::sendFloat)
         .function("sendSymbol", &Pd4Web::sendSymbol)
-        // .function("sendList", &Pd4Web::sendList)
-        // .function("sendMessage", &Pd4Web::sendMessage)
+        .function("sendList", &Pd4Web::sendList)
+        .function("sendMessage", &Pd4Web::sendMessage)
+
+        // bind and unbind receivers
+        .function("bind", &Pd4Web::bind)
+        .function("unbind", &Pd4Web::unbind)
 
         // Midi
         .function("_midiByte", &Pd4Web::midiByte);
