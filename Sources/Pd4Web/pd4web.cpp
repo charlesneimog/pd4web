@@ -6,6 +6,13 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
+
+// ─────────────────────────────────────
+EM_JS(int, is_dark_mode, (), {
+  return window.matchMedia &&
+         window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
+});
+
 // ─────────────────────────────────────
 EM_JS(void, _JS_alert, (const char *msg), {
     alert(UTF8ToString(msg));
@@ -419,6 +426,82 @@ void pd4web_queue_mouseclick(t_pd *obj, void *data) {
 }
 
 // ─────────────────────────────────────
+void pd4web_queue_keydown(t_pd *obj, void *userData) {
+    Pd4WebUserData *data = (Pd4WebUserData *)userData;
+    libpd_set_instance(data->libpd);
+
+    lua_State *L = __L();
+    lua_getglobal(L, "pd");          // stack: pd
+    lua_getfield(L, -1, "_objects"); // stack: pd, pd._objects
+    lua_remove(L, -2);               // stack: pd._objects
+
+    lua_pushnil(L); // primeira chave para lua_next
+
+    int count = 0;
+    while (lua_next(L, -2) != 0) {
+        // stack: pd._objects, key, value (objeto)
+        count++;
+
+        if (lua_istable(L, -1)) {
+            lua_getfield(L, -1, "key_down"); // stack: ..., key, value, key_down
+            if (lua_isfunction(L, -1)) {
+                lua_pushvalue(L, -2);                 // self (objeto)
+                lua_pushinteger(L, 20);               // x
+                lua_pushinteger(L, 20);               // y
+                lua_pushstring(L, data->key.c_str()); // key
+
+                if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
+                    const char *err = lua_tostring(L, -1);
+                    fprintf(stderr, "Erro ao chamar key_down: %s\n", err);
+                    lua_pop(L, 1); // remove mensagem de erro
+                }
+            } else {
+                lua_pop(L, 1); // remove key_down que não é função
+            }
+        }
+
+        lua_pop(L, 1); // remove value, mantém key para lua_next
+    }
+
+    lua_pop(L, 1); // remove pd._objects
+}
+
+// ─────────────────────────────────────
+EM_BOOL key_listener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
+    Pd4WebUserData *data = (Pd4WebUserData *)userData;
+    libpd_set_instance(data->libpd);
+
+    t_canvas *canvas = pd_getcanvaslist();
+    if (!canvas) {
+        fprintf(stderr, "No pd canvas found\n");
+        return EM_FALSE;
+    }
+
+    data->xpos = data->pd4web->lastMouseX;
+    data->ypos = data->pd4web->lastMouseY;
+    data->canvas = canvas;
+    data->doit = false;
+
+    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+        int x1, y1, x2, y2;
+        if (canvas_hitbox(canvas, obj, data->xpos, data->ypos, &x1, &y1, &x2, &y2, 0)) {
+            Pd4WebUserData *d = new Pd4WebUserData();
+            d->obj = obj;
+            d->canvas = canvas;
+            d->xpos = data->xpos;
+            d->ypos = data->ypos;
+            d->doit = data->doit;
+            d->libpd = data->libpd;
+            d->key = e->key;
+            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, pd4web_queue_keydown);
+            break;
+        }
+    }
+
+    return EM_TRUE;
+}
+
+// ─────────────────────────────────────
 EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
     libpd_set_instance(data->libpd);
@@ -426,11 +509,11 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
         fprintf(stderr, "No pd canvas found\n");
-        return EM_TRUE;
+        return EM_FALSE;
     }
 
     if (e->numTouches < 1) {
-        return EM_TRUE;
+        return EM_FALSE;
     }
 
     // Use o primeiro toque apenas (pode ser estendido para multitouch se necessário)
@@ -446,6 +529,8 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     case EMSCRIPTEN_EVENT_TOUCHSTART:
         data->mousedown = true;
         data->doit = true;
+        data->pd4web->lastMouseX = xpos;
+        data->pd4web->lastMouseY = ypos;
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHEND:
@@ -474,7 +559,7 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
         }
     }
 
-    return EM_TRUE;
+    return EM_FALSE;
 }
 
 // ─────────────────────────────────────
@@ -504,6 +589,8 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
     case EMSCRIPTEN_EVENT_MOUSEUP:
         data->mousedown = false;
         data->doit = false;
+        data->pd4web->lastMouseX = xpos;
+        data->pd4web->lastMouseY = ypos;
         break;
 
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
@@ -527,7 +614,7 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
         }
     }
 
-    return EM_TRUE;
+    return EM_FALSE;
 }
 
 // ─────────────────────────────────────
@@ -601,6 +688,8 @@ void Pd4Web::openPatchJS(const std::string &patchPath, emscripten::val options) 
 // ─────────────────────────────────────
 void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId) {
     // init new instance of libpd
+    libpd_set_printhook(libpd_print_concatenator);
+    libpd_set_concatenated_printhook(_JS_post);
     m_NewPdInstance = libpd_new_instance();
     if (m_NewPdInstance == NULL) {
         _JS_alert("libpd_init() failed, please report!");
@@ -618,6 +707,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
                     return;
                 }
                 el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
+                el.style.backgroundRepeat = "no-repeat";
                 el.classList.add("pulse-icon");
             },
             ICON_SOUND_OFF, soundToggleId.c_str());
@@ -628,7 +718,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_SoundToggle->soundSuspended = false;
         m_SoundToggle->pd4web = this;
         m_SoundToggle->soundToggleSel = soundToggleId;
-        emscripten_set_mousedown_callback(selector.c_str(), (void *)m_SoundToggle, EM_FALSE, sound_toggle);
+        emscripten_set_mousedown_callback(selector.c_str(), (void *)m_SoundToggle, EM_TRUE, sound_toggle);
     }
 
     // add paths
@@ -706,6 +796,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
             emscripten_set_touchcancel_callback(sel, (void *)m_MouseListener, EM_FALSE, touch_listener);
 
             // TODO: key input (for nbx, floatatom, and similar)
+            emscripten_set_keydown_callback(sel, (void *)m_MouseListener, EM_FALSE, key_listener);
         }
 
         m_MainLoop = new Pd4WebUserData(); // delete on Pd4Web destructor
@@ -725,6 +816,30 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 // ╭─────────────────────────────────────╮
 // │            Gui Interface            │
 // ╰─────────────────────────────────────╯
+void getDefaultColor(std::string key, float *r, float *g, float *b) {
+    static bool themeDefined = false;
+    static bool darkTheme = false;
+
+    if (!themeDefined) {
+        darkTheme = is_dark_mode();
+    }
+
+    if (darkTheme) {
+        if (key == "bg") {
+            *r = *g = *b = 0.20;
+        } else if (key == "fg") {
+            *r = *g = *b = 0.95;
+        }
+    } else {
+        if (key == "bg") {
+            *r = *g = *b = 0.98;
+        } else if (key == "fg") {
+            *r = *g = *b = 0.2;
+        }
+    }
+}
+
+// ─────────────────────────────────────
 static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b) {
     if (hex[0] == '#') {
         hex++;
@@ -787,15 +902,16 @@ void create_webgl_context(Pd4WebUserData *ud) {
         return;
     }
 
-    glClearColor(1, 1, 1, 1);
+    float r, g, b;
+    getDefaultColor("bg", &r, &g, &b);
+
+    glClearColor(r, g, b, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     ud->contextReady = true;
 }
 
-// ╭─────────────────────────────────────╮
-// │            Gui Commands             │
-// ╰─────────────────────────────────────╯
+// ─────────────────────────────────────
 PdLuaObjsGui &get_libpd_instance_commands() {
     static PdInstanceGui GuiCommands;
     t_pdinstance *pd = libpd_this_instance();
@@ -884,7 +1000,9 @@ void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgFill(ud->vg);
 
-        nvgStrokeColor(ud->vg, nvgRGBAf(0, 0, 0, 1.0f));
+        float r, g, b;
+        getDefaultColor("fg", &r, &g, &b);
+        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgStrokeWidth(ud->vg, 1 * PD4WEB_PATCH_ZOOM);
         nvgStroke(ud->vg);
         break;
@@ -1023,7 +1141,7 @@ void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
             nvgFontFaceId(ud->vg, ud->font_handler);
             nvgFontSize(ud->vg, cmd->font_size);
             nvgTextAlign(ud->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
-            nvgTextBox(ud->vg, cmd->x1, cmd->y1, cmd->w, cmd->text, nullptr);
+            nvgTextBox(ud->vg, round(cmd->x1), round(cmd->y1), cmd->w, cmd->text, nullptr);
         }
         break;
     }
@@ -1090,7 +1208,9 @@ void loop(void *userData) {
     glViewport(0, 0, ud->canvas_width, ud->canvas_height);
     nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
-    glClearColor(1, 1, 1, 1);
+    float r, g, b;
+    getDefaultColor("bg", &r, &g, &b);
+    glClearColor(r, g, b, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     nvgSave(ud->vg);
     nvgScale(ud->vg, zoom, zoom);

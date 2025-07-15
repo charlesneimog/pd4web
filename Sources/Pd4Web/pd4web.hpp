@@ -126,6 +126,9 @@ struct Pd4WebUserData {
     t_gobj *obj;
     t_canvas *canvas;
 
+    // key
+    std::string key;
+
     // rendering optimization
     bool first_frame = true;
     int font_handler = 0;
@@ -200,10 +203,15 @@ class Pd4Web {
 
     // TODO: make private
     EMSCRIPTEN_WEBAUDIO_T m_Context;
+    int lastMouseX;
+    int lastMouseY;
 
   private:
     void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
     void startMidi();
+
+    bool m_ThemeDefined = false;
+    bool m_DarkTheme = false;
 
     // TODO: remove pointers
     Pd4WebUserData *m_SoundToggle;
