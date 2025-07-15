@@ -19,10 +19,9 @@
     <body>
         <!-- All the styles are in the pd4web.style.css -->
         <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
-        <canvas id="Pd4WebCanvas" class="Pd4WebCanvas"></canvas>
+        <canvas tabindex="0" class="pd4web-patch-canvas" id="Pd4WebCanvas"></canvas>
         <script>
-            var Pd4Web = null; // Pd4Web object must be declared in the global scope
-
+            var Pd4Web = null;
             Pd4WebModule().then((Pd4WebModulePromise) => {
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
                 Pd4Web.openPatch("index.pd", {
