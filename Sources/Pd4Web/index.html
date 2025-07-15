@@ -28,6 +28,19 @@
                     canvasId: "Pd4WebCanvas",
                     soundToggleId: "Pd4WebAudioSwitch",
                 });
+
+                Pd4Web.onBangReceived("r-test", (r) => {
+                    console.log("Received bang from ", r);
+                });
+                Pd4Web.onFloatReceived("r-test", (r, f) => {
+                    console.log("Received float: ", f);
+                });
+                Pd4Web.onSymbolReceived("r-test", (r, s) => {
+                    console.log("Received symbol: ", s);
+                });
+                Pd4Web.onListReceived("r-test", (r, l) => {
+                    console.log("Received list: ", l);
+                });
             });
         </script>
         <script>
