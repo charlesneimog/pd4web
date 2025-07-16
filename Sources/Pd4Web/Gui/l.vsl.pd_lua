@@ -112,12 +112,16 @@ end
 -- ──────────────────────────────────────────
 function vsl:mouse_up(x, y)
 	self.pos = self:clamp_pos(y)
+	local val = self:pos_to_value(self.pos)
+	self:outlet(1, "float", { val })
 	self:repaint(2)
 end
 
 -- ──────────────────────────────────────────
 function vsl:mouse_drag(x, y)
 	self.pos = self:clamp_pos(y)
+	local val = self:pos_to_value(self.pos)
+	self:outlet(1, "float", { val })
 	self:repaint(2)
 end
 
