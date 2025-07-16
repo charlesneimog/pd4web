@@ -18,6 +18,8 @@
 #define PD4WEB_PATCH_ZOOM 2
 #define PD4WEB_FPS 60
 #define PD4WEB_AUTO_THEME true
+#define PD4WEB_RENDER_THROUGH_IMAGE false
+#define PD4WEB_MAX_FRAMERATE_MS 32  // 30fps limit (1000ms/30fps = 33.33ms, rounded to 32ms)
 
 // Midi
 #define PD4WEB_MIDI true

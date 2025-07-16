@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <tuple>
+#include <cstdint>
+#include <cstdio>
 
 // emscripten
 #include <emscripten.h>
@@ -95,7 +97,50 @@ extern void pdlua_setup();
 #include <nanovg_gl.h> // or nanovg_gl3.h depending on your setup
 #include <nanovg_gl_utils.h>
 
+// ╭─────────────────────────────────────╮
+// │         Dirty Rectangle System     │
+// ╰─────────────────────────────────────╯
+struct Rectangle {
+    int x, y, width, height;
+    
+    Rectangle(int x = 0, int y = 0, int w = 0, int h = 0) : x(x), y(y), width(w), height(h) {}
+    
+    bool isEmpty() const { return width <= 0 || height <= 0; }
+    
+    Rectangle getIntersection(const Rectangle& other) const {
+        int x1 = std::max(x, other.x);
+        int y1 = std::max(y, other.y);
+        int x2 = std::min(x + width, other.x + other.width);
+        int y2 = std::min(y + height, other.y + other.height);
+        
+        if (x1 >= x2 || y1 >= y2) {
+            return Rectangle(0, 0, 0, 0);
+        }
+        
+        return Rectangle(x1, y1, x2 - x1, y2 - y1);
+    }
+    
+    Rectangle getUnion(const Rectangle& other) const {
+        if (isEmpty()) return other;
+        if (other.isEmpty()) return *this;
+        
+        int x1 = std::min(x, other.x);
+        int y1 = std::min(y, other.y);
+        int x2 = std::max(x + width, other.x + other.width);
+        int y2 = std::max(y + height, other.y + other.height);
+        
+        return Rectangle(x1, y1, x2 - x1, y2 - y1);
+    }
+    
+    bool intersects(const Rectangle& other) const {
+        return !getIntersection(other).isEmpty();
+    }
+};
+
 class Pd4Web;
+
+// Forward declaration for global context
+extern Pd4WebUserData *g_mainLoopContext;
 
 enum Pd4WebSenderType { BANG = 0, FLOAT, SYMBOL, LIST, MESSAGE };
 struct Pd4WebUserData {
@@ -136,10 +181,23 @@ struct Pd4WebUserData {
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
     NVGcontext *vg;
     bool contextReady = false;
+    
+    // Dirty rectangle system
+    Rectangle invalidArea;
+    uint32_t lastRenderTime = 0;
+    bool renderThroughImage = false;
+    bool needsBufferSwap = false;
+    
+    // Frame buffers
+    NVGLUframebuffer *invalidFBO = nullptr;
+    NVGLUframebuffer *backupRenderImage = nullptr;
 };
 
 void loop(void *userData);
 void create_webgl_context(Pd4WebUserData *ud);
+void invalidateRegion(Pd4WebUserData *ud, const Rectangle& region);
+uint32_t getCurrentTimeMs();
+void updateBufferSize(Pd4WebUserData *ud);
 
 // ╭─────────────────────────────────────╮
 // │           PdLua Graphics            │
@@ -193,6 +251,24 @@ static Pd4WebReceiverListeners ListReceiverListeners;
 class Pd4Web {
   public:
     ~Pd4Web() {
+        // Clean up framebuffers
+        if (m_MainLoop) {
+            if (m_MainLoop->invalidFBO) {
+                nvgluDeleteFramebuffer(m_MainLoop->invalidFBO);
+                m_MainLoop->invalidFBO = nullptr;
+            }
+            if (m_MainLoop->backupRenderImage) {
+                nvgluDeleteFramebuffer(m_MainLoop->backupRenderImage);
+                m_MainLoop->backupRenderImage = nullptr;
+            }
+            
+            // Clear global reference
+            extern Pd4WebUserData *g_mainLoopContext;
+            if (g_mainLoopContext == m_MainLoop) {
+                g_mainLoopContext = nullptr;
+            }
+        }
+        
         libpd_free_instance(m_NewPdInstance);
         delete m_SoundToggle;
         delete m_MouseListener;

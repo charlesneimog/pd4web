@@ -80,7 +80,7 @@ if(NOT EXISTS ${NANOVG_DIR})
         # DOWNLOAD https://github.com/rgb2hsv/nanovg/archive/refs/heads/development.zip
         # ${NANOVG_ZIP}
         DOWNLOAD
-        https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
+        https://github.com/timothyschoen/nanovg/archive/f9acedc9d69b8a4f40854c3a826518633bd16ec1.zip
         ${NANOVG_ZIP}
         STATUS DOWNLOAD_STATUS)
 

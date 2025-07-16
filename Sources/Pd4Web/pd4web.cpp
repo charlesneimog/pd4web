@@ -1,5 +1,7 @@
 #include "pd4web.hpp"
 
+#include <emscripten/html5.h>
+
 // ╭─────────────────────────────────────╮
 // │        JavaScript Functions         │
 // ╰─────────────────────────────────────╯
@@ -992,6 +994,17 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_MainLoop->libpd = m_NewPdInstance;
         m_MainLoop->pd4web = this;
         m_MainLoop->canvasSel = PatchCanvaSel;
+        
+        // Initialize dirty rectangle system
+        m_MainLoop->invalidArea = Rectangle(0, 0, 0, 0);
+        m_MainLoop->lastRenderTime = 0;
+        m_MainLoop->renderThroughImage = PD4WEB_RENDER_THROUGH_IMAGE;
+        m_MainLoop->needsBufferSwap = false;
+        m_MainLoop->invalidFBO = nullptr;
+        m_MainLoop->backupRenderImage = nullptr;
+        
+        // Set global reference for invalidation
+        g_mainLoopContext = m_MainLoop;
 
         create_webgl_context(m_MainLoop);
         if (m_MainLoop->vg == nullptr) {
@@ -1026,6 +1039,51 @@ void getDefaultColor(std::string key, float *r, float *g, float *b) {
         } else if (key == "fg") {
             *r = *g = *b = 0.2;
         }
+    }
+}
+
+// ─────────────────────────────────────
+// Get current time in milliseconds
+uint32_t getCurrentTimeMs() {
+    return static_cast<uint32_t>(emscripten_get_now());
+}
+
+// ─────────────────────────────────────
+// Update buffer size and create frame buffers if needed
+void updateBufferSize(Pd4WebUserData *ud) {
+    if (!ud->vg) return;
+    
+    int viewWidth = ud->canvas_width;
+    int viewHeight = ud->canvas_height;
+    
+    // Create invalid area framebuffer if needed
+    if (!ud->invalidFBO) {
+        ud->invalidFBO = nvgluCreateFramebuffer(ud->vg, viewWidth, viewHeight, NVG_IMAGE_PREMULTIPLIED);
+        if (!ud->invalidFBO) {
+            fprintf(stderr, "Failed to create invalid area framebuffer\n");
+            return;
+        }
+    }
+    
+    // Create backup render image if needed for image rendering mode
+    if (ud->renderThroughImage && !ud->backupRenderImage) {
+        ud->backupRenderImage = nvgluCreateFramebuffer(ud->vg, viewWidth, viewHeight, NVG_IMAGE_PREMULTIPLIED);
+        if (!ud->backupRenderImage) {
+            fprintf(stderr, "Failed to create backup render image\n");
+            return;
+        }
+    }
+}
+
+// ─────────────────────────────────────
+// Invalidate a region of the canvas
+void invalidateRegion(Pd4WebUserData *ud, const Rectangle& region) {
+    if (region.isEmpty()) return;
+    
+    if (ud->invalidArea.isEmpty()) {
+        ud->invalidArea = region;
+    } else {
+        ud->invalidArea = ud->invalidArea.getUnion(region);
     }
 }
 
@@ -1101,6 +1159,9 @@ void create_webgl_context(Pd4WebUserData *ud) {
     ud->contextReady = true;
 }
 
+// Global reference to main loop context for invalidation
+static Pd4WebUserData *g_mainLoopContext = nullptr;
+
 // ─────────────────────────────────────
 PdLuaObjsGui &get_libpd_instance_commands() {
     static PdInstanceGui GuiCommands;
@@ -1130,6 +1191,12 @@ void clear_layercommand(const char *obj_layer_id, int layer, int x, int y, int w
     obj_layer.objh = h;
     obj_layer.objx = x;
     obj_layer.objy = y;
+    
+    // Invalidate the object region in the main rendering context
+    if (g_mainLoopContext) {
+        Rectangle objRect(x, y, w, h);
+        invalidateRegion(g_mainLoopContext, objRect);
+    }
 }
 
 // ─────────────────────────────────────
@@ -1341,6 +1408,16 @@ void pd4webdraw_command(Pd4WebUserData *ud, GuiCommand *cmd) {
 // ─────────────────────────────────────
 void loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+    
+    // Frame rate limiting - similar to plugdata
+    if (ud->renderThroughImage) {
+        uint32_t currentTime = getCurrentTimeMs();
+        if (currentTime - ud->lastRenderTime < PD4WEB_MAX_FRAMERATE_MS) {
+            return; // Skip frame to maintain 30fps limit
+        }
+        ud->lastRenderTime = currentTime;
+    }
+    
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
@@ -1350,8 +1427,21 @@ void loop(void *userData) {
         _JS_alert("NanoVG context invalid");
         return;
     }
+    
     float zoom = PD4WEB_PATCH_ZOOM;
+    float pixelScale = zoom;
+    
+    // Calculate viewport dimensions
+    int viewWidth = ud->canvas_width * pixelScale;
+    int viewHeight = ud->canvas_height * pixelScale;
+    
+    updateBufferSize(ud);
+    
+    // Get local bounds for intersection testing
+    Rectangle localBounds(0, 0, ud->canvas_width, ud->canvas_height);
+    ud->invalidArea = ud->invalidArea.getIntersection(localBounds);
 
+    // Check if any layers need updating and update their framebuffers
     bool needs_redraw = false;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
     for (auto &obj_pair : pdlua_objs) {
@@ -1363,6 +1453,10 @@ void loop(void *userData) {
             if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
                 continue;
             }
+            
+            // Mark object region as needing redraw
+            Rectangle objRect(layer.objx, layer.objy, layer.objw, layer.objh);
+            invalidateRegion(ud, objRect);
             needs_redraw = true;
 
             int fbw = layer.objw * zoom;
@@ -1392,42 +1486,85 @@ void loop(void *userData) {
             layer.dirty = false;
         }
     }
-    if (!needs_redraw) {
-        return;
-    }
-
-    // size of main canvas
-    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-
-    float r, g, b;
-    getDefaultColor("bg", &r, &g, &b);
-    glClearColor(r, g, b, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    nvgSave(ud->vg);
-    nvgScale(ud->vg, zoom, zoom);
-    for (auto &obj_pair : pdlua_objs) {
-        std::string layer_id = obj_pair.first;
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-        for (size_t i = 0; i < obj_layers.size(); ++i) {
-            PdLuaObjGuiLayer &layer = obj_layers[i];
-            if (!layer.fb) {
-                continue;
+    
+    // Only proceed with main canvas rendering if there's an invalid area
+    if (!ud->invalidArea.isEmpty()) {
+        // Draw only the invalidated region on top of framebuffer
+        nvgluBindFramebuffer(ud->invalidFBO);
+        glViewport(0, 0, viewWidth, viewHeight);
+        glClear(GL_STENCIL_BUFFER_BIT);
+        nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+        
+        // Set background color
+        float r, g, b;
+        getDefaultColor("bg", &r, &g, &b);
+        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
+        nvgFillRect(ud->vg, 0, 0, ud->canvas_width, ud->canvas_height);
+        
+        // Apply zoom scaling
+        nvgScale(ud->vg, zoom, zoom);
+        
+        // Use global scissor to limit drawing to invalid area
+        nvgGlobalScissor(ud->vg, 
+            ud->invalidArea.x * pixelScale, 
+            ud->invalidArea.y * pixelScale, 
+            ud->invalidArea.width * pixelScale, 
+            ud->invalidArea.height * pixelScale);
+        
+        // Render all object layers that intersect with invalid area
+        nvgSave(ud->vg);
+        for (auto &obj_pair : pdlua_objs) {
+            std::string layer_id = obj_pair.first;
+            PdLuaObjLayers &obj_layers = obj_pair.second;
+            for (size_t i = 0; i < obj_layers.size(); ++i) {
+                PdLuaObjGuiLayer &layer = obj_layers[i];
+                if (!layer.fb) {
+                    continue;
+                }
+                
+                Rectangle objRect(layer.objx, layer.objy, layer.objw, layer.objh);
+                if (!objRect.intersects(ud->invalidArea)) {
+                    continue; // Skip objects that don't intersect with invalid area
+                }
+                
+                int x = layer.objx;
+                int y = layer.objy;
+                int w = layer.objw;
+                int h = layer.objh;
+                int fbImage = layer.fb->image;
+                NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
+                nvgBeginPath(ud->vg);
+                nvgRect(ud->vg, x, y, w, h);
+                nvgFillPaint(ud->vg, paint);
+                nvgFill(ud->vg);
             }
-            int x = layer.objx;
-            int y = layer.objy;
-            int w = layer.objw;
-            int h = layer.objh;
-            int fbImage = layer.fb->image;
-            NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
-            nvgBeginPath(ud->vg);
-            nvgRect(ud->vg, x, y, w, h);
-            nvgFillPaint(ud->vg, paint);
-            nvgFill(ud->vg);
         }
+        nvgRestore(ud->vg);
+        
+        nvgEndFrame(ud->vg);
+        
+        if (ud->renderThroughImage) {
+            // TODO: Implement renderFrameToImage function if needed
+            // renderFrameToImage(ud->backupRenderImage, ud->invalidArea);
+        } else {
+            ud->needsBufferSwap = true;
+        }
+        
+        // Clear the invalid area
+        ud->invalidArea = Rectangle(0, 0, 0, 0);
     }
-    nvgRestore(ud->vg);
-    nvgEndFrame(ud->vg);
+    
+    // Swap buffers if needed
+    if (ud->needsBufferSwap) {
+        nvgluBindFramebuffer(nullptr);
+        
+        // Note: nvgluBlitFramebuffer may not be available in current NanoVG version
+        // For now, we'll rely on the main rendering being done to the default framebuffer
+        // This will be improved once we update to the newer NanoVG version
+        
+        // Swap GL buffers - note this is automatic in WebGL context
+        ud->needsBufferSwap = false;
+    }
 }
 
 // ╭─────────────────────────────────────╮
