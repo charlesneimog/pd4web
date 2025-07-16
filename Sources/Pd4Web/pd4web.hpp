@@ -186,7 +186,6 @@ struct Pd4WebUserData {
     Rectangle invalidArea;
     uint32_t lastRenderTime = 0;
     bool renderThroughImage = false;
-    bool needsBufferSwap = false;
     
     // Frame buffers
     NVGLUframebuffer *invalidFBO = nullptr;
@@ -196,6 +195,7 @@ struct Pd4WebUserData {
 void loop(void *userData);
 void create_webgl_context(Pd4WebUserData *ud);
 void invalidateRegion(Pd4WebUserData *ud, const Rectangle& region);
+void invalidateAll(Pd4WebUserData *ud);
 uint32_t getCurrentTimeMs();
 void updateBufferSize(Pd4WebUserData *ud);
 

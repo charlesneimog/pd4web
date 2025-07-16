@@ -744,6 +744,12 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, xpos, ypos, &x1, &y1, &x2, &y2, 0)) {
+            // Invalidate the object's region for redraw
+            if (g_mainLoopContext) {
+                Rectangle objRect(x1, y1, x2 - x1, y2 - y1);
+                invalidateRegion(g_mainLoopContext, objRect);
+            }
+            
             Pd4WebUserData *d = new Pd4WebUserData();
             d->obj = obj;
             d->canvas = canvas;
@@ -798,6 +804,12 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, xpos, ypos, &x1, &y1, &x2, &y2, 0)) {
+            // Invalidate the object's region for redraw
+            if (g_mainLoopContext) {
+                Rectangle objRect(x1, y1, x2 - x1, y2 - y1);
+                invalidateRegion(g_mainLoopContext, objRect);
+            }
+            
             Pd4WebUserData *d = new Pd4WebUserData();
             d->obj = obj;
             d->canvas = canvas;
@@ -859,9 +871,19 @@ void setAsyncMainLoop(void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
     int canvas_width, canvas_height;
     emscripten_get_canvas_element_size(ud->canvasSel.c_str(), &canvas_width, &canvas_height);
+    
+    // Check if canvas size changed
+    bool sizeChanged = (ud->canvas_width != canvas_width || ud->canvas_height != canvas_height);
+    
     ud->canvas_width = canvas_width;
     ud->canvas_height = canvas_height;
     ud->devicePixelRatio = emscripten_get_device_pixel_ratio();
+    
+    // Invalidate entire canvas if size changed
+    if (sizeChanged) {
+        invalidateAll(ud);
+    }
+    
     emscripten_set_main_loop_arg(loop, (void *)userData, 0, 0);
 }
 
@@ -999,7 +1021,6 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_MainLoop->invalidArea = Rectangle(0, 0, 0, 0);
         m_MainLoop->lastRenderTime = 0;
         m_MainLoop->renderThroughImage = PD4WEB_RENDER_THROUGH_IMAGE;
-        m_MainLoop->needsBufferSwap = false;
         m_MainLoop->invalidFBO = nullptr;
         m_MainLoop->backupRenderImage = nullptr;
         
@@ -1088,6 +1109,14 @@ void invalidateRegion(Pd4WebUserData *ud, const Rectangle& region) {
 }
 
 // ─────────────────────────────────────
+// Invalidate the entire canvas
+void invalidateAll(Pd4WebUserData *ud) {
+    if (ud) {
+        ud->invalidArea = Rectangle(0, 0, ud->canvas_width, ud->canvas_height);
+    }
+}
+
+// ─────────────────────────────────────
 static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b) {
     if (hex[0] == '#') {
         hex++;
@@ -1157,6 +1186,11 @@ void create_webgl_context(Pd4WebUserData *ud) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     ud->contextReady = true;
+    
+    // Force a full invalidation on first render
+    if (ud->canvas_width > 0 && ud->canvas_height > 0) {
+        invalidateAll(ud);
+    }
 }
 
 // Global reference to main loop context for invalidation
@@ -1489,8 +1523,8 @@ void loop(void *userData) {
     
     // Only proceed with main canvas rendering if there's an invalid area
     if (!ud->invalidArea.isEmpty()) {
-        // Draw only the invalidated region on top of framebuffer
-        nvgluBindFramebuffer(ud->invalidFBO);
+        // First, render to the main framebuffer (null = default framebuffer)
+        nvgluBindFramebuffer(nullptr);
         glViewport(0, 0, viewWidth, viewHeight);
         glClear(GL_STENCIL_BUFFER_BIT);
         nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
@@ -1543,28 +1577,13 @@ void loop(void *userData) {
         
         nvgEndFrame(ud->vg);
         
-        if (ud->renderThroughImage) {
-            // TODO: Implement renderFrameToImage function if needed
-            // renderFrameToImage(ud->backupRenderImage, ud->invalidArea);
-        } else {
-            ud->needsBufferSwap = true;
-        }
-        
-        // Clear the invalid area
+        // Clear the invalid area after rendering
         ud->invalidArea = Rectangle(0, 0, 0, 0);
     }
     
-    // Swap buffers if needed
-    if (ud->needsBufferSwap) {
-        nvgluBindFramebuffer(nullptr);
-        
-        // Note: nvgluBlitFramebuffer may not be available in current NanoVG version
-        // For now, we'll rely on the main rendering being done to the default framebuffer
-        // This will be improved once we update to the newer NanoVG version
-        
-        // Swap GL buffers - note this is automatic in WebGL context
-        ud->needsBufferSwap = false;
-    }
+    // Note: No buffer swap needed since we're rendering directly to default framebuffer
+    // The WebGL context will handle presentation automatically
+}
 }
 
 // ╭─────────────────────────────────────╮
