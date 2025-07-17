@@ -40,3 +40,6 @@ Tests/Libraries/ambi~/favicon.ico
 Tests/Libraries/ambi~/index.html
 Tests/Libraries/else/else/
 Sources/Compiler/.cache/clangd/index
+Resources/Tests/libnanovg.a
+Resources/Tests/nanovg.o
+Resources/Tests/nanovg_test

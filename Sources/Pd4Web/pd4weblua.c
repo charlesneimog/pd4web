@@ -42,7 +42,7 @@
 #define ssize_t int
 #define snprintf _snprintf
 #else
-#include <sys/fcntl.h> // for open
+#include <fcntl.h> // for open
 #include <unistd.h>
 #endif
 /* we use Lua */

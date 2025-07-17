@@ -19,6 +19,11 @@ EM_JS(void, JS_alert, (const char *msg), {
 });
 
 // ─────────────────────────────────────
+EM_JS(void, JS_warning, (const char *msg), {
+    console.warning(UTF8ToString(msg));
+});
+
+// ─────────────────────────────────────
 EM_JS(void, JS_post, (const char *msg), {
     let msgJS = UTF8ToString(msg);
     if (msgJS == "\n"){
@@ -70,7 +75,8 @@ EM_JS(void, JS_suspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
 void senderCallBack(t_pd *obj, void *data) {
-    Pd4WebSender *sender = (Pd4WebSender *)data;
+    std::unique_ptr<Pd4WebSender> sender(static_cast<Pd4WebSender *>(data));
+
     switch (sender->type) {
     case BANG:
         libpd_bang(sender->receiver);
@@ -81,84 +87,92 @@ void senderCallBack(t_pd *obj, void *data) {
     case SYMBOL:
         libpd_symbol(sender->receiver, sender->m);
         break;
-    case LIST:
-        // TODO:
-        break;
-    case MESSAGE:
-        // TODO:
-        break;
-    default:
+    case LIST: {
+        size_t llen = sender->l["length"].as<size_t>();
+        if (libpd_start_message(llen)) {
+            JS_alert("Failed to start message for sendList");
+            return;
+        }
+        for (unsigned i = 0; i < llen; ++i) {
+            emscripten::val v = sender->l[i];
+            if (v.isNumber()) {
+                libpd_add_float(v.as<double>());
+            } else if (v.isString()) {
+                libpd_add_symbol(v.as<std::string>().c_str());
+            } else {
+                std::cerr << "Unsupported type at index " << i << " for sendList\n";
+            }
+        }
+        if (libpd_finish_list(sender->receiver)) {
+            JS_alert("Failed to send message for sendList");
+        }
         break;
     }
-
-    delete sender;
+    case MESSAGE: {
+        const unsigned len = sender->l["length"].as<unsigned>();
+        t_atom atoms[len];
+        for (unsigned i = 0; i < len; ++i) {
+            emscripten::val v = sender->l[i];
+            if (v.isNumber()) {
+                libpd_set_float(&atoms[i], v.as<double>());
+            } else if (v.isString()) {
+                libpd_set_symbol(&atoms[i], v.as<std::string>().c_str());
+            } else {
+                std::cerr << "Unsupported type at index " << i << " for sendMessage\n";
+            }
+        }
+        libpd_message(sender->receiver, sender->sel, len, atoms);
+        break;
+    }
+    default:
+        JS_alert("Memory corruption, please report");
+        break;
+    }
 }
 
 // ─────────────────────────────────────
 void Pd4Web::sendBang(std::string s) {
-    Pd4WebSender *sender = new Pd4WebSender();
+    auto sender = std::make_unique<Pd4WebSender>();
     sender->type = BANG;
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, (void *)sender, senderCallBack);
+    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::sendFloat(std::string s, float f) {
-    Pd4WebSender *sender = new Pd4WebSender();
+    auto sender = std::make_unique<Pd4WebSender>();
     sender->type = FLOAT;
     sender->f = f;
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, (void *)sender, senderCallBack);
+    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::sendSymbol(std::string s, std::string thing) {
-    Pd4WebSender *sender = new Pd4WebSender();
+    auto sender = std::make_unique<Pd4WebSender>();
     sender->type = SYMBOL;
     sender->m = thing.c_str();
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, (void *)sender, senderCallBack);
+    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendList(const std::string &r, emscripten::val jsArray) {
-    const unsigned len = jsArray["length"].as<unsigned>();
-    if (libpd_start_message(len)) {
-        JS_alert("Failed to start message for sendList");
-        return;
-    }
-
-    for (unsigned i = 0; i < len; ++i) {
-        emscripten::val v = jsArray[i];
-        if (v.isNumber()) {
-            libpd_add_float(v.as<double>());
-        } else if (v.isString()) {
-            libpd_add_symbol(v.as<std::string>().c_str());
-        } else {
-            std::cerr << "Unsupported type at index " << i << " for sendList\n";
-        }
-    }
-    if (libpd_finish_list(r.c_str())) {
-        JS_alert("Failed to send message for sendList");
-    }
+void Pd4Web::sendList(std::string s, emscripten::val a) {
+    auto sender = std::make_unique<Pd4WebSender>();
+    sender->type = LIST;
+    sender->l = a;
+    t_pd *receiver = gensym(s.c_str())->s_thing;
+    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendMessage(const std::string &r, const std::string &s, emscripten::val jsArray) {
-    const unsigned len = jsArray["length"].as<unsigned>();
-    t_atom atoms[len];
-
-    for (unsigned i = 0; i < len; ++i) {
-        emscripten::val v = jsArray[i];
-        if (v.isNumber()) {
-            libpd_set_float(&atoms[i], v.as<double>());
-        } else if (v.isString()) {
-            libpd_set_symbol(&atoms[i], v.as<std::string>().c_str());
-        } else {
-            std::cerr << "Unsupported type at index " << i << " for sendMessage\n";
-        }
-    }
-    libpd_message(r.c_str(), s.c_str(), len, atoms);
+void Pd4Web::sendMessage(std::string r, std::string s, emscripten::val a) {
+    auto sender = std::make_unique<Pd4WebSender>();
+    sender->type = MESSAGE;
+    sender->l = a;
+    sender->sel = s.c_str();
+    t_pd *receiver = gensym(s.c_str())->s_thing;
+    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
 }
 
 // ╭─────────────────────────────────────╮
@@ -177,7 +191,8 @@ void Pd4Web::sendMessage(const std::string &r, const std::string &s, emscripten:
 void Pd4Web::onBangReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_NewPdInstance);
 
-    (void)libpd_bind(r.c_str()); // TODO: Unbind on delete
+    void *s = libpd_bind(r.c_str());
+    m_bindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -206,7 +221,8 @@ void Pd4Web::onBangReceived(std::string r, emscripten::val func) {
 void Pd4Web::onFloatReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_NewPdInstance);
 
-    (void)libpd_bind(r.c_str()); // TODO: Unbind on delete
+    void *s = libpd_bind(r.c_str());
+    m_bindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -235,7 +251,8 @@ void Pd4Web::onFloatReceived(std::string r, emscripten::val func) {
 void Pd4Web::onSymbolReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_NewPdInstance);
 
-    (void)libpd_bind(r.c_str()); // TODO: Unbind on delete
+    void *s = libpd_bind(r.c_str());
+    m_bindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -264,7 +281,8 @@ void Pd4Web::onSymbolReceived(std::string r, emscripten::val func) {
 void Pd4Web::onListReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_NewPdInstance);
 
-    (void)libpd_bind(r.c_str()); // TODO: Unbind on delete
+    void *s = libpd_bind(r.c_str());
+    m_bindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -964,7 +982,7 @@ void setAsyncMainLoop(void *userData) {
     ud->canvas_width = canvas_width;
     ud->canvas_height = canvas_height;
     ud->devicePixelRatio = emscripten_get_device_pixel_ratio();
-    emscripten_set_main_loop_arg(loop, (void *)userData, 0, 0);
+    emscripten_set_main_loop_arg(loop, (void *)userData, 30, 0);
 }
 
 // ─────────────────────────────────────
@@ -1014,11 +1032,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     }
 
     libpd_set_instance(m_NewPdInstance);
-    int ret = libpd_queued_init();
-    // if (ret){
-    //     JS_alert("libpd_queued_init() failed, please report!");
-    //     return;
-    // }
+    (void)libpd_queued_init();
 
     libpd_set_queued_banghook(receivedBang);
     libpd_set_queued_floathook(receivedFloat);
@@ -1065,7 +1079,7 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     // open patch
     if (!libpd_openfile(PatchPath.c_str(), "./")) {
-        JS_alert("Failed to open patch | Please Report!\n");
+        JS_alert("Failed to open patch | Please Report!");
         return;
     }
 
@@ -1113,8 +1127,8 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_GuiLoopCtx->libpd = m_NewPdInstance;
         m_GuiLoopCtx->pd4web = this;
         m_GuiLoopCtx->canvasSel = PatchCanvaSel;
+        getGlCtx(m_GuiLoopCtx.get());
 
-        create_webgl_context(m_GuiLoopCtx.get());
         if (m_GuiLoopCtx->vg == nullptr) {
             JS_alert("NanoVG invalid Context, not rendering patch");
             return;
@@ -1187,7 +1201,18 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
  * @param ud  Pointer to Pd4WebUserData containing canvas selector and context state.
  */
 // ─────────────────────────────────────
-void create_webgl_context(Pd4WebUserData *ud) {
+void getGlCtx(Pd4WebUserData *ud) {
+#ifdef PD4WEB_WEBGPU
+    WGPUDevice instance = emscripten_webgpu_get_device();
+    if (!instance) {
+        printf("Failed to get WebGPU instance\n");
+        return;
+    }
+
+    printf("Got WebGPU instance: %p\n", instance);
+    return;
+
+#else
     if (ud->contextReady) {
         emscripten_webgl_make_context_current(ud->ctx);
         return;
@@ -1196,20 +1221,15 @@ void create_webgl_context(Pd4WebUserData *ud) {
     EmscriptenWebGLContextAttributes attrs;
     emscripten_webgl_init_context_attributes(&attrs);
 
+    //
     attrs.alpha = false;
     attrs.depth = false;
-    attrs.stencil = false;
-    attrs.antialias = false;
+    attrs.stencil = true;
+    attrs.antialias = true;
     attrs.premultipliedAlpha = false;
-    attrs.preserveDrawingBuffer = false;
     attrs.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
-    attrs.failIfMajorPerformanceCaveat = false;
     attrs.majorVersion = 2;
-    attrs.minorVersion = 2;
-    attrs.enableExtensionsByDefault = false;
-    attrs.explicitSwapControl = false;
-    attrs.proxyContextToMainThread = EMSCRIPTEN_WEBGL_CONTEXT_PROXY_DISALLOW;
-    attrs.renderViaOffscreenBackBuffer = false;
+    attrs.enableExtensionsByDefault = true;
 
     ud->ctx = emscripten_webgl_create_context(ud->canvasSel.c_str(), &attrs);
     if (ud->ctx <= 0) {
@@ -1217,8 +1237,7 @@ void create_webgl_context(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    // ud->vg = nvgCreateContext(NVG_ANTIALIAS);
-    ud->vg = nvgCreateContext(0);
+    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
     if (!ud->vg) {
         JS_alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -1238,6 +1257,7 @@ void create_webgl_context(Pd4WebUserData *ud) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     ud->contextReady = true;
+#endif
 }
 
 // ─────────────────────────────────────
@@ -1370,6 +1390,8 @@ void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
  * @param cmd  Pointer to the GuiCommand to be drawn.
  */
 void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
+#ifdef PD4WEB_WEBGPU
+#else
     float r, g, b;
     hex_to_rgb_normalized(cmd->current_color, &r, &g, &b);
     nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
@@ -1384,7 +1406,7 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float r, g, b;
         getDefaultColor("fg", &r, &g, &b);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgStrokeWidth(ud->vg, 1 * PD4WEB_PATCH_ZOOM);
+        nvgStrokeWidth(ud->vg, 2);
         nvgStroke(ud->vg);
         break;
     }
@@ -1527,6 +1549,7 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         break;
     }
     }
+#endif
 }
 
 // ─────────────────────────────────────
@@ -1537,143 +1560,6 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
  *
  * @param userData  Pointer to user-defined data (Pd4WebUserData).
  */
-// void loop(void *userData) {
-//     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
-//     libpd_set_instance(ud->libpd);
-//     libpd_queued_receive_pd_messages();
-//     libpd_queued_receive_midi_messages();
-//
-//     create_webgl_context(ud);
-//     if (ud->vg == nullptr) {
-//         JS_alert("NanoVG context invalid");
-//         return;
-//     }
-//     float zoom = PD4WEB_PATCH_ZOOM;
-//
-//     bool needs_redraw = false;
-//     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
-//     for (auto &obj_pair : pdlua_objs) {
-//         PdLuaObjLayers &obj_layers = obj_pair.second;
-//
-//         for (auto &layer_pair : obj_layers) {
-//             // int layer_num = layer_pair.first;
-//             PdLuaObjGuiLayer &layer = layer_pair.second;
-//             if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
-//                 continue;
-//             }
-//             needs_redraw = true;
-//
-//             int fbw = layer.objw * zoom;
-//             int fbh = layer.objh * zoom;
-//
-//             if (!layer.fb) {
-//                 layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
-//             }
-//
-//             // Render to the offscreen framebuffer
-//             nvgluBindFramebuffer(layer.fb);
-//             glViewport(0, 0, fbw, fbh);
-//             nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
-//             glClearColor(0, 0, 0, 0);
-//             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-//
-//             // Draw something in the framebuffer, e.g., a red rectangle
-//             nvgSave(ud->vg);
-//             nvgScale(ud->vg, zoom, zoom);
-//             for (GuiCommand &cmd : layer.gui_commands) {
-//                 pd4webdraw(ud, &cmd);
-//             }
-//
-//             nvgRestore(ud->vg); // desfaz o scale
-//             nvgEndFrame(ud->vg);
-//             nvgluBindFramebuffer(nullptr);
-//             layer.dirty = false;
-//         }
-//     }
-//     if (!needs_redraw) {
-//         return;
-//     }
-//
-//     // size of main canvas
-//     glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-//     nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-//
-//     float r, g, b;
-//     getDefaultColor("bg", &r, &g, &b);
-//     glClearColor(r, g, b, 0);
-//     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-//     nvgSave(ud->vg);
-//     nvgScale(ud->vg, zoom, zoom);
-//     for (auto &obj_pair : pdlua_objs) {
-//         std::string layer_id = obj_pair.first;
-//         PdLuaObjLayers &obj_layers = obj_pair.second;
-//         for (size_t i = 0; i < obj_layers.size(); ++i) {
-//             PdLuaObjGuiLayer &layer = obj_layers[i];
-//             if (!layer.fb) {
-//                 continue;
-//             }
-//             int x = layer.objx;
-//             int y = layer.objy;
-//             int w = layer.objw;
-//             int h = layer.objh;
-//             int fbImage = layer.fb->image;
-//             NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
-//             nvgBeginPath(ud->vg);
-//             nvgRect(ud->vg, x, y, w, h);
-//             nvgFillPaint(ud->vg, paint);
-//             nvgFill(ud->vg);
-//         }
-//     }
-//     nvgRestore(ud->vg);
-//     nvgEndFrame(ud->vg);
-// }
-
-// void NVGSurface::renderFrameToImage(Image& image, Rectangle<int> area)
-// {
-//     nvgBindFramebuffer(nullptr);
-//     auto const bufferSize = fbHeight * fbWidth;
-//     if (bufferSize != backupPixelData.size())
-//         backupPixelData.resize(bufferSize);
-//
-//     auto region = area.getIntersection(getLocalBounds()).toFloat() * getRenderScale();
-//     nvgReadPixels(nvg, invalidFBO, region.getX(), region.getY(), region.getWidth(),
-//     region.getHeight(), fbHeight, backupPixelData.data());
-//
-//     if (!image.isValid() || image.getWidth() != fbWidth || image.getHeight() != fbHeight) {
-//         image = Image(Image::PixelFormat::ARGB, fbWidth, fbHeight, true);
-//     }
-//
-//     Image::BitmapData imageData(image, Image::BitmapData::writeOnly);
-//
-//     for (int y = 0; y < static_cast<int>(region.getHeight()); y++) {
-//         auto* scanLine = reinterpret_cast<uint32*>(imageData.getLinePointer(y + region.getY()));
-//         for (int x = 0; x < static_cast<int>(region.getWidth()); x++) {
-// #if NANOVG_GL_IMPLEMENTATION
-//             // OpenGL images are upside down
-//             uint32 argb = backupPixelData[((int)region.getHeight() - (y + 1)) *
-//             (int)region.getWidth() + x];
-// #else
-//             uint32 argb = backupPixelData[y * static_cast<int>(region.getWidth()) + x];
-// #endif
-//             uint8 a = argb >> 24;
-//             uint8 r = argb >> 16;
-//             uint8 g = argb >> 8;
-//             uint8 b = argb;
-//
-//             // order bytes as abgr
-// #if NANOVG_GL_IMPLEMENTATION
-//             scanLine[x + (int)region.getX()] = (a << 24) | (b << 16) | (g << 8) | r;
-// #else
-//             scanLine[x + static_cast<int>(region.getX())] = a << 24 | r << 16 | g << 8 | b;
-// #endif
-//         }
-//     }
-//
-//     backupImageComponent.setImage(Image()); // Need to set a dummy image first to force an update
-//     backupImageComponent.setImage(image);
-// }
-
-#include "pd4web.hpp" // assuming necessary types come from here
 
 void loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
@@ -1681,78 +1567,93 @@ void loop(void *userData) {
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 
-    create_webgl_context(ud);
+    getGlCtx(ud);
     if (ud->vg == nullptr) {
-        JS_alert("NanoVG context invalid");
+        JS_warning("NanoVG context invalid");
         return;
     }
-
-    auto pixelScale = ud->devicePixelRatio;
-    auto const desktopScale = 2;
-    auto const devicePixelScale = pixelScale / desktopScale;
-
-    auto viewWidth = ud->canvas_width;
-    auto viewHeight = ud->canvas_height;
-
-    // Initialize invalidArea properly
-    Rectangle<int> &invalidArea = ud->pd4web->invalidArea;
-    invalidArea = Rectangle<int>(0, 0, 0, 0);
-
     float zoom = PD4WEB_PATCH_ZOOM;
 
+#ifdef PD4WEB_WEBGPU
+    // need to draw
+#else
+    bool needs_redraw = false;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
-
     for (auto &obj_pair : pdlua_objs) {
         PdLuaObjLayers &obj_layers = obj_pair.second;
+
         for (auto &layer_pair : obj_layers) {
+            int layer_num = layer_pair.first;
             PdLuaObjGuiLayer &layer = layer_pair.second;
             if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
                 continue;
             }
+            needs_redraw = true;
 
-            nvgViewport(0, 0, layer.objw, layer.objh);
-            nvgClear(ud->vg);
-            nvgBeginFrame(ud->vg, layer.objw, layer.objh, pixelScale);
-            nvgScale(ud->vg, zoom, zoom);
+            int fbw = static_cast<int>(layer.objw * zoom);
+            int fbh = static_cast<int>(layer.objh * zoom);
+
+            if (!layer.fb) {
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
+            }
+
+            // Render to the offscreen framebuffer
+            nvgluBindFramebuffer(layer.fb);
+            glViewport(0, 0, fbw, fbh);
+            nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
+            glClearColor(0, 0, 0, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            // Draw something in the framebuffer, e.g., a red rectangle
             nvgSave(ud->vg);
+            nvgScale(ud->vg, zoom, zoom);
             for (GuiCommand &cmd : layer.gui_commands) {
                 pd4webdraw(ud, &cmd);
             }
-            nvgRestore(ud->vg);
-            nvgEndFrame(ud->vg);
 
-            layer.dirty = false; // Mark layer as clean
+            nvgRestore(ud->vg); // desfaz o scale
+            nvgEndFrame(ud->vg);
+            nvgluBindFramebuffer(nullptr);
+            layer.dirty = false;
         }
     }
-
-    if (ud->invalidFBO) {
-        ud->invalidFBO =
-            nvgluCreateFramebuffer(ud->vg, viewWidth, viewHeight, NVG_IMAGE_PREMULTIPLIED);
+    if (!needs_redraw) {
+        return;
     }
 
-    if (!invalidArea.isEmpty()) {
-        nvgBindFramebuffer(ud->invalidFBO);
-        nvgViewport(0, 0, viewWidth, viewHeight);
-        glClear(GL_STENCIL_BUFFER_BIT);
-        nvgBeginFrame(ud->vg, viewWidth, viewHeight, pixelScale);
-        nvgScale(ud->vg, pixelScale, pixelScale);
+    // size of main canvas
+    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
 
-        nvgFillColor(ud->vg, nvgRGBA(255, 255, 255, 255));
-        nvgFillRect(ud->vg, 0, 0, viewWidth, viewHeight);
-
-        // ud->editor->renderArea(ud->vg, invalidArea);
-
-        nvgGlobalScissor(ud->vg, invalidArea.getX() * pixelScale, invalidArea.getY() * pixelScale,
-                         invalidArea.getWidth() * pixelScale, invalidArea.getHeight() * pixelScale);
-
-        nvgEndFrame(ud->vg);
-        invalidArea = Rectangle<int>(0, 0, 0, 0);
+    float r, g, b;
+    getDefaultColor("bg", &r, &g, &b);
+    glClearColor(r, g, b, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    nvgSave(ud->vg);
+    nvgScale(ud->vg, zoom, zoom);
+    for (auto &obj_pair : pdlua_objs) {
+        std::string layer_id = obj_pair.first;
+        PdLuaObjLayers &obj_layers = obj_pair.second;
+        for (size_t i = 0; i < obj_layers.size(); ++i) {
+            PdLuaObjGuiLayer &layer = obj_layers[i];
+            if (!layer.fb) {
+                continue;
+            }
+            int x = layer.objx;
+            int y = layer.objy;
+            int w = layer.objw;
+            int h = layer.objh;
+            int fbImage = layer.fb->image;
+            NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
+            nvgBeginPath(ud->vg);
+            nvgRect(ud->vg, x, y, w, h);
+            nvgFillPaint(ud->vg, paint);
+            nvgFill(ud->vg);
+        }
     }
-
-    nvgBindFramebuffer(nullptr);
-    nvgBlitFramebuffer(ud->vg, ud->invalidFBO, 0, 0, viewWidth, viewHeight);
-
-    // glContext->swapBuffers(); // To be implemented depending on platform
+    nvgRestore(ud->vg);
+    nvgEndFrame(ud->vg);
+#endif
 }
 
 // ╭─────────────────────────────────────╮
@@ -1802,8 +1703,10 @@ void Pd4Web::init() {
 int main() {
     emscripten_set_window_title(PD4WEB_PROJECT_NAME);
     libpd_set_printhook(JS_post);
-    int ok = libpd_init();
-    if (ok) {
+    int result = libpd_init();
+    if (result != 0) {
+        JS_alert("Failed to initialize libpd, please report to pd4web");
+        abort();
     }
     std::cout << std::format("pd4web version {}.{}.{}", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
                              PD4WEB_VERSION_PATCH)

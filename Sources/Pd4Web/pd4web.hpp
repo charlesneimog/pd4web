@@ -50,12 +50,16 @@ extern void pdlua_setup();
 // ╭─────────────────────────────────────╮
 // │            Graphics / GL Setup      │
 // ╰─────────────────────────────────────╯
+#ifdef PD4WEB_WEBGPU
+#include <webgpu/webgpu.h>
+#include <emscripten/html5_webgpu.h>
+#else
 #include <GLES3/gl3.h>
-
 #define NANOVG_GLES3_IMPLEMENTATION
 #include <nanovg.h>
 #include <nanovg_gl.h>
 #include <nanovg_gl_utils.h>
+#endif
 
 // ────────── User Data Struct ──────────
 enum Pd4WebSenderType { BANG = 0, FLOAT, SYMBOL, LIST, MESSAGE };
@@ -64,7 +68,7 @@ struct Pd4WebUserData {
     class Pd4Web *pd4web;
     t_pdinstance *libpd;
 
-    NVGLUframebuffer *invalidFBO;
+    bool redraw = true;
 
     // Sound state
     bool soundInit;
@@ -98,8 +102,15 @@ struct Pd4WebUserData {
     bool first_frame = true;
     int font_handler = 0;
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
-    NVGcontext *vg;
     bool contextReady = false;
+
+#ifdef PD4WEB_WEBGPU
+    WGPUDevice *vg;
+#else
+    NVGcontext *vg;
+    NVGLUframebuffer *invalidFBO;
+    NVGLUframebuffer *fb = nullptr;
+#endif
 };
 
 // ─────────── PdLua Graphics ───────────
@@ -118,7 +129,10 @@ struct PdLuaObjGuiLayer {
     int objy;
     int objw;
     int objh;
+#ifdef PD4WEB_WEBGPU
+#else
     NVGLUframebuffer *fb = nullptr;
+#endif
     float last_zoom = 0; // Track last zoom to detect changes
 };
 using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
@@ -129,8 +143,11 @@ using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 struct Pd4WebSender {
     const char *receiver;
     Pd4WebSenderType type;
+    const char *sel;
+
     float f;
     const char *m;
+    emscripten::val l;
 };
 
 static std::unordered_map<t_pdinstance *, std::unordered_map<std::string, emscripten::val>>
@@ -147,42 +164,12 @@ static Pd4WebReceiverListeners ListReceiverListeners;
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
 // ╰─────────────────────────────────────╯
-template <typename T> class Rectangle {
-  public:
-    Rectangle() : x(0), y(0), width(0), height(0) {}
-    Rectangle(T x_, T y_, T w_, T h_) : x(x_), y(y_), width(w_), height(h_) {}
-
-    T getX() const {
-        return x;
-    }
-    T getY() const {
-        return y;
-    }
-    T getWidth() const {
-        return width;
-    }
-    T getHeight() const {
-        return height;
-    }
-
-    void setBounds(T x_, T y_, T w_, T h_) {
-        x = x_;
-        y = y_;
-        width = w_;
-        height = h_;
-    }
-
-    bool isEmpty() const {
-        return width <= 0 || height <= 0;
-    }
-
-  private:
-    T x, y, width, height;
-};
-
 class Pd4Web {
   public:
     ~Pd4Web() {
+        for (auto s : m_bindSymbols) {
+            libpd_unbind(s);
+        }
         libpd_free_instance(m_NewPdInstance);
     }
 
@@ -195,8 +182,8 @@ class Pd4Web {
     void sendFloat(std::string r, float f);
     void sendSymbol(std::string r, std::string s);
     void sendBang(std::string r);
-    void sendList(const std::string &r, emscripten::val jsArray);
-    void sendMessage(const std::string &r, const std::string &s, emscripten::val jsArray);
+    void sendList(std::string r, emscripten::val a);
+    void sendMessage(std::string r, std::string s, emscripten::val a);
 
     // bind
     void onBangReceived(std::string r, emscripten::val func);
@@ -212,12 +199,10 @@ class Pd4Web {
     EMSCRIPTEN_WEBAUDIO_T getWebAudioContext();
     void setWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx);
 
-    //
-    Rectangle<int> invalidArea;
-
   private:
     void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
     void startMidi();
+    std::vector<void *> m_bindSymbols;
 
     // Theme
     bool m_ThemeDefined = false;
@@ -245,7 +230,7 @@ class Pd4Web {
 // │           Function Prototypes       │
 // ╰─────────────────────────────────────╯
 void loop(void *userData);
-void create_webgl_context(Pd4WebUserData *ud);
+void getGlCtx(Pd4WebUserData *ud);
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
