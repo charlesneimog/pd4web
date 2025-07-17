@@ -3,12 +3,6 @@ project(libpd C)
 
 set(ENABLE_TILDE_TARGET_WARNING off)
 
-if(LSP_SUPPORT)
-    if(NOT DEFINED PD_SOURCE_DIR)
-        set(PD_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src/)
-    endif()
-endif()
-
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
 
 # ╭──────────────────────────────────────╮

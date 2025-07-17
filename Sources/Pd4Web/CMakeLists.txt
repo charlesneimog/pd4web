@@ -1,102 +1,56 @@
 cmake_minimum_required(VERSION 3.25)
 project(pd4web)
 
-set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+option(USE_WEBGPU "Enable WebGPU backend (requires Emscripten with WebGPU support)" OFF)
+set(LIBPD_TAG "0.56-0test1")
+set(PDLUA_TAG "0.12.23")
+
+include(FetchContent)
 
 # ╭──────────────────────────────────────╮
 # │               PureData               │
 # ╰──────────────────────────────────────╯
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/pure-data)
-    find_package(Git REQUIRED)
-    set(LIBPD_TAG "0.56-0test1")
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} clone https://github.com/pure-data/pure-data.git --branch
-                ${LIBPD_TAG} --recursive
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        RESULT_VARIABLE GIT_RESULT)
-    if(NOT GIT_RESULT EQUAL "0")
-        message(FATAL_ERROR "Failed to clone puredata repository.")
-    endif()
-endif()
-set(PD_SOURCES_PATH ${CMAKE_CURRENT_BINARY_DIR}/pure-data/src)
+FetchContent_Declare(
+    pure_data
+    GIT_REPOSITORY https://github.com/pure-data/pure-data.git
+    GIT_TAG ${LIBPD_TAG}
+    GIT_SHALLOW FALSE
+    GIT_PROGRESS TRUE
+    SOURCE_SUBDIR src)
+
+FetchContent_MakeAvailable(pure_data)
+set(PD_SOURCE_DIR ${pure_data_SOURCE_DIR}/src/)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/Libraries/libpd.cmake)
+target_compile_definitions(libpd PUBLIC PDTHREADS PDINSTANCE)
 
 # ╭──────────────────────────────────────╮
 # │                Pdlua                 │
 # ╰──────────────────────────────────────╯
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/pd-lua)
-    find_package(Git REQUIRED)
-    set(PDLUA_TAG "0.12.23")
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} clone https://github.com/agraef/pd-lua --recursive --branch
-                ${PDLUA_TAG} --recursive
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        RESULT_VARIABLE GIT_RESULT)
-    if(NOT GIT_RESULT EQUAL "0")
-        message(FATAL_ERROR "Failed to clone pdlua repository.")
-    endif()
-endif()
+FetchContent_Declare(
+    pd_lua
+    GIT_REPOSITORY https://github.com/agraef/pd-lua.git
+    GIT_TAG ${PDLUA_TAG}
+    GIT_PROGRESS TRUE
+    GIT_SUBMODULES_RECURSE TRUE)
+
+FetchContent_MakeAvailable(pd_lua)
+include_directories("${pd_lua_SOURCE_DIR}/")
+add_library(lua "${pd_lua_SOURCE_DIR}/lua/onelua.c")
+target_compile_definitions(lua PUBLIC "MAKE_LIB")
 
 # for now, it is necessary to replace glist_getrtext
-add_library(lua "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/lua/onelua.c")
-target_compile_definitions(lua PUBLIC "-DMAKE_LIB")
-
 add_custom_target(
     update_gfw
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua_gfx.c"
-            "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua_gfx.h"
+            "${pd_lua_SOURCE_DIR}/pdlua_gfx.h"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.h"
-            "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.h"
+            "${pd_lua_SOURCE_DIR}/pdlua.h"
     COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.c"
-            "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.c"
+            "${pd_lua_SOURCE_DIR}/pdlua.c"
     COMMENT "Updating pdlua.c, pdlua.h and pdlua_gfx.h")
 
-include_directories("${CMAKE_CURRENT_BINARY_DIR}/pd-lua")
-add_dependencies(lua update_gfw)
-target_compile_definitions(lua PUBLIC PD4WEB_LUA)
-
-set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${CMAKE_CURRENT_SOURCE_DIR}/DejaVuSans.ttf@/DejaVuSans.ttf"
-)
-set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pd.lua@/pd.lua")
-set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua/tutorial/examples/pdx.lua@/pdx.lua"
-)
-set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua/tutorial/examples/pdx.lua@/pdx.lua"
-)
-set(CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} --preload-file=${CMAKE_CURRENT_SOURCE_DIR}/Gui/@/Gui/")
-
-# ╭──────────────────────────────────────╮
-# │                nanovg                │
-# ╰──────────────────────────────────────╯
-set(NANOVG_DIR "${CMAKE_CURRENT_BINARY_DIR}/nanovg")
-set(NANOVG_ZIP "${CMAKE_CURRENT_BINARY_DIR}/nanovg.zip")
-if(NOT EXISTS ${NANOVG_DIR})
-    message(STATUS "Downloading NanoVG...")
-    file(
-        # DOWNLOAD https://github.com/rgb2hsv/nanovg/archive/refs/heads/development.zip
-        # ${NANOVG_ZIP}
-        DOWNLOAD
-        https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
-        ${NANOVG_ZIP}
-        STATUS DOWNLOAD_STATUS)
-
-    message(STATUS "Unzipping NanoVG...")
-    execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf ${NANOVG_ZIP}
-                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-
-    file(GLOB NANOVG_EXTRACTED_DIR "${CMAKE_CURRENT_BINARY_DIR}/nanovg-*")
-    file(RENAME ${NANOVG_EXTRACTED_DIR} ${NANOVG_DIR})
-endif()
-add_subdirectory(${NANOVG_DIR} ${CMAKE_CURRENT_BINARY_DIR}/nanovg EXCLUDE_FROM_ALL)
-
-# ╭──────────────────────────────────────╮
-# │                Pdlua                 │
-# ╰──────────────────────────────────────╯
-set(PD_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/pure-data/src)
+# pd.cmake
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
 set(PDCMAKE_VERSION "v0.2.0")
 if(NOT EXISTS "${PDCMAKE_FILE}")
@@ -105,27 +59,38 @@ if(NOT EXISTS "${PDCMAKE_FILE}")
          ${PDCMAKE_FILE})
 endif()
 include(${PDCMAKE_FILE})
+pd_add_external(pdlua "${pd_lua_SOURCE_DIR}/pdlua.c")
+target_link_libraries(pdlua PUBLIC lua libpd)
+target_include_directories(pdlua PUBLIC "${PD_SOURCE_DIR}" "${pd_lua_SOURCE_DIR}/lua/"
+                                        "${CMAKE_CURRENT_SOURCE_DIR}")
+add_dependencies(pdlua update_gfw)
 
-pd_add_external(pdlua "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/pdlua.c")
-target_link_libraries(pdlua PUBLIC nanovg)
-target_link_libraries(pdlua PUBLIC lua)
-target_include_directories(
-    pdlua PUBLIC "${PD_SOURCE_DIR}" "${NANOVG_DIR}/src" "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/lua/"
-                 "${CMAKE_CURRENT_SOURCE_DIR}")
+# ╭──────────────────────────────────────╮
+# │                nanovg                │
+# ╰──────────────────────────────────────╯
+FetchContent_Declare(
+    nanovg
+    # Works
+    URL https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
+    # Test framebuffer URL
+    # https://github.com/charlesneimog/nanovg/archive/refs/heads/development.zip
+)
+
+FetchContent_MakeAvailable(nanovg)
 
 # ╭──────────────────────────────────────╮
 # │              Executable              │
 # ╰──────────────────────────────────────╯
-include(${CMAKE_CURRENT_SOURCE_DIR}/Libraries/libpd.cmake)
 add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp
                       ${CMAKE_CURRENT_SOURCE_DIR}/externals.cpp)
 
-add_definitions(-DPDTHREADS)
-add_definitions(-DPDINSTANCE)
+target_include_directories(pd4web PUBLIC "${PD_SOURCE_DIR}" "${pd_lua_SOURCE_DIR}/lua/"
+                                         "${nanovg_SOURCE_DIR}/src")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -matomics -mbulk-memory")
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -matomics -mbulk-memory")
-target_link_libraries(pd4web PRIVATE embind libpd pdlua)
+target_compile_definitions(pd4web PUBLIC PD4WEB_LUA)
+target_compile_options(pd4web PUBLIC -matomics -mbulk-memory)
+
+target_link_libraries(pd4web PUBLIC embind libpd pdlua)
 target_link_options(
     pd4web
     PUBLIC
@@ -133,10 +98,9 @@ target_link_options(
     -sMODULARIZE=1
     -sEXPORT_NAME='Pd4WebModule'
     -sINITIAL_MEMORY=512mb
-    # Optimization flags -O3 # Maximum optimization level -flto # Link-time optimization Performance
+    # Optimization flags -O3 # Maximum optimization level -flto Link-time optimization Performance
     # tuning
     -sFORCE_FILESYSTEM=0 # Disable filesystem if not needed
-    -sTOTAL_STACK=16mb # Optimize stack size
     # Threading support
     -sUSE_PTHREADS=1
     -sPTHREAD_POOL_SIZE=4
@@ -145,19 +109,19 @@ target_link_options(
     -sAUDIO_WORKLET=1
     -sWASM_WORKERS=1
     -sWASM=1
-    -sUSE_WEBGL2=1
-    -sMIN_WEBGL_VERSION=2
-    # Disable debug features in production
+    # others
     -sASSERTIONS=0 # Disable assertions
     -sSTACK_OVERFLOW_CHECK=0 # Disable stack overflow checking
-)
+    -sDISABLE_EXCEPTION_CATCHING=1)
 
-# Include
-include_directories("${NANOVG_DIR}/src")
-target_include_directories(pd4web PUBLIC "${PD_SOURCE_DIR}" "${NANOVG_DIR}/src"
-                                         "${CMAKE_CURRENT_BINARY_DIR}/pd-lua/lua/")
-set_target_properties(
-    pd4web PROPERTIES LINK_FLAGS "--preload-file \"${CMAKE_CURRENT_SOURCE_DIR}/main.pd@/index.pd\"")
+target_link_options(
+    pd4web
+    PRIVATE
+    "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/DejaVuSans.ttf@/DejaVuSans.ttf"
+    "--preload-file=${pd_lua_SOURCE_DIR}/pd.lua@/pd.lua"
+    "--preload-file=${pd_lua_SOURCE_DIR}/pdlua/tutorial/examples/pdx.lua@/pdx.lua"
+    "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/main.pd@/index.pd"
+    "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/Gui/@/Gui/")
 
 add_custom_command(
     TARGET pd4web
@@ -178,4 +142,28 @@ add_custom_command(
             "$<TARGET_FILE_DIR:pd4web>/pd4web.style.css"
     COMMENT "Copying extra files to build output directory")
 
-add_compile_options(-H)
+add_dependencies(pd4web update_gfw)
+target_compile_features(pd4web PUBLIC cxx_std_23)
+
+if(USE_WEBGPU)
+    message(WARNING "Using WebGPU")
+    target_link_options(pd4web PUBLIC --use-port=emdawnwebgpu)
+    target_compile_definitions(pd4web PUBLIC PD4WEB_WEBGPU)
+else()
+    target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2
+                        -sOFFSCREEN_FRAMEBUFFER=1 -sOFFSCREENCANVAS_SUPPORT=1)
+    target_link_libraries(pdlua PUBLIC nanovg)
+endif()
+
+# ╭──────────────────────────────────────╮
+# │              Fix Cmake               │
+# ╰──────────────────────────────────────╯
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+execute_process(COMMAND ${CMAKE_CXX_COMPILER} --cflags OUTPUT_VARIABLE EM_CFLAGS
+                                                                       COMMAND_ERROR_IS_FATAL ANY)
+string(STRIP "${EM_CFLAGS}" EM_CFLAGS)
+find_package(Python3 REQUIRED)
+message("Python: ${Python3_EXECUTABLE}")
+set(ENV{EXTRA_FLAGS} "${EM_CFLAGS}")
+execute_process(COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Resources/fix_lsp.py
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
