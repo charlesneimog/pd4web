@@ -137,7 +137,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                 output.append(buffer, bytesRead);
                 if (showMessage && !output.empty()) {
                     output.erase(std::remove(output.begin(), output.end(), '\r'), output.end());
-                    if (output.find("ERROR:") != std::string::npos) {
+                    if (output.find("ERROR ") != std::string::npos) {
                         pd_error(x, "%s", output.c_str());
                     } else {
                         logpost(x, 2, "%s", output.c_str());
@@ -192,7 +192,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
-                        if (line.find("ERROR:") != std::string::npos) {
+                        if (line.find("ERROR ") != std::string::npos) {
                             pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
                             logpost(x, 2, "[pd4web] %s", line.c_str());
@@ -202,7 +202,7 @@ static bool pd4web_terminal(Pd4Web *x, std::string cmd, bool detached = false,
                     line.erase(std::remove(line.begin(), line.end(), '\n'), line.end());
                     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
                     if (line != "") {
-                        if (line.find("ERROR:") != std::string::npos) {
+                        if (line.find("ERROR ") != std::string::npos) {
                             pd_error(x, "[pd4web] %s", line.c_str());
                         } else {
                             logpost(x, 2, "[pd4web] %s", line.c_str());
