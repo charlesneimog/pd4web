@@ -50,6 +50,7 @@ end
 -- ──────────────────────────────────────────
 function nbx:in_1_float(args)
 	self.number = args
+	self:outlet(1, "float", { tonumber(self.number) })
 	self:repaint()
 end
 
@@ -75,6 +76,9 @@ function nbx:paint(g)
 	else
 		g:set_color(0, 0, 0)
 	end
+
+    self.number = tonumber(string.format("%.4f", self.number))
+
 	g:draw_text(self.number, 10, height / 4, 50, 10)
 end
 
