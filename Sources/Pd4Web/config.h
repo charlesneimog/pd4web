@@ -17,7 +17,7 @@ extern "C" {
 // Audio Config
 #define PD4WEB_CHS_IN 1
 #define PD4WEB_CHS_OUT 2
-#define PD4WEB_SR 44100
+#define PD4WEB_SR 48000
 
 // GUI Interface
 #define PD4WEB_GUI true

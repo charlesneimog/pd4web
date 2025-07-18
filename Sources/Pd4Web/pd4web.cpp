@@ -1239,7 +1239,7 @@ void getGlCtx(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(0);
+    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
     if (!ud->vg) {
         JS_alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -1737,9 +1737,6 @@ void loop2(void *userData) {
     }
     float zoom = PD4WEB_PATCH_ZOOM;
 
-#ifdef PD4WEB_WEBGPU
-    // need to draw
-#else
     bool needs_redraw = false;
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
     for (auto &obj_pair : pdlua_objs) {
@@ -1816,7 +1813,6 @@ void loop2(void *userData) {
     }
     nvgRestore(ud->vg);
     nvgEndFrame(ud->vg);
-#endif
 }
 
 // ╭─────────────────────────────────────╮
