@@ -40,15 +40,17 @@ add_library(lua "${pd_lua_SOURCE_DIR}/lua/onelua.c")
 target_compile_definitions(lua PUBLIC "MAKE_LIB")
 
 # for now, it is necessary to replace glist_getrtext
-add_custom_target(
-    update_gfw
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua_gfx.c"
+add_custom_target(update_gfw
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua_gfx.c"
             "${pd_lua_SOURCE_DIR}/pdlua_gfx.h"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.h"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.h"
             "${pd_lua_SOURCE_DIR}/pdlua.h"
-    COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.c"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${CMAKE_CURRENT_SOURCE_DIR}/pd4weblua.c"
             "${pd_lua_SOURCE_DIR}/pdlua.c"
-    COMMENT "Updating pdlua.c, pdlua.h and pdlua_gfx.h")
+    COMMENT "Checking pdlua.c, pdlua.h and pdlua_gfx.h")
 
 # pd.cmake
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
@@ -70,10 +72,10 @@ add_dependencies(pdlua update_gfw)
 # ╰──────────────────────────────────────╯
 FetchContent_Declare(
     nanovg
-    # Works
-    URL https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
-    # Test framebuffer URL
-    # https://github.com/charlesneimog/nanovg/archive/refs/heads/development.zip
+    URL # Works
+        https://github.com/timothyschoen/nanovg/archive/729305e3bc69d8202ab03b5537a6c54e9b8ddd54.zip
+        # https://github.com/charlesneimog/nanovg/archive/refs/heads/development.zip
+    # Valid
 )
 
 FetchContent_MakeAvailable(nanovg)
@@ -150,8 +152,8 @@ if(USE_WEBGPU)
     target_link_options(pd4web PUBLIC --use-port=emdawnwebgpu)
     target_compile_definitions(pd4web PUBLIC PD4WEB_WEBGPU)
 else()
-    target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2
-                        -sOFFSCREEN_FRAMEBUFFER=1 -sOFFSCREENCANVAS_SUPPORT=1)
+    target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2 -sOFFSCREEN_FRAMEBUFFER
+                        -sOFFSCREENCANVAS_SUPPORT)
     target_link_libraries(pdlua PUBLIC nanovg)
 endif()
 

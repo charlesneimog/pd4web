@@ -69,6 +69,9 @@ struct Pd4WebUserData {
     t_pdinstance *libpd;
 
     bool redraw = true;
+    bool needsSwap = false;
+    int fbWidth;
+    int fbHeight;
 
     // Sound state
     bool soundInit;
@@ -104,13 +107,9 @@ struct Pd4WebUserData {
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
     bool contextReady = false;
 
-#ifdef PD4WEB_WEBGPU
-    WGPUDevice *vg;
-#else
     NVGcontext *vg;
-    NVGLUframebuffer *invalidFBO;
     NVGLUframebuffer *fb = nullptr;
-#endif
+    NVGLUframebuffer *mainFBO = nullptr;
 };
 
 // ─────────── PdLua Graphics ───────────
@@ -134,8 +133,11 @@ struct PdLuaObjGuiLayer {
     NVGLUframebuffer *fb = nullptr;
 #endif
     float last_zoom = 0; // Track last zoom to detect changes
+    int fb_width = 0;
+    int fb_height = 0;
 };
-using PdLuaObjLayers = std::unordered_map<int, PdLuaObjGuiLayer>;
+
+using PdLuaObjLayers = std::map<int, PdLuaObjGuiLayer>;
 using PdLuaObjsGui = std::unordered_map<std::string, PdLuaObjLayers>;
 using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 
@@ -198,6 +200,8 @@ class Pd4Web {
     // WebAudioContext
     EMSCRIPTEN_WEBAUDIO_T getWebAudioContext();
     void setWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx);
+    void setSampleRate(float sr);
+    float getSampleRate();
 
   private:
     void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
@@ -217,6 +221,7 @@ class Pd4Web {
     bool m_Pd4WebInit = false;
     bool m_PdInit = false;
     bool m_audioSuspended = false;
+    float m_SampleRate;
 
     t_pdinstance *m_NewPdInstance;
     EMSCRIPTEN_WEBAUDIO_T m_Context;

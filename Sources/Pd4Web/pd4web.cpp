@@ -8,7 +8,7 @@
 // clang-format off
 
 // ─────────────────────────────────────
-EM_JS(int, is_dark_mode, (), {
+EM_JS(int, JS_isDarkMode, (), {
   return window.matchMedia &&
          window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
 });
@@ -20,7 +20,7 @@ EM_JS(void, JS_alert, (const char *msg), {
 
 // ─────────────────────────────────────
 EM_JS(void, JS_warning, (const char *msg), {
-    console.warning(UTF8ToString(msg));
+    console.warn(UTF8ToString(msg));
 });
 
 // ─────────────────────────────────────
@@ -562,11 +562,6 @@ void onMIDIInMessage(emscripten::val message) {
     int byte2 = data[1].as<int>();
     int byte3 = data[2].as<int>();
 
-    // int instance_size = libpd_num_instances();
-    // for (int i = 0; i < instance_size; i++) {
-    // t_pdinstance *libpd = libpd_get_instance(i);
-    // libpd_set_instance(libpd);
-
     int channel = byte1 & 0x0F;
     uint8_t status = byte1 & 0xF0;
 
@@ -675,8 +670,20 @@ void Pd4Web::getLastMousePosition(int *x, int *y) {
 void Pd4Web::setWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx) {
     m_Context = ctx;
 }
+
+// ─────────────────────────────────────
 EMSCRIPTEN_WEBAUDIO_T Pd4Web::getWebAudioContext() {
     return m_Context;
+}
+
+// ─────────────────────────────────────
+void Pd4Web::setSampleRate(float sr) {
+    m_SampleRate = sr;
+}
+
+// ─────────────────────────────────────
+float Pd4Web::getSampleRate() {
+    return m_SampleRate;
 }
 
 // ╭─────────────────────────────────────╮
@@ -1149,7 +1156,7 @@ void getDefaultColor(std::string key, float *r, float *g, float *b) {
     static bool darkTheme = false;
 
     if (!themeDefined) {
-        darkTheme = is_dark_mode();
+        darkTheme = JS_isDarkMode();
     }
 
     if (darkTheme) {
@@ -1202,17 +1209,6 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
  */
 // ─────────────────────────────────────
 void getGlCtx(Pd4WebUserData *ud) {
-#ifdef PD4WEB_WEBGPU
-    WGPUDevice instance = emscripten_webgpu_get_device();
-    if (!instance) {
-        printf("Failed to get WebGPU instance\n");
-        return;
-    }
-
-    printf("Got WebGPU instance: %p\n", instance);
-    return;
-
-#else
     if (ud->contextReady) {
         emscripten_webgl_make_context_current(ud->ctx);
         return;
@@ -1222,14 +1218,20 @@ void getGlCtx(Pd4WebUserData *ud) {
     emscripten_webgl_init_context_attributes(&attrs);
 
     //
-    attrs.alpha = false;
+    attrs.alpha = false; // or true if you want canvas transparency
     attrs.depth = false;
-    attrs.stencil = true;
+    attrs.stencil = true; // needed for NanoVG and FBO clipping
     attrs.antialias = true;
     attrs.premultipliedAlpha = false;
+    attrs.preserveDrawingBuffer = true; // <-- THIS IS IMPORTANT FOR DIRTY RECT
     attrs.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
     attrs.majorVersion = 2;
+    attrs.minorVersion = 0;
     attrs.enableExtensionsByDefault = true;
+
+    // Optional, usually not needed for dirty rects:
+    attrs.explicitSwapControl = false;
+    attrs.renderViaOffscreenBackBuffer = false;
 
     ud->ctx = emscripten_webgl_create_context(ud->canvasSel.c_str(), &attrs);
     if (ud->ctx <= 0) {
@@ -1237,7 +1239,7 @@ void getGlCtx(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
+    ud->vg = nvgCreateContext(0);
     if (!ud->vg) {
         JS_alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -1257,7 +1259,6 @@ void getGlCtx(Pd4WebUserData *ud) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     ud->contextReady = true;
-#endif
 }
 
 // ─────────────────────────────────────
@@ -1560,8 +1561,170 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
  *
  * @param userData  Pointer to user-defined data (Pd4WebUserData).
  */
-
 void loop(void *userData) {
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+    libpd_set_instance(ud->libpd);
+    libpd_queued_receive_pd_messages();
+    libpd_queued_receive_midi_messages();
+
+    getGlCtx(ud);
+    if (ud->vg == nullptr) {
+        JS_warning("NanoVG context invalid");
+        return;
+    }
+
+    float zoom = PD4WEB_PATCH_ZOOM;
+    // ud->devicePixelRatio = 1;
+
+    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    std::vector<PdLuaObjLayers> objs_to_redraw;
+
+    int dirtySceneMinX = std::numeric_limits<int>::max();
+    int dirtySceneMinY = std::numeric_limits<int>::max();
+    int dirtySceneMaxX = std::numeric_limits<int>::min();
+    int dirtySceneMaxY = std::numeric_limits<int>::min();
+
+    bool needs_redraw = false;
+
+    for (auto &obj_pair : pdlua_objs) {
+        PdLuaObjLayers &obj_layers = obj_pair.second;
+        bool object_dirty = false;
+
+        for (auto &layer_pair : obj_layers) {
+            PdLuaObjGuiLayer &layer = layer_pair.second;
+
+            if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
+                continue;
+            }
+
+            object_dirty = true;
+            needs_redraw = true;
+
+            int fbw = static_cast<int>(layer.objw * zoom);
+            int fbh = static_cast<int>(layer.objh * zoom);
+
+            if (!layer.fb) {
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
+            }
+
+            nvgluBindFramebuffer(layer.fb);
+            glViewport(0, 0, fbw, fbh);
+
+            nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
+            nvgScissor(ud->vg, 0, 0, fbw, fbh);
+            glClearColor(0, 0, 0, 0);
+            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+
+            nvgSave(ud->vg);
+            nvgScale(ud->vg, zoom, zoom); // zoom aqui é correto
+
+            for (GuiCommand &cmd : layer.gui_commands) {
+                pd4webdraw(ud, &cmd);
+            }
+
+            nvgRestore(ud->vg);
+            nvgResetScissor(ud->vg);
+            nvgEndFrame(ud->vg);
+            nvgluBindFramebuffer(nullptr);
+
+            layer.dirty = false;
+
+            // Região suja em coordenadas lógicas
+            int lx = layer.objx;
+            int ly = layer.objy;
+            int lw = layer.objw;
+            int lh = layer.objh;
+
+            dirtySceneMinX = std::min(dirtySceneMinX, lx);
+            dirtySceneMinY = std::min(dirtySceneMinY, ly);
+            dirtySceneMaxX = std::max(dirtySceneMaxX, lx + lw);
+            dirtySceneMaxY = std::max(dirtySceneMaxY, ly + lh);
+        }
+
+        if (object_dirty) {
+            objs_to_redraw.push_back(obj_layers);
+        }
+    }
+
+    if (!needs_redraw || objs_to_redraw.empty()) {
+        return;
+    }
+
+    int dirtyW = dirtySceneMaxX - dirtySceneMinX;
+    int dirtyH = dirtySceneMaxY - dirtySceneMinY;
+
+    // Criação do mainFBO, se necessário
+    if (!ud->mainFBO) {
+        ud->mainFBO = nvgluCreateFramebuffer(ud->vg, ud->canvas_width, ud->canvas_height,
+                                             NVG_IMAGE_PREMULTIPLIED);
+    }
+
+    // Limpa a área suja do mainFBO
+    nvgluBindFramebuffer(ud->mainFBO);
+    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
+
+    int scissorX = static_cast<int>(dirtySceneMinX * zoom);
+    int scissorY = static_cast<int>(dirtySceneMinY * zoom);
+    int scissorW = static_cast<int>(dirtyW * zoom);
+    int scissorH = static_cast<int>(dirtyH * zoom);
+
+    glEnable(GL_SCISSOR_TEST);
+    glScissor(scissorX, scissorY, scissorW, scissorH);
+    glClearColor(0, 0, 0, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
+
+    // Composição no mainFBO
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+    nvgSave(ud->vg);
+    nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+
+    for (const auto &obj_layers : objs_to_redraw) {
+        for (const auto &layer_pair : obj_layers) {
+            const PdLuaObjGuiLayer &layer = layer_pair.second;
+            if (!layer.fb) {
+                continue;
+            }
+
+            float dstX = layer.objx * zoom;
+            float dstY = layer.objy * zoom;
+            float dstW = layer.objw * zoom;
+            float dstH = layer.objh * zoom;
+
+            NVGpaint paint =
+                nvgImagePattern(ud->vg, dstX, dstY, dstW, dstH, 0, layer.fb->image, 1.0f);
+            nvgBeginPath(ud->vg);
+            nvgRect(ud->vg, dstX, dstY, dstW, dstH);
+            nvgFillPaint(ud->vg, paint);
+            nvgFill(ud->vg);
+        }
+    }
+
+    nvgResetScissor(ud->vg);
+    nvgRestore(ud->vg);
+    nvgEndFrame(ud->vg);
+    nvgluBindFramebuffer(nullptr);
+
+    // Composição final na tela
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+
+    // Aqui: zoom aplicado manualmente, então nada de nvgScale
+    nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+
+    NVGpaint screenPaint = nvgImagePattern(ud->vg, 0, 0, ud->canvas_width, ud->canvas_height, 0,
+                                           ud->mainFBO->image, 1.0f);
+
+    nvgBeginPath(ud->vg);
+    nvgRect(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+    nvgFillPaint(ud->vg, screenPaint);
+    nvgFill(ud->vg);
+
+    nvgResetScissor(ud->vg);
+    nvgEndFrame(ud->vg);
+}
+
+// ─────────────────────────────────────
+void loop2(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
@@ -1666,22 +1829,24 @@ void loop(void *userData) {
  * creates user data, and starts the audio worklet thread asynchronously.
  */
 void Pd4Web::init() {
-    uint32_t SR = PD4WEB_SR;
     float NInCh = PD4WEB_CHS_IN;
     float NOutCh = PD4WEB_CHS_OUT;
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate = SR,
+        .sampleRate = PD4WEB_SR,
     };
 
+    // TODO: replace this by smart pointer
     Pd4WebUserData *userData = new Pd4WebUserData();
     userData->libpd = m_NewPdInstance;
     libpd_set_instance(m_NewPdInstance);
 
     // Start the audio context
-    EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
+    EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
+    setSampleRate(PD4WEB_SR);
+
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
                                                      audioWorkletInit, (void *)userData);
