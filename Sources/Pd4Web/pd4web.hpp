@@ -212,10 +212,8 @@ class Pd4Web {
     bool m_ThemeDefined = false;
     bool m_DarkTheme = false;
 
-    // This make the class destructor free this memory
-    std::unique_ptr<Pd4WebUserData> m_SoundBtn;
-    std::unique_ptr<Pd4WebUserData> m_EventCtx;
-    std::unique_ptr<Pd4WebUserData> m_GuiLoopCtx;
+    // m_userDat
+    std::shared_ptr<Pd4WebUserData> m_userData;
 
     std::string canvasId;
     bool m_Pd4WebInit = false;

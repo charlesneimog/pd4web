@@ -6,6 +6,8 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
+EM_JS(bool, JS_openKeyboard, (const char *key), {
+});
 
 // ─────────────────────────────────────
 EM_JS(int, JS_isDarkMode, (), {
@@ -454,9 +456,9 @@ void receivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
  * @return true if processing succeeded, false otherwise.
  */
 EM_BOOL process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
-                int numParams, const AudioParamFrame *params, void *data) {
+                int numParams, const AudioParamFrame *params, void *userData) {
 
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(data);
+    auto* ud = static_cast<Pd4WebUserData*>(userData);
     libpd_set_instance(ud->libpd);
 
     int ChCount = Out[0].numberOfChannels;
@@ -486,6 +488,7 @@ EM_BOOL process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
 void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                   void *userData) {
 
+    auto* ud = static_cast<Pd4WebUserData*>(userData);
     if (!success) {
         JS_alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
@@ -501,7 +504,7 @@ void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
         .numberOfOutputs = 1,
         .outputChannelCounts = nOutChannelsArray,
     };
-    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+
     libpd_set_instance(ud->libpd);
 
     // turn audio on
@@ -513,6 +516,7 @@ void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     std::string id = "pd4web_" + std::to_string(libpd_num_instances());
     EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
         audioContext, id.c_str(), &options, process, userData);
+
     JS_getMicAccess(audioContext, AudioWorkletNode, NInCh);
 }
 
@@ -528,8 +532,7 @@ void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
  * @param userData Pointer to user data (not used in this function).
  */
 void audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
-    // LOG("Pd4Web::audioWorkletInit");
-    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    auto* ud = static_cast<Pd4WebUserData*>(userData);
     if (!success) {
         JS_alert("WebAudio worklet thread initialization failed!\n");
         return;
@@ -807,11 +810,11 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
         fprintf(stderr, "No pd canvas found\n");
-        return EM_FALSE;
+        return EM_TRUE;
     }
 
     if (e->numTouches < 1) {
-        return EM_FALSE;
+        return EM_TRUE;
     }
 
     // Use o primeiro toque apenas (pode ser estendido para multitouch se necessário)
@@ -933,7 +936,7 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
  * @param eventType  The type of mouse event triggering the toggle.
  * @param e          Pointer to the EmscriptenMouseEvent containing event details.
  * @param userData   Pointer to user-defined data (typically Pd4WebUserData).
- * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
+ * @return           Returns EM_FALSE.
  */
 EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
@@ -1065,12 +1068,10 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
             ICON_SOUND_OFF, soundToggleId.c_str());
 
         std::string sel = "#" + soundToggleId;
-        m_SoundBtn = std::make_unique<Pd4WebUserData>();
-        m_SoundBtn->soundInit = false;
-        m_SoundBtn->soundSuspended = false;
-        m_SoundBtn->pd4web = this;
-        m_SoundBtn->soundToggleSel = soundToggleId;
-        emscripten_set_mousedown_callback(sel.c_str(), m_SoundBtn.get(), EM_TRUE, sound_toggle);
+        m_userData->soundInit = false;
+        m_userData->soundSuspended = false;
+        m_userData->soundToggleSel = soundToggleId;
+        emscripten_set_mousedown_callback(sel.c_str(), m_userData.get(), EM_TRUE, sound_toggle);
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -1111,38 +1112,33 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
                 gobj_vis(obj, canvas, 1);
             }
 
-            m_EventCtx = std::make_unique<Pd4WebUserData>();
-            m_EventCtx->libpd = m_NewPdInstance;
-            m_EventCtx->mousedown = false;
-            m_EventCtx->pd4web = this;
-
-            // mouse
-            emscripten_set_mousedown_callback(sel, m_EventCtx.get(), EM_FALSE, mouse_listener);
-            emscripten_set_mouseup_callback(sel, m_EventCtx.get(), EM_FALSE, mouse_listener);
-            emscripten_set_mousemove_callback(sel, m_EventCtx.get(), EM_FALSE, mouse_listener);
+            m_userData->mousedown = false;
+            emscripten_set_mousedown_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
+            emscripten_set_mouseup_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
+            emscripten_set_mousemove_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
 
             // touchscreen
-            emscripten_set_touchstart_callback(sel, m_EventCtx.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchend_callback(sel, m_EventCtx.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchmove_callback(sel, m_EventCtx.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchcancel_callback(sel, m_EventCtx.get(), EM_FALSE, touch_listener);
+            emscripten_set_touchstart_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
+            emscripten_set_touchend_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
+            emscripten_set_touchmove_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
+            emscripten_set_touchcancel_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
 
-            emscripten_set_keydown_callback(sel, m_EventCtx.get(), EM_FALSE, key_listener);
+            emscripten_set_keydown_callback(sel, m_userData.get(), EM_FALSE, key_listener);
         }
 
-        m_GuiLoopCtx = std::make_unique<Pd4WebUserData>();
-        m_GuiLoopCtx->libpd = m_NewPdInstance;
-        m_GuiLoopCtx->pd4web = this;
-        m_GuiLoopCtx->canvasSel = PatchCanvaSel;
-        getGlCtx(m_GuiLoopCtx.get());
+        // m_GuiLoopCtx = std::make_unique<Pd4WebUserData>();
+        m_userData->libpd = m_NewPdInstance;
+        m_userData->pd4web = this;
+        m_userData->canvasSel = PatchCanvaSel;
+        getGlCtx(m_userData.get());
 
-        if (m_GuiLoopCtx->vg == nullptr) {
+        if (m_userData->vg == nullptr) {
             JS_alert("NanoVG invalid Context, not rendering patch");
             return;
         }
 
         // TODO: create comments text
-        emscripten_async_call(setAsyncMainLoop, m_GuiLoopCtx.get(), 0);
+        emscripten_async_call(setAsyncMainLoop, m_userData.get(), 0);
         // call async to avoid unwind error
     }
 }
@@ -1239,7 +1235,7 @@ void getGlCtx(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
+    ud->vg = nvgCreateContext(0);
     if (!ud->vg) {
         JS_alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -1407,8 +1403,11 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float r, g, b;
         getDefaultColor("fg", &r, &g, &b);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgStrokeWidth(ud->vg, 2);
+        nvgBeginPath(ud->vg);
+        nvgStrokeWidth(ud->vg, 1);
+        nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgStroke(ud->vg);
+
         break;
     }
     case FILL_RECT: {
@@ -1574,7 +1573,7 @@ void loop(void *userData) {
     }
 
     float zoom = PD4WEB_PATCH_ZOOM;
-    // ud->devicePixelRatio = 1;
+    float pxRatio = ud->devicePixelRatio;
 
     PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
     std::vector<PdLuaObjLayers> objs_to_redraw;
@@ -1600,8 +1599,8 @@ void loop(void *userData) {
             object_dirty = true;
             needs_redraw = true;
 
-            int fbw = static_cast<int>(layer.objw * zoom);
-            int fbh = static_cast<int>(layer.objh * zoom);
+            int fbw = static_cast<int>(layer.objw * zoom * pxRatio);
+            int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
 
             if (!layer.fb) {
                 layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
@@ -1610,18 +1609,18 @@ void loop(void *userData) {
             nvgluBindFramebuffer(layer.fb);
             glViewport(0, 0, fbw, fbh);
 
-            nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
+            nvgBeginFrame(ud->vg, fbw, fbh, 1);
             nvgScissor(ud->vg, 0, 0, fbw, fbh);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom, zoom); // zoom aqui é correto
-
+            nvgScale(ud->vg, zoom * pxRatio,
+                     zoom * pxRatio); // Apenas zoom lógico, devicePixelRatio já está aplicado
+                                      // no tamanho do framebuffer
             for (GuiCommand &cmd : layer.gui_commands) {
                 pd4webdraw(ud, &cmd);
             }
-
             nvgRestore(ud->vg);
             nvgResetScissor(ud->vg);
             nvgEndFrame(ud->vg);
@@ -1629,7 +1628,6 @@ void loop(void *userData) {
 
             layer.dirty = false;
 
-            // Região suja em coordenadas lógicas
             int lx = layer.objx;
             int ly = layer.objy;
             int lw = layer.objw;
@@ -1653,20 +1651,18 @@ void loop(void *userData) {
     int dirtyW = dirtySceneMaxX - dirtySceneMinX;
     int dirtyH = dirtySceneMaxY - dirtySceneMinY;
 
-    // Criação do mainFBO, se necessário
     if (!ud->mainFBO) {
         ud->mainFBO = nvgluCreateFramebuffer(ud->vg, ud->canvas_width, ud->canvas_height,
                                              NVG_IMAGE_PREMULTIPLIED);
     }
 
-    // Limpa a área suja do mainFBO
     nvgluBindFramebuffer(ud->mainFBO);
     glViewport(0, 0, ud->canvas_width, ud->canvas_height);
 
-    int scissorX = static_cast<int>(dirtySceneMinX * zoom);
-    int scissorY = static_cast<int>(dirtySceneMinY * zoom);
-    int scissorW = static_cast<int>(dirtyW * zoom);
-    int scissorH = static_cast<int>(dirtyH * zoom);
+    int scissorX = static_cast<int>(dirtySceneMinX * zoom * pxRatio);
+    int scissorY = static_cast<int>(dirtySceneMinY * zoom * pxRatio);
+    int scissorW = static_cast<int>(dirtyW * zoom * pxRatio);
+    int scissorH = static_cast<int>(dirtyH * zoom * pxRatio);
 
     glEnable(GL_SCISSOR_TEST);
     glScissor(scissorX, scissorY, scissorW, scissorH);
@@ -1674,8 +1670,7 @@ void loop(void *userData) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
 
-    // Composição no mainFBO
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, 1);
     nvgSave(ud->vg);
     nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
 
@@ -1705,113 +1700,18 @@ void loop(void *userData) {
     nvgEndFrame(ud->vg);
     nvgluBindFramebuffer(nullptr);
 
-    // Composição final na tela
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-
-    // Aqui: zoom aplicado manualmente, então nada de nvgScale
+    // Final draw on screen
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, 1);
     nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
 
     NVGpaint screenPaint = nvgImagePattern(ud->vg, 0, 0, ud->canvas_width, ud->canvas_height, 0,
                                            ud->mainFBO->image, 1.0f);
-
     nvgBeginPath(ud->vg);
     nvgRect(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
     nvgFillPaint(ud->vg, screenPaint);
     nvgFill(ud->vg);
 
     nvgResetScissor(ud->vg);
-    nvgEndFrame(ud->vg);
-}
-
-// ─────────────────────────────────────
-void loop2(void *userData) {
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
-    libpd_set_instance(ud->libpd);
-    libpd_queued_receive_pd_messages();
-    libpd_queued_receive_midi_messages();
-
-    getGlCtx(ud);
-    if (ud->vg == nullptr) {
-        JS_warning("NanoVG context invalid");
-        return;
-    }
-    float zoom = PD4WEB_PATCH_ZOOM;
-
-    bool needs_redraw = false;
-    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
-    for (auto &obj_pair : pdlua_objs) {
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-
-        for (auto &layer_pair : obj_layers) {
-            int layer_num = layer_pair.first;
-            PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
-                continue;
-            }
-            needs_redraw = true;
-
-            int fbw = static_cast<int>(layer.objw * zoom);
-            int fbh = static_cast<int>(layer.objh * zoom);
-
-            if (!layer.fb) {
-                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
-            }
-
-            // Render to the offscreen framebuffer
-            nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, fbw, fbh);
-            nvgBeginFrame(ud->vg, fbw, fbh, ud->devicePixelRatio);
-            glClearColor(0, 0, 0, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-            // Draw something in the framebuffer, e.g., a red rectangle
-            nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom, zoom);
-            for (GuiCommand &cmd : layer.gui_commands) {
-                pd4webdraw(ud, &cmd);
-            }
-
-            nvgRestore(ud->vg); // desfaz o scale
-            nvgEndFrame(ud->vg);
-            nvgluBindFramebuffer(nullptr);
-            layer.dirty = false;
-        }
-    }
-    if (!needs_redraw) {
-        return;
-    }
-
-    // size of main canvas
-    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, ud->devicePixelRatio);
-
-    float r, g, b;
-    getDefaultColor("bg", &r, &g, &b);
-    glClearColor(r, g, b, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    nvgSave(ud->vg);
-    nvgScale(ud->vg, zoom, zoom);
-    for (auto &obj_pair : pdlua_objs) {
-        std::string layer_id = obj_pair.first;
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-        for (size_t i = 0; i < obj_layers.size(); ++i) {
-            PdLuaObjGuiLayer &layer = obj_layers[i];
-            if (!layer.fb) {
-                continue;
-            }
-            int x = layer.objx;
-            int y = layer.objy;
-            int w = layer.objw;
-            int h = layer.objh;
-            int fbImage = layer.fb->image;
-            NVGpaint paint = nvgImagePattern(ud->vg, x, y, w, h, 0, fbImage, 1.0f);
-            nvgBeginPath(ud->vg);
-            nvgRect(ud->vg, x, y, w, h);
-            nvgFillPaint(ud->vg, paint);
-            nvgFill(ud->vg);
-        }
-    }
-    nvgRestore(ud->vg);
     nvgEndFrame(ud->vg);
 }
 
@@ -1833,9 +1733,10 @@ void Pd4Web::init() {
         .sampleRate = PD4WEB_SR,
     };
 
-    // TODO: replace this by smart pointer
-    Pd4WebUserData *userData = new Pd4WebUserData();
-    userData->libpd = m_NewPdInstance;
+    m_userData = std::make_shared<Pd4WebUserData>();
+    m_userData->pd4web = this;
+    m_userData->libpd = m_NewPdInstance;
+
     libpd_set_instance(m_NewPdInstance);
 
     // Start the audio context
@@ -1845,7 +1746,7 @@ void Pd4Web::init() {
 
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
-                                                     audioWorkletInit, (void *)userData);
+                                                     audioWorkletInit, m_userData.get());
     m_Context = AudioContext;
     m_audioSuspended = false;
 }
