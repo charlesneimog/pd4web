@@ -77,9 +77,11 @@ function nbx:paint(g)
 		g:set_color(0, 0, 0)
 	end
 
-    self.number = tonumber(string.format("%.4f", self.number))
+	local number_str = string.format("%.5f", self.number):gsub("0+$", ""):gsub("%.$", "")
+	g:draw_text(number_str, 10, height / 4, 50, 10)
 
-	g:draw_text(self.number, 10, height / 4, 50, 10)
+	g:set_color(0, 0, 0)
+	g:stroke_rect(0, 0, width, height, 1)
 end
 
 -- ──────────────────────────────────────────
