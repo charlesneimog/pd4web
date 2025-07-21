@@ -12,6 +12,8 @@
 #include <mutex>
 #include <condition_variable>
 #include <tuple>
+#include <fstream>
+#include <iostream>
 
 // Emscripten APIs
 #include <emscripten.h>
@@ -23,7 +25,9 @@
 #include <z_libpd.h>
 #include <z_print_util.h>
 #include <z_queued.h>
+
 #include <g_canvas.h>
+#include <m_imp.h>
 
 // Local project headers
 #include "config.h"
@@ -169,101 +173,137 @@ static Pd4WebReceiverListeners ListReceiverListeners;
 class Pd4Web {
   public:
     ~Pd4Web() {
-        for (auto s : m_bindSymbols) {
-            libpd_unbind(s);
+        for (auto symbol : m_BindSymbols) {
+            libpd_unbind(symbol);
         }
-        libpd_free_instance(m_NewPdInstance);
+        libpd_free_instance(m_PdInstance);
     }
 
     // Main
-    void init();
-    void suspendAudio();
-    void openPatchJS(const std::string &patchPath, emscripten::val options);
+    void Init();
+    void ToggleAudio();
+    void OpenPatchJS(const std::string &patchPath, emscripten::val options);
 
-    // send Messages
-    void sendFloat(std::string r, float f);
-    void sendSymbol(std::string r, std::string s);
-    void sendBang(std::string r);
-    void sendList(std::string r, emscripten::val a);
-    void sendMessage(std::string r, std::string s, emscripten::val a);
+    // Send messages
+    void SendFloat(std::string receiver, float value);
+    void SendSymbol(std::string receiver, std::string symbol);
+    void SendBang(std::string receiver);
+    void SendList(std::string receiver, emscripten::val list);
+    void SendMessage(std::string receiver, std::string msg, emscripten::val list);
 
-    // bind
-    void onBangReceived(std::string r, emscripten::val func);
-    void onFloatReceived(std::string r, emscripten::val func);
-    void onSymbolReceived(std::string r, emscripten::val func);
-    void onListReceived(std::string r, emscripten::val func);
+    // Bind callbacks
+    void OnBangReceived(std::string receiver, emscripten::val callback);
+    void OnFloatReceived(std::string receiver, emscripten::val callback);
+    void OnSymbolReceived(std::string receiver, emscripten::val callback);
+    void OnListReceived(std::string receiver, emscripten::val callback);
 
-    // Mouse Position
-    void getLastMousePosition(int *x, int *y);
-    void setLastMousePosition(int x, int y);
+    // Mouse position
+    void GetLastMousePosition(int *x, int *y);
+    void SetLastMousePosition(int x, int y);
 
-    // WebAudioContext
-    EMSCRIPTEN_WEBAUDIO_T getWebAudioContext();
-    void setWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx);
-    void setSampleRate(float sr);
-    float getSampleRate();
+    // File Transfering
+    void SendFile(emscripten::val jsArrayBuffer, std::string filename);
+
+    // WebAudio
+    EMSCRIPTEN_WEBAUDIO_T GetWebAudioContext();
+    void SetWebAudioContext(EMSCRIPTEN_WEBAUDIO_T context);
+    void SetSampleRate(float sampleRate);
+    float GetSampleRate();
+
+    // Get
+    std::string GetPatchPath();
+    std::string GetCanvasId();
+    std::string GetSoundToggleId();
+    std::string GetProjectName();
+    int GetChannelCountIn();
+    int GetChannelCountOut();
+    float GetPatchZoom();
+    int GetFps();
+    std::string GetBGColor();
+    std::string GetFGColor();
+
+    bool RenderGui();
+    bool UseMidi();
 
   private:
-    void openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId);
-    void startMidi();
-    std::vector<void *> m_bindSymbols;
+    void OpenPatch(std::string patchPath, std::string patchCanvasId, std::string soundToggleId);
+    void StartMidi();
+
+    std::vector<void *> m_BindSymbols;
 
     // Theme
-    bool m_ThemeDefined = false;
-    bool m_DarkTheme = false;
+    std::string m_BgColor;
+    std::string m_FgColor;
 
-    // m_userDat
-    std::shared_ptr<Pd4WebUserData> m_userData;
+    // User data
+    std::shared_ptr<Pd4WebUserData> m_UserData;
 
-    std::string canvasId;
-    bool m_Pd4WebInit = false;
-    bool m_PdInit = false;
-    bool m_audioSuspended = false;
-    float m_SampleRate;
+    bool m_Pd4WebAudioWorkletInit = false;
+    bool m_AudioSuspended = false;
 
-    t_pdinstance *m_NewPdInstance;
-    EMSCRIPTEN_WEBAUDIO_T m_Context;
+    t_pdinstance *m_PdInstance = nullptr;
+    EMSCRIPTEN_WEBAUDIO_T m_AudioContext;
 
-    // mouse
-    int m_LastMouseX;
-    int m_LastMouseY;
+    // Mouse
+    int m_LastMouseX = 0;
+    int m_LastMouseY = 0;
+
+    // User Configurations
+    std::string m_PatchPath = "";
+    std::string m_CanvasId = "";
+    std::string m_SoundToggleId = "";
+    std::string m_ProjectName = "";
+
+    int m_ChannelCountIn = 0;
+    int m_ChannelCountOut = 0;
+    float m_SampleRate = 48000.0f;
+    bool m_UseMidi;
+
+    float m_PatchZoom = 1;
+    bool m_RenderGui = true;
+    int m_Fps = 0;
 };
 
 // ╭─────────────────────────────────────╮
 // │           Function Prototypes       │
 // ╰─────────────────────────────────────╯
-void loop(void *userData);
-void getGlCtx(Pd4WebUserData *ud);
+void Loop(void *userData);
+void GetGLContext(Pd4WebUserData *ud);
+void RenderPatchComments(Pd4WebUserData *ud);
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
 // ╰─────────────────────────────────────╯
-void onMIDISuccess(emscripten::val midiAccess);
-void onMIDIFailed(emscripten::val error);
-void onMIDIInMessage(emscripten::val event);
-void onMIDIOutMessage(emscripten::val event);
+void SetupMIDI();
+void OnMIDISuccess(emscripten::val midiAccess);
+void OnMIDIFailed(emscripten::val error);
+void OnMIDIInMessage(emscripten::val event);
+void OnMIDIOutMessage(emscripten::val event);
 
 EMSCRIPTEN_BINDINGS(Pd4WebModule) {
-    function("onMIDISuccess", &onMIDISuccess);
-    function("onMIDIFailed", &onMIDIFailed);
-    function("onMIDIInMessage", &onMIDIInMessage);
-    function("onMIDIOutMessage", &onMIDIOutMessage);
+    function("_onMIDISuccess", &OnMIDISuccess);
+    function("_onMIDIFailed", &OnMIDIFailed);
+    function("_onMIDIInMessage", &OnMIDIInMessage);
+    function("_onMIDIOutMessage", &OnMIDIOutMessage);
 
     emscripten::class_<Pd4Web>("Pd4Web")
         .constructor<>() // Default constructor
-        .function("openPatch", &Pd4Web::openPatchJS)
-        .function("suspendAudio", &Pd4Web::suspendAudio)
+        .function("openPatch", &Pd4Web::OpenPatchJS)
+        .function("toggleAudio", &Pd4Web::ToggleAudio)
+
+        // send file
+        .function("sendFile", &Pd4Web::SendFile)
 
         // senders
-        .function("sendBang", &Pd4Web::sendBang)
-        .function("sendFloat", &Pd4Web::sendFloat)
-        .function("sendSymbol", &Pd4Web::sendSymbol)
-        .function("sendList", &Pd4Web::sendList)
-        .function("sendMessage", &Pd4Web::sendMessage)
+        .function("sendBang", &Pd4Web::SendBang)
+        .function("sendFloat", &Pd4Web::SendFloat)
+        .function("sendSymbol", &Pd4Web::SendSymbol)
+        .function("sendList", &Pd4Web::SendList)
+        .function("sendMessage", &Pd4Web::SendMessage)
 
         // bind and unbind receivers
-        .function("onBangReceived", &Pd4Web::onBangReceived)
-        .function("onFloatReceived", &Pd4Web::onFloatReceived)
-        .function("onSymbolReceived", &Pd4Web::onSymbolReceived)
-        .function("onListReceived", &Pd4Web::onListReceived);
+        .function("onBangReceived", &Pd4Web::OnBangReceived)
+        .function("onFloatReceived", &Pd4Web::OnFloatReceived)
+        .function("onSymbolReceived", &Pd4Web::OnSymbolReceived)
+        .function("onListReceived", &Pd4Web::OnListReceived);
 }
