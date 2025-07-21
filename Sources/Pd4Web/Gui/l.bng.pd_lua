@@ -99,6 +99,16 @@ function bng:blink(x, y)
 end
 
 -- ──────────────────────────────────────────
+function bng:in_1_bang()
+    self.value = not self.value
+	self.filled = true
+	self:repaint()
+	self.clock:delay(1)
+	self.blink_delay = 0
+	self:outlet(1, "bang", {})
+end
+
+-- ──────────────────────────────────────────
 function bng:paint(g)
 	if self.need_update_args then
 		self.need_update_args = false
