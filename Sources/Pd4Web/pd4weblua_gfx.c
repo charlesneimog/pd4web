@@ -369,7 +369,7 @@ static int start_paint(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    clear_layercommand(obj_layer_id, gfx->current_layer, x, y, gfx->width, gfx->height);
+    ClearLayerCommand(obj_layer_id, gfx->current_layer, x, y, gfx->width, gfx->height);
 
     lua_pushlightuserdata(L, gfx);
     luaL_setmetatable(L, "GraphicsContext");
@@ -384,7 +384,7 @@ static int end_paint(lua_State *L) {
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
 
-    endpaint_layercommand(obj_layer_id, gfx->current_layer);
+    EndPaintLayerCommand(obj_layer_id, gfx->current_layer);
     return 0;
 }
 
@@ -456,7 +456,7 @@ static int fill_ellipse(lua_State *L) {
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
 
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -483,7 +483,7 @@ static int stroke_ellipse(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -504,7 +504,7 @@ static int fill_all(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -532,7 +532,7 @@ static int fill_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -560,7 +560,7 @@ static int stroke_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -590,7 +590,7 @@ static int fill_rounded_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -620,7 +620,7 @@ static int stroke_rounded_rect(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -649,7 +649,7 @@ static int draw_line(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -690,7 +690,7 @@ static int draw_text(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -788,7 +788,7 @@ static int stroke_path(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -823,7 +823,7 @@ static int fill_path(lua_State *L) {
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
-    add_newcommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
     return 0;
 }
 
