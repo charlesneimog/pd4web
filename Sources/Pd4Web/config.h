@@ -21,7 +21,7 @@ extern "C" {
 
 // GUI Interface
 #define PD4WEB_GUI true
-#define PD4WEB_PATCH_ZOOM 2
+// #define PD4WEB_PATCH_ZOOM 2
 #define PD4WEB_FPS 60
 #define PD4WEB_AUTO_THEME true
 
@@ -116,9 +116,9 @@ typedef struct {
     int path_size;
 } GuiCommand;
 
-extern void clear_layercommand(const char *obj_layer_id, int layer, int x, int y, int w, int h);
-extern void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c);
-extern void endpaint_layercommand(const char *obj_layer_id, int layer);
+extern void ClearLayerCommand(const char *obj_layer_id, int layer, int x, int y, int w, int h);
+extern void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c);
+extern void EndPaintLayerCommand(const char *obj_layer_id, int layer);
 
 #ifdef __cplusplus
 }
