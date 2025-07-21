@@ -6,27 +6,33 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
-EM_JS(bool, JS_openKeyboard, (const char *key), {
+EM_JS(bool, JS_OpenKeyboard, (const char *key), {
+      // TODO:
 });
 
 // ─────────────────────────────────────
-EM_JS(int, JS_isDarkMode, (), {
+EM_JS(int, JS_IsDarkMode, (), {
   return window.matchMedia &&
          window.matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0;
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_alert, (const char *msg), {
+EM_JS(void, JS_Alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_warning, (const char *msg), {
+EM_JS(void, JS_Error, (const char *msg), {
+    console.error(UTF8ToString(msg));
+});
+
+// ─────────────────────────────────────
+EM_JS(void, JS_Warning, (const char *msg), {
     console.warn(UTF8ToString(msg));
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_post, (const char *msg), {
+EM_JS(void, JS_Post, (const char *msg), {
     let msgJS = UTF8ToString(msg);
     if (msgJS == "\n"){
         return;
@@ -35,7 +41,7 @@ EM_JS(void, JS_post, (const char *msg), {
 });
     
 // ─────────────────────────────────────
-EM_JS(void, JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
+EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
 
@@ -67,7 +73,7 @@ EM_JS(void, JS_getMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUD
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_suspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
+EM_JS(void, JS_SuspendAudioWorklet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioContext.suspend();
 });
@@ -76,7 +82,7 @@ EM_JS(void, JS_suspendAudioWorkLet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 // ╭─────────────────────────────────────╮
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
-void senderCallBack(t_pd *obj, void *data) {
+void SenderCallback(t_pd *obj, void *data) {
     std::unique_ptr<Pd4WebSender> sender(static_cast<Pd4WebSender *>(data));
 
     switch (sender->type) {
@@ -92,7 +98,7 @@ void senderCallBack(t_pd *obj, void *data) {
     case LIST: {
         size_t llen = sender->l["length"].as<size_t>();
         if (libpd_start_message(llen)) {
-            JS_alert("Failed to start message for sendList");
+            JS_Alert("Failed to start message for sendList");
             return;
         }
         for (unsigned i = 0; i < llen; ++i) {
@@ -106,7 +112,7 @@ void senderCallBack(t_pd *obj, void *data) {
             }
         }
         if (libpd_finish_list(sender->receiver)) {
-            JS_alert("Failed to send message for sendList");
+            JS_Alert("Failed to send message for sendList");
         }
         break;
     }
@@ -127,54 +133,69 @@ void senderCallBack(t_pd *obj, void *data) {
         break;
     }
     default:
-        JS_alert("Memory corruption, please report");
+        JS_Alert("Memory corruption, please report");
         break;
     }
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendBang(std::string s) {
+void Pd4Web::SendBang(std::string s) {
     auto sender = std::make_unique<Pd4WebSender>();
     sender->type = BANG;
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
+    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendFloat(std::string s, float f) {
+void Pd4Web::SendFloat(std::string s, float f) {
     auto sender = std::make_unique<Pd4WebSender>();
     sender->type = FLOAT;
     sender->f = f;
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
+    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendSymbol(std::string s, std::string thing) {
+void Pd4Web::SendSymbol(std::string s, std::string thing) {
     auto sender = std::make_unique<Pd4WebSender>();
     sender->type = SYMBOL;
     sender->m = thing.c_str();
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
+    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendList(std::string s, emscripten::val a) {
+void Pd4Web::SendList(std::string s, emscripten::val a) {
     auto sender = std::make_unique<Pd4WebSender>();
     sender->type = LIST;
     sender->l = a;
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
+    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
 }
 
 // ─────────────────────────────────────
-void Pd4Web::sendMessage(std::string r, std::string s, emscripten::val a) {
+void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     auto sender = std::make_unique<Pd4WebSender>();
     sender->type = MESSAGE;
     sender->l = a;
     sender->sel = s.c_str();
     t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_NewPdInstance, receiver, sender.release(), senderCallBack);
+    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+}
+
+// ─────────────────────────────────────
+void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
+    size_t length = jsArrayBuffer["byteLength"].as<size_t>();
+    emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
+    std::vector<uint8_t> buffer(length);
+    uint8Array.call<void>("set", emscripten::typed_memory_view(length, buffer.data()));
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) {
+        JS_Error("Failed to open output file");
+        return;
+    }
+    out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
+    out.close();
 }
 
 // ╭─────────────────────────────────────╮
@@ -190,11 +211,11 @@ void Pd4Web::sendMessage(std::string r, std::string s, emscripten::val a) {
  * @param func  The JavaScript callback function to invoke on bang.
  */
 
-void Pd4Web::onBangReceived(std::string r, emscripten::val func) {
-    libpd_set_instance(m_NewPdInstance);
+void Pd4Web::OnBangReceived(std::string r, emscripten::val func) {
+    libpd_set_instance(m_PdInstance);
 
     void *s = libpd_bind(r.c_str());
-    m_bindSymbols.push_back(s);
+    m_BindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -207,7 +228,7 @@ void Pd4Web::onBangReceived(std::string r, emscripten::val func) {
                 declaredArgCount);
         return;
     }
-    BangReceiverListeners[m_NewPdInstance][r] = func;
+    BangReceiverListeners[m_PdInstance][r] = func;
 }
 
 // ─────────────────────────────────────
@@ -220,11 +241,11 @@ void Pd4Web::onBangReceived(std::string r, emscripten::val func) {
  * @param r     The receiver symbol in Pure Data to listen for floats.
  * @param func  The JavaScript callback function to invoke with the float value.
  */
-void Pd4Web::onFloatReceived(std::string r, emscripten::val func) {
-    libpd_set_instance(m_NewPdInstance);
+void Pd4Web::OnFloatReceived(std::string r, emscripten::val func) {
+    libpd_set_instance(m_PdInstance);
 
     void *s = libpd_bind(r.c_str());
-    m_bindSymbols.push_back(s);
+    m_BindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -237,7 +258,7 @@ void Pd4Web::onFloatReceived(std::string r, emscripten::val func) {
                 declaredArgCount);
         return;
     }
-    FloatReceiverListeners[m_NewPdInstance][r] = func;
+    FloatReceiverListeners[m_PdInstance][r] = func;
 }
 
 // ─────────────────────────────────────
@@ -250,11 +271,11 @@ void Pd4Web::onFloatReceived(std::string r, emscripten::val func) {
  * @param r     The receiver symbol in Pure Data to listen for symbols.
  * @param func  The JavaScript callback function to invoke with the symbol string.
  */
-void Pd4Web::onSymbolReceived(std::string r, emscripten::val func) {
-    libpd_set_instance(m_NewPdInstance);
+void Pd4Web::OnSymbolReceived(std::string r, emscripten::val func) {
+    libpd_set_instance(m_PdInstance);
 
     void *s = libpd_bind(r.c_str());
-    m_bindSymbols.push_back(s);
+    m_BindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -267,7 +288,7 @@ void Pd4Web::onSymbolReceived(std::string r, emscripten::val func) {
                 declaredArgCount);
         return;
     }
-    SymbolReceiverListeners[m_NewPdInstance][r] = func;
+    SymbolReceiverListeners[m_PdInstance][r] = func;
 }
 
 // ─────────────────────────────────────
@@ -280,11 +301,11 @@ void Pd4Web::onSymbolReceived(std::string r, emscripten::val func) {
  * @param r     The receiver symbol in Pure Data to listen for lists.
  * @param func  The JavaScript callback function to invoke with the list elements.
  */
-void Pd4Web::onListReceived(std::string r, emscripten::val func) {
-    libpd_set_instance(m_NewPdInstance);
+void Pd4Web::OnListReceived(std::string r, emscripten::val func) {
+    libpd_set_instance(m_PdInstance);
 
     void *s = libpd_bind(r.c_str());
-    m_bindSymbols.push_back(s);
+    m_BindSymbols.push_back(s);
 
     if (func.typeOf().as<std::string>() != "function") {
         fprintf(stderr, "Error: passed value is not a function\n");
@@ -297,7 +318,7 @@ void Pd4Web::onListReceived(std::string r, emscripten::val func) {
                 declaredArgCount);
         return;
     }
-    ListReceiverListeners[m_NewPdInstance][r] = func;
+    ListReceiverListeners[m_PdInstance][r] = func;
 }
 
 // ─────────────────────────────────────
@@ -312,7 +333,7 @@ void Pd4Web::onListReceived(std::string r, emscripten::val func) {
  *
  * @param r  The receiver symbol of the bang message.
  */
-void receivedBang(const char *r) {
+void ReceivedBang(const char *r) {
     t_pdinstance *instance = libpd_this_instance();
     auto it = BangReceiverListeners.find(instance);
     if (it != BangReceiverListeners.end()) {
@@ -342,7 +363,7 @@ void receivedBang(const char *r) {
  * @param r  The receiver symbol of the float message.
  * @param f  The float value received.
  */
-void receivedFloat(const char *r, float f) {
+void ReceivedFloat(const char *r, float f) {
     t_pdinstance *instance = libpd_this_instance();
     auto it = FloatReceiverListeners.find(instance);
     if (it != FloatReceiverListeners.end()) {
@@ -372,7 +393,7 @@ void receivedFloat(const char *r, float f) {
  * @param r  The receiver symbol of the message.
  * @param s  The symbol string received.
  */
-void receivedSymbol(const char *r, const char *s) {
+void ReceivedSymbol(const char *r, const char *s) {
     t_pdinstance *instance = libpd_this_instance();
     auto it = SymbolReceiverListeners.find(instance);
     if (it != SymbolReceiverListeners.end()) {
@@ -403,7 +424,7 @@ void receivedSymbol(const char *r, const char *s) {
  * @param argc  The number of atoms in the list.
  * @param argv  Pointer to the array of atoms representing the list elements.
  */
-void receivedList(const char *r, int argc, t_atom *argv) {
+void ReceivedList(const char *r, int argc, t_atom *argv) {
     // BUG: Command is repeated 4 times
     t_pdinstance *instance = libpd_this_instance();
     auto it = ListReceiverListeners.find(instance);
@@ -432,10 +453,10 @@ void receivedList(const char *r, int argc, t_atom *argv) {
 }
 
 // ─────────────────────────────────────
-void receivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
+void ReceivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
     // t_pdinstance *instance = libpd_this_instance();
     // emscripten::val func = ReceiverListeners[instance][std::string(r)];
-    // _JS_post("here i am");
+    JS_Alert("ReceivedMessage not implemented");
 }
 
 // ╭─────────────────────────────────────╮
@@ -455,10 +476,10 @@ void receivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
  * @param userData Pointer to user data (not used in this function).
  * @return true if processing succeeded, false otherwise.
  */
-EM_BOOL process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
+EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
                 int numParams, const AudioParamFrame *params, void *userData) {
 
-    auto* ud = static_cast<Pd4WebUserData*>(userData);
+    auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
 
     int ChCount = Out[0].numberOfChannels;
@@ -485,18 +506,18 @@ EM_BOOL process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
  * @param success Boolean indicating whether creation of AudioWorkletProcessor was successful.
  * @param userData Pointer to user data (not used in this function).
  */
-void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
+void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success,
                                   void *userData) {
 
-    auto* ud = static_cast<Pd4WebUserData*>(userData);
+    auto *ud = static_cast<Pd4WebUserData *>(userData);
     if (!success) {
-        JS_alert("Failed to create AudioWorkletProcessor, please report!\n");
+        JS_Alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
     }
 
-    uint32_t SR = PD4WEB_SR;
-    int NInCh = PD4WEB_CHS_IN;
-    int NOutCh = PD4WEB_CHS_OUT;
+    uint32_t SR = ud->pd4web->GetSampleRate();
+    int NInCh = ud->pd4web->GetChannelCountIn();
+    int NOutCh = ud->pd4web->GetChannelCountOut();
     int nOutChannelsArray[1] = {NOutCh};
 
     EmscriptenAudioWorkletNodeCreateOptions options = {
@@ -515,9 +536,9 @@ void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
 
     std::string id = "pd4web_" + std::to_string(libpd_num_instances());
     EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
-        audioContext, id.c_str(), &options, process, userData);
+        audioContext, id.c_str(), &options, Process, userData);
 
-    JS_getMicAccess(audioContext, AudioWorkletNode, NInCh);
+    JS_GetMicAccess(audioContext, AudioWorkletNode, NInCh);
 }
 
 // ─────────────────────────────────────
@@ -531,10 +552,10 @@ void audioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
  * @param success Boolean indicating whether initialization was successful.
  * @param userData Pointer to user data (not used in this function).
  */
-void audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
-    auto* ud = static_cast<Pd4WebUserData*>(userData);
+void AudioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
+    auto *ud = static_cast<Pd4WebUserData *>(userData);
     if (!success) {
-        JS_alert("WebAudio worklet thread initialization failed!\n");
+        JS_Alert("WebAudio worklet thread initialization failed!\n");
         return;
     }
 
@@ -545,21 +566,32 @@ void audioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void 
 
     libpd_set_instance(ud->libpd);
     emscripten_create_wasm_audio_worklet_processor_async(audioContext, &opts,
-                                                         audioWorkletProcessorCreated, userData);
+                                                         AudioWorkletProcessorCreated, userData);
 }
 
 // ─────────────────────────────────────
 /**
- * Suspends the audio worklet using JavaScript.
+ * Toggle Audio
  */
-void Pd4Web::suspendAudio() {
-    JS_suspendAudioWorkLet(m_Context);
+void Pd4Web::ToggleAudio() {
+    SetupMIDI();
+    if (!m_Pd4WebAudioWorkletInit) {
+        Init();
+        m_Pd4WebAudioWorkletInit = true;
+        m_AudioSuspended = false;
+    } else {
+        if (m_AudioSuspended) {
+            emscripten_resume_audio_context_sync(GetWebAudioContext());
+        } else {
+            JS_SuspendAudioWorklet(GetWebAudioContext());
+        }
+    }
 }
 
 // ╭─────────────────────────────────────╮
 // │          Midi Input/Output          │
 // ╰─────────────────────────────────────╯
-void onMIDIInMessage(emscripten::val message) {
+void OnMIDIInMessage(emscripten::val message) {
     emscripten::val data = message["data"];
     int byte1 = data[0].as<int>();
     int byte2 = data[1].as<int>();
@@ -619,12 +651,12 @@ void onMIDIInMessage(emscripten::val message) {
 }
 
 // ─────────────────────────────────────
-void onMIDIOutMessage(emscripten::val message) {
-    JS_alert("MIDI not implemented yet");
+void OnMIDIOutMessage(emscripten::val message) {
+    JS_Alert("MIDI not implemented yet");
 }
 
 // ─────────────────────────────────────
-void onMIDISuccess(emscripten::val midiAccess) {
+void OnMIDISuccess(emscripten::val midiAccess) {
     emscripten::val inputs = midiAccess["inputs"];
     emscripten::val iter = inputs.call<emscripten::val>("values");
     while (true) {
@@ -633,66 +665,126 @@ void onMIDISuccess(emscripten::val midiAccess) {
             break;
         }
         emscripten::val input = next["value"];
-        input.set("onmidimessage", emscripten::val::module_property("onMIDIMessage"));
+        input.set("onmidimessage", emscripten::val::module_property("_onMIDIMessage"));
     }
 }
 
 // ─────────────────────────────────────
-void onMIDIFailed(emscripten::val error) {
-    JS_alert("Access to MIDI devices failed.");
+void OnMIDIFailed(emscripten::val error) {
+    JS_Alert("Access to MIDI devices failed.");
 }
 
 // ─────────────────────────────────────
-void setupMIDI() {
+void SetupMIDI() {
     emscripten::val navigator = emscripten::val::global("navigator");
     if (navigator["requestMIDIAccess"].typeOf().as<std::string>() != "function") {
-        JS_alert("Web MIDI API is not supported.");
+        JS_Alert("Web MIDI API is not supported.");
         return;
     }
     emscripten::val promise = navigator.call<emscripten::val>("requestMIDIAccess");
     promise.call<emscripten::val>("then", // execute promise
-                                  emscripten::val::module_property("onMIDISuccess"),
-                                  emscripten::val::module_property("onMIDIFailed"));
+                                  emscripten::val::module_property("_onMIDISuccess"),
+                                  emscripten::val::module_property("_onMIDIFailed"));
 }
 
 // ╭─────────────────────────────────────╮
 // │           Getter & Setter           │
 // ╰─────────────────────────────────────╯
-void Pd4Web::setLastMousePosition(int x, int y) {
+void Pd4Web::SetLastMousePosition(int x, int y) {
     m_LastMouseX = x;
     m_LastMouseY = y;
 }
 
 // ─────────────────────────────────────
-void Pd4Web::getLastMousePosition(int *x, int *y) {
+void Pd4Web::GetLastMousePosition(int *x, int *y) {
     *x = m_LastMouseX;
     *y = m_LastMouseY;
 }
 
 // ─────────────────────────────────────
-void Pd4Web::setWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx) {
-    m_Context = ctx;
+void Pd4Web::SetWebAudioContext(EMSCRIPTEN_WEBAUDIO_T ctx) {
+    m_AudioContext = ctx;
 }
 
 // ─────────────────────────────────────
-EMSCRIPTEN_WEBAUDIO_T Pd4Web::getWebAudioContext() {
-    return m_Context;
+EMSCRIPTEN_WEBAUDIO_T Pd4Web::GetWebAudioContext() {
+    return m_AudioContext;
 }
 
 // ─────────────────────────────────────
-void Pd4Web::setSampleRate(float sr) {
+void Pd4Web::SetSampleRate(float sr) {
     m_SampleRate = sr;
 }
 
 // ─────────────────────────────────────
-float Pd4Web::getSampleRate() {
+float Pd4Web::GetSampleRate() {
     return m_SampleRate;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetPatchPath() {
+    return m_PatchPath;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetCanvasId() {
+    return m_CanvasId;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetSoundToggleId() {
+    return m_SoundToggleId;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetProjectName() {
+    return m_ProjectName;
+}
+
+// ─────────────────────────────────────
+int Pd4Web::GetChannelCountIn() {
+    return m_ChannelCountIn;
+}
+
+// ─────────────────────────────────────
+int Pd4Web::GetChannelCountOut() {
+    return m_ChannelCountOut;
+}
+
+// ─────────────────────────────────────
+float Pd4Web::GetPatchZoom() {
+    return m_PatchZoom;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::RenderGui() {
+    return m_RenderGui;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::UseMidi() {
+    return m_UseMidi;
+}
+
+// ─────────────────────────────────────
+int Pd4Web::GetFps() {
+    return m_Fps;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetBGColor() {
+    return m_BgColor;
+}
+
+// ─────────────────────────────────────
+std::string Pd4Web::GetFGColor() {
+    return m_FgColor;
 }
 
 // ╭─────────────────────────────────────╮
 // │             USER EVENTS             │
 // ╰─────────────────────────────────────╯
-void pd4web_queue_mouseclick(t_pd *obj, void *data) {
+void QueueMouseclick(t_pd *obj, void *data) {
     Pd4WebUserData *d = (Pd4WebUserData *)data;
     libpd_set_instance(d->libpd);
     (void)gobj_click(d->obj, d->canvas, d->xpos, d->ypos, 0, 0, 0, d->doit);
@@ -701,14 +793,16 @@ void pd4web_queue_mouseclick(t_pd *obj, void *data) {
 
 // ─────────────────────────────────────
 /**
- * Queues a keydown event to be processed by Lua within the Pd4Web environment. On Pd4Web, when
- using pdlua objects is possible to define a method key_down, nbx:key_down(x, y, key), this function
- is called here for all lua objects when there is a keydown event.
+ * Queues a keydown event to be processed by Lua within the Pd4Web environment on Audio Worklet
+ Thread. On Pd4Web, when using pdlua objects is possible to define a method key_down,
+ nbx:key_down(x, y, key), this function is called here for all lua objects when there is a keydown
+ event.
  *
  * @param obj       Pointer to the Pure Data object triggering the event.
  * @param userData  Pointer to Pd4WebUserData containing the key string and libpd instance.
  */
-void pd4web_queue_keydown(t_pd *obj, void *userData) {
+void QueueKeydown(t_pd *obj, void *userData) {
+    printf("keydown\n");
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
     libpd_set_instance(data->libpd);
 
@@ -741,7 +835,6 @@ void pd4web_queue_keydown(t_pd *obj, void *userData) {
         }
         lua_pop(L, 1);
     }
-
     lua_pop(L, 1);
 }
 
@@ -749,15 +842,14 @@ void pd4web_queue_keydown(t_pd *obj, void *userData) {
 /**
  * Keyboard event listener callback for Emscripten environment.
  *
- * Processes keyboard events and updates Pd4Web state accordingly.
- * This function is designed to be registered with Emscripten's event system.
+ * Processes keyboard events and updates Pd4Web state accordingly inside Audio Worklet thread.
  *
  * @param eventType  The type of keyboard event (e.g., keydown, keyup).
  * @param e          Pointer to the EmscriptenKeyboardEvent containing event details.
  * @param userData   Pointer to user-defined data (typically Pd4WebUserData).
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
-EM_BOOL key_listener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
+EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
     libpd_set_instance(data->libpd);
 
@@ -767,14 +859,14 @@ EM_BOOL key_listener(int eventType, const EmscriptenKeyboardEvent *e, void *user
         return EM_FALSE;
     }
 
-    data->pd4web->getLastMousePosition(&data->xpos, &data->ypos);
-
+    data->pd4web->GetLastMousePosition(&data->xpos, &data->ypos);
     data->canvas = canvas;
     data->doit = false;
 
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, data->xpos, data->ypos, &x1, &y1, &x2, &y2, 0)) {
+            // TODO: replace by smart pointer
             Pd4WebUserData *d = new Pd4WebUserData();
             d->obj = obj;
             d->canvas = canvas;
@@ -783,7 +875,7 @@ EM_BOOL key_listener(int eventType, const EmscriptenKeyboardEvent *e, void *user
             d->doit = data->doit;
             d->libpd = data->libpd;
             d->key = e->key;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, pd4web_queue_keydown);
+            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueKeydown);
             break;
         }
     }
@@ -803,7 +895,7 @@ EM_BOOL key_listener(int eventType, const EmscriptenKeyboardEvent *e, void *user
  * @param userData   Pointer to user-defined data (typically Pd4WebUserData).
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
-EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userData) {
+EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
     libpd_set_instance(data->libpd);
 
@@ -818,8 +910,8 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     }
 
     // Use o primeiro toque apenas (pode ser estendido para multitouch se necessário)
-    int xpos = round((float)e->touches[0].targetX / PD4WEB_PATCH_ZOOM);
-    int ypos = round((float)e->touches[0].targetY / PD4WEB_PATCH_ZOOM);
+    int xpos = round((float)e->touches[0].targetX / data->pd4web->GetPatchZoom());
+    int ypos = round((float)e->touches[0].targetY / data->pd4web->GetPatchZoom());
 
     data->xpos = xpos;
     data->ypos = ypos;
@@ -830,7 +922,7 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
     case EMSCRIPTEN_EVENT_TOUCHSTART:
         data->mousedown = true;
         data->doit = true;
-        data->pd4web->setLastMousePosition(xpos, ypos);
+        data->pd4web->SetLastMousePosition(xpos, ypos);
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHEND:
@@ -854,7 +946,7 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
             d->ypos = ypos;
             d->doit = data->doit;
             d->libpd = data->libpd;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, pd4web_queue_mouseclick);
+            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueMouseclick);
             break;
         }
     }
@@ -874,7 +966,7 @@ EM_BOOL touch_listener(int eventType, const EmscriptenTouchEvent *e, void *userD
  * @param userData   Pointer to user-defined data (typically Pd4WebUserData).
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
-EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
     libpd_set_instance(data->libpd);
 
@@ -884,8 +976,8 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
         return EM_TRUE;
     }
 
-    int xpos = round((float)e->targetX / PD4WEB_PATCH_ZOOM);
-    int ypos = round((float)e->targetY / PD4WEB_PATCH_ZOOM);
+    int xpos = round((float)e->targetX / data->pd4web->GetPatchZoom());
+    int ypos = round((float)e->targetY / data->pd4web->GetPatchZoom());
 
     data->xpos = xpos;
     data->ypos = ypos;
@@ -900,11 +992,11 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
     case EMSCRIPTEN_EVENT_MOUSEUP:
         data->mousedown = false;
         data->doit = false;
-        data->pd4web->setLastMousePosition(xpos, ypos);
+        data->pd4web->SetLastMousePosition(xpos, ypos);
         break;
 
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
-        data->doit = data->mousedown; // Always process mousemove events
+        data->doit = data->mousedown; // Always Process mousemove events
         break;
     }
 
@@ -919,7 +1011,7 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
             d->doit = data->doit;           // Use the doit value we determined above
             d->mousedown = data->mousedown; // Pass mousedown state separately
             d->libpd = data->libpd;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, pd4web_queue_mouseclick);
+            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueMouseclick);
             break;
         }
     }
@@ -938,11 +1030,13 @@ EM_BOOL mouse_listener(int eventType, const EmscriptenMouseEvent *e, void *userD
  * @param userData   Pointer to user-defined data (typically Pd4WebUserData).
  * @return           Returns EM_FALSE.
  */
-EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userData) {
+EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    setupMIDI();
     if (!data->soundInit) {
-        data->pd4web->init();
+        if (data->pd4web->UseMidi()) {
+            SetupMIDI();
+        }
+        data->pd4web->Init();
         data->soundInit = true;
         data->soundSuspended = false;
         EM_ASM(
@@ -961,7 +1055,7 @@ EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userDat
                 },
                 ICON_SOUND_ON, data->soundToggleSel.c_str());
             data->soundSuspended = false;
-            emscripten_resume_audio_context_sync(data->pd4web->getWebAudioContext());
+            emscripten_resume_audio_context_sync(data->pd4web->GetWebAudioContext());
         } else {
             EM_ASM(
                 {
@@ -970,7 +1064,7 @@ EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userDat
                 },
                 ICON_SOUND_OFF, data->soundToggleSel.c_str());
             data->soundSuspended = true;
-            JS_suspendAudioWorkLet(data->pd4web->getWebAudioContext());
+            JS_SuspendAudioWorklet(data->pd4web->GetWebAudioContext());
         }
     }
     return EM_FALSE;
@@ -978,21 +1072,20 @@ EM_BOOL sound_toggle(int eventType, const EmscriptenMouseEvent *e, void *userDat
 
 // ─────────────────────────────────────
 /**
- * Sets up the asynchronous main loop for Pd4Web.
+ * Sets up the asynchronous main Loop for Pd4Web.
  *
  * Retrieves the current canvas size and device pixel ratio, stores them in user data,
- * and registers the main loop function (`loop`) to be called repeatedly by Emscripten.
+ * and registers the main Loop function (`Loop`) to be called repeatedly by Emscripten.
  *
  * @param userData  Pointer to Pd4WebUserData containing canvas selector and other state.
  */
 void setAsyncMainLoop(void *userData) {
-    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-    int canvas_width, canvas_height;
-    emscripten_get_canvas_element_size(ud->canvasSel.c_str(), &canvas_width, &canvas_height);
-    ud->canvas_width = canvas_width;
-    ud->canvas_height = canvas_height;
-    ud->devicePixelRatio = emscripten_get_device_pixel_ratio();
-    emscripten_set_main_loop_arg(loop, (void *)userData, 30, 0);
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+    int fps = ud->pd4web->GetFps();
+    GetGLContext(ud);
+
+    RenderPatchComments(ud);
+    emscripten_set_main_loop_arg(Loop, userData, fps, 20);
 }
 
 // ─────────────────────────────────────
@@ -1000,26 +1093,81 @@ void setAsyncMainLoop(void *userData) {
  * Opens a Pure Data patch with optional canvas and sound toggle identifiers.
  *
  * Extracts `canvasId` and `soundToggleId` from the JavaScript `options` object if provided,
- * then calls `openPatch` with the patch path and these identifiers.
+ * then calls `OpenPatch` with the patch path and these identifiers.
  *
  * @param patchPath      The file path or URL of the patch to open.
  * @param options        JavaScript object containing optional `canvasId` and `soundToggleId`
  * strings.
  */
-void Pd4Web::openPatchJS(const std::string &patchPath, emscripten::val options) {
-    std::string canvasId = "";
-    std::string soundToggleId = "";
+void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) {
+    // Default values
+    m_PatchPath = patchPath;
+    if (m_PatchPath.empty()) {
+        JS_Alert("You need to specify a patch path");
+        return;
+    }
 
+    m_CanvasId = "";
+    m_SoundToggleId = "";
+    m_ProjectName = "";
+    m_ChannelCountIn = 0;
+    m_ChannelCountOut = 0;
+    m_SampleRate = 48000.0f;
+    m_PatchZoom = 1.0f;
+    m_RenderGui = true;
+    m_Fps = 0;
+    m_UseMidi = false;
+
+    if (JS_IsDarkMode()) {
+        m_BgColor = "#303030";
+        m_FgColor = "#fcfcfc";
+    } else {
+        m_BgColor = "#fcfcfc";
+        m_FgColor = "#000000";
+    }
+
+    // Parse JS options
     if (!options.isUndefined()) {
         if (options.hasOwnProperty("canvasId")) {
-            canvasId = options["canvasId"].as<std::string>();
+            m_CanvasId = options["canvasId"].as<std::string>();
         }
         if (options.hasOwnProperty("soundToggleId")) {
-            soundToggleId = options["soundToggleId"].as<std::string>();
+            m_SoundToggleId = options["soundToggleId"].as<std::string>();
+        }
+        if (options.hasOwnProperty("patchZoom")) {
+            m_PatchZoom = options["patchZoom"].as<float>();
+        }
+        if (options.hasOwnProperty("projectName")) {
+            m_ProjectName = options["projectName"].as<std::string>();
+        }
+        if (options.hasOwnProperty("channelCountIn")) {
+            m_ChannelCountIn = options["channelCountIn"].as<int>();
+        }
+        if (options.hasOwnProperty("channelCountOut")) {
+            m_ChannelCountOut = options["channelCountOut"].as<int>();
+        }
+        if (options.hasOwnProperty("sampleRate")) {
+            m_SampleRate = options["sampleRate"].as<float>();
+        }
+        if (options.hasOwnProperty("renderGui")) {
+            m_RenderGui = options["renderGui"].as<bool>();
+        }
+        if (options.hasOwnProperty("requestMidi")) {
+            m_UseMidi = options["requestMidi"].as<bool>();
+        }
+        if (options.hasOwnProperty("fps")) {
+            m_Fps = options["fps"].as<int>();
+        }
+        if (options.hasOwnProperty("bgColor")) {
+            m_BgColor = options["bgColor"].as<std::string>();
+        }
+        if (options.hasOwnProperty("fgColor")) {
+            m_FgColor = options["fgColor"].as<std::string>();
         }
     }
 
-    openPatch(patchPath, canvasId, soundToggleId);
+    // Call internal OpenPatch
+    OpenPatch(m_PatchPath, m_CanvasId, m_SoundToggleId);
 }
 
 // ─────────────────────────────────────
@@ -1034,21 +1182,28 @@ void Pd4Web::openPatchJS(const std::string &patchPath, emscripten::val options) 
  * @param PatchCanvaId     The HTML canvas element ID for rendering audio visuals.
  * @param soundToggleId    The HTML element ID for toggling sound output.
  */
-void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId) {
-    m_NewPdInstance = libpd_new_instance();
-    if (m_NewPdInstance == NULL) {
-        JS_alert("libpd_init() failed, please report!");
+void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId) {
+    m_PdInstance = libpd_new_instance();
+    if (m_PdInstance == nullptr) {
+        JS_Alert("libpd_Init() failed, please report!");
         return;
     }
 
-    libpd_set_instance(m_NewPdInstance);
+    m_Pd4WebAudioWorkletInit = false;
+    m_AudioSuspended = false;
+
+    libpd_set_instance(m_PdInstance);
+
+    m_UserData->pd4web = this;
+    m_UserData->libpd = m_PdInstance;
+
     (void)libpd_queued_init();
 
-    libpd_set_queued_banghook(receivedBang);
-    libpd_set_queued_floathook(receivedFloat);
-    libpd_set_queued_symbolhook(receivedSymbol);
-    libpd_set_queued_listhook(receivedList);
-    libpd_set_queued_messagehook(receivedMessage);
+    libpd_set_queued_banghook(ReceivedBang);
+    libpd_set_queued_floathook(ReceivedFloat);
+    libpd_set_queued_symbolhook(ReceivedSymbol);
+    libpd_set_queued_listhook(ReceivedList);
+    libpd_set_queued_messagehook(ReceivedMessage);
 
     // TODO: Midi messages
 
@@ -1068,10 +1223,11 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
             ICON_SOUND_OFF, soundToggleId.c_str());
 
         std::string sel = "#" + soundToggleId;
-        m_userData->soundInit = false;
-        m_userData->soundSuspended = false;
-        m_userData->soundToggleSel = soundToggleId;
-        emscripten_set_mousedown_callback(sel.c_str(), m_userData.get(), EM_TRUE, sound_toggle);
+        m_UserData->soundToggleSel = soundToggleId;
+        emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
+    } else {
+        JS_Warning("You don't assigned any sound toggle id, you need to run Pd4Web.init() from a "
+                   "click event!");
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -1079,20 +1235,17 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     libpd_add_to_search_path("./Audios/");
     libpd_add_to_search_path("./Gui/");
 
-    // setup objects
-#if PD4WEB_LUA
     pdlua_setup();
-#endif
     Pd4WebInitExternals();
 
     // open patch
     if (!libpd_openfile(PatchPath.c_str(), "./")) {
-        JS_alert("Failed to open patch | Please Report!");
+        JS_Alert("Failed to open patch | Please Report!");
         return;
     }
 
     // resize canvas
-    if (PatchCanvaId != "") {
+    if (RenderGui() && PatchCanvaId != "") {
         t_canvas *canvas = pd_getcanvaslist();
         int canvasWidth = canvas->gl_pixwidth;
         int canvasHeight = canvas->gl_pixheight;
@@ -1103,75 +1256,122 @@ void Pd4Web::openPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         std::string PatchCanvaSel = "#" + PatchCanvaId;
         const char *sel = PatchCanvaSel.c_str();
-        if (PD4WEB_GUI) {
-            int zoom = PD4WEB_PATCH_ZOOM;
-            emscripten_set_canvas_element_size(sel, canvasWidth * zoom, canvasHeight * zoom);
+        m_UserData->canvasSel = PatchCanvaSel;
 
-            t_canvas *canvas = pd_getcanvaslist();
-            for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
-                gobj_vis(obj, canvas, 1);
-            }
+        // set patch canvas size
+        float dpr = emscripten_get_device_pixel_ratio();
+        int cssW = canvasWidth * GetPatchZoom();
+        int cssH = canvasHeight * GetPatchZoom();
 
-            m_userData->mousedown = false;
-            emscripten_set_mousedown_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
-            emscripten_set_mouseup_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
-            emscripten_set_mousemove_callback(sel, m_userData.get(), EM_FALSE, mouse_listener);
+        int backingW = static_cast<int>(cssW * dpr);
+        int backingH = static_cast<int>(cssH * dpr);
+        emscripten_set_canvas_element_size(sel, backingW, backingH);
+        EM_ASM(
+            {
+                const canvas = document.querySelector(UTF8ToString($0));
+                if (canvas) {
+                    canvas.style.width = $1 + 'px';
+                    canvas.style.height = $2 + 'px';
+                }
+            },
+            sel, cssW, cssH);
 
-            // touchscreen
-            emscripten_set_touchstart_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchend_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchmove_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
-            emscripten_set_touchcancel_callback(sel, m_userData.get(), EM_FALSE, touch_listener);
+        m_UserData->canvas_width = backingW;
+        m_UserData->canvas_height = backingH;
+        m_UserData->devicePixelRatio = dpr;
 
-            emscripten_set_keydown_callback(sel, m_userData.get(), EM_FALSE, key_listener);
+        for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+            gobj_vis(obj, canvas, 1);
         }
 
-        // m_GuiLoopCtx = std::make_unique<Pd4WebUserData>();
-        m_userData->libpd = m_NewPdInstance;
-        m_userData->pd4web = this;
-        m_userData->canvasSel = PatchCanvaSel;
-        getGlCtx(m_userData.get());
+        m_UserData->mousedown = false;
+        emscripten_set_mousedown_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
+        emscripten_set_mouseup_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
+        emscripten_set_mousemove_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
 
-        if (m_userData->vg == nullptr) {
-            JS_alert("NanoVG invalid Context, not rendering patch");
-            return;
-        }
+        // touchscreen
+        emscripten_set_touchstart_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchend_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
 
-        // TODO: create comments text
-        emscripten_async_call(setAsyncMainLoop, m_userData.get(), 0);
-        // call async to avoid unwind error
+        // keydown (lua object must define obj::key_down)
+        emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
+
+        m_UserData->libpd = m_PdInstance;
+        m_UserData->pd4web = this;
+        m_UserData->canvasSel = PatchCanvaSel;
+        emscripten_async_call(setAsyncMainLoop, m_UserData.get(), 0);
     }
 }
 
 // ╭─────────────────────────────────────╮
 // │            Gui Interface            │
 // ╰─────────────────────────────────────╯
-void getDefaultColor(std::string key, float *r, float *g, float *b) {
-    // TODO: pd-0.57
-    static bool themeDefined = false;
-    static bool darkTheme = false;
-
-    if (!themeDefined) {
-        darkTheme = JS_isDarkMode();
+void RenderPatchComments(Pd4WebUserData *ud) {
+    t_canvas *canvas = pd_getcanvaslist();
+    if (!canvas) {
+        return;
     }
 
-    if (darkTheme) {
-        if (key == "bg") {
-            *r = *g = *b = 0.20;
-        } else if (key == "fg") {
-            *r = *g = *b = 0.95;
-        }
-    } else {
-        if (key == "bg") {
-            *r = *g = *b = 0.98;
-        } else if (key == "fg") {
-            *r = *g = *b = 0.2;
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
+            t_text *txt = (t_text *)obj;
+            t_binbuf *bb = txt->te_binbuf;
+            if (!bb) {
+                continue;
+            }
+
+            char *textbuf = nullptr;
+            int textsize = 0;
+            binbuf_gettext(bb, &textbuf, &textsize);
+
+            if (!textbuf || textsize <= 0) {
+                continue;
+            }
+
+            char safe_buf[1025];
+            int copy_len = (textsize < 1024) ? textsize : 1024;
+            memcpy(safe_buf, textbuf, copy_len);
+            safe_buf[copy_len] = '\0';
+
+            int x = txt->te_xpix;
+            int y = txt->te_ypix;
+
+            GuiCommand cmd;
+            cmd.command = DRAW_TEXT;
+
+            std::string fg = ud->pd4web->GetFGColor();
+            strncpy(cmd.current_color, fg.c_str(), sizeof(cmd.current_color) - 1);
+            cmd.current_color[sizeof(cmd.current_color) - 1] = '\0';
+
+            strncpy(cmd.layer_id, "default_layer_0", sizeof(cmd.layer_id) - 1);
+            cmd.layer_id[sizeof(cmd.layer_id) - 1] = '\0';
+            snprintf(cmd.text, sizeof(cmd.text), "%s", safe_buf);
+            cmd.x1 = 0;
+            cmd.y1 = 0;
+            cmd.w = txt->te_width;
+            if (cmd.w == 0) {
+                float bounds[4]; // [x0, y0, x1, y1]
+                cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, NULL, bounds);
+            }
+
+            cmd.h = 10;
+            cmd.font_size = 10;
+            cmd.objx = x;
+            cmd.objy = y;
+
+            char obj_layer_id[64];
+            snprintf(obj_layer_id, 64, "layer_%p", obj);
+            ClearLayerCommand(obj_layer_id, 0, x, y, cmd.w, cmd.h);
+            AddNewCommand(obj_layer_id, 0, &cmd);
+            EndPaintLayerCommand(obj_layer_id, 0);
         }
     }
 }
 
 // ─────────────────────────────────────
-static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b) {
+static void HexToRgbNormalized(const char *hex, float *r, float *g, float *b) {
     if (hex[0] == '#') {
         hex++;
     }
@@ -1204,7 +1404,7 @@ static void hex_to_rgb_normalized(const char *hex, float *r, float *g, float *b)
  * @param ud  Pointer to Pd4WebUserData containing canvas selector and context state.
  */
 // ─────────────────────────────────────
-void getGlCtx(Pd4WebUserData *ud) {
+void GetGLContext(Pd4WebUserData *ud) {
     if (ud->contextReady) {
         emscripten_webgl_make_context_current(ud->ctx);
         return;
@@ -1235,22 +1435,22 @@ void getGlCtx(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(0);
+    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
     if (!ud->vg) {
-        JS_alert("Failed to create NanoVG context");
+        JS_Alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
         return;
     }
 
     ud->font_handler = nvgCreateFont(ud->vg, "roboto", "DejaVuSans.ttf");
     if (ud->font_handler == -1) {
-        JS_alert("Failed to create NanoVG font");
+        JS_Alert("Failed to create NanoVG font");
         return;
     }
 
     float r, g, b;
-    getDefaultColor("bg", &r, &g, &b);
-
+    std::string bg = ud->pd4web->GetBGColor();
+    HexToRgbNormalized(bg.c_str(), &r, &g, &b);
     glClearColor(r, g, b, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -1266,7 +1466,7 @@ void getGlCtx(Pd4WebUserData *ud) {
  *
  * @return Reference to PdLuaObjsGui for the current Pure Data instance.
  */
-PdLuaObjsGui &get_libpd_instance_commands() {
+PdLuaObjsGui &GetLibPDInstanceCommands() {
     static PdInstanceGui GuiCommands;
     t_pdinstance *pd = libpd_this_instance();
     return GuiCommands[pd];
@@ -1287,10 +1487,10 @@ PdLuaObjsGui &get_libpd_instance_commands() {
  * @param w             Width of the drawing area.
  * @param h             Height of the drawing area.
  */
-void clear_layercommand(const char *obj_layer_id, int layer, int x, int y, int w, int h) {
+void ClearLayerCommand(const char *obj_layer_id, int layer, int x, int y, int w, int h) {
     std::string layer_id(obj_layer_id);
 
-    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
     PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
 
@@ -1312,7 +1512,7 @@ void clear_layercommand(const char *obj_layer_id, int layer, int x, int y, int w
 
 // ─────────────────────────────────────
 /**
- * Marks the end of the painting process for a specified layer.
+ * Marks the end of the painting Process for a specified layer.
  *
  * Sets the drawing flag of the given layer to false, indicating that
  * rendering operations are complete for this layer.
@@ -1320,10 +1520,10 @@ void clear_layercommand(const char *obj_layer_id, int layer, int x, int y, int w
  * @param obj_layer_id  Identifier string for the target object layer.
  * @param layer         Layer index within the object layer.
  */
-void endpaint_layercommand(const char *obj_layer_id, int layer) {
+void EndPaintLayerCommand(const char *obj_layer_id, int layer) {
     std::string layer_id(obj_layer_id);
 
-    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
     PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
     obj_layer.drawing = false;
@@ -1341,7 +1541,7 @@ void endpaint_layercommand(const char *obj_layer_id, int layer) {
  * @param layer         Layer index within the object layer.
  * @param c             Pointer to the GuiCommand to add (must not be null).
  */
-void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
+void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c) {
     if (!c) {
         fprintf(stderr, "NULL command\n");
         return;
@@ -1349,7 +1549,7 @@ void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
 
     std::string layer_id(obj_layer_id);
 
-    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
     PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
     GuiCommand copy = *c;
@@ -1386,11 +1586,9 @@ void add_newcommand(const char *obj_layer_id, int layer, GuiCommand *c) {
  * @param ud   Pointer to Pd4WebUserData containing the NanoVG context.
  * @param cmd  Pointer to the GuiCommand to be drawn.
  */
-void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
-#ifdef PD4WEB_WEBGPU
-#else
+void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
     float r, g, b;
-    hex_to_rgb_normalized(cmd->current_color, &r, &g, &b);
+    HexToRgbNormalized(cmd->current_color, &r, &g, &b);
     nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
     nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
 
@@ -1400,10 +1598,9 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgFill(ud->vg);
 
-        float r, g, b;
-        getDefaultColor("fg", &r, &g, &b);
+        std::string fg = ud->pd4web->GetFGColor();
+        HexToRgbNormalized(fg.c_str(), &r, &g, &b);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgBeginPath(ud->vg);
         nvgStrokeWidth(ud->vg, 1);
         nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgStroke(ud->vg);
@@ -1549,33 +1746,32 @@ void pd4webdraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         break;
     }
     }
-#endif
 }
 
 // ─────────────────────────────────────
 /**
- * Main loop function called repeatedly by Emscripten.
+ * Main Loop function called repeatedly by Emscripten.
  *
  * Handles processing and rendering tasks using the provided user data.
  *
  * @param userData  Pointer to user-defined data (Pd4WebUserData).
  */
-void loop(void *userData) {
+void Loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 
-    getGlCtx(ud);
+    GetGLContext(ud);
     if (ud->vg == nullptr) {
-        JS_warning("NanoVG context invalid");
+        JS_Warning("NanoVG context invalid");
         return;
     }
 
-    float zoom = PD4WEB_PATCH_ZOOM;
+    float zoom = ud->pd4web->GetPatchZoom();
     float pxRatio = ud->devicePixelRatio;
 
-    PdLuaObjsGui &pdlua_objs = get_libpd_instance_commands();
+    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     std::vector<PdLuaObjLayers> objs_to_redraw;
 
     int dirtySceneMinX = std::numeric_limits<int>::max();
@@ -1603,23 +1799,23 @@ void loop(void *userData) {
             int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
 
             if (!layer.fb) {
-                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
+                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
             }
 
             nvgluBindFramebuffer(layer.fb);
             glViewport(0, 0, fbw, fbh);
 
-            nvgBeginFrame(ud->vg, fbw, fbh, 1);
+            nvgBeginFrame(ud->vg, fbw, fbh, pxRatio);
             nvgScissor(ud->vg, 0, 0, fbw, fbh);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
             nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom * pxRatio,
-                     zoom * pxRatio); // Apenas zoom lógico, devicePixelRatio já está aplicado
-                                      // no tamanho do framebuffer
+            nvgScale(ud->vg, zoom * pxRatio, zoom * pxRatio);
+
             for (GuiCommand &cmd : layer.gui_commands) {
-                pd4webdraw(ud, &cmd);
+                Pd4WebDraw(ud, &cmd);
             }
             nvgRestore(ud->vg);
             nvgResetScissor(ud->vg);
@@ -1670,9 +1866,10 @@ void loop(void *userData) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
 
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, 1);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
     nvgSave(ud->vg);
-    nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+    nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
+               dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
 
     for (const auto &obj_layers : objs_to_redraw) {
         for (const auto &layer_pair : obj_layers) {
@@ -1681,10 +1878,10 @@ void loop(void *userData) {
                 continue;
             }
 
-            float dstX = layer.objx * zoom;
-            float dstY = layer.objy * zoom;
-            float dstW = layer.objw * zoom;
-            float dstH = layer.objh * zoom;
+            float dstX = layer.objx * zoom * pxRatio;
+            float dstY = layer.objy * zoom * pxRatio;
+            float dstW = layer.objw * zoom * pxRatio;
+            float dstH = layer.objh * zoom * pxRatio;
 
             NVGpaint paint =
                 nvgImagePattern(ud->vg, dstX, dstY, dstW, dstH, 0, layer.fb->image, 1.0f);
@@ -1701,13 +1898,15 @@ void loop(void *userData) {
     nvgluBindFramebuffer(nullptr);
 
     // Final draw on screen
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, 1);
-    nvgScissor(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
+    nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
+               dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
 
     NVGpaint screenPaint = nvgImagePattern(ud->vg, 0, 0, ud->canvas_width, ud->canvas_height, 0,
                                            ud->mainFBO->image, 1.0f);
     nvgBeginPath(ud->vg);
-    nvgRect(ud->vg, dirtySceneMinX * zoom, dirtySceneMinY * zoom, dirtyW * zoom, dirtyH * zoom);
+    nvgRect(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
+            dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
     nvgFillPaint(ud->vg, screenPaint);
     nvgFill(ud->vg);
 
@@ -1724,31 +1923,28 @@ void loop(void *userData) {
  * Sets up the Web Audio context with specified sample rate and channels,
  * creates user data, and starts the audio worklet thread asynchronously.
  */
-void Pd4Web::init() {
-    float NInCh = PD4WEB_CHS_IN;
-    float NOutCh = PD4WEB_CHS_OUT;
-
+void Pd4Web::Init() {
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
         .sampleRate = PD4WEB_SR,
     };
 
-    m_userData = std::make_shared<Pd4WebUserData>();
-    m_userData->pd4web = this;
-    m_userData->libpd = m_NewPdInstance;
+    m_UserData = std::make_shared<Pd4WebUserData>();
+    m_UserData->pd4web = this;
+    m_UserData->libpd = m_PdInstance;
 
-    libpd_set_instance(m_NewPdInstance);
+    libpd_set_instance(m_PdInstance);
 
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
     EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
-    setSampleRate(PD4WEB_SR);
+    SetSampleRate(m_SampleRate);
 
     emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
-                                                     audioWorkletInit, m_userData.get());
-    m_Context = AudioContext;
-    m_audioSuspended = false;
+                                                     AudioWorkletInit, m_UserData.get());
+    m_AudioContext = AudioContext;
+    m_AudioSuspended = false;
 }
 
 // ╭─────────────────────────────────────╮
@@ -1764,12 +1960,13 @@ void Pd4Web::init() {
  */
 int main() {
     emscripten_set_window_title(PD4WEB_PROJECT_NAME);
-    libpd_set_printhook(JS_post);
+    libpd_set_printhook(JS_Post);
     int result = libpd_init();
     if (result != 0) {
-        JS_alert("Failed to initialize libpd, please report to pd4web");
+        JS_Alert("Failed to initialize libpd, please report to pd4web");
         abort();
     }
+
     std::cout << std::format("pd4web version {}.{}.{}", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
                              PD4WEB_VERSION_PATCH)
               << std::endl;

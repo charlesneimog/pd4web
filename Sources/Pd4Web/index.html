@@ -28,6 +28,14 @@
                 Pd4Web.openPatch("index.pd", {
                     canvasId: "Pd4WebCanvas",
                     soundToggleId: "Pd4WebAudioSwitch",
+                    patchZoom: 2,
+                    projectName: "MyProject",
+                    channelCountIn: 1,
+                    channelCountOut: 2,
+                    sampleRate: 48000,
+                    renderGui: true,
+                    requestMidi: false,
+                    fps: 0,
                 });
 
                 Pd4Web.onBangReceived("r-test", (r) => {
