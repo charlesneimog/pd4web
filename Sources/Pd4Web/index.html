@@ -99,6 +99,7 @@
             var Pd4Web = null;
             Pd4WebModule().then((Pd4WebModulePromise) => {
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
+
                 Pd4Web.openPatch("index.pd", {
                     canvasId: "Pd4WebCanvas",
                     soundToggleId: "Pd4WebAudioSwitch",
@@ -108,7 +109,7 @@
                     channelCountOut: 2,
                     sampleRate: 48000,
                     renderGui: true,
-                    requestMidi: false,
+                    requestMidi: true,
                     fps: 0,
                 });
 
@@ -128,12 +129,12 @@
         </script>
         <script>
             // Create an App (installable using PWA ( https://en.wikipedia.org/wiki/Progressive_web_app ))
-            if ("serviceWorker" in navigator) {
-                navigator.serviceWorker
-                    .register("pd4web.sw.js")
-                    .then(() => console.log("Service Worker registered"))
-                    .catch((err) => console.error("Service Worker registration failed:", err));
-            }
+            // if ("serviceWorker" in navigator) {
+            //     navigator.serviceWorker
+            //         .register("pd4web.sw.js")
+            //         .then(() => console.log("Service Worker registered"))
+            //         .catch((err) => console.error("Service Worker registration failed:", err));
+            // }
         </script>
     </body>
 </html>

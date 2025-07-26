@@ -122,6 +122,11 @@ end
 
 -- ──────────────────────────────────────
 function hsl:hex_to_rgb(hex)
+	if hex[1] ~= "#" then
+		self:error("Hex color must start with #")
+		return { 0, 0, 0 }
+	end
+
 	hex = hex:gsub("#", "")
 	return {
 		tonumber(hex:sub(1, 2), 16),

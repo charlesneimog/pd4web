@@ -102,7 +102,7 @@ function vsl:clamp_pos(y)
 end
 
 -- ──────────────────────────────────────────
-function vsl:mouse_down(x, y)
+function vsl:mouse_down(_, y)
 	self.pos = self:clamp_pos(y)
 	local val = self:pos_to_value(self.pos)
 	self:outlet(1, "float", { val })
@@ -110,7 +110,7 @@ function vsl:mouse_down(x, y)
 end
 
 -- ──────────────────────────────────────────
-function vsl:mouse_up(x, y)
+function vsl:mouse_up(_, y)
 	self.pos = self:clamp_pos(y)
 	local val = self:pos_to_value(self.pos)
 	self:outlet(1, "float", { val })
@@ -118,7 +118,7 @@ function vsl:mouse_up(x, y)
 end
 
 -- ──────────────────────────────────────────
-function vsl:mouse_drag(x, y)
+function vsl:mouse_drag(_, y)
 	self.pos = self:clamp_pos(y)
 	local val = self:pos_to_value(self.pos)
 	self:outlet(1, "float", { val })
@@ -127,6 +127,11 @@ end
 
 -- ──────────────────────────────────────────
 function vsl:hex_to_rgb(hex)
+	if hex:sub(1, 1) ~= "#" then
+		self:error("vsl: hex color must start with #: " .. hex)
+		return { 0, 0, 0 }
+	end
+
 	hex = hex:gsub("#", "")
 	return {
 		tonumber(hex:sub(1, 2), 16),
@@ -136,11 +141,25 @@ function vsl:hex_to_rgb(hex)
 end
 
 -- ──────────────────────────────────────────
+function vsl:in_1_color(args)
+	if args[1][1] == "#" or args[2][1] == "#" or args[3][1] == "#" then
+		self:error("There is at least one invalid color")
+		return
+	end
+
+	self.bg_color = args[1]
+	self.fg_color = args[2]
+	self.laber_color = args[3]
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
 function vsl:paint(g)
 	if self.need_update_args then
 		self.need_update_args = false
 		self:update_args()
 	end
+
 	local width, height = self:get_size()
 	g:set_color(table.unpack(self:hex_to_rgb(self.bg_color)))
 	g:fill_all()

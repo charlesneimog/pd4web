@@ -33,7 +33,7 @@ function vradio:initialize(_, args)
 		self.font = 0
 		self.fontsize = 10
 		self.bg_color = "#fcfcfc"
-		self.fg_color = "#000000"
+		self.fg_color = "#ff0000"
 		self.label_color = "#000000"
 		self.default_value = 0
 	end
@@ -45,11 +45,91 @@ function vradio:initialize(_, args)
 end
 
 -- ──────────────────────────────────────────
+function vradio:postinitialize()
+	if self.init == 1 then
+		self:outlet(1, "float", { self.default_value })
+		if self.send ~= "empty" then
+			pd.send(self.send, "float", { self.default_value })
+		end
+	end
+
+	self.recv = nil
+	if self.receive ~= "empty" then
+		self.recv = pd.Receive:new():register(self, self.receive, "receive_callback")
+	end
+end
+
+-- ──────────────────────────────────────────
+function vradio:receive_callback(sel, atoms)
+	if sel == "float" then
+		local f = atoms[1]
+		self.selected = f
+		self:outlet(1, "float", { f })
+		pd.send(self.send, "float", { f })
+		self:repaint(2)
+	end
+end
+
+-- ──────────────────────────────────────────
 function vradio:mouse_down(x, y)
 	local pos = math.floor(y / self.size)
 	self.selected = pos
 	self:outlet(1, "float", { pos })
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.pos })
+	end
 	self:repaint(2)
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_send(args)
+	self.send = args[1]
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_receive(args)
+	self.receive = args[1]
+	if self.receive ~= "empty" then
+		self.recv = pd.Receive:new():register(self, self.receive, "receive_callback")
+	end
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_float(args)
+	local pos = args[1]
+	self.selected = pos
+	self:outlet(1, "float", { pos })
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.default_value })
+	end
+	self:repaint(2)
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_color(args)
+	if args[1][1] == "#" or args[2][1] == "#" or args[3][1] == "#" then
+		self:error("There is at least one invalid color")
+		return
+	end
+
+	self.bg_color = args[1]
+	self.fg_color = args[2]
+	self.laber_color = args[3]
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_size(args)
+	self.size = args[1]
+	self:set_size(self.size, self.size * self.number)
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_number(args)
+	self.number = args[1]
+	self:set_size(self.size, self.size * self.number)
+	self:repaint()
 end
 
 -- ──────────────────────────────────────────
@@ -64,13 +144,12 @@ end
 
 -- ──────────────────────────────────────────
 function vradio:paint(g)
-	local width, height = self:get_size()
 	g:set_color(table.unpack(self:hex_to_rgb(self.bg_color)))
 	g:fill_all()
 
-	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
 	local pos = 0
-	for i = 1, self.number do
+	for _ = 1, self.number do
+		g:set_color(0, 0, 0)
 		g:stroke_rect(0, 0 + pos, self.size, self.size, 1)
 		pos = pos + self.size
 	end
@@ -78,6 +157,7 @@ end
 
 -- ──────────────────────────────────────────
 function vradio:paint_layer_2(g)
+	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
 	g:fill_rect(4, 4 + (self.selected * self.size), self.size - 8, self.size - 8, 1)
 end
 
