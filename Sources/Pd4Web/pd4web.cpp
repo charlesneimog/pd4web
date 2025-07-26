@@ -30,15 +30,6 @@ EM_JS(void, JS_Error, (const char *msg), {
 EM_JS(void, JS_Warning, (const char *msg), {
     console.warn(UTF8ToString(msg));
 });
-
-// ─────────────────────────────────────
-EM_JS(void, JS_Post, (const char *msg), {
-    let msgJS = UTF8ToString(msg);
-    if (msgJS == "\n"){
-        return;
-    }
-    console.log(msgJS);
-});
     
 // ─────────────────────────────────────
 EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
@@ -210,7 +201,6 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
  * @param r     The receiver symbol in Pure Data to listen for bangs.
  * @param func  The JavaScript callback function to invoke on bang.
  */
-
 void Pd4Web::OnBangReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_PdInstance);
 
@@ -319,6 +309,19 @@ void Pd4Web::OnListReceived(std::string r, emscripten::val func) {
         return;
     }
     ListReceiverListeners[m_PdInstance][r] = func;
+}
+
+// ─────────────────────────────────────
+/**
+ * Called when a print is received from Pure Data.
+ *
+ * @param msg The print message.
+ */
+void ReceivedPrintMsg(const char *msg) {
+    if (msg[0] == '\n') {
+        return;
+    }
+    emscripten_log(EM_LOG_CONSOLE, msg);
 }
 
 // ─────────────────────────────────────
@@ -459,6 +462,21 @@ void ReceivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
     JS_Alert("ReceivedMessage not implemented");
 }
 
+// ─────────────────────────────────────
+void ReceivedNoteON(int channel, int pitch, int velocity) {
+    // typedef void (*t_libpd_noteonhook)(int channel, int pitch, int velocity)
+}
+
+// ─────────────────────────────────────
+void ReceivedControlChannel(int channel, int controller, int value) {
+    // typedef void (*t_libpd_controlchangehook)(int channel, int controller, int value)
+}
+
+// ─────────────────────────────────────
+void ReceivedProgramChange(int channel, int program) {
+    // typedef void (*t_libpd_programchangehook)(int channel, int program)
+}
+
 // ╭─────────────────────────────────────╮
 // │            WebAudioPatch            │
 // ╰─────────────────────────────────────╯
@@ -574,8 +592,10 @@ void AudioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void 
  * Toggle Audio
  */
 void Pd4Web::ToggleAudio() {
-    SetupMIDI();
     if (!m_Pd4WebAudioWorkletInit) {
+        if (m_UseMidi) {
+            SetupMIDI();
+        }
         Init();
         m_Pd4WebAudioWorkletInit = true;
         m_AudioSuspended = false;
@@ -666,6 +686,25 @@ void OnMIDISuccess(emscripten::val midiAccess) {
         }
         emscripten::val input = next["value"];
         input.set("onmidimessage", emscripten::val::module_property("_onMIDIMessage"));
+    }
+
+    emscripten::val outputs = midiAccess["outputs"];
+    iter = outputs.call<emscripten::val>("values");
+
+    while (true) {
+        emscripten::val next = iter.call<emscripten::val>("next");
+        if (next["done"].as<bool>()) {
+            break;
+        }
+
+        emscripten::val output = next["value"];
+
+        std::string name = output["name"].as<std::string>();
+        std::string manufacturer = output["manufacturer"].as<std::string>();
+        std::string id = output["id"].as<std::string>();
+
+        std::cout << "MIDI Output: " << name << " | Manufacturer: " << manufacturer
+                  << " | ID: " << id << std::endl;
     }
 }
 
@@ -784,11 +823,23 @@ std::string Pd4Web::GetFGColor() {
 // ╭─────────────────────────────────────╮
 // │             USER EVENTS             │
 // ╰─────────────────────────────────────╯
-void QueueMouseclick(t_pd *obj, void *data) {
-    Pd4WebUserData *d = (Pd4WebUserData *)data;
-    libpd_set_instance(d->libpd);
-    (void)gobj_click(d->obj, d->canvas, d->xpos, d->ypos, 0, 0, 0, d->doit);
-    delete d;
+void QueueMouseClick(t_pd *obj, void *data) {
+    std::unique_ptr<Pd4WebUserData> ud(static_cast<Pd4WebUserData *>(data));
+    libpd_set_instance(ud->libpd);
+
+    t_canvas *canvas = pd_getcanvaslist();
+    if (!canvas) {
+        fprintf(stderr, "No pd canvas found\n");
+        return;
+    }
+
+    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+        int x1, y1, x2, y2;
+        if (canvas_hitbox(canvas, obj, ud->xpos, ud->ypos, &x1, &y1, &x2, &y2, 0)) {
+            (void)gobj_click(obj, canvas, ud->xpos, ud->ypos, 0, 0, 0, ud->doit);
+        }
+    }
+    return;
 }
 
 // ─────────────────────────────────────
@@ -801,16 +852,14 @@ void QueueMouseclick(t_pd *obj, void *data) {
  * @param obj       Pointer to the Pure Data object triggering the event.
  * @param userData  Pointer to Pd4WebUserData containing the key string and libpd instance.
  */
-void QueueKeydown(t_pd *obj, void *userData) {
-    printf("keydown\n");
-    Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    libpd_set_instance(data->libpd);
+void QueueKeyDown(t_pd *obj, void *userData) {
+    std::unique_ptr<Pd4WebUserData> ud(static_cast<Pd4WebUserData *>(userData));
+    libpd_set_instance(ud->libpd);
 
     lua_State *L = __L();
     lua_getglobal(L, "pd");
     lua_getfield(L, -1, "_objects");
     lua_remove(L, -2);
-
     lua_pushnil(L);
 
     int count = 0;
@@ -822,11 +871,10 @@ void QueueKeydown(t_pd *obj, void *userData) {
                 lua_pushvalue(L, -2);
                 lua_pushinteger(L, 20);
                 lua_pushinteger(L, 20);
-                lua_pushstring(L, data->key.c_str());
-
+                lua_pushstring(L, ud->key.c_str());
                 if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
                     const char *err = lua_tostring(L, -1);
-                    fprintf(stderr, "Erro when calling key_down: %s\n", err);
+                    emscripten_log(EM_LOG_ERROR, "Erro when calling key_down: %s", err);
                     lua_pop(L, 1);
                 }
             } else {
@@ -850,8 +898,8 @@ void QueueKeydown(t_pd *obj, void *userData) {
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
 EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
-    Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    libpd_set_instance(data->libpd);
+    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
@@ -859,26 +907,17 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
         return EM_FALSE;
     }
 
-    data->pd4web->GetLastMousePosition(&data->xpos, &data->ypos);
-    data->canvas = canvas;
-    data->doit = false;
+    ud->pd4web->GetLastMousePosition(&ud->xpos, &ud->ypos);
+    ud->canvas = canvas;
+    ud->doit = false;
+    ud->key = e->key;
 
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, data->xpos, data->ypos, &x1, &y1, &x2, &y2, 0)) {
-            // TODO: replace by smart pointer
-            Pd4WebUserData *d = new Pd4WebUserData();
-            d->obj = obj;
-            d->canvas = canvas;
-            d->xpos = data->xpos;
-            d->ypos = data->ypos;
-            d->doit = data->doit;
-            d->libpd = data->libpd;
-            d->key = e->key;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueKeydown);
-            break;
-        }
-    }
+    t_class *obj = canvas->gl_list->g_pd->c_next;
+    int x1, y1, x2, y2;
+    ud->doit = ud->doit;
+    ud->mousedown = ud->mousedown;
+    ud->libpd = ud->libpd;
+    pd_queue_mess(ud->libpd, &obj, ud, QueueKeyDown);
 
     return EM_TRUE;
 }
@@ -896,9 +935,8 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
 EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userData) {
-    Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    libpd_set_instance(data->libpd);
-
+    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    libpd_set_instance(ud->libpd);
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
         fprintf(stderr, "No pd canvas found\n");
@@ -909,47 +947,40 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
         return EM_TRUE;
     }
 
-    // Use o primeiro toque apenas (pode ser estendido para multitouch se necessário)
-    int xpos = round((float)e->touches[0].targetX / data->pd4web->GetPatchZoom());
-    int ypos = round((float)e->touches[0].targetY / data->pd4web->GetPatchZoom());
-
-    data->xpos = xpos;
-    data->ypos = ypos;
-    data->canvas = canvas;
-    data->doit = false;
+    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
+    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
+    ud->xpos = xpos;
+    ud->ypos = ypos;
+    ud->canvas = canvas;
+    ud->doit = false;
 
     switch (eventType) {
     case EMSCRIPTEN_EVENT_TOUCHSTART:
-        data->mousedown = true;
-        data->doit = true;
-        data->pd4web->SetLastMousePosition(xpos, ypos);
+        ud->mousedown = true;
+        ud->doit = true;
+        ud->pd4web->SetLastMousePosition(xpos, ypos);
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHEND:
     case EMSCRIPTEN_EVENT_TOUCHCANCEL:
-        data->mousedown = false;
-        data->doit = false;
+        ud->mousedown = false;
+        ud->doit = false;
         break;
 
     case EMSCRIPTEN_EVENT_TOUCHMOVE:
-        data->doit = data->mousedown;
+        ud->doit = ud->mousedown;
         break;
     }
 
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, xpos, ypos, &x1, &y1, &x2, &y2, 0)) {
-            Pd4WebUserData *d = new Pd4WebUserData();
-            d->obj = obj;
-            d->canvas = canvas;
-            d->xpos = xpos;
-            d->ypos = ypos;
-            d->doit = data->doit;
-            d->libpd = data->libpd;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueMouseclick);
-            break;
-        }
-    }
+    t_class *obj = canvas->gl_list->g_pd->c_next;
+    int x1, y1, x2, y2;
+    ud->canvas = canvas;
+    ud->xpos = xpos;
+    ud->ypos = ypos;
+    ud->doit = ud->doit;
+    ud->mousedown = ud->mousedown;
+    ud->libpd = ud->libpd;
+    pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
 
     return EM_FALSE;
 }
@@ -967,8 +998,8 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
  * @return           Returns EM_TRUE if the event was handled, otherwise EM_FALSE.
  */
 EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    libpd_set_instance(data->libpd);
+    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
@@ -976,45 +1007,39 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
         return EM_TRUE;
     }
 
-    int xpos = round((float)e->targetX / data->pd4web->GetPatchZoom());
-    int ypos = round((float)e->targetY / data->pd4web->GetPatchZoom());
+    int xpos = round((e->targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
+    int ypos = round((e->targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
 
-    data->xpos = xpos;
-    data->ypos = ypos;
-    data->canvas = canvas;
+    ud->xpos = xpos;
+    ud->ypos = ypos;
+    ud->canvas = canvas;
 
     switch (eventType) {
     case EMSCRIPTEN_EVENT_MOUSEDOWN:
-        data->mousedown = true;
-        data->doit = true;
+        ud->mousedown = true;
+        ud->doit = true;
         break;
 
     case EMSCRIPTEN_EVENT_MOUSEUP:
-        data->mousedown = false;
-        data->doit = false;
-        data->pd4web->SetLastMousePosition(xpos, ypos);
+        ud->mousedown = false;
+        ud->doit = false;
+        ud->pd4web->SetLastMousePosition(xpos, ypos);
         break;
 
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
-        data->doit = data->mousedown; // Always Process mousemove events
+        ud->doit = ud->mousedown; // Always Process mousemove events
         break;
     }
 
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, xpos, ypos, &x1, &y1, &x2, &y2, 0)) {
-            Pd4WebUserData *d = new Pd4WebUserData();
-            d->obj = obj;
-            d->canvas = canvas;
-            d->xpos = xpos;
-            d->ypos = ypos;
-            d->doit = data->doit;           // Use the doit value we determined above
-            d->mousedown = data->mousedown; // Pass mousedown state separately
-            d->libpd = data->libpd;
-            pd_queue_mess(data->libpd, &obj->g_pd, (void *)d, QueueMouseclick);
-            break;
-        }
-    }
+    t_class *obj = canvas->gl_list->g_pd->c_next;
+    int x1, y1, x2, y2;
+    ud->canvas = canvas;
+    ud->xpos = xpos;
+    ud->ypos = ypos;
+    ud->doit = ud->doit;
+    ud->mousedown = ud->mousedown;
+    ud->libpd = ud->libpd;
+    pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
 
     return EM_FALSE;
 }
@@ -1031,40 +1056,40 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
  * @return           Returns EM_FALSE.
  */
 EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *userData) {
-    Pd4WebUserData *data = (Pd4WebUserData *)userData;
-    if (!data->soundInit) {
-        if (data->pd4web->UseMidi()) {
+    Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    if (!ud->soundInit) {
+        if (ud->pd4web->UseMidi()) {
             SetupMIDI();
         }
-        data->pd4web->Init();
-        data->soundInit = true;
-        data->soundSuspended = false;
+        ud->pd4web->Init();
+        ud->soundInit = true;
+        ud->soundSuspended = false;
         EM_ASM(
             {
                 const el = document.getElementById(UTF8ToString($1));
                 el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
                 el.classList.remove("pulse-icon");
             },
-            ICON_SOUND_ON, data->soundToggleSel.c_str());
+            ICON_SOUND_ON, ud->soundToggleSel.c_str());
     } else {
-        if (data->soundSuspended) {
+        if (ud->soundSuspended) {
             EM_ASM(
                 {
                     const el = document.getElementById(UTF8ToString($1));
                     el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
                 },
-                ICON_SOUND_ON, data->soundToggleSel.c_str());
-            data->soundSuspended = false;
-            emscripten_resume_audio_context_sync(data->pd4web->GetWebAudioContext());
+                ICON_SOUND_ON, ud->soundToggleSel.c_str());
+            ud->soundSuspended = false;
+            emscripten_resume_audio_context_sync(ud->pd4web->GetWebAudioContext());
         } else {
             EM_ASM(
                 {
                     const el = document.getElementById(UTF8ToString($1));
                     el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
                 },
-                ICON_SOUND_OFF, data->soundToggleSel.c_str());
-            data->soundSuspended = true;
-            JS_SuspendAudioWorklet(data->pd4web->GetWebAudioContext());
+                ICON_SOUND_OFF, ud->soundToggleSel.c_str());
+            ud->soundSuspended = true;
+            JS_SuspendAudioWorklet(ud->pd4web->GetWebAudioContext());
         }
     }
     return EM_FALSE;
@@ -1193,11 +1218,15 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     m_AudioSuspended = false;
 
     libpd_set_instance(m_PdInstance);
+    libpd_init_audio(0, 0, m_SampleRate);
 
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;
+    m_UserData->lastFrame = emscripten_get_now();
 
     (void)libpd_queued_init();
+
+    libpd_set_queued_printhook(ReceivedPrintMsg);
 
     libpd_set_queued_banghook(ReceivedBang);
     libpd_set_queued_floathook(ReceivedFloat);
@@ -1206,6 +1235,13 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     libpd_set_queued_messagehook(ReceivedMessage);
 
     // TODO: Midi messages
+    // libpd_set_queued_noteonhook
+    // libpd_set_queued_controlchangehook
+    // libpd_set_queued_programchangehook
+    // libpd_set_queued_pitchbendhook
+    // libpd_set_queued_aftertouchhook
+    // libpd_set_queued_polyaftertouchhook
+    // libpd_set_queued_midibytehook
 
     // Set Audio on/off listener
     if (soundToggleId != "") {
@@ -1226,8 +1262,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->soundToggleSel = soundToggleId;
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
-        JS_Warning("You don't assigned any sound toggle id, you need to run Pd4Web.init() from a "
-                   "click event!");
+        emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
+                                    "Pd4Web.init() from a click event!");
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -1249,10 +1285,6 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         t_canvas *canvas = pd_getcanvaslist();
         int canvasWidth = canvas->gl_pixwidth;
         int canvasHeight = canvas->gl_pixheight;
-        if (canvasWidth == 0 && canvasHeight == 0) {
-            canvasWidth = canvas->gl_screenx2 - canvas->gl_screenx1;
-            canvasHeight = canvas->gl_screeny2 - canvas->gl_screeny1;
-        }
 
         std::string PatchCanvaSel = "#" + PatchCanvaId;
         const char *sel = PatchCanvaSel.c_str();
@@ -1278,6 +1310,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         m_UserData->canvas_width = backingW;
         m_UserData->canvas_height = backingH;
+        m_UserData->canvas_marginx = canvas->gl_xmargin;
+        m_UserData->canvas_marginy = canvas->gl_ymargin;
         m_UserData->devicePixelRatio = dpr;
 
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
@@ -1297,6 +1331,9 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
+
+        //
+        // emscripten_set_focus_callback(sel, m_UserData.get(), EM_FALSE, FocusListener);
 
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
@@ -1335,9 +1372,6 @@ void RenderPatchComments(Pd4WebUserData *ud) {
             memcpy(safe_buf, textbuf, copy_len);
             safe_buf[copy_len] = '\0';
 
-            int x = txt->te_xpix;
-            int y = txt->te_ypix;
-
             GuiCommand cmd;
             cmd.command = DRAW_TEXT;
 
@@ -1350,20 +1384,35 @@ void RenderPatchComments(Pd4WebUserData *ud) {
             snprintf(cmd.text, sizeof(cmd.text), "%s", safe_buf);
             cmd.x1 = 0;
             cmd.y1 = 0;
+
             cmd.w = txt->te_width;
-            if (cmd.w == 0) {
-                float bounds[4]; // [x0, y0, x1, y1]
-                cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, NULL, bounds);
+            cmd.h = 16;
+            if (txt->te_width == 0) {
+                float bounds[4];
+                cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, nullptr, bounds);
+                cmd.h = bounds[3] - bounds[1];
+            } else {
+                nvgFontSize(ud->vg, 10);
+
+                float bounds[4];
+                float charWidthBounds[4];
+                nvgTextBounds(ud->vg, 0, 0, "A", nullptr, charWidthBounds);
+                float charWidth = (charWidthBounds[2] - charWidthBounds[0]) / 1.35;
+                float wrapWidth = charWidth * txt->te_width;
+                nvgTextBoxBounds(ud->vg, 0, 0, wrapWidth, cmd.text, nullptr, bounds);
+                cmd.w = (bounds[2] - bounds[0]);
+                cmd.h = (bounds[3] - bounds[1]);
+                cmd.objw = (bounds[2] - bounds[0]);
+                cmd.objh = (bounds[3] - bounds[1]);
             }
 
-            cmd.h = 10;
             cmd.font_size = 10;
-            cmd.objx = x;
-            cmd.objy = y;
+            cmd.objx = txt->te_xpix;
+            cmd.objy = txt->te_ypix;
 
             char obj_layer_id[64];
             snprintf(obj_layer_id, 64, "layer_%p", obj);
-            ClearLayerCommand(obj_layer_id, 0, x, y, cmd.w, cmd.h);
+            ClearLayerCommand(obj_layer_id, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
             AddNewCommand(obj_layer_id, 0, &cmd);
             EndPaintLayerCommand(obj_layer_id, 0);
         }
@@ -1442,11 +1491,12 @@ void GetGLContext(Pd4WebUserData *ud) {
         return;
     }
 
-    ud->font_handler = nvgCreateFont(ud->vg, "roboto", "DejaVuSans.ttf");
+    ud->font_handler = nvgCreateFont(ud->vg, "DejaVuSans", "DejaVuSans.ttf");
     if (ud->font_handler == -1) {
         JS_Alert("Failed to create NanoVG font");
         return;
     }
+    nvgFontFaceId(ud->vg, ud->font_handler);
 
     float r, g, b;
     std::string bg = ud->pd4web->GetBGColor();
@@ -1589,6 +1639,7 @@ void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c) {
 void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
     float r, g, b;
     HexToRgbNormalized(cmd->current_color, &r, &g, &b);
+
     nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
     nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
 
@@ -1597,13 +1648,16 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgBeginPath(ud->vg);
         nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgFill(ud->vg);
+        nvgClosePath(ud->vg);
 
+        nvgBeginPath(ud->vg);
         std::string fg = ud->pd4web->GetFGColor();
         HexToRgbNormalized(fg.c_str(), &r, &g, &b);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgStrokeWidth(ud->vg, 1);
         nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
         nvgStroke(ud->vg);
+        nvgClosePath(ud->vg);
 
         break;
     }
@@ -1611,6 +1665,7 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgBeginPath(ud->vg);
         nvgRect(ud->vg, cmd->x1, cmd->y1, cmd->w, cmd->h);
         nvgFill(ud->vg);
+        nvgClosePath(ud->vg);
         break;
     }
     case STROKE_RECT: {
@@ -1620,9 +1675,10 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float height = cmd->h;
         float thickness = cmd->line_width;
         nvgBeginPath(ud->vg);
-        nvgStrokeWidth(ud->vg, thickness);
         nvgRect(ud->vg, x, y, width, height);
+        nvgStrokeWidth(ud->vg, thickness);
         nvgStroke(ud->vg);
+        nvgClosePath(ud->vg);
         break;
     }
     case FILL_ELLIPSE: {
@@ -1638,6 +1694,7 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgEllipse(ud->vg, cx, cy, rx, ry);
         nvgFill(ud->vg);
+        nvgClosePath(ud->vg);
         break;
     }
     case STROKE_ELLIPSE: {
@@ -1652,9 +1709,10 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float ry = height * 0.5f;
         nvgBeginPath(ud->vg);
         nvgStrokeWidth(ud->vg, line_width);
-        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgEllipse(ud->vg, cx, cy, rx, ry);
+
         nvgStroke(ud->vg);
+        nvgClosePath(ud->vg);
         break;
     }
 
@@ -1738,9 +1796,8 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         }
         if (ud->font_handler >= 0) {
             nvgBeginPath(ud->vg);
-            nvgFontFaceId(ud->vg, ud->font_handler);
             nvgFontSize(ud->vg, cmd->font_size);
-            nvgTextAlign(ud->vg, NVG_ALIGN_LEFT | NVG_ALIGN_TOP);
+            nvgTextAlign(ud->vg, NVG_ALIGN_TOP | NVG_ALIGN_LEFT);
             nvgTextBox(ud->vg, round(cmd->x1), round(cmd->y1), cmd->w, cmd->text, nullptr);
         }
         break;
@@ -1766,6 +1823,21 @@ void Loop(void *userData) {
     if (ud->vg == nullptr) {
         JS_Warning("NanoVG context invalid");
         return;
+    }
+    if (!ud->soundInit) {
+        // Before audio initialization, the internal tick of Pd is driven by the main loop.
+        // After audio is initialized, control of the tick is handed over to the audio processing
+        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
+        // the graphical interface becomes static and unresponsive due to the absence of tick
+        // updates.
+
+        float sampleRate = ud->pd4web->GetSampleRate();
+        float blockSize = 64.0f;
+        double now = emscripten_get_now();
+        double elapsed = now - ud->lastFrame;
+        ud->lastFrame = now;
+        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
+        libpd_process_float(ticks, nullptr, nullptr);
     }
 
     float zoom = ud->pd4web->GetPatchZoom();
@@ -1824,8 +1896,8 @@ void Loop(void *userData) {
 
             layer.dirty = false;
 
-            int lx = layer.objx;
-            int ly = layer.objy;
+            int lx = layer.objx - ud->canvas_marginx;
+            int ly = layer.objy - ud->canvas_marginy;
             int lw = layer.objw;
             int lh = layer.objh;
 
@@ -1878,8 +1950,8 @@ void Loop(void *userData) {
                 continue;
             }
 
-            float dstX = layer.objx * zoom * pxRatio;
-            float dstY = layer.objy * zoom * pxRatio;
+            float dstX = (layer.objx - ud->canvas_marginx) * zoom * pxRatio;
+            float dstY = (layer.objy - ud->canvas_marginy) * zoom * pxRatio;
             float dstW = layer.objw * zoom * pxRatio;
             float dstH = layer.objh * zoom * pxRatio;
 
@@ -1960,7 +2032,7 @@ void Pd4Web::Init() {
  */
 int main() {
     emscripten_set_window_title(PD4WEB_PROJECT_NAME);
-    libpd_set_printhook(JS_Post);
+    libpd_set_printhook(ReceivedPrintMsg);
     int result = libpd_init();
     if (result != 0) {
         JS_Alert("Failed to initialize libpd, please report to pd4web");

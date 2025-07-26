@@ -82,6 +82,9 @@ struct Pd4WebUserData {
     bool soundSuspended;
     std::string soundToggleSel;
 
+    // last frame
+    double lastFrame;
+
     // Canvas selection
     std::string canvasSel;
 
@@ -98,6 +101,8 @@ struct Pd4WebUserData {
     int ypos;
     int canvas_width;
     int canvas_height;
+    int canvas_marginx;
+    int canvas_marginy;
     float devicePixelRatio;
     t_gobj *obj;
     t_canvas *canvas;
