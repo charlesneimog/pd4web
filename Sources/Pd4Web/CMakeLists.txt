@@ -78,8 +78,7 @@ add_dependencies(pdlua update_gfw)
 # ╰──────────────────────────────────────╯
 FetchContent_Declare(
   nanovg
-  URL https://github.com/charlesneimog/nanovg/archive/refs/heads/copilot/fix-1afab257-2ecd-4337-8bd3-ac17212d76c3.zip
-)
+  URL https://github.com/charlesneimog/nanovg/archive/refs/heads/main.zip)
 
 FetchContent_MakeAvailable(nanovg)
 
@@ -118,7 +117,7 @@ target_link_options(
   # others -sSTACK_OVERFLOW_CHECK=0 # Disable stack overflow checking
   # -sDISABLE_EXCEPTION_CATCHING=1 Debug -sASSERTIONS=0 # Disable assertions
   $<$<CONFIG:Debug>:-g
-  -sASSERTIONS=1>)
+  -sASSERTIONS=0>)
 
 target_link_options(
   pd4web
@@ -139,16 +138,10 @@ add_custom_command(
           "$<TARGET_FILE_DIR:pd4web>/pd4web.sw.js"
   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/index.html"
           "$<TARGET_FILE_DIR:pd4web>/index.html"
-  COMMAND
-    ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.style.css"
-    "$<TARGET_FILE_DIR:pd4web>/pd4web.style.css"
   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/icon-192.png"
           "$<TARGET_FILE_DIR:pd4web>/icon-192.png"
   COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/favicon.ico"
           "$<TARGET_FILE_DIR:pd4web>/favicon.ico"
-  COMMAND
-    ${CMAKE_COMMAND} -E copy "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.style.css"
-    "$<TARGET_FILE_DIR:pd4web>/pd4web.style.css"
   COMMENT "Copying extra files to build output directory")
 
 add_dependencies(pd4web update_gfw)
@@ -159,15 +152,9 @@ if(USE_WEBGPU)
   target_link_options(pd4web PUBLIC --use-port=emdawnwebgpu)
   target_compile_definitions(pd4web PUBLIC PD4WEB_WEBGPU)
 else()
-  target_link_options(
-    pd4web
-    PUBLIC
-    -sUSE_WEBGL2=1
-    -sMIN_WEBGL_VERSION=2
-    -sOFFSCREEN_FRAMEBUFFER
-    -sOFFSCREENCANVAS_SUPPORT
-    -profiling
-    -gsource-map)
+  target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2
+                      -sOFFSCREEN_FRAMEBUFFER -sOFFSCREENCANVAS_SUPPORT)
+
   target_link_libraries(pdlua PUBLIC nanovg)
 endif()
 
