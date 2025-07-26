@@ -92,13 +92,7 @@ nav:
           - patch/upload/cloudflare.md
           - patch/upload/others.md
   - libraries.md
-  - Pd4Web JavaScript Module:
-      - JavaScript Module: js/js.md
-      - js/requirements.md
-      - js/engine.md
-      - js/receive.md
-      - js/send.md
-      - js/midi.md
+  - js/js.md
   - devs.md
  # - Examples: tests/
 plugins:
