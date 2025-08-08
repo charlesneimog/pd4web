@@ -1163,6 +1163,7 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
         }
         if (options.hasOwnProperty("projectName")) {
             m_ProjectName = options["projectName"].as<std::string>();
+            emscripten_set_window_title(m_ProjectName.c_str());
         }
         if (options.hasOwnProperty("channelCountIn")) {
             m_ChannelCountIn = options["channelCountIn"].as<int>();
@@ -1998,7 +1999,7 @@ void Loop(void *userData) {
 void Pd4Web::Init() {
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate = PD4WEB_SR,
+        .sampleRate = m_SampleRate,
     };
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
@@ -2027,7 +2028,6 @@ void Pd4Web::Init() {
  * @return 0 on successful execution.
  */
 int main() {
-    emscripten_set_window_title(PD4WEB_PROJECT_NAME);
     libpd_set_printhook(ReceivedPrintMsg);
     int result = libpd_init();
     if (result != 0) {

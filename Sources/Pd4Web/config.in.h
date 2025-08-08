@@ -11,24 +11,6 @@ extern "C" {
 #define PD4WEB_VERSION_MINOR @PD4WEB_VERSION_MINOR@
 #define PD4WEB_VERSION_PATCH @PD4WEB_VERSION_PATCH@
 
-// Project Name
-#define PD4WEB_PROJECT_NAME @PD4WEB_PROJECT_NAME@
-
-// Audio Config
-#define PD4WEB_CHS_IN @PD4WEB_CHS_IN@
-#define PD4WEB_CHS_OUT @PD4WEB_CHS_OUT@
-#define PD4WEB_SR @PD4WEB_SR@
-
-// GUI Interface
-#define PD4WEB_GUI @PD4WEB_GUI@
-#define PD4WEB_PATCH_ZOOM @PD4WEB_PATCH_ZOOM@
-#define PD4WEB_FPS @PD4WEB_FPS@
-#define PD4WEB_AUTO_THEME @PD4WEB_AUTO_THEME@
-#define PD4WEB_LUA @PD4WEB_LUA@
-
-// Midi
-#define PD4WEB_MIDI @PD4WEB_MIDI@
-
 // ╭─────────────────────────────────────╮
 // │             Sound Icons             │
 // ╰─────────────────────────────────────╯
@@ -80,11 +62,9 @@ enum LuaGuiCommands {
     STROKE_ROUNDED_RECT,
     DRAW_LINE,
     DRAW_TEXT,
-    // DRAW_SVG, // TODO: implement this
     STROKE_PATH,
     FILL_PATH,
     FILL_ALL,
-    // CLEAR_CANVAS,
 };
 
 typedef struct {
