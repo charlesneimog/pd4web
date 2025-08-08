@@ -20,16 +20,6 @@ EM_JS(int, JS_IsDarkMode, (), {
 EM_JS(void, JS_Alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
-
-// ─────────────────────────────────────
-EM_JS(void, JS_Error, (const char *msg), {
-    console.error(UTF8ToString(msg));
-});
-
-// ─────────────────────────────────────
-EM_JS(void, JS_Warning, (const char *msg), {
-    console.warn(UTF8ToString(msg));
-});
     
 // ─────────────────────────────────────
 EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
@@ -182,7 +172,7 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     uint8Array.call<void>("set", emscripten::typed_memory_view(length, buffer.data()));
     std::ofstream out(filename, std::ios::binary);
     if (!out) {
-        JS_Error("Failed to open output file");
+        emscripten_log(EM_LOG_ERROR, "Failed to open output file");
         return;
     }
     out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
@@ -1057,6 +1047,10 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
  */
 EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
+    if (ud == nullptr) {
+        return EM_TRUE;
+    }
+
     if (!ud->soundInit) {
         if (ud->pd4web->UseMidi()) {
             SetupMIDI();
@@ -1080,7 +1074,9 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
                 },
                 ICON_SOUND_ON, ud->soundToggleSel.c_str());
             ud->soundSuspended = false;
-            emscripten_resume_audio_context_sync(ud->pd4web->GetWebAudioContext());
+            if (ud->pd4web != nullptr) {
+                emscripten_resume_audio_context_sync(ud->pd4web->GetWebAudioContext());
+            }
         } else {
             EM_ASM(
                 {
@@ -1089,7 +1085,9 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
                 },
                 ICON_SOUND_OFF, ud->soundToggleSel.c_str());
             ud->soundSuspended = true;
-            JS_SuspendAudioWorklet(ud->pd4web->GetWebAudioContext());
+            if (ud->pd4web != nullptr) {
+                JS_SuspendAudioWorklet(ud->pd4web->GetWebAudioContext());
+            }
         }
     }
     return EM_FALSE;
@@ -1210,7 +1208,7 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
 void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::string soundToggleId) {
     m_PdInstance = libpd_new_instance();
     if (m_PdInstance == nullptr) {
-        JS_Alert("libpd_Init() failed, please report!");
+        JS_Alert("libpd_new_instance() failed, please report!");
         return;
     }
 
@@ -1220,6 +1218,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     libpd_set_instance(m_PdInstance);
     libpd_init_audio(0, 0, m_SampleRate);
 
+    m_UserData = std::make_shared<Pd4WebUserData>();
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;
     m_UserData->lastFrame = emscripten_get_now();
@@ -1821,7 +1820,7 @@ void Loop(void *userData) {
 
     GetGLContext(ud);
     if (ud->vg == nullptr) {
-        JS_Warning("NanoVG context invalid");
+        emscripten_log(EM_LOG_ERROR, "NanoVG context invalid");
         return;
     }
     if (!ud->soundInit) {
@@ -2000,22 +1999,18 @@ void Pd4Web::Init() {
         .latencyHint = "interactive",
         .sampleRate = PD4WEB_SR,
     };
+    // Start the audio context
+    static uint8_t WasmAudioWorkletStack[1024 * 1024];
+    m_AudioContext = emscripten_create_audio_context(&attrs);
 
-    m_UserData = std::make_shared<Pd4WebUserData>();
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;
 
     libpd_set_instance(m_PdInstance);
-
-    // Start the audio context
-    static uint8_t WasmAudioWorkletStack[1024 * 1024];
-    EMSCRIPTEN_WEBAUDIO_T AudioContext = emscripten_create_audio_context(&attrs);
     SetSampleRate(m_SampleRate);
-
-    emscripten_start_wasm_audio_worklet_thread_async(AudioContext, WasmAudioWorkletStack,
+    emscripten_start_wasm_audio_worklet_thread_async(m_AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
                                                      AudioWorkletInit, m_UserData.get());
-    m_AudioContext = AudioContext;
     m_AudioSuspended = false;
 }
 

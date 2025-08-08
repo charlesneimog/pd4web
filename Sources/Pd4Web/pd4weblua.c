@@ -57,7 +57,9 @@
 #include "g_canvas.h"
 /* BAD: support for Pd < 0.41 */
 
+#include <config.h>
 #include "pdlua_gfx.h"
+
 
 // function pointer type for signal_setmultiout (added with Pd 0.54)
 typedef void (*t_signal_setmultiout_fn)(t_signal **, int);
