@@ -138,8 +138,6 @@ endif()
 # ╭──────────────────────────────────────╮
 # │    Download e extração do libgit2    │
 # ╰──────────────────────────────────────╯
-set(LIBGIT2_USE_ZLIB_FROM_SYSTEM ON) # força uso de libz.so do sistema
-set(ZLIB_LIBRARY /usr/lib/libz.so) # ajuste o path se necessário
 set(GIT_FILE ${CMAKE_BINARY_DIR}/libgit2.tar.gz)
 if(NOT EXISTS ${GIT_FILE})
   message(STATUS "Downloading libgit2")

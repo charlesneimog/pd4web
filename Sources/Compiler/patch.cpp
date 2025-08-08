@@ -43,14 +43,16 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
     if (Line[1] == "canvas") {
         pl.Type = PatchLine::CANVAS;
+        p->CanvasLevel++;
+    } else if (Line[1] == "restore") {
+        pl.Type = PatchLine::RESTORE;
+        p->CanvasLevel--;
     } else if (Line[1] == "declare") {
         pl.Type = PatchLine::DECLARE;
         processDeclareClass(p, pl);
     } else if (Line[1] == "obj") {
         processObjClass(p, pl);
         pl.Type = PatchLine::OBJ;
-    } else if (Line[1] == "restore") {
-        pl.Type = PatchLine::RESTORE;
     } else if (Line[1] == "msg") {
         pl.Type = PatchLine::MSG;
     } else if (Line[1] == "connect") {
@@ -569,9 +571,10 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
 
         // check and replace gui objects
         if (pl.Type == PatchLine::OBJ) {
-            std::unordered_set<std::string> guiObjs = {"vsl", "hsl", "vradio",   "hradio",
-                                                       "tgl", "bng", "keyboard", "vu"};
-            if (guiObjs.count(pl.Name) && mainPatch) {
+            std::unordered_set<std::string> guiObjs = {
+                "vsl", "hsl", "vradio", "hradio", "tgl", "bng", "keyboard", "else/keyboard", "vu"};
+            printf("canvas el: %d\n", p->CanvasLevel);
+            if (guiObjs.count(pl.Name) && mainPatch && p->CanvasLevel == 1) {
                 pl.OriginalTokens[4] = "l." + pl.Name;
                 p->PdLua = true;
                 p->LuaGuiObjects = true;

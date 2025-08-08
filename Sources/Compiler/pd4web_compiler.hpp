@@ -111,6 +111,8 @@ struct Patch {
     std::shared_ptr<Patch> Father;
     std::vector<std::shared_ptr<Patch>> Childs;
     int printLevel = 1; // just to better debug info
+
+    int CanvasLevel = 0;
 };
 
 // ──────────────────────────────────────────
