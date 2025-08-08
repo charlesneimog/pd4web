@@ -29,9 +29,9 @@ void run(const std::vector<std::string> &args) {
     for (int i = 0; i < argc; ++i) {
         argv[i] = const_cast<char *>(args[i].c_str());
     }
+    printf("\n");
 
     pd4web.parseArgs(argc, argv.data());
-
     pd4web.init();
     pd4web.processPatch();
 }

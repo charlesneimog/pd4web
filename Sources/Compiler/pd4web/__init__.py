@@ -1,10 +1,12 @@
 import sys
+import os
 from pd4web.pypd4web import run
 
 
 def main():
-    run(sys.argv[1:])
+    folder = os.path.abspath(os.path.dirname(__file__))
+    args = sys.argv
 
-
-if __name__ == "__main__":
-    main()
+    # add pd4web folder
+    args += ["--pd4web-folder", os.path.join(folder, "Pd4Web")]
+    run(args)

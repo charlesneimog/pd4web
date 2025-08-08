@@ -8907,6 +8907,22 @@
       ]
     }
   },
+  "pdlua": {
+    "objects": {
+      "pdlua proxy clock": [
+        "static void pdlua_proxyclock_setup(void)",
+        "pdlua_proxyclock_setup"
+      ],
+      "pdlua proxy inlet": [
+        "static void pdlua_proxyinlet_setup(void)",
+        "pdlua_proxyinlet_setup"
+      ],
+      "pdlua proxy receive": [
+        "static void pdlua_proxyreceive_setup()",
+        "pdlua_proxyreceive_setup"
+      ]
+    }
+  },
   "pure-data/src": {
     "objects": {
       "!=": [

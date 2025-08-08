@@ -30,7 +30,7 @@ const TSLanguage *tree_sitter_c();
 #include <m_pd.h>
 #endif
 
-#define PD_VERSION "0.56-0test1"
+#define PD_VERSION "0.56-0"
 #define EMSDK_VERSION "4.0.10"
 
 using json = nlohmann::json;
@@ -88,6 +88,7 @@ struct Patch {
     int Zoom = 1;
     std::vector<PatchLine> PatchLines;
     std::vector<PatchLine> ExternalPatchLines;
+    std::string PdVersion = PD_VERSION;
 
     json ExternalObjectsJson;
 
@@ -133,17 +134,37 @@ class Pd4Web {
     bool init();
     bool processPatch();
 
-    void setPatchFile(std::string file) { m_PatchFile = file; };
-    void setPd4WebFilesFolder(std::string path) { m_Pd4WebFiles = path; };
-    void setInitialMemory(int memory) { m_Memory = memory; };
-    void setPatchZoom(int zoom) { m_PatchZoom = zoom; };
-    void setOutputFolder(std::string folder) { m_OutputFolder = folder; };
-    void setTemplateId(int id) { m_TemplateId = id; };
-    void setDebugMode(bool debug) { m_Debug = debug; };
-    void setDevDebugMode(bool debug) { m_DevDebug = debug; };
-    void setFailFast(bool failfast) { m_FailFast = failfast; };
+    void setPatchFile(std::string file) {
+        m_PatchFile = file;
+    };
+    void setPd4WebFilesFolder(std::string path) {
+        m_Pd4WebFiles = path;
+    };
+    void setInitialMemory(int memory) {
+        m_Memory = memory;
+    };
+    void setPatchZoom(int zoom) {
+        m_PatchZoom = zoom;
+    };
+    void setOutputFolder(std::string folder) {
+        m_OutputFolder = folder;
+    };
+    void setTemplateId(int id) {
+        m_TemplateId = id;
+    };
+    void setDebugMode(bool debug) {
+        m_Debug = debug;
+    };
+    void setDevDebugMode(bool debug) {
+        m_DevDebug = debug;
+    };
+    void setFailFast(bool failfast) {
+        m_FailFast = failfast;
+    };
 
-    void disableGuiRender() { m_RenderGui = false; };
+    void disableGuiRender() {
+        m_RenderGui = false;
+    };
 
   private:
     bool m_Init;

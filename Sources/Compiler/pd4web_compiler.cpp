@@ -71,13 +71,17 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
     // clang-format off
     options.add_options()
-        ("h,help", "Print this usage.")
+        // help
+        ("help", "Print this usage.")
 
-        // TODO:
+        // Configuration of Compiler
+        ("pd4web-folder", "Pd4Web Folder (with Libraries, Sources, etc).",
+            cxxopts::value<fs::path>(m_Pd4WebFiles))
+
+        // Configuration of Pd4Web
         ("m,initial-memory", "Initial memory size (in MB).", 
             cxxopts::value<int>(m_Memory)->default_value("32"))
 
-        // TODO:
         ("z,patch-zoom", "Patch zoom.", 
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
@@ -111,11 +115,6 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
     m_RenderGui = !disableGui;
     m_FailFast = failFast;
-
-    if (result.count("patch_file")) {
-        std::string patchFile = result["patch_file"].as<std::string>();
-        print(patchFile, Pd4WebLogLevel::VERBOSE);
-    }
 
     if (result.count("help")) {
         options.set_width(120);

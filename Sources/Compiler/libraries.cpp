@@ -106,14 +106,12 @@ std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::
 
     if (std::find(Patch->PdLuaFolderSearch.begin(), Patch->PdLuaFolderSearch.end(), dir) !=
         Patch->PdLuaFolderSearch.end()) {
-
         for (std::string objName : Patch->ValidLuaObjects) {
             if (objName == pl.Name) {
                 pl.Found = true;
                 pl.isLuaExternal = true;
             }
         }
-
         return results;
     }
 
@@ -139,6 +137,7 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
 
     std::vector<std::string> absNames;
+    // TODO: Need to update
     const std::string jsonFile = "/home/neimog/Documents/Git/pd4web/Sources/Compiler/objects.json";
     json full_json;
     std::ifstream in(jsonFile);
@@ -204,51 +203,61 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode node,
                                              std::vector<std::string> &setupSignatures) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
 
-    if (ts_node_is_null(node))
+    if (ts_node_is_null(node)) {
         return;
+    }
 
     if (strcmp(ts_node_type(node), "call_expression") == 0) {
         TSNode func_node = ts_node_child_by_field_name(node, "function", 8);
-        if (ts_node_is_null(func_node))
+        if (ts_node_is_null(func_node)) {
             return;
+        }
 
         std::string func_text(content.data() + ts_node_start_byte(func_node),
                               ts_node_end_byte(func_node) - ts_node_start_byte(func_node));
 
         bool is_class_new = func_text.find("class_new") != std::string::npos;
         bool is_class_addcreator = func_text.find("class_addcreator") != std::string::npos;
-        if (!is_class_new && !is_class_addcreator)
+        if (!is_class_new && !is_class_addcreator) {
             return;
+        }
 
         TSNode args_node = ts_node_child_by_field_name(node, "arguments", 9);
-        if (ts_node_is_null(args_node))
+        if (ts_node_is_null(args_node)) {
             return;
+        }
 
         uint32_t args_count = ts_node_named_child_count(args_node);
         uint32_t target_arg_index = is_class_new ? 0 : 1;
-        if (args_count <= target_arg_index)
+        if (args_count <= target_arg_index) {
             return;
+        }
 
         TSNode target_arg = ts_node_named_child(args_node, target_arg_index);
-        if (strcmp(ts_node_type(target_arg), "call_expression") != 0)
+        if (strcmp(ts_node_type(target_arg), "call_expression") != 0) {
             return;
+        }
 
         TSNode inner_func = ts_node_child_by_field_name(target_arg, "function", 8);
-        if (ts_node_is_null(inner_func))
+        if (ts_node_is_null(inner_func)) {
             return;
+        }
 
         std::string inner_func_text(content.data() + ts_node_start_byte(inner_func),
                                     ts_node_end_byte(inner_func) - ts_node_start_byte(inner_func));
-        if (inner_func_text != "gensym")
+        if (inner_func_text != "gensym") {
             return;
+        }
 
         TSNode gensym_args = ts_node_child_by_field_name(target_arg, "arguments", 9);
-        if (ts_node_named_child_count(gensym_args) < 1)
+        if (ts_node_named_child_count(gensym_args) < 1) {
             return;
+        }
 
         TSNode string_arg = ts_node_named_child(gensym_args, 0);
-        if (strcmp(ts_node_type(string_arg), "string_literal") != 0)
+        if (strcmp(ts_node_type(string_arg), "string_literal") != 0) {
             return;
+        }
 
         std::string object_name(content.data() + ts_node_start_byte(string_arg) + 1,
                                 ts_node_end_byte(string_arg) - ts_node_start_byte(string_arg) - 2);
@@ -262,13 +271,15 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode node,
         // ← Find function_definition parent
         TSNode current = node;
         while (!ts_node_is_null(current)) {
-            if (strcmp(ts_node_type(current), "function_definition") == 0)
+            if (strcmp(ts_node_type(current), "function_definition") == 0) {
                 break;
+            }
             current = ts_node_parent(current);
         }
 
-        if (ts_node_is_null(current))
+        if (ts_node_is_null(current)) {
             return;
+        }
 
         // ← Try extract setup function name
         std::string func_name;
@@ -370,8 +381,9 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
             }
 
             std::ifstream inFile(entry.path());
-            if (!inFile)
+            if (!inFile) {
                 continue;
+            }
 
             std::string content((std::istreambuf_iterator<char>(inFile)),
                                 std::istreambuf_iterator<char>());

@@ -190,14 +190,13 @@ if(PD4WEB_BUILD_PYBIND11)
   target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler
                                          tree-sitter-cpp tree-sitter-c)
   set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
-  install(TARGETS pypd4web DESTINATION ./pd4web)
-endif()
-
-# ╭──────────────────────────────────────╮
-# │           Executável final           │
-# ╰──────────────────────────────────────╯
-add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp
+    install(TARGETS pypd4web DESTINATION ./pd4web)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py DESTINATION pd4web)
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
+else()
+    add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+    target_link_libraries(pd4web PRIVATE pd4web_compiler tree-sitter-cpp
                                      tree-sitter-c)
-target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
-install(TARGETS pd4web RUNTIME DESTINATION bin)
+    target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
+    install(TARGETS pd4web RUNTIME DESTINATION bin)
+endif()

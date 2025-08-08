@@ -117,7 +117,7 @@ void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     if (Patch->PdLua) {
         std::vector<fs::path> results;
-        std::vector<std::string> subdirs = {"Extras", "Lib"};
+        std::vector<std::string> subdirs = {"Extras", "Libs"};
         for (const auto &subdir : subdirs) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
         }
@@ -478,6 +478,9 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
                                            objectsInLibrary.end());
                 print("Found declare library " + Lib, Pd4WebLogLevel::LOG2, p->printLevel + 1);
                 (void)downloadSupportedLib(Lib);
+                if (Lib == "pdlua") {
+                    p->PdLua = true;
+                }
             } else {
                 print("Declared lib " + Lib + " not supported", Pd4WebLogLevel::LOG2,
                       p->printLevel + 1);
@@ -675,7 +678,7 @@ bool Pd4Web::processPatch() {
         if (m_PatchFile == "") {
             print("Please provide a patch file", Pd4WebLogLevel::ERROR);
         } else {
-            print("Patch file " + m_PatchFile + "not found", Pd4WebLogLevel::ERROR);
+            print("Patch file " + m_PatchFile + " not found", Pd4WebLogLevel::ERROR);
         }
         return false;
     }
@@ -685,6 +688,7 @@ bool Pd4Web::processPatch() {
     p->PatchFolder = p->PathFile.parent_path();
     p->mainRoot = p->PatchFolder;
     p->Zoom = m_PatchZoom;
+    p->PdVersion = m_PdVersion;
 
     if (m_Pd4WebFiles == "") {
         print("m_Pd4WebFiles not set", Pd4WebLogLevel::ERROR);
@@ -692,6 +696,8 @@ bool Pd4Web::processPatch() {
     }
 
     p->Pd4WebFiles = m_Pd4WebFiles;
+    p->PdLua = true;
+
     if (m_OutputFolder != "") {
         p->WebPatchFolder = fs::path(m_OutputFolder);
     } else {

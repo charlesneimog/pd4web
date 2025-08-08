@@ -70,12 +70,17 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
         }
 
         print("Replacig lua sources from pdlua to pd4web", Pd4WebLogLevel::LOG2, 2);
-        fs::copy(p->Pd4WebFiles / "pdlua.h",
+
+        fs::copy(p->Pd4WebFiles / "pd4weblua.c",
+                 p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua.c",
+                 fs::copy_options::overwrite_existing);
+        fs::copy(p->Pd4WebFiles / "pd4weblua.h",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua.h",
                  fs::copy_options::overwrite_existing);
         fs::copy(p->Pd4WebFiles / "pd4weblua_gfx.c",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua_gfx.h",
                  fs::copy_options::overwrite_existing);
+
         fs::copy(p->Pd4WebFiles / "DejaVuSans.ttf",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "DejaVuSans.ttf",
                  fs::copy_options::skip_existing);
@@ -95,19 +100,14 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
              fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "favicon.ico", p->WebPatchFolder / "favicon.ico",
              fs::copy_options::skip_existing);
-    fs::copy(p->Pd4WebFiles / "pd4web.gui.js", p->WebPatchFolder / "WebPatch" / "pd4web.gui.js",
-             fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.sw.js", p->WebPatchFolder / "WebPatch" / "pd4web.sw.js",
              fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "icon-512.png", p->WebPatchFolder / "WebPatch" / "icon-512.png",
              fs::copy_options::skip_existing);
     fs::copy(p->Pd4WebFiles / "icon-192.png", p->WebPatchFolder / "WebPatch" / "icon-192.png",
              fs::copy_options::skip_existing);
-
     fs::copy(p->Pd4WebFiles / "pd4web.threads.js",
              p->WebPatchFolder / "WebPatch" / "pd4web.threads.js", fs::copy_options::skip_existing);
-    fs::copy(p->Pd4WebFiles / "pd4web.style.css",
-             p->WebPatchFolder / "WebPatch" / "pd4web.style.css", fs::copy_options::skip_existing);
 }
 
 // ──────────────────────────────────────────
@@ -160,6 +160,8 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
 
     replaceAll(cmakeTemplate, "@PROJECT_NAME@", p->ProjectName);
     replaceAll(cmakeTemplate, "@MEMORY_SIZE@", std::to_string(p->MemorySize));
+    // TODO: Version
+    replaceAll(cmakeTemplate, "@LIBPD_TAG@", "0.56-0");
 
     // Lua (condicional)
     if (p->PdLua) {
@@ -200,10 +202,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     }
 
     // pdlua is separeted to avoid conflict with else
-    if (p->PdLua) {
-        LibrariesInclude +=
-            "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake\")\n";
-    }
+    LibrariesInclude += "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake\")\n";
     replaceAll(cmakeTemplate, "@LIBRARIES_SCRIPT_INCLUDE@", LibrariesInclude);
 
     std::string pdsource =
