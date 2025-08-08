@@ -10,17 +10,19 @@ requires-python = ">=3.10"
 [project.scripts]
 pd4web = "pd4web:main"
 
+[tool.setuptools]
+package-dir = {"" = "Sources/Compiler"}
+
+[tool.setuptools.packages.find]
+where = ["Sources/Compiler"]
+
 [build-system]
 requires = ["scikit-build-core", "pybind11"]
-
 build-backend = "scikit_build_core.build"
 
 [tool.scikit-build]
 build-dir = "build"
-packages = ["pd4web"]
-package-dir = {"" = "Sources/Compiler"}
 cmake.args = [
-  "-DPD4WEB_BUILD_COMPILER=OFF",
-  "-DPD4WEB_BUILD_PYBIND11=ON"
+    "-DPD4WEB_BUILD_COMPILER=OFF",
+    "-DPD4WEB_BUILD_PYBIND11=ON",
 ]
-
