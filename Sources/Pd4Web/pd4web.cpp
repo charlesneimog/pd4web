@@ -814,7 +814,7 @@ std::string Pd4Web::GetFGColor() {
 // │             USER EVENTS             │
 // ╰─────────────────────────────────────╯
 void QueueMouseClick(t_pd *obj, void *data) {
-    std::unique_ptr<Pd4WebUserData> ud(static_cast<Pd4WebUserData *>(data));
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(data);
     libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
@@ -843,7 +843,7 @@ void QueueMouseClick(t_pd *obj, void *data) {
  * @param userData  Pointer to Pd4WebUserData containing the key string and libpd instance.
  */
 void QueueKeyDown(t_pd *obj, void *userData) {
-    std::unique_ptr<Pd4WebUserData> ud(static_cast<Pd4WebUserData *>(userData));
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
 
     lua_State *L = __L();
@@ -1030,6 +1030,7 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     ud->mousedown = ud->mousedown;
     ud->libpd = ud->libpd;
     pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
+
 
     return EM_FALSE;
 }

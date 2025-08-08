@@ -88,9 +88,6 @@ FetchContent_MakeAvailable(nanovg)
 add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp
                       ${CMAKE_CURRENT_SOURCE_DIR}/externals.cpp)
 
-target_include_directories(
-  pd4web PUBLIC "${PD_SOURCE_DIR}" "${pd_lua_SOURCE_DIR}/lua/"
-                "${nanovg_SOURCE_DIR}/src")
 
 target_compile_definitions(pd4web PUBLIC PD4WEB_LUA)
 target_compile_options(pd4web PUBLIC -matomics -mbulk-memory)
