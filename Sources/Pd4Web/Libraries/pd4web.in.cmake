@@ -3,8 +3,32 @@ project("@PROJECT_NAME@")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+include(FetchContent)
 
-# Pd sources
+# ╭──────────────────────────────────────╮
+# │               pd.cmake               │
+# ╰──────────────────────────────────────╯
+set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
+set(PDCMAKE_VERSION "v0.2.1")
+if(NOT EXISTS "${PDCMAKE_FILE}")
+  file(
+    DOWNLOAD
+    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake
+    ${PDCMAKE_FILE})
+endif()
+include(${PDCMAKE_FILE})
+
+# ╭──────────────────────────────────────╮
+# │                Nanovg                │
+# ╰──────────────────────────────────────╯
+FetchContent_Declare(
+  nanovg
+  URL https://github.com/charlesneimog/nanovg/archive/refs/heads/main.zip)
+FetchContent_MakeAvailable(nanovg)
+
+# ╭──────────────────────────────────────╮
+# │              Pd sources              │
+# ╰──────────────────────────────────────╯
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")
 set(PDCMAKE_DIR
     "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/"
@@ -16,15 +40,16 @@ set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")
 
 @PD_SOURCE_DIR@
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")
-@PD_CMAKE_CONTENT@
-
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 
-add_definitions(-DPDTHREADS)
-add_definitions(-DPD4WEB)
+add_compile_definitions(PDTHREADS PDINSTANCE)
+@PD_CMAKE_CONTENT@
+
 @PD_CMAKE_EXTRADEFINITIONS@
 
-# Debug or Release options
+# ╭──────────────────────────────────────╮
+# │       Debug or Release options       │
+# ╰──────────────────────────────────────╯
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(WARNING "Building in Debug mode")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -flto -pthread -matomics -mbulk-memory -msimd128")
@@ -34,15 +59,23 @@ else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O3 -flto -pthread -matomics -mbulk-memory -msimd128")
 endif()
 
-# Pd4Web executable
+# ╭──────────────────────────────────────╮
+# │          Pd4Web executable           │
+# ╰──────────────────────────────────────╯
 add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
                       "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
+target_include_directories(pd4web PUBLIC "${nanovg_SOURCE_DIR}/src")
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua")
+endif()
 
 target_include_directories(pd4web PRIVATE Pd4Web/pure-data/src)
-target_link_libraries(pd4web PRIVATE embind libpd)
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                         "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 
+target_link_libraries(pd4web PRIVATE embind libpd nanovg)
 target_link_options(
     pd4web
     PRIVATE
@@ -58,12 +91,9 @@ target_link_options(
     -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
     -sMIN_WEBGL_VERSION=2
-    
-    # optimizations
-    #-flto
-    #-g0
-    #-O3
-    )
+    -sOFFSCREENCANVAS_SUPPORT
+    -sOFFSCREEN_FRAMEBUFFER 
+)
 
 # Externals includes
 @LIBRARIES_SCRIPT_INCLUDE@
