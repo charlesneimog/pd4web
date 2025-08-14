@@ -1,5 +1,7 @@
 #include "pd4web_compiler.hpp"
 
+#include <fstream>
+
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {
     std::ifstream file(path);

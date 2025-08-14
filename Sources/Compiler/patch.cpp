@@ -5,6 +5,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <fstream>
 
 // ─────────────────────────────────────
 bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {

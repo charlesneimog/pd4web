@@ -1,5 +1,7 @@
 #include "pd4web_compiler.hpp"
+
 #include <filesystem>
+#include <fstream>
 
 // ─────────────────────────────────────
 bool Pd4Web::initPaths() {

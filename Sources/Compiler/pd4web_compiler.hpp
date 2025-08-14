@@ -1,29 +1,28 @@
 #pragma once
 
-#include <cstdlib>
-#include <fstream>
-#include <iostream>
+
 #include <memory>
 #include <string>
 #include <sys/stat.h>
 
 #include <cxxopts.hpp>
-#include <json.hpp>
-#include <yaml.hpp>
+#include <nlohmann/json.hpp>
+#include <fkYAML/node.hpp>
 
 #define CPPHTTPLIB_OPENSSL_SUPPORT
-#define CPPHTTPLIB_OPENSSL_SUPPORT
-#include "httplib.h"
+#include <httplib.h>
 
 #ifdef _WIN32
 #include <windows.h>
 #endif
 
 extern "C" {
+
 #include <git2.h>
 #include <tree_sitter/api.h>
-const TSLanguage *tree_sitter_cpp();
-const TSLanguage *tree_sitter_c();
+
+const TSLanguage *tree_sitter_cpp(void);
+const TSLanguage *tree_sitter_c(void);
 }
 
 #ifdef PDOBJECT

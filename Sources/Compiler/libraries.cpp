@@ -1,5 +1,7 @@
 #include "pd4web_compiler.hpp"
 
+#include <fstream>
+
 // ─────────────────────────────────────
 bool Pd4Web::libIsSupported(std::string libName) {
     for (Library lib : m_Libraries) {

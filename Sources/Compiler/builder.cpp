@@ -2,6 +2,7 @@
 
 #include <string>
 #include <thread>
+#include <fstream>
 
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
@@ -273,7 +274,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     replaceAll(cmakeTemplate, "@PD4WEB_PRELOADED_PATCH@", PreloadedFiles);
 
     // Write cmake
-    writeFile(p->WebPatchFolder.string() + "/CMakeLists.txt", cmakeTemplate);
+    writeFile(p->WebPatchFolder / "CMakeLists.txt", cmakeTemplate);
 }
 
 // ─────────────────────────────────────
@@ -359,7 +360,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_EXTRA@", extraDefinitions);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_DECLARATION@", Declaration);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_SETUP@", Call);
-    writeFile(p->WebPatchFolder.string() + "/Pd4Web/externals.cpp", externalsTemplate);
+    writeFile(p->WebPatchFolder / "Pd4Web" / "externals.cpp", externalsTemplate);
 }
 
 // ─────────────────────────────────────

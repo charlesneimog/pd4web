@@ -43,3 +43,4 @@ Sources/Compiler/.cache/clangd/index
 Resources/Tests/libnanovg.a
 Resources/Tests/nanovg.o
 Resources/Tests/nanovg_test
+wheelhouse

@@ -1,0 +1,12 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7b655fe..109779a 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -53,6 +53,6 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/tree-sitter-cpp.pc"
+ install(TARGETS tree-sitter-cpp
+         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+ 
+-add_custom_target(ts-test "${TREE_SITTER_CLI}" test
++add_custom_target(ts-test-cpp "${TREE_SITTER_CLI}" test
+                   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                   COMMENT "tree-sitter test")

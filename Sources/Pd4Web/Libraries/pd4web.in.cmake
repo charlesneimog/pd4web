@@ -75,7 +75,7 @@ target_include_directories(pd4web PRIVATE Pd4Web/pure-data/src)
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                         "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 
-target_link_libraries(pd4web PRIVATE embind libpd nanovg)
+target_link_libraries(pd4web PRIVATE embind libpd nanovg pdlua)
 target_link_options(
     pd4web
     PRIVATE
