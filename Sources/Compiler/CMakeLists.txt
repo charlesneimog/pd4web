@@ -12,6 +12,8 @@ set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(USE_NSEC OFF)
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF)
+set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
+set(TREE_SITTER_CLI "")
 
 # ╭──────────────────────────────────────╮
 # │             CPM Package              │
@@ -46,12 +48,20 @@ CPMAddPackage(
 CPMAddPackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
 CPMAddPackage("gh:nlohmann/json#v3.12.0") # read/save json files
 CPMAddPackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
-CPMAddPackage(
-    NAME openssl-cmake
-    URL https://github.com/jimmy-park/openssl-cmake/archive/main.tar.gz
-)
+
+if (MSVC)
+    CPMAddPackage(
+        NAME openssl-cmake
+        URL https://github.com/jimmy-park/openssl-cmake/archive/main.tar.gz
+    )
+endif()
 
 CPMAddPackage("gh:libgit2/libgit2#v1.9.1")
+
+
+if(tree-sitter_ADDED)
+    include_directories("${tree-sitter_SOURCE_DIR}/lib/include")
+endif()
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
@@ -73,10 +83,15 @@ target_link_libraries(pd4web_compiler PUBLIC
             cxxopts 
             nlohmann_json fkYAML
             httplib
-            # libgit2
+            libgit2
             libgit2package
-            OpenSSL::SSL OpenSSL::Crypto
 )
+
+# if(not MSVC)
+#
+#
+# endif()
+
 set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ╭──────────────────────────────────────╮
