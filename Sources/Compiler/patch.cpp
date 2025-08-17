@@ -670,7 +670,7 @@ bool Pd4Web::isUniqueObjFromLibrary(std::shared_ptr<Patch> &p, std::string &Obj)
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::processPatch() {
+bool Pd4Web::compilePatch() {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
 
     if (!m_Init) {
@@ -757,6 +757,9 @@ bool Pd4Web::processPatch() {
     print("Start building Patch", Pd4WebLogLevel::LOG1);
     buildPatch(p);
     createAppManifest(p);
+    if (!m_Error) {
+        print("Finished", Pd4WebLogLevel::LOG1);
+    }
 
     return true;
 }

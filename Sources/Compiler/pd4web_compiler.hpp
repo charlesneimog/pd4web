@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <functional>
 #include <memory>
 #include <string>
 #include <sys/stat.h>
@@ -9,7 +9,6 @@
 #include <nlohmann/json.hpp>
 #include <fkYAML/node.hpp>
 
-#define CPPHTTPLIB_OPENSSL_SUPPORT
 #include <httplib.h>
 
 #ifdef _WIN32
@@ -24,10 +23,6 @@ extern "C" {
 const TSLanguage *tree_sitter_cpp(void);
 const TSLanguage *tree_sitter_c(void);
 }
-
-#ifdef PDOBJECT
-#include <m_pd.h>
-#endif
 
 #define PD_VERSION "0.56-0"
 #define EMSDK_VERSION "4.0.10"
@@ -133,7 +128,7 @@ class Pd4Web {
     Pd4Web(std::string pathHome);
     void parseArgs(int argc, char *argv[]);
     bool init();
-    bool processPatch();
+    bool compilePatch();
 
     void setPatchFile(std::string file) {
         m_PatchFile = file;
@@ -167,6 +162,10 @@ class Pd4Web {
         m_RenderGui = false;
     };
 
+    void setPrintCallback(std::function<void(const std::string &, Pd4WebLogLevel, int)> cb) {
+        m_PrintCallback = cb;
+    }
+
   private:
     bool m_Init;
     bool m_Error;
@@ -196,6 +195,8 @@ class Pd4Web {
     bool m_PdLua;
     bool m_UsingMidi;
     std::vector<std::string> m_PdObjects;
+
+    std::function<void(const std::string &, Pd4WebLogLevel, int)> m_PrintCallback;
 
     // Paths
     bool initPaths();

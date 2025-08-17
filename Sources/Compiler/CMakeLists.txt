@@ -43,7 +43,7 @@ CPMAddPackage(
     NAME tree-sitter-cpp
     VERSION 0.23.4
     GITHUB_REPOSITORY tree-sitter/tree-sitter-cpp
-    PATCHES ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
+    # PATCHES ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
 )
 CPMAddPackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
 CPMAddPackage("gh:nlohmann/json#v3.12.0") # read/save json files
@@ -87,11 +87,6 @@ target_link_libraries(pd4web_compiler PUBLIC
             libgit2package
 )
 
-# if(not MSVC)
-#
-#
-# endif()
-
 set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # ╭──────────────────────────────────────╮
@@ -108,7 +103,7 @@ if(PD4WEB_BUILD_PYBIND11)
     install(TARGETS pypd4web DESTINATION pd4web)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py DESTINATION pd4web)
     install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
-else()
+elseif(PD4WEB_BUILD_EXE)
     add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
     target_link_libraries(pd4web PRIVATE pd4web_compiler)
     target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)

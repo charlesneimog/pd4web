@@ -17,6 +17,6 @@ int main(int argc, char *argv[]) {
 
     pd4web.setPd4WebFilesFolder("/home/neimog/Documents/Git/pd4web/Sources/Pd4Web");
     pd4web.init();
-    pd4web.processPatch();
+    pd4web.compilePatch();
     return 0;
 }

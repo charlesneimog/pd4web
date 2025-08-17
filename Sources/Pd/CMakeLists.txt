@@ -1,3 +1,5 @@
+cmake_minimum_required(VERSION 3.13)
+
 project(pdobj)
 
 # ──────────────────────────────────────
@@ -14,5 +16,6 @@ include(${PDCMAKE_FILE})
 # │                Objeto                │
 # ╰──────────────────────────────────────╯
 pd_add_external(pdobj "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp" EXTERNAL_NAME pd4web)
-target_include_directories(pdobj PRIVATE "${httplib_SOURCE_DIR}/")
-target_link_libraries(pdobj pd4web_compiler httplib)
+target_link_libraries(pdobj PRIVATE pd4web_compiler)
+target_include_directories(pdobj PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
+

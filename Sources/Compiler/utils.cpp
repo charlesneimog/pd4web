@@ -5,8 +5,9 @@
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {
     std::ifstream file(path);
-    if (!file)
+    if (!file) {
         throw std::runtime_error("Failed to open file: " + path);
+    }
     std::ostringstream ss;
     ss << file.rdbuf();
     return ss.str();
@@ -15,8 +16,9 @@ std::string Pd4Web::readFile(const std::string &path) {
 // ─────────────────────────────────────
 void Pd4Web::writeFile(const std::string &path, const std::string &content) {
     std::ofstream file(path);
-    if (!file)
+    if (!file) {
         throw std::runtime_error("Failed to write file: " + path);
+    }
     file << content;
 }
 
@@ -46,25 +48,32 @@ std::string Pd4Web::formatLibUrl(const std::string &format, const std::string &a
 
 // ─────────────────────────────────────
 bool Pd4Web::isNumber(const std::string &s) {
-    if (s.empty())
+    if (s.empty()) {
         return false;
+    }
     for (char c : s) {
-        if (!std::isdigit(static_cast<unsigned char>(c)))
+        if (!std::isdigit(static_cast<unsigned char>(c))) {
             return false;
+        }
     }
     return true;
 }
 
 // ──────────────────────────────────────────
 void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
+    if (m_PrintCallback) {
+        m_PrintCallback(msg, color, level);
+        return;
+    }
+
     if (msg == "\n") {
         std::cout << std::endl;
         return;
     }
 
     std::string tablevel(level * 2, ' ');
-
     const std::string RESET = "\033[0m";
+
     switch (color) {
     case Pd4WebLogLevel::ERROR: {
         std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
