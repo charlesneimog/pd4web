@@ -30,7 +30,7 @@ bool Pd4Web::init() {
     }
 
     print("Checking pure-data", Pd4WebLogLevel::LOG2);
-    ok = gitClone("https://github.com/pure-data/pure-data.git", "pure-data", PD_VERSION);
+    ok = gitClone("https://github.com/pure-data/pure-data.git", "pure-data", PUREDATA_VERSION);
     if (!ok) {
         return false;
     }

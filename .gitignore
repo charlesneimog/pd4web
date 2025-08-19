@@ -44,3 +44,10 @@ Resources/Tests/libnanovg.a
 Resources/Tests/nanovg.o
 Resources/Tests/nanovg_test
 wheelhouse
+Sources/Pd/1-hello-world/.build
+Sources/Pd/1-hello-world/Pd4Web
+Sources/Pd/1-hello-world/WebPatch
+Sources/Pd/1-hello-world/CMakeLists.txt
+Sources/Pd/1-hello-world/favicon.ico
+Sources/Pd/1-hello-world/index.html
+Sources/Pd/CMakeLists.txt

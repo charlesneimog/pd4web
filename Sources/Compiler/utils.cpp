@@ -1,6 +1,49 @@
 #include "pd4web_compiler.hpp"
 
 #include <fstream>
+#include <boost/asio.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/stdio.hpp>
+#include <iostream>
+
+namespace bp = boost::process::v2;
+namespace asio = boost::asio;
+
+// ─────────────────────────────────────
+int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &args) {
+
+    std::ostringstream oss;
+    for (const auto &arg : args) {
+        oss << arg << " ";
+    }
+
+    std::string fullCommand = command + " " + oss.str();
+    print("\n\n" + fullCommand + "\n\n");
+
+    asio::io_context ctx;
+    asio::readable_pipe out{ctx};
+    bp::process proc(ctx, command, args, bp::process_stdio{{}, out, {}});
+    auto buffer = std::make_shared<std::string>();
+    std::function<void()> do_read = [&]() {
+        asio::async_read_until(out, asio::dynamic_buffer(*buffer), '\n',
+                               [&](boost::system::error_code ec, std::size_t n) {
+                                   if (!ec) {
+                                       std::string line(buffer->substr(0, n));
+                                       buffer->erase(0, n);
+                                       if (!line.empty() && line.back() == '\n') {
+                                           line.pop_back();
+                                       }
+                                       print(line);
+                                       do_read();
+                                   }
+                               });
+    };
+
+    do_read();
+    ctx.run();
+    proc.wait();
+    return proc.exit_code();
+}
 
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {

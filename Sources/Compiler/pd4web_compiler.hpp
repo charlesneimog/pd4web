@@ -24,7 +24,7 @@ const TSLanguage *tree_sitter_cpp(void);
 const TSLanguage *tree_sitter_c(void);
 }
 
-#define PD_VERSION "0.56-0"
+#define PUREDATA_VERSION "0.56-0"
 #define EMSDK_VERSION "4.0.10"
 
 using json = nlohmann::json;
@@ -82,7 +82,7 @@ struct Patch {
     int Zoom = 1;
     std::vector<PatchLine> PatchLines;
     std::vector<PatchLine> ExternalPatchLines;
-    std::string PdVersion = PD_VERSION;
+    std::string PdVersion = PUREDATA_VERSION;
 
     json ExternalObjectsJson;
 
@@ -292,6 +292,7 @@ class Pd4Web {
     void createAppManifest(std::shared_ptr<Patch> &p);
 
     // Utils
+    int execProcess(const std::string &command, std::vector<std::string> &args);
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);

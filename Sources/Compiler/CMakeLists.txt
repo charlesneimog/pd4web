@@ -22,7 +22,8 @@ set(CPM_FILE ${CMAKE_BINARY_DIR}/CPM.cmake)
 set(CPM_VERSION "0.42.0")
 if(NOT EXISTS "${CPM_FILE}")
   file(
-    DOWNLOAD "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake"
+    DOWNLOAD
+    "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake"
     SHOW_PROGRESS
     ${CPM_FILE})
 endif()
@@ -31,36 +32,72 @@ include(${CPM_FILE})
 # ╭──────────────────────────────────────╮
 # │             Dependencies             │
 # ╰──────────────────────────────────────╯
-CPMAddPackage("gh:yhirose/cpp-httplib#v0.25.0")
-CPMAddPackage(
-    NAME tree-sitter
-    GITHUB_REPOSITORY tree-sitter/tree-sitter
-    VERSION 0.25.6
-    SOURCE_SUBDIR lib
-)
-CPMAddPackage("gh:tree-sitter/tree-sitter-c#v0.24.1")
-CPMAddPackage(
-    NAME tree-sitter-cpp
-    VERSION 0.23.4
-    GITHUB_REPOSITORY tree-sitter/tree-sitter-cpp
-    # PATCHES ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
-)
-CPMAddPackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
-CPMAddPackage("gh:nlohmann/json#v3.12.0") # read/save json files
-CPMAddPackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
+cpmaddpackage("gh:yhirose/cpp-httplib#v0.25.0")
+cpmaddpackage(
+  NAME
+  tree-sitter
+  GITHUB_REPOSITORY
+  tree-sitter/tree-sitter
+  VERSION
+  0.25.6
+  SOURCE_SUBDIR
+  lib
+  EXCLUDE_FROM_ALL
+  YES)
+cpmaddpackage("gh:tree-sitter/tree-sitter-c#v0.24.1")
 
-if (MSVC)
-    CPMAddPackage(
-        NAME openssl-cmake
-        URL https://github.com/jimmy-park/openssl-cmake/archive/main.tar.gz
-    )
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/CMakeCache.txt")
+  cpmaddpackage(
+    NAME
+    tree-sitter-cpp
+    VERSION
+    0.23.4
+    GITHUB_REPOSITORY
+    tree-sitter/tree-sitter-cpp
+    PATCHES
+    ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
+    EXCLUDE_FROM_ALL
+    YES)
+
+else()
+  cpmaddpackage(
+    NAME
+    tree-sitter-cpp
+    VERSION
+    0.23.4
+    GITHUB_REPOSITORY
+    tree-sitter/tree-sitter-cpp
+    EXCLUDE_FROM_ALL
+    YES)
 endif()
 
-CPMAddPackage("gh:libgit2/libgit2#v1.9.1")
+cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
+cpmaddpackage("gh:nlohmann/json#v3.12.0") # read/save json files
+cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
 
+if(MSVC)
+  cpmaddpackage(NAME openssl-cmake URL
+                https://github.com/jimmy-park/openssl-cmake/archive/main.tar.gz)
+endif()
+
+cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
+
+cpmaddpackage(
+  NAME
+  Boost
+  VERSION
+  1.86.0
+  URL
+  https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.tar.xz
+  URL_HASH
+  SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
+  EXCLUDE_FROM_ALL
+  YES)
+
+# Include
 
 if(tree-sitter_ADDED)
-    include_directories("${tree-sitter_SOURCE_DIR}/lib/include")
+  include_directories("${tree-sitter_SOURCE_DIR}/lib/include")
 endif()
 
 # ╭──────────────────────────────────────╮
@@ -78,35 +115,41 @@ add_library(
   "${CMAKE_CURRENT_SOURCE_DIR}/pd4web_compiler.cpp")
 
 target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR})
-target_link_libraries(pd4web_compiler PUBLIC 
-            tree-sitter tree-sitter-cpp tree-sitter-c 
-            cxxopts 
-            nlohmann_json fkYAML
-            httplib
-            libgit2
-            libgit2package
-)
+target_link_libraries(
+  pd4web_compiler
+  PUBLIC tree-sitter
+         tree-sitter-cpp
+         tree-sitter-c
+         cxxopts
+         nlohmann_json
+         fkYAML
+         httplib
+         libgit2
+         libgit2package
+         Boost::process)
 
-set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
+set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
+                                                 ON)
 
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-    # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
-    set(PYBIND11_FINDPYTHON ON)
-    find_package(pybind11 REQUIRED)
-    add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
-    target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
-    set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
+  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
+  set(PYBIND11_FINDPYTHON ON)
+  find_package(pybind11 REQUIRED)
+  add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
+  target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
+  set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
 
-    install(TARGETS pypd4web DESTINATION pd4web)
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py DESTINATION pd4web)
-    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
+  install(TARGETS pypd4web DESTINATION pd4web)
+  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
+          DESTINATION pd4web)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
 elseif(PD4WEB_BUILD_EXE)
-    add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-    target_link_libraries(pd4web PRIVATE pd4web_compiler)
-    target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
+  add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+  target_link_libraries(pd4web PRIVATE pd4web_compiler)
+  target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
 
-    install(TARGETS pd4web RUNTIME DESTINATION bin)
+  install(TARGETS pd4web RUNTIME DESTINATION bin)
 endif()

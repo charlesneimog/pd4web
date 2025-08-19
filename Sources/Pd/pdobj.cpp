@@ -63,6 +63,8 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
             x->pd4web->disableGuiRender();
         }
         logpost(x, 2, "[pd4web] GUI rendering %s", gui ? "enabled" : "disabled");
+    } else if (strcmp(s->s_name, "verbose") == 0) {
+        logpost(x, 2, "[pd4web] not implemented yet!");
     }
 }
 
@@ -74,6 +76,7 @@ static void pd4web_compile(Pd4WebObj *x) {
 // ─────────────────────────────────────
 static void pd4web_logcallback(t_pd *obj, void *data) {
     Pd4WebDetachedPost *d = (Pd4WebDetachedPost *)data;
+
     if (d->loglevel == ERROR) {
         logpost(obj, 1, "[pd4web] %s", d->msg.c_str());
     } else if (d->loglevel != VERBOSE) {
@@ -126,10 +129,10 @@ static void *pd4web_new() {
 static void pd4web_free(Pd4WebObj *x) {}
 
 // ─────────────────────────────────────
-extern "C" void pd4web_setup(void) {
+extern "C" void setup_pd4web0x2ecompiler(void) {
     post("pd4web by Charles K. Neimog");
-    pd4web_class = class_new(gensym("pd4web"), (t_newmethod)pd4web_new, (t_method)pd4web_free,
-                             sizeof(Pd4WebObj), CLASS_DEFAULT, A_NULL);
+    pd4web_class = class_new(gensym("pd4web.compiler"), (t_newmethod)pd4web_new,
+                             (t_method)pd4web_free, sizeof(Pd4WebObj), CLASS_DEFAULT, A_NULL);
 
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("patch"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("memory"), A_GIMME, 0);
@@ -138,6 +141,7 @@ extern "C" void pd4web_setup(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("template"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("debug"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("failfast"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("verbose"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("gui"), A_GIMME, 0);
 
     class_addbang(pd4web_class, (t_method)pd4web_compile);

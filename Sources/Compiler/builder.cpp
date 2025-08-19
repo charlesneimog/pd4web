@@ -4,6 +4,17 @@
 #include <thread>
 #include <fstream>
 
+#define BOOST_PROCESS_VERSION 2
+#include <boost/process.hpp>
+#include <boost/asio.hpp>
+
+#include <boost/asio.hpp>
+#include <boost/process/v2/process.hpp>
+#include <boost/process/v2/stdio.hpp>
+
+namespace bp = boost::process::v2;
+namespace asio = boost::asio;
+
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
                            "set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)\n"
@@ -386,8 +397,6 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
     std::string configure = m_Emconfigure;
     std::string make = m_Emmake;
-    std::string fullCommand;
-
     fs::create_directory(p->WebPatchFolder / ".build");
 
 #ifdef _WIN32
@@ -399,8 +408,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 #endif
 
     // TODO: on windows I need to set this cmake as binary
-    std::vector<std::string> command = {m_Emcmake,
-                                        m_Cmake,
+    std::vector<std::string> command = {m_Cmake,
                                         p->WebPatchFolder.string(),
                                         "-B",
                                         (p->WebPatchFolder / ".build").string(),
@@ -414,29 +422,21 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                         "-DEMMAKE=" + make,
                                         "-Wno-dev"};
 
-    for (const auto &arg : command) {
-        fullCommand += arg + " ";
+    int result = execProcess(m_Emcmake, command);
+    if (result != 0) {
+        print("Configure failed", Pd4WebLogLevel::ERROR);
+        return;
     }
-    int ret = std::system(fullCommand.c_str());
 
-    // build
     int cpuCount = std::thread::hardware_concurrency();
-    std::vector<std::string> buildCmd = {m_Cmake,
-                                         "--build",
-                                         (p->WebPatchFolder / ".build").string(),
-                                         "-j" + std::to_string(cpuCount),
-                                         "--target",
-                                         "pd4web"};
+    std::vector<std::string> args = {"--build", (p->WebPatchFolder / ".build").string(),
+                                     "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
-    std::string buildStr;
-    for (const auto &arg : buildCmd) {
-        buildStr += arg + " ";
+    result = execProcess(m_Cmake, args);
+    if (result != 0) {
+        print("Build failed", Pd4WebLogLevel::ERROR);
     }
-
-    ret = std::system(buildStr.c_str());
-    if (ret != 0) {
-        std::cerr << "Build failed\n";
-    }
+    return;
 }
 
 // ─────────────────────────────────────
