@@ -236,7 +236,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     }
 
     for (auto &pl : p->ExternalPatchLines) {
-        if (pl.isExternal) {
+        if (pl.isExternal && !pl.isAbstraction) {
             std::string str = pl.Name;
             size_t pos = 0;
             while ((pos = str.find('~', pos)) != std::string::npos) {
@@ -326,17 +326,8 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                                 p->ExternalObjectsJson[pl.Lib]["objects"][pl.Name][1]
                                     .get<std::string>() +
                                 "();\n";
-                    } else {
-                        print("No objects name key " + pl.Name, Pd4WebLogLevel::ERROR,
-                              p->printLevel + 1);
                     }
-                } else {
-                    print("Something went wrong (no objects key) " + pl.Name, Pd4WebLogLevel::ERROR,
-                          p->printLevel + 1);
                 }
-            } else {
-                print("Something went wrong (no objects lib) " + pl.Name, Pd4WebLogLevel::ERROR,
-                      p->printLevel + 1);
             }
         } else if (pl.isExternal && !pl.isLuaExternal && pl.Lib.empty() && !pl.Name.empty()) {
             if (p->ExternalObjectsJson.contains(pl.Name)) {
@@ -354,17 +345,8 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                         "    " +
                         p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][1].get<std::string>() +
                         "();\n";
-                } else {
-                    print("Something went wrong no name " + pl.Name, Pd4WebLogLevel::ERROR,
-                          p->printLevel + 1);
                 }
-            } else {
-                print("Something went wrong no objects " + pl.Name, Pd4WebLogLevel::ERROR,
-                      p->printLevel + 1);
             }
-        } else {
-            print("Something went wrong for no lib" + pl.Name, Pd4WebLogLevel::ERROR,
-                  p->printLevel + 1);
         }
     }
 
@@ -397,6 +379,10 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
     std::string configure = m_Emconfigure;
     std::string make = m_Emmake;
+    if (m_CleanBuild) {
+        fs::remove_all(p->WebPatchFolder / ".build");
+    }
+
     fs::create_directory(p->WebPatchFolder / ".build");
 
 #ifdef _WIN32
@@ -421,6 +407,10 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                         "-DEMCONFIGURE=" + configure,
                                         "-DEMMAKE=" + make,
                                         "-Wno-dev"};
+    if (m_Error) {
+        print("There is errors, solve then first!");
+        return;
+    }
 
     int result = execProcess(m_Emcmake, command);
     if (result != 0) {
@@ -432,6 +422,10 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     std::vector<std::string> args = {"--build", (p->WebPatchFolder / ".build").string(),
                                      "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
+    if (m_Error) {
+        print("There is errors, solve then first!");
+        return;
+    }
     result = execProcess(m_Cmake, args);
     if (result != 0) {
         print("Build failed", Pd4WebLogLevel::ERROR);

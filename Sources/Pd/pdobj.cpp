@@ -63,6 +63,9 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
             x->pd4web->disableGuiRender();
         }
         logpost(x, 2, "[pd4web] GUI rendering %s", gui ? "enabled" : "disabled");
+    } else if (strcmp(s->s_name, "clean") == 0) {
+        bool clean = atom_getint(av) != 0;
+        x->pd4web->setCleanBuild(clean);
     } else if (strcmp(s->s_name, "verbose") == 0) {
         logpost(x, 2, "[pd4web] not implemented yet!");
     }
@@ -142,6 +145,7 @@ extern "C" void setup_pd4web0x2ecompiler(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("debug"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("failfast"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("verbose"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("clean"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("gui"), A_GIMME, 0);
 
     class_addbang(pd4web_class, (t_method)pd4web_compile);

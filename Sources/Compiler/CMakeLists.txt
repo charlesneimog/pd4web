@@ -11,8 +11,12 @@ set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(USE_NSEC OFF)
+
+# http
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
+set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF)
+
 set(TREE_SITTER_CLI "")
 
 # ╭──────────────────────────────────────╮
@@ -58,7 +62,6 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/CMakeCache.txt")
     ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
     EXCLUDE_FROM_ALL
     YES)
-
 else()
   cpmaddpackage(
     NAME
@@ -75,13 +78,13 @@ cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
 cpmaddpackage("gh:nlohmann/json#v3.12.0") # read/save json files
 cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
 
-if(MSVC)
-  cpmaddpackage(NAME openssl-cmake URL
-                https://github.com/jimmy-park/openssl-cmake/archive/main.tar.gz)
-endif()
-
+# libgit
+set(OPENSSL_USE_STATIC_LIBS TRUE CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+cpmaddpackage("gh:jimmy-park/openssl-cmake#3.5.2")
 cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
 
+# boost (process)
 cpmaddpackage(
   NAME
   Boost
@@ -126,16 +129,16 @@ target_link_libraries(
          httplib
          libgit2
          libgit2package
+         OpenSSL::SSL
+         OpenSSL::Crypto
          Boost::process)
 
-set_target_properties(pd4web_compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
-                                                 ON)
+target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-  # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++ -static-libgcc")
   set(PYBIND11_FINDPYTHON ON)
   find_package(pybind11 REQUIRED)
   add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
@@ -146,10 +149,4 @@ if(PD4WEB_BUILD_PYBIND11)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
           DESTINATION pd4web)
   install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
-elseif(PD4WEB_BUILD_EXE)
-  add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
-  target_link_libraries(pd4web PRIVATE pd4web_compiler)
-  target_compile_options(pd4web PRIVATE $<$<CONFIG:Debug>:-g>)
-
-  install(TARGETS pd4web RUNTIME DESTINATION bin)
 endif()

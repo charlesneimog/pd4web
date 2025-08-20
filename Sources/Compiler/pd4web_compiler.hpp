@@ -49,11 +49,14 @@ struct PatchLine {
         CANVAS,
         RESTORE,
         MSG,
+        ARRAY,
         COORDS,
+        FLOATATOM,
         TEXT,
         INVALID
     };
     PatchTokenType Type = INVALID;
+    std::string OriginalLine;
     std::vector<std::string> OriginalTokens;
     std::vector<std::string> ModifiedTokens;
 
@@ -69,13 +72,13 @@ struct PatchLine {
 
 // ──────────────────────────────────────────
 struct Patch {
-    fs::path PathFile;
+    fs::path PatchFile;
     fs::path PatchFolder;
     fs::path WebPatchFolder;
-
     fs::path Pd4WebFiles;
     fs::path Pd4WebRoot;
     fs::path mainRoot;
+
     std::string ProjectName;
 
     int MemorySize = 64;
@@ -92,6 +95,7 @@ struct Patch {
     std::vector<std::string> DeclaredLibs;
     std::vector<std::string> ValidObjectNames;
     std::vector<std::string> ValidLuaObjects;
+    std::vector<std::string> ProcessedSubpatches;
 
     std::vector<fs::path> PdLuaFolderSearch;
 
@@ -157,6 +161,9 @@ class Pd4Web {
     void setFailFast(bool failfast) {
         m_FailFast = failfast;
     };
+    void setCleanBuild(bool clean) {
+        m_CleanBuild = clean;
+    }
 
     void disableGuiRender() {
         m_RenderGui = false;
@@ -183,6 +190,7 @@ class Pd4Web {
     bool m_Debug;
     bool m_DevDebug = false;
     bool m_FailFast = false;
+    bool m_CleanBuild = false;
     int m_Memory;
 
     unsigned m_ChnsOutCount;
@@ -197,6 +205,7 @@ class Pd4Web {
     std::vector<std::string> m_PdObjects;
 
     std::function<void(const std::string &, Pd4WebLogLevel, int)> m_PrintCallback;
+    bool m_inArray = false;
 
     // Paths
     bool initPaths();
@@ -245,7 +254,7 @@ class Pd4Web {
     void isDollarObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExtraObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
 
-    void updatePatch(std::shared_ptr<Patch> &p, bool mainPatch = false);
+    void updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch = false);
 
     // process
     bool processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl);

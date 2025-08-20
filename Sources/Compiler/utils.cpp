@@ -104,6 +104,10 @@ bool Pd4Web::isNumber(const std::string &s) {
 
 // ──────────────────────────────────────────
 void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
+    if (color == Pd4WebLogLevel::ERROR) {
+        m_Error = true;
+    }
+
     if (m_PrintCallback) {
         m_PrintCallback(msg, color, level);
         return;
@@ -120,7 +124,6 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
     switch (color) {
     case Pd4WebLogLevel::ERROR: {
         std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
-        m_Error = true;
         if (m_FailFast) {
             throw std::runtime_error(msg);
         }

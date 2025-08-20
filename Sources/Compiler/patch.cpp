@@ -10,9 +10,9 @@
 // ─────────────────────────────────────
 bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
-    std::ifstream file(p->PathFile);
+    std::ifstream file(p->PatchFile);
     if (!file) {
-        std::cerr << "Erro ao abrir o arquivo: " << p->PathFile << std::endl;
+        std::cerr << "Erro ao abrir o arquivo: " << p->PatchFile << std::endl;
         return false;
     }
 
@@ -26,6 +26,7 @@ bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
         }
         PatchLine pl;
         pl.OriginalTokens = tokens;
+        pl.OriginalLine = line;
         p->PatchLines.push_back(pl);
     }
 
@@ -35,6 +36,9 @@ bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
 // ─────────────────────────────────────
 bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    if (m_Error) {
+        return false;
+    }
 
     std::vector<std::string> Line;
     Line = pl.OriginalTokens;
@@ -42,28 +46,43 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         return true;
     }
 
-    if (Line[1] == "canvas") {
-        pl.Type = PatchLine::CANVAS;
+    if (Line[0] == "#X") {
+        m_inArray = false;
+        if (Line[1] == "restore") {
+            pl.Type = PatchLine::RESTORE;
+            p->CanvasLevel--;
+        } else if (Line[1] == "declare") {
+            pl.Type = PatchLine::DECLARE;
+            processDeclareClass(p, pl);
+        } else if (Line[1] == "obj") {
+            processObjClass(p, pl);
+            pl.Type = PatchLine::OBJ;
+        } else if (Line[1] == "msg") {
+            pl.Type = PatchLine::MSG;
+        } else if (Line[1] == "array") {
+            pl.Type = PatchLine::ARRAY;
+        } else if (Line[1] == "connect") {
+            pl.Type = PatchLine::CONNECTION;
+        } else if (Line[1] == "text") {
+            pl.Type = PatchLine::TEXT;
+        } else if (Line[1] == "coords") {
+            pl.Type = PatchLine::COORDS;
+        } else if (Line[1] == "floatatom") {
+            pl.Type = PatchLine::FLOATATOM;
+        } else {
+            print("t_canvas class unknown " + Line[1], Pd4WebLogLevel::ERROR);
+        }
+    } else if (Line[0] == "#A") {
+        m_inArray = true;
+    } else if (m_inArray) {
+        // Nothing To-Do;
+    } else if (Line[0] == "#N") {
         p->CanvasLevel++;
-    } else if (Line[1] == "restore") {
-        pl.Type = PatchLine::RESTORE;
-        p->CanvasLevel--;
-    } else if (Line[1] == "declare") {
-        pl.Type = PatchLine::DECLARE;
-        processDeclareClass(p, pl);
-    } else if (Line[1] == "obj") {
-        processObjClass(p, pl);
-        pl.Type = PatchLine::OBJ;
-    } else if (Line[1] == "msg") {
-        pl.Type = PatchLine::MSG;
-    } else if (Line[1] == "connect") {
-        pl.Type = PatchLine::CONNECTION;
-    } else if (Line[1] == "text") {
-        pl.Type = PatchLine::TEXT;
-    } else if (Line[1] == "coords") {
-        pl.Type = PatchLine::COORDS;
+    } else if (Line[0][0] == '#') {
+        print("Class unknown " + Line[0] + " in " + p->PatchFile.string(), Pd4WebLogLevel::ERROR);
     } else {
-        print("Class unknown " + Line[1], Pd4WebLogLevel::ERROR);
+        // print("Class unknown " + Line[0] + " in " + p->PatchFile.string(),
+        // Pd4WebLogLevel::ERROR);
     }
 
     return true;
@@ -112,6 +131,38 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, PatchLine &pl) {
         }
     }
 
+    for (auto Lib : p->DeclaredLibs) {
+        if (Lib != "") {
+            if (p->ExternalObjectsJson.contains(Lib)) {
+                if (p->ExternalObjectsJson[Lib].contains("abstractions")) {
+                    if (p->ExternalObjectsJson[Lib]["abstractions"].contains(objName)) {
+                        fullPath = p->ExternalObjectsJson[Lib]["abstractions"][objName][1];
+                        if (fs::exists(fullPath)) {
+                            return fullPath;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    size_t pos = objName.find('/');
+    if (pos != std::string::npos) {
+        std::string Lib = objName.substr(0, pos);
+        objName = objName.substr(pos + 1);
+        if (p->ExternalObjectsJson.contains(Lib)) {
+            if (p->ExternalObjectsJson[Lib].contains("abstractions")) {
+                if (p->ExternalObjectsJson[Lib]["abstractions"].contains(objName)) {
+                    fullPath = p->ExternalObjectsJson[Lib]["abstractions"][objName][1];
+                    if (fs::exists(fullPath)) {
+                        return fullPath;
+                    }
+                }
+            }
+        }
+    }
+
+    print("Abstraction '" + objName + ".pd' not found", Pd4WebLogLevel::ERROR);
     return fs::path("");
 }
 
@@ -140,11 +191,11 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
         AbsPath = p->mainRoot / path / (pl.Name + ".pd");
         if (fs::exists(AbsPath)) {
             auto Abstraction = std::make_shared<Patch>();
-            Abstraction->PathFile = AbsPath;
+            Abstraction->PatchFile = AbsPath;
             Abstraction->PatchFolder = AbsPath.parent_path();
 
             print("\n");
-            print("Processing clone SubPatch '" + Abstraction->PathFile.filename().string(),
+            print("Processing clone SubPatch '" + Abstraction->PatchFile.filename().string(),
                   Pd4WebLogLevel::LOG1, p->printLevel + 1);
             processSubpatch(p, Abstraction);
 
@@ -154,15 +205,15 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
         }
     }
 
-    // with preffix
+    // with prefix
     AbsPath = p->mainRoot / pl.Lib / (pl.Name + ".pd");
     if (fs::exists(AbsPath)) {
         auto Abstraction = std::make_shared<Patch>();
-        Abstraction->PathFile = AbsPath;
+        Abstraction->PatchFile = AbsPath;
         Abstraction->PatchFolder = AbsPath.parent_path();
 
         print("\n");
-        print("Processing clone SubPatch '" + Abstraction->PathFile.filename().string(),
+        print("Processing clone SubPatch '" + Abstraction->PatchFile.filename().string(),
               Pd4WebLogLevel::LOG1, p->printLevel + 1);
         processSubpatch(p, Abstraction);
         pl.isAbstraction = true;
@@ -177,11 +228,12 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
                 AbsPath = fs::path(p->ExternalObjectsJson[pl.Lib]["abstractions"][pl.Name][1]);
                 if (fs::exists(AbsPath)) {
                     auto Abstraction = std::make_shared<Patch>();
-                    Abstraction->PathFile = AbsPath;
+                    Abstraction->PatchFile = AbsPath;
                     Abstraction->PatchFolder = AbsPath.parent_path();
 
                     print("\n");
-                    print("Processing clone SubPatch '" + Abstraction->PathFile.filename().string(),
+                    print("Processing clone SubPatch '" +
+                              Abstraction->PatchFile.filename().string(),
                           Pd4WebLogLevel::LOG1, p->printLevel + 1);
                     processSubpatch(p, Abstraction);
                     pl.isAbstraction = true;
@@ -199,16 +251,16 @@ void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
     if (pl.Found) {
         return;
     }
-    std::string libPreffix = pl.Lib;
+    std::string libprefix = pl.Lib;
 
-    // object with preffix
+    // object with prefix
     for (Library SupportedLib : m_Libraries) {
         if (SupportedLib.Name == pl.Lib && pl.Lib != "") {
             std::vector<std::string> objects = listObjectsInLibrary(p, pl.Lib);
             for (std::string obj : objects) {
                 if (obj == pl.Name) {
                     print("Found external object '" + pl.Name +
-                              "' via preffix lib: " + pl.OriginalTokens[4],
+                              "' via prefix lib: " + pl.OriginalTokens[4],
                           LOG2, p->printLevel + 1);
                     pl.isExternal = true;
                     pl.isAbstraction = false;
@@ -303,7 +355,10 @@ std::string Pd4Web::getObjLib(std::string &objToken) {
 // ─────────────────────────────────────
 std::string Pd4Web::getObjName(std::string &objToken) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
-    if (objToken == "/" || objToken == "//") {
+    if (objToken == "/" || objToken == "//" || objToken == "/;") {
+        if (!objToken.empty() && objToken.back() == ';') {
+            objToken.pop_back();
+        }
         return objToken;
     }
 
@@ -368,26 +423,44 @@ bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
 }
 
 // ─────────────────────────────────────
+static bool isCloneSubPatchToken(const std::unordered_set<std::string> &args,
+                                 const std::string &token) {
+    if (token.empty()) {
+        return false;
+    }
+
+    std::string t = token;
+    // only strip trailing ',' or ';'
+    if (t.back() == ',' || t.back() == ';') {
+        t.pop_back();
+    }
+
+    if (args.find(t) != args.end()) {
+        return false;
+    }
+    if (t[0] == '$' || t[0] == '\\') {
+        return false;
+    }
+    if (std::all_of(t.begin(), t.end(), ::isdigit)) {
+        return false;
+    }
+
+    return true;
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
+
     std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s", "f"};
+
     std::vector<std::string> filtered;
     std::copy_if(pl.OriginalTokens.begin(), pl.OriginalTokens.end(), std::back_inserter(filtered),
-                 [&args](const std::string &token) {
-                     auto is_number = [](std::string s) {
-                         s.erase(std::remove_if(s.begin(), s.end(),
-                                                [](char c) { return c == ',' || c == ';'; }),
-                                 s.end());
-
-                         return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
-                     };
-
-                     return args.find(token) == args.end() && !is_number(token);
-                 });
+                 [&](const std::string &token) { return isCloneSubPatchToken(args, token); });
 
     if (filtered.size() != 1) {
         for (auto filteredToken : filtered) {
-            print(filteredToken, Pd4WebLogLevel::ERROR);
+            print(filteredToken + " ", Pd4WebLogLevel::ERROR);
         }
         print("Filtered should return just 1 result, please report", Pd4WebLogLevel::ERROR);
         return false;
@@ -396,15 +469,13 @@ bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
         abs.erase(
             std::remove_if(abs.begin(), abs.end(), [](char c) { return c == ';' || c == ','; }),
             abs.end());
-
         pl.CloneAbs = abs;
         fs::path AbsPath = getAbsPath(p, pl);
         if (!fs::exists(AbsPath)) {
-            print("AbsPath doesn't exists", Pd4WebLogLevel::ERROR);
             return false;
         }
         auto Abstraction = std::make_shared<Patch>();
-        Abstraction->PathFile = AbsPath;
+        Abstraction->PatchFile = AbsPath;
         Abstraction->PatchFolder = AbsPath.parent_path();
         pl.isAbstraction = true;
         print("\n");
@@ -427,6 +498,7 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
     pl.Name = Obj;
     pl.Lib = Lib;
+
     if (Obj == "declare") {
         pl.isExternal = false;
         return true;
@@ -455,7 +527,8 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
         isExternalLibObj(p, pl);
 
         if (!pl.Found) {
-            print("Not Found object " + Obj, Pd4WebLogLevel::ERROR, p->printLevel + 1);
+            print("Not Found object '" + Obj + "'", Pd4WebLogLevel::ERROR, p->printLevel + 1);
+            print(pl.OriginalLine, Pd4WebLogLevel::ERROR);
             return false;
         }
     }
@@ -506,13 +579,12 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 }
 
 // ─────────────────────────────────────
-void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
+void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     std::string editPatch = "";
     for (auto pl : p->PatchLines) {
-
-        // tradicional external
         if (pl.isExternal && pl.Type == PatchLine::OBJ) {
+            // tradicional external
             std::string &token = pl.OriginalTokens[4];
             size_t firstSlash = token.find('/');
             if (firstSlash != std::string::npos) {
@@ -523,9 +595,8 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
                     token = token.substr(firstSlash + 1);
                 }
             }
-
-            // abstraction but not clone
         } else if (pl.isAbstraction && pl.Type == PatchLine::OBJ && pl.Name != "clone") {
+            // abstraction but not clone
             std::string &token = pl.OriginalTokens[4];
             size_t firstSlash = token.find('/');
             if (firstSlash != std::string::npos) {
@@ -536,35 +607,26 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
                     token = token.substr(firstSlash + 1);
                 }
             }
-
-            // clone abstraction
         } else if (pl.isAbstraction && pl.Type == PatchLine::OBJ && pl.Name == "clone") {
+            // clone abstraction
             std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s"};
-
             std::vector<size_t> filteredIndexes;
             std::vector<std::string> filtered;
-
             for (size_t i = 0; i < pl.OriginalTokens.size(); ++i) {
                 const std::string &token = pl.OriginalTokens[i];
-
                 auto is_number = [](const std::string &s) {
                     return !s.empty() && std::all_of(s.begin(), s.end(), ::isdigit);
                 };
-
                 if (args.find(token) == args.end() && !is_number(token)) {
                     std::string cleaned = token;
-
-                    // Remove prefix before last slash, keep everything after (including ';')
                     size_t slashPos = cleaned.rfind('/');
                     if (slashPos != std::string::npos) {
                         cleaned = cleaned.substr(slashPos + 1);
                     }
-
                     filteredIndexes.push_back(i);
                     filtered.push_back(cleaned);
                 }
             }
-
             for (size_t i = 0; i < filteredIndexes.size(); ++i) {
                 pl.OriginalTokens[filteredIndexes[i]] = filtered[i];
             }
@@ -574,7 +636,6 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
         if (pl.Type == PatchLine::OBJ) {
             std::unordered_set<std::string> guiObjs = {
                 "vsl", "hsl", "vradio", "hradio", "tgl", "bng", "keyboard", "else/keyboard", "vu"};
-            printf("canvas el: %d\n", p->CanvasLevel);
             if (guiObjs.count(pl.Name) && mainPatch && p->CanvasLevel == 1) {
                 pl.OriginalTokens[4] = "l." + pl.Name;
                 p->PdLua = true;
@@ -583,8 +644,6 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
                       Pd4WebLogLevel::LOG2, p->printLevel + 1);
             }
         }
-
-        // save
         for (auto &token : pl.OriginalTokens) {
             editPatch += token + " ";
         }
@@ -593,20 +652,24 @@ void Pd4Web::updatePatch(std::shared_ptr<Patch> &p, bool mainPatch) {
 
     if (mainPatch) {
         print("\n");
-        print("Saving " + p->PathFile.filename().string() + " as index.pd", Pd4WebLogLevel::LOG1);
+        print("Saving " + p->PatchFile.filename().string() + " as index.pd", Pd4WebLogLevel::LOG1);
         writeFile((p->WebPatchFolder / "WebPatch" / "index.pd").string(), editPatch);
     } else {
-        print("Creating modified version of " + p->PathFile.filename().string(),
+        print("Creating modified version of " + p->PatchFile.filename().string(),
               Pd4WebLogLevel::LOG2, p->printLevel + 1);
         fs::create_directory(p->WebPatchFolder / ".tmp");
-        writeFile((p->WebPatchFolder / ".tmp" / p->PathFile.filename()).string(), editPatch);
+        writeFile((p->WebPatchFolder / ".tmp" / p->PatchFile.filename()).string(), editPatch);
     }
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p) {
     print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
-
+    for (auto &c : f->Childs) {
+        if (c->PatchFile == p->PatchFile) {
+            return true;
+        }
+    }
     p->Father = f;
     p->mainRoot = f->mainRoot;
     p->DeclaredPaths = f->DeclaredPaths;
@@ -616,16 +679,15 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     p->Pd4WebFiles = f->Pd4WebFiles;
 
     f->Childs.push_back(p);
-
     bool ok = openPatch(p);
     if (!ok) {
         return false;
     }
-
     getSupportedLibraries(p);
 
     if (m_PdObjects.empty()) {
-        print("Pd Objects should already be listed here", Pd4WebLogLevel::ERROR);
+        print("Pd Objects should already be listed here, this is an internal error, please report",
+              Pd4WebLogLevel::ERROR);
         return false;
     }
 
@@ -633,28 +695,28 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     for (PatchLine &Line : p->PatchLines) {
         ok = processLine(p, Line);
         if (!ok) {
-            print("Failed to process subpatch line" + std::to_string(i), Pd4WebLogLevel::ERROR);
+            print("Failed to process subpatch line " + std::to_string(i) + ". " +
+                      p->PatchFile.string(),
+                  Pd4WebLogLevel::ERROR);
             return false;
         }
         i++;
     }
 
-    // TODO: Review this
+    // update father declare libs and paths
     for (auto lib : p->DeclaredLibs) {
         p->Father->DeclaredLibs.push_back(lib);
     }
     for (auto lib : p->DeclaredPaths) {
         p->Father->DeclaredPaths.push_back(lib);
     }
-
     for (auto &pl : p->PatchLines) {
         if (pl.isExternal) {
             p->Father->ExternalPatchLines.push_back(pl);
         }
     }
 
-    updatePatch(p);
-
+    updatePatchFile(p);
     return true;
 }
 
@@ -688,11 +750,12 @@ bool Pd4Web::compilePatch() {
     }
 
     auto p = std::make_shared<Patch>();
-    p->PathFile = fs::path(m_PatchFile);
-    p->PatchFolder = p->PathFile.parent_path();
+    p->PatchFile = fs::path(m_PatchFile);
+    p->PatchFolder = p->PatchFile.parent_path();
     p->mainRoot = p->PatchFolder;
     p->Zoom = m_PatchZoom;
     p->PdVersion = m_PdVersion;
+    p->ProcessedSubpatches.clear();
 
     if (m_Pd4WebFiles == "") {
         print("m_Pd4WebFiles not set", Pd4WebLogLevel::ERROR);
@@ -707,7 +770,7 @@ bool Pd4Web::compilePatch() {
     } else {
         p->WebPatchFolder = p->PatchFolder;
     }
-    p->ProjectName = p->PathFile.parent_path().filename().string();
+    p->ProjectName = p->PatchFile.parent_path().filename().string();
     p->Pd4WebRoot = m_Pd4WebRoot;
 
     bool ok = openPatch(p);
@@ -745,7 +808,7 @@ bool Pd4Web::compilePatch() {
     fs::create_directory(p->WebPatchFolder / "Pd4Web" / "Gui");
 
     getSupportedLibraries(p);
-    updatePatch(p, true);
+    updatePatchFile(p, true);
     configureProjectToCompile(p);
 
     if (m_Error) {
