@@ -33,7 +33,7 @@ void run(const std::vector<std::string> &args) {
 
     pd4web.parseArgs(argc, argv.data());
     pd4web.init();
-    pd4web.processPatch();
+    pd4web.compilePatch();
 }
 
 PYBIND11_MODULE(pypd4web, m) {
@@ -54,7 +54,7 @@ PYBIND11_MODULE(pypd4web, m) {
                  self.parseArgs(argc, argv.data());
              })
         .def("init", &Pd4Web::init)
-        .def("processPatch", &Pd4Web::processPatch)
+        .def("processPatch", &Pd4Web::compilePatch)
 
         // options
         .def("setPatchFile", &Pd4Web::setPatchFile)
