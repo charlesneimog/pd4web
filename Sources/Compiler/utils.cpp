@@ -104,7 +104,7 @@ bool Pd4Web::isNumber(const std::string &s) {
 
 // ──────────────────────────────────────────
 void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
-    if (color == Pd4WebLogLevel::ERROR) {
+    if (color == Pd4WebLogLevel::PD4WEB_ERROR) {
         m_Error = true;
     }
 
@@ -122,26 +122,26 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
     const std::string RESET = "\033[0m";
 
     switch (color) {
-    case Pd4WebLogLevel::ERROR: {
+    case Pd4WebLogLevel::PD4WEB_ERROR: {
         std::cout << tablevel << "\033[31mERROR: " << msg << RESET << std::endl;
         if (m_FailFast) {
             throw std::runtime_error(msg);
         }
         break;
     }
-    case Pd4WebLogLevel::WARNING: {
+    case Pd4WebLogLevel::PD4WEB_WARNING: {
         std::cout << tablevel << "\033[33mWARNING: " << msg << RESET << std::endl;
         break;
     }
-    case Pd4WebLogLevel::LOG1: {
+    case Pd4WebLogLevel::PD4WEB_LOG1: {
         std::cout << tablevel << "\033[34m" << msg << RESET << std::endl;
         break;
     }
-    case Pd4WebLogLevel::LOG2: {
+    case Pd4WebLogLevel::PD4WEB_LOG2: {
         std::cout << tablevel << "\033[32m" << msg << RESET << std::endl;
         break;
     }
-    case Pd4WebLogLevel::VERBOSE: {
+    case Pd4WebLogLevel::PD4WEB_VERBOSE: {
         if (m_DevDebug) {
             std::cout << tablevel << msg << RESET << std::endl;
         }

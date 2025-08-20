@@ -32,12 +32,12 @@ using YamlNode = ::fkyaml::v0_4_2::basic_node<>;
 namespace fs = std::filesystem;
 
 // ──────────────────────────────────────────
-enum Pd4WebLogLevel {
-    WARNING = 0,
-    ERROR,
-    LOG1,
-    LOG2,
-    VERBOSE,
+enum class Pd4WebLogLevel {
+    PD4WEB_WARNING = 0,
+    PD4WEB_ERROR,
+    PD4WEB_LOG1,
+    PD4WEB_LOG2,
+    PD4WEB_VERBOSE
 };
 
 // ──────────────────────────────────────────
@@ -305,7 +305,7 @@ class Pd4Web {
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);
-    void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::LOG2, int level = 1);
+    void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::PD4WEB_LOG2, int level = 1);
 
     std::string readFile(const std::string &path);
     void writeFile(const std::string &path, const std::string &content);

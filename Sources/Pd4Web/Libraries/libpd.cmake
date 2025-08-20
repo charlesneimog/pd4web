@@ -8,20 +8,22 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -matomics -mbulk-memory")
 # ╭──────────────────────────────────────╮
 # │       Remove print of sys_vgui       │
 # ╰──────────────────────────────────────╯
-# Função para adicionar 'return;' após o comentário específico, se ainda não existir
+# Função para adicionar 'return;' após o comentário específico, se ainda não
+# existir
 function(AddReturnAfterComment file start_block return_statement)
-    file(READ ${file} FILE_CONTENTS)
-    string(FIND "${FILE_CONTENTS}" "${start_block}\n    return;" POSITION)
-    if(POSITION EQUAL -1)
-        string(REPLACE "${start_block}" "${start_block}\n    return;" FILE_CONTENTS
-                       "${FILE_CONTENTS}")
-        file(WRITE ${file} "${FILE_CONTENTS}")
-    endif()
+  file(READ ${file} FILE_CONTENTS)
+  string(FIND "${FILE_CONTENTS}" "${start_block}\n    return;" POSITION)
+  if(POSITION EQUAL -1)
+    string(REPLACE "${start_block}" "${start_block}\n    return;" FILE_CONTENTS
+                   "${FILE_CONTENTS}")
+    file(WRITE ${file} "${FILE_CONTENTS}")
+  endif()
 endfunction()
 
 addreturnaftercomment(
-    ${PD_SOURCE_DIR}/s_inter.c "{       /* if there's no TK process just throw it to stderr */"
-    "             return;")
+  ${PD_SOURCE_DIR}/s_inter.c
+  "{       /* if there's no TK process just throw it to stderr */"
+  "             return;")
 
 # ╭──────────────────────────────────────╮
 # │           PureData Sources           │
@@ -123,19 +125,23 @@ set(PD_STDOUT_SOURCE ${PD_SOURCE_DIR}/../extra/stdout/stdout.c)
 # ╭──────────────────────────────────────╮
 # │            Libpd Sources             │
 # ╰──────────────────────────────────────╯
-set(LIBPD_MAIN_SOURCES ${PD_SOURCE_DIR}/x_libpdreceive.c ${PD_SOURCE_DIR}/s_libpdmidi.c
-                       ${PD_SOURCE_DIR}/z_hooks.c ${PD_SOURCE_DIR}/z_libpd.c)
-set(LIBPD_UTILS_SOURCES ${PD_SOURCE_DIR}/z_ringbuffer.c ${PD_SOURCE_DIR}/z_print_util.c
-                        ${PD_SOURCE_DIR}/z_queued.c)
+set(LIBPD_MAIN_SOURCES
+    ${PD_SOURCE_DIR}/x_libpdreceive.c ${PD_SOURCE_DIR}/s_libpdmidi.c
+    ${PD_SOURCE_DIR}/z_hooks.c ${PD_SOURCE_DIR}/z_libpd.c)
+set(LIBPD_UTILS_SOURCES
+    ${PD_SOURCE_DIR}/z_ringbuffer.c ${PD_SOURCE_DIR}/z_print_util.c
+    ${PD_SOURCE_DIR}/z_queued.c)
 set(LIBPD_SOURCES ${PD_SOURCES} ${LIBPD_MAIN_SOURCES} ${LIBPD_UTILS_SOURCES})
 
 add_library(libpd STATIC ${LIBPD_SOURCES})
 set_target_properties(libpd PROPERTIES OUTPUT_NAME pd)
-target_compile_definitions(libpd PRIVATE -DPD=1 -DUSEAPI_DUMMY=1 -DHAVE_UNISTD_H=1 -DHAVE_LIBDL -DPD_INTERNAL)
+target_compile_definitions(
+  libpd PRIVATE -DPD=1 -DUSEAPI_DUMMY=1 -DHAVE_UNISTD_H=1 -DHAVE_LIBDL
+                -DPD_INTERNAL)
 
 target_compile_options(libpd PRIVATE -w)
 target_compile_options(
-    libpd PRIVATE $<$<CONFIG:Release>:-ffast-math> $<$<CONFIG:Release>:-funroll-loops>
-                  $<$<CONFIG:Release>:-fomit-frame-pointer> $<$<CONFIG:Release>:-O3>)
+  libpd
+  PRIVATE $<$<CONFIG:Release>:-ffast-math> $<$<CONFIG:Release>:-funroll-loops>
+          $<$<CONFIG:Release>:-fomit-frame-pointer> $<$<CONFIG:Release>:-O3>)
 target_include_directories(libpd PRIVATE ${PD_SOURCE_DIR}/src)
-

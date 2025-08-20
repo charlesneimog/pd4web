@@ -18,7 +18,6 @@ set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF)
 
 set(TREE_SITTER_CLI "")
-
 # ╭──────────────────────────────────────╮
 # │             CPM Package              │
 # ╰──────────────────────────────────────╯
@@ -50,7 +49,13 @@ cpmaddpackage(
   YES)
 cpmaddpackage("gh:tree-sitter/tree-sitter-c#v0.24.1")
 
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/CMakeCache.txt")
+# Track whether this is the first configuration
+if(NOT DEFINED PATCH_TREESITTERCPP)
+  set(PATCH_TREESITTERCPP TRUE CACHE INTERNAL "First CMake configure")
+endif()
+
+if(PATCH_TREESITTERCPP)
+  # First configuration: apply the patch
   cpmaddpackage(
     NAME
     tree-sitter-cpp
@@ -62,7 +67,11 @@ if(NOT EXISTS "${CMAKE_BINARY_DIR}/CMakeCache.txt")
     ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
     EXCLUDE_FROM_ALL
     YES)
+
+  # Mark that patching has been done
+  set(PATCH_TREESITTERCPP FALSE CACHE INTERNAL "First CMake configure")
 else()
+  # Subsequent configurations: no patch
   cpmaddpackage(
     NAME
     tree-sitter-cpp
@@ -73,6 +82,7 @@ else()
     EXCLUDE_FROM_ALL
     YES)
 endif()
+
 
 cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
 cpmaddpackage("gh:nlohmann/json#v3.12.0") # read/save json files

@@ -12,9 +12,6 @@
 #include <boost/process/v2/process.hpp>
 #include <boost/process/v2/stdio.hpp>
 
-namespace bp = boost::process::v2;
-namespace asio = boost::asio;
-
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
                            "set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)\n"
@@ -28,9 +25,9 @@ std::string pdCMakeBlock = "# Pd Cmake\n"
 
 // ─────────────────────────────────────
 void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
-    print("Creating config.h file", Pd4WebLogLevel::LOG2, p->printLevel + 1);
+    print("Creating config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
-    std::string configFile = readFile(p->Pd4WebFiles / "config.in.h");
+    std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
     replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"2\"");
     replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"4\"");
     replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.dev\"");
@@ -63,7 +60,7 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
 
     fs::create_directory(p->WebPatchFolder / "Pd4Web" / "pure-data");
 
-    print("Copying pure-data sources to Pd4Web", Pd4WebLogLevel::LOG2, 2);
+    print("Copying pure-data sources to Pd4Web", Pd4WebLogLevel::PD4WEB_LOG2, 2);
     fs::copy(p->Pd4WebRoot / "pure-data" / "src",
              p->WebPatchFolder / "Pd4Web" / "pure-data" / "src",
              fs::copy_options::recursive | fs::copy_options::skip_existing |
@@ -81,7 +78,7 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
                      fs::copy_options::recursive);
         }
 
-        print("Replacig lua sources from pdlua to pd4web", Pd4WebLogLevel::LOG2, 2);
+        print("Replacig lua sources from pdlua to pd4web", Pd4WebLogLevel::PD4WEB_LOG2, 2);
 
         fs::copy(p->Pd4WebFiles / "pd4weblua.c",
                  p->WebPatchFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua.c",
@@ -127,14 +124,14 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
     for (Library Lib : m_Libraries) {
         fs::path cmakeFile = p->WebPatchFolder / "Pd4Web" / "Externals" / (LibName + ".cmake");
         if (Lib.Name == LibName && !fs::exists(cmakeFile)) {
-            print("Copying files of '" + LibName + "' to Pd4Web/Externals", Pd4WebLogLevel::LOG2,
-                  2);
+            print("Copying files of '" + LibName + "' to Pd4Web/Externals",
+                  Pd4WebLogLevel::PD4WEB_LOG2, 2);
             fs::copy(p->Pd4WebRoot / LibName, p->WebPatchFolder / "Pd4Web" / "Externals" / LibName,
                      fs::copy_options::recursive | fs::copy_options::skip_existing |
                          fs::copy_options::skip_symlinks);
 
             print("Copying build script '" + LibName + ".cmake' to Pd4Web/Externals",
-                  Pd4WebLogLevel::LOG2, 2);
+                  Pd4WebLogLevel::PD4WEB_LOG2, 2);
 
             fs::copy(p->Pd4WebFiles / "Libraries" / (LibName + ".cmake"),
                      p->WebPatchFolder / "Pd4Web" / "Externals" / (LibName + ".cmake"),
@@ -151,7 +148,7 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
 
 // ─────────────────────────────────────
 void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
-    print("Configuring CMakeLists.txt", Pd4WebLogLevel::LOG2, p->printLevel + 1);
+    print("Configuring CMakeLists.txt", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     fs::create_directory(p->WebPatchFolder / "Pd4Web");
     fs::create_directory(p->WebPatchFolder / "Pd4Web" / "Externals");
@@ -168,7 +165,8 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         copyCmakeLibFiles(p, "pdlua");
     }
 
-    std::string cmakeTemplate = readFile(p->Pd4WebFiles / "Libraries" / "pd4web.in.cmake");
+    std::string cmakeTemplate =
+        readFile((p->Pd4WebFiles / "Libraries" / "pd4web.in.cmake").string());
 
     replaceAll(cmakeTemplate, "@PROJECT_NAME@", p->ProjectName);
     replaceAll(cmakeTemplate, "@MEMORY_SIZE@", std::to_string(p->MemorySize));
@@ -197,7 +195,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
             AddedLibs.push_back(Lib);
             LibrariesInclude +=
                 "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" + Lib + ".cmake\")\n";
-            print("Including '" + Lib + "'", Pd4WebLogLevel::LOG2, p->printLevel + 2);
+            print("Including '" + Lib + "'", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 2);
         }
     }
 
@@ -208,7 +206,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
                 AddedLibs.push_back(Lib);
                 LibrariesInclude +=
                     "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/" + Lib + ".cmake\")\n";
-                print("Including '" + Lib + "'", Pd4WebLogLevel::LOG2, p->printLevel + 1);
+                print("Including '" + Lib + "'", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
             }
         }
     }
@@ -285,14 +283,14 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     replaceAll(cmakeTemplate, "@PD4WEB_PRELOADED_PATCH@", PreloadedFiles);
 
     // Write cmake
-    writeFile(p->WebPatchFolder / "CMakeLists.txt", cmakeTemplate);
+    writeFile((p->WebPatchFolder / "CMakeLists.txt").string(), cmakeTemplate);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
-    print("Creating externals.cpp file", Pd4WebLogLevel::LOG2, p->printLevel + 1);
+    print("Creating externals.cpp file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
     print("\n");
-    std::string externalsTemplate = readFile(p->Pd4WebFiles / "externals.in.cpp");
+    std::string externalsTemplate = readFile((p->Pd4WebFiles / "externals.in.cpp").string());
 
     std::string Declaration = "";
     std::string Call = "";
@@ -317,7 +315,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                                   p->ExternalObjectsJson[pl.Lib]["objects"][pl.Name][0]
                                       .get<std::string>() +
                                   " setup function",
-                              Pd4WebLogLevel::LOG2, p->printLevel + 1);
+                              Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
                         Declaration += "extern \"C\" " +
                                        p->ExternalObjectsJson[pl.Lib]["objects"][pl.Name][0]
                                            .get<std::string>() +
@@ -336,7 +334,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                               p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][0]
                                   .get<std::string>() +
                               " setup function",
-                          Pd4WebLogLevel::LOG2, p->printLevel + 1);
+                          Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
                     Declaration +=
                         "extern \"C\" " +
                         p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][0].get<std::string>() +
@@ -353,20 +351,20 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_EXTRA@", extraDefinitions);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_DECLARATION@", Declaration);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_SETUP@", Call);
-    writeFile(p->WebPatchFolder / "Pd4Web" / "externals.cpp", externalsTemplate);
+    writeFile((p->WebPatchFolder / "Pd4Web" / "externals.cpp").string(), externalsTemplate);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 
     print("\n");
-    print("Configuring Build Project", Pd4WebLogLevel::LOG1);
+    print("Configuring Build Project", Pd4WebLogLevel::PD4WEB_LOG1);
 
     createMainCmake(p);
     copySources(p);
 
     print("\n");
-    print("Configuring C++ Code", Pd4WebLogLevel::LOG1);
+    print("Configuring C++ Code", Pd4WebLogLevel::PD4WEB_LOG1);
     createConfigFile(p);
     createExternalsCppFile(p);
 }
@@ -414,7 +412,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 
     int result = execProcess(m_Emcmake, command);
     if (result != 0) {
-        print("Configure failed", Pd4WebLogLevel::ERROR);
+        print("Configure failed", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
@@ -428,7 +426,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
     result = execProcess(m_Cmake, args);
     if (result != 0) {
-        print("Build failed", Pd4WebLogLevel::ERROR);
+        print("Build failed", Pd4WebLogLevel::PD4WEB_ERROR);
     }
     return;
 }

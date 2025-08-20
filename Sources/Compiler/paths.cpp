@@ -5,7 +5,7 @@
 
 // ─────────────────────────────────────
 bool Pd4Web::initPaths() {
-    print(__FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    print(__FUNCTION__, Pd4WebLogLevel::PD4WEB_VERBOSE);
     m_EmsdkInstaller = getEmsdkPath();
     if (m_EmsdkInstaller.empty()) {
         return false;
@@ -22,35 +22,35 @@ bool Pd4Web::initPaths() {
 
 // ─────────────────────────────────────
 bool Pd4Web::checkAllPaths() {
-    print(__FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    print(__FUNCTION__, Pd4WebLogLevel::PD4WEB_VERBOSE);
     // check if m_Emcmake exists
 
-    print("Checking emscripten paths", Pd4WebLogLevel::LOG2, 2);
+    print("Checking emscripten paths", Pd4WebLogLevel::PD4WEB_LOG2, 2);
 
     bool ok = std::filesystem::exists(m_Emcmake);
     if (!ok) {
-        print("emcmake not found", Pd4WebLogLevel::ERROR);
+        print("emcmake not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
     ok = std::filesystem::exists(m_Emcc);
     if (!ok) {
-        print("emcc not found", Pd4WebLogLevel::ERROR);
+        print("emcc not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
     ok = std::filesystem::exists(m_Emconfigure);
     if (!ok) {
-        print("emconfigure not found", Pd4WebLogLevel::ERROR);
+        print("emconfigure not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
     ok = std::filesystem::exists(m_Emmake);
     if (!ok) {
-        print("emmake not found", Pd4WebLogLevel::ERROR);
+        print("emmake not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     ok = getCmakeBinary();
     if (!ok) {
-        print("Failed to get Cmake Binary", Pd4WebLogLevel::ERROR);
+        print("Failed to get Cmake Binary", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
@@ -92,14 +92,14 @@ bool Pd4Web::getCmakeBinary() {
 
     std::string url = "/Kitware/CMake/releases/download/v4.0.3/" + asset;
 
-    print("Downloading " + url, Pd4WebLogLevel::LOG2);
+    print("Downloading " + url, Pd4WebLogLevel::PD4WEB_LOG2);
     httplib::SSLClient cli("github.com");
     cli.set_follow_location(true);
 
     auto res = cli.Get(url.c_str());
     if (!res || res->status != 200) {
         print("Failed to get " + url + ". Code: " + std::to_string(res->status),
-              Pd4WebLogLevel::ERROR);
+              Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
@@ -110,26 +110,28 @@ bool Pd4Web::getCmakeBinary() {
 #if defined(_WIN32)
     std::string output_dir = m_Pd4WebRoot + "cmake";
     std::string zip_path = cmakeOutput;
-    std::string cmd = "powershell -Command \""
-                      "if (-Not (Test-Path -Path '" +
-                      output_dir + "')) { New-Item -ItemType Directory -Path '" + output_dir +
-                      "' } ; "
-                      "Expand-Archive -Path '" +
-                      zip_path + "' -DestinationPath '" + output_dir + "' -Force\"";
+
+    std::string cmd = R"(powershell -Command "
+    if (-Not (Test-Path -Path ')" +
+                      output_dir + R"(')) { New-Item -ItemType Directory -Path ')" + output_dir +
+                      R"(' } ;
+    Expand-Archive -Path ')" +
+                      zip_path + R"(' -DestinationPath ')" + output_dir + R"(' -Force")";
+
     int ret = std::system(cmd.c_str());
     if (ret != 0) {
         std::cerr << "Erro ao extrair arquivo zip no Windows" << std::endl;
         exit(-1);
     }
+
     fs::remove(cmakeOutput);
 
     if (fs::exists(cmakeBinary)) {
         m_Cmake = cmakeBinary;
     } else {
-        print("Empty cmake path", Pd4WebLogLevel::ERROR);
+        print("Empty cmake path", Pd4WebLogLevel::PD4WEB_ERROR);
         exit(-1);
     }
-
 #else
     std::string cmd = "mkdir -p " + (m_Pd4WebRoot + "cmake") +
                       " && tar --strip-components=1 -xzf " + cmakeOutput + " -C " +
@@ -146,7 +148,7 @@ bool Pd4Web::getCmakeBinary() {
     if (fs::exists(cmakeBinary)) {
         m_Cmake = cmakeBinary;
     } else {
-        print("Empty cmake path", Pd4WebLogLevel::ERROR);
+        print("Empty cmake path", Pd4WebLogLevel::PD4WEB_ERROR);
         exit(-1);
     }
 
@@ -156,9 +158,9 @@ bool Pd4Web::getCmakeBinary() {
 
 // ─────────────────────────────────────
 std::string Pd4Web::getEmsdkPath() {
-    print(__FUNCTION__, Pd4WebLogLevel::VERBOSE);
+    print(__FUNCTION__, Pd4WebLogLevel::PD4WEB_VERBOSE);
     std::string path = m_Pd4WebRoot + "emsdk/emsdk";
-    print(path, Pd4WebLogLevel::VERBOSE);
+    print(path, Pd4WebLogLevel::PD4WEB_VERBOSE);
 
 #ifdef _WIN32
     path += ".bat";

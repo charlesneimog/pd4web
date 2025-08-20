@@ -1,7 +1,6 @@
 #include "pd4web_compiler.hpp"
 
 Pd4Web::Pd4Web(std::string pathHome) {
-    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     m_Init = false;
     m_Error = false;
     m_Pd4WebRoot = pathHome;
@@ -14,7 +13,7 @@ bool Pd4Web::init() {
         m_Pd4WebRoot += "/";
     }
 
-    print("Initializing pd4web", Pd4WebLogLevel::LOG1);
+    print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
     git_libgit2_init();
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();
@@ -23,20 +22,20 @@ bool Pd4Web::init() {
     ts_parser_set_language(m_cParser, tree_sitter_c());
 
     // clone emscripten and pd
-    print("Checking emsdk", Pd4WebLogLevel::LOG2);
+    print("Checking emsdk", Pd4WebLogLevel::PD4WEB_LOG2);
     bool ok = gitClone("https://github.com/emscripten-core/emsdk.git", "emsdk", EMSDK_VERSION);
     if (!ok) {
         return false;
     }
 
-    print("Checking pure-data", Pd4WebLogLevel::LOG2);
+    print("Checking pure-data", Pd4WebLogLevel::PD4WEB_LOG2);
     ok = gitClone("https://github.com/pure-data/pure-data.git", "pure-data", PUREDATA_VERSION);
     if (!ok) {
         return false;
     }
 
     // install emscripten
-    print("Initializing paths", Pd4WebLogLevel::LOG2);
+    print("Initializing paths", Pd4WebLogLevel::PD4WEB_LOG2);
     ok = initPaths();
     if (!ok) {
         std::cout << "Failed to init paths" << std::endl;
@@ -62,7 +61,6 @@ bool Pd4Web::init() {
 
 // ─────────────────────────────────────
 void Pd4Web::parseArgs(int argc, char *argv[]) {
-    print(__PRETTY_FUNCTION__, Pd4WebLogLevel::VERBOSE);
     cxxopts::Options options("pd4web", "pd4web compiles PureData patches with external objects for "
                                        "Wasm, allowing to run entire patches in web browsers.\n");
 

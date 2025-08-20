@@ -80,9 +80,9 @@ static void pd4web_compile(Pd4WebObj *x) {
 static void pd4web_logcallback(t_pd *obj, void *data) {
     Pd4WebDetachedPost *d = (Pd4WebDetachedPost *)data;
 
-    if (d->loglevel == ERROR) {
+    if (d->loglevel == Pd4WebLogLevel::PD4WEB_ERROR) {
         logpost(obj, 1, "[pd4web] %s", d->msg.c_str());
-    } else if (d->loglevel != VERBOSE) {
+    } else if (d->loglevel != Pd4WebLogLevel::PD4WEB_VERBOSE) {
         if (d->msg != "\n") {
             logpost(obj, 2, "[pd4web] %s", d->msg.c_str());
         } else {
