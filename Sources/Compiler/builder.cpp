@@ -25,6 +25,7 @@ std::string pdCMakeBlock = "# Pd Cmake\n"
 
 // ─────────────────────────────────────
 void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
     print("Creating config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
@@ -55,6 +56,7 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
     fs::copy(p->Pd4WebFiles / "Libraries" / "libpd.cmake",
              p->WebPatchFolder / "Pd4Web" / "libpd.cmake", fs::copy_options::skip_existing);
 
@@ -121,6 +123,7 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
 
 // ──────────────────────────────────────────
 void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
+    PD4WEB_LOGGER();
     for (Library Lib : m_Libraries) {
         fs::path cmakeFile = p->WebPatchFolder / "Pd4Web" / "Externals" / (LibName + ".cmake");
         if (Lib.Name == LibName && !fs::exists(cmakeFile)) {
@@ -148,6 +151,9 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
 
 // ─────────────────────────────────────
 void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
+
+    //
     print("Configuring CMakeLists.txt", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     fs::create_directory(p->WebPatchFolder / "Pd4Web");
@@ -288,6 +294,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
     print("Creating externals.cpp file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
     print("\n");
     std::string externalsTemplate = readFile((p->Pd4WebFiles / "externals.in.cpp").string());
@@ -356,6 +363,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
 
     print("\n");
     print("Configuring Build Project", Pd4WebLogLevel::PD4WEB_LOG1);
@@ -371,68 +379,75 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 
 // ─────────────────────────────────────
 void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
-    std::string releaseType = "Release"; // or get from config
-    if (m_Debug) {
-        releaseType = "Debug";
-    }
-    std::string configure = m_Emconfigure;
-    std::string make = m_Emmake;
-    if (m_CleanBuild) {
-        fs::remove_all(p->WebPatchFolder / ".build");
+    PD4WEB_LOGGER();
+
+    if (m_Error) {
+        print("There are errors, solve them first!", Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
     }
 
-    fs::create_directory(p->WebPatchFolder / ".build");
+    std::string buildType = m_Debug ? "Debug" : "Release";
+
+    fs::path buildDir = p->WebPatchFolder / ".build";
+    if (m_CleanBuild && fs::exists(buildDir)) {
+        fs::remove_all(buildDir);
+    }
+
+    fs::create_directories(buildDir);
 
 #ifdef _WIN32
-    auto path = (p->WebPatchFolder / ".build").string();
-    DWORD attrs = GetFileAttributes(path.c_str());
+    DWORD attrs = GetFileAttributes(buildDir.string().c_str());
     if (attrs != INVALID_FILE_ATTRIBUTES) {
-        SetFileAttributes(path.c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
+        SetFileAttributes(buildDir.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
     }
 #endif
 
-    // TODO: on windows I need to set this cmake as binary
-    std::vector<std::string> command = {m_Cmake,
-                                        p->WebPatchFolder.string(),
-                                        "-B",
-                                        (p->WebPatchFolder / ".build").string(),
-                                        "-G",
-                                        "Ninja",
-                                        "-DCMAKE_MAKE_PROGRAM=" +
-                                            m_Ninja, // full path to Ninja from emsdk
-                                        "-DPDCMAKE_DIR=Pd4Web/Externals/",
-                                        "-DCMAKE_BUILD_TYPE=" + releaseType,
-                                        "-DEMCONFIGURE=" + configure,
-                                        "-DEMMAKE=" + make,
-                                        "-Wno-dev"};
-    if (m_Error) {
-        print("There is errors, solve then first!");
+    if (!fs::exists(m_Ninja)) {
+        print("Ninja binary not found at: " + m_Ninja, Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
-    int result = execProcess(m_Emcmake, command);
+    // Step 1: Configure with emcmake
+    std::vector<std::string> configureArgs = {
+        m_Cmake,
+        p->WebPatchFolder.string(),
+        "-B", buildDir.string(),
+        "-G", "Ninja",
+        "-DPDCMAKE_DIR=Pd4Web/Externals/",
+        "-DCMAKE_BUILD_TYPE=" + buildType,
+        "-DEMCONFIGURE=" + m_Emconfigure,
+        "-DEMMAKE=" + m_Emmake,
+        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
+        "-Wno-dev"
+    };
+
+    int result = execProcess(m_Emcmake, configureArgs);
     if (result != 0) {
-        print("Configure failed", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
+    // Step 2: Build
     int cpuCount = std::thread::hardware_concurrency();
-    std::vector<std::string> args = {"--build", (p->WebPatchFolder / ".build").string(),
-                                     "-j" + std::to_string(cpuCount), "--target", "pd4web"};
+    std::vector<std::string> buildArgs = {
+        "--build", buildDir.string(),
+        "-j" + std::to_string(cpuCount),
+        "--target", "pd4web"
+    };
 
-    if (m_Error) {
-        print("There is errors, solve then first!");
-        return;
-    }
-    result = execProcess(m_Cmake, args);
+    result = execProcess(m_Cmake, buildArgs);
     if (result != 0) {
         print("Build failed", Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
     }
-    return;
+
+    print("Build completed successfully!", Pd4WebLogLevel::PD4WEB_LOG2);
 }
 
 // ─────────────────────────────────────
 void Pd4Web::createAppManifest(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
+    
     fs::path webpatch = p->WebPatchFolder / "WebPatch";
     std::vector<std::string> fileList;
     for (const auto &entry : fs::directory_iterator(webpatch)) {

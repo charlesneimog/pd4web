@@ -12,12 +12,14 @@ bool Pd4Web::init() {
     if (m_Pd4WebRoot.back() != '/') {
         m_Pd4WebRoot += "/";
     }
-
     print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
+
+    // libgit2
     git_libgit2_init();
+
+    // libtree-sitter
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();
-
     ts_parser_set_language(m_cppParser, tree_sitter_cpp());
     ts_parser_set_language(m_cParser, tree_sitter_c());
 
@@ -28,9 +30,17 @@ bool Pd4Web::init() {
         return false;
     }
 
+    // clone pure-data
     print("Checking pure-data", Pd4WebLogLevel::PD4WEB_LOG2);
     ok = gitClone("https://github.com/pure-data/pure-data.git", "pure-data", PUREDATA_VERSION);
     if (!ok) {
+        return false;
+    }
+
+    // clone pd-lua
+    ok = gitClone("https://github.com/agraef/pd-lua.git", "pdlua", "0.12.23");
+    if (!ok) {
+        print("Failed to clone pd-lua", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
@@ -42,19 +52,21 @@ bool Pd4Web::init() {
         return false;
     }
 
+    // install emscripten
+    ok = cmdInstallEmsdk();
+    if (!ok) {
+        return false;
+    }
+
+    // check all paths
     ok = checkAllPaths();
     if (!ok) {
-        ok = cmdInstallEmsdk();
-        if (!ok) {
-            return false;
-        }
-        ok = checkAllPaths();
-        if (!ok) {
-            return false;
-        }
+        return false;
     }
+
     m_Init = true;
     m_Error = false;
+    print("Pd4Web initialized successfully", Pd4WebLogLevel::PD4WEB_LOG1);
 
     return true;
 }

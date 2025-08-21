@@ -2,6 +2,7 @@
 
 // ──────────────────────────────────────────
 static int progress_callback(const git_transfer_progress *stats, void *payload) {
+    PD4WEB_LOGGER();
     if (stats->total_objects == 0)
         return 0;
 
@@ -21,6 +22,7 @@ static int progress_callback(const git_transfer_progress *stats, void *payload) 
 
 // ─────────────────────────────────────
 bool Pd4Web::gitRepoExists(const std::string &path) {
+    PD4WEB_LOGGER();
     struct stat info;
     if (stat(path.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         return false;
@@ -44,6 +46,7 @@ struct SubmoduleFileCheckContext {
 
 // ─────────────────────────────────────
 int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) {
+    PD4WEB_LOGGER();
     auto *ctx = static_cast<SubmoduleFileCheckContext *>(payload);
     fs::path submodulePath = ctx->repoRoot / git_submodule_path(sm);
     fs::path fileAbs = fs::absolute(ctx->filePath);
@@ -57,6 +60,7 @@ int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) 
 
 // ─────────────────────────────────────
 bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath) {
+    PD4WEB_LOGGER();
     git_repository *repo = nullptr;
     if (git_repository_open(&repo, (const char *)repoRoot.c_str()) != 0) {
         return false;
@@ -69,12 +73,14 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
 
 // ─────────────────────────────────────
 bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
+    PD4WEB_LOGGER();
     std::string path = m_Pd4WebRoot + gitFolder;
     if (gitRepoExists(path)) {
         gitCheckout(url, gitFolder, tag);
         return true;
     }
 
+    print("Cloning " + url + "... This may take a while.", Pd4WebLogLevel::PD4WEB_LOG2);
     git_repository *repo = nullptr;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
@@ -142,6 +148,7 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
 
 // ─────────────────────────────────────
 bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
+    PD4WEB_LOGGER();
     std::string path = m_Pd4WebRoot + gitFolder;
 
     git_repository *repo = nullptr;
@@ -231,6 +238,7 @@ bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
 
 // ─────────────────────────────────────
 bool Pd4Web::gitCheckout(std::string git, std::string gitFolder, std::string tag) {
+    PD4WEB_LOGGER();
 
     std::string path = m_Pd4WebRoot + gitFolder;
     git_repository *repo = nullptr;

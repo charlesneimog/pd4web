@@ -1,5 +1,13 @@
 #pragma once
 
+/* 
+    TODO: Update template files
+    TODO: Implement support to templates
+    TODO: Check Windows compatibility
+    TODO: Check MacOS compatibility
+*/
+
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -30,6 +38,30 @@ const TSLanguage *tree_sitter_c(void);
 using json = nlohmann::json;
 using YamlNode = ::fkyaml::v0_4_2::basic_node<>;
 namespace fs = std::filesystem;
+
+// ──────────────────────────────────────────
+class Pd4WebLogger {
+  public:
+    Pd4WebLogger(const char *name){
+        m_Name = name;
+        std::cout << "[Enter] " << name << std::endl;
+    }
+    ~Pd4WebLogger() {
+        std::cout << "[Exit] " << m_Name << std::endl;
+    }
+private:
+    std::string m_Name;
+};
+
+//#define PD4WEB_LOGGER_ENABLED
+#if defined(PD4WEB_LOGGER_ENABLED)
+#define PD4WEB_LOGGER() \
+    Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
+#else
+#define PD4WEB_LOGGER() \
+    do {} while(0)
+#endif
+
 
 // ──────────────────────────────────────────
 enum class Pd4WebLogLevel {
@@ -173,9 +205,12 @@ class Pd4Web {
         m_PrintCallback = cb;
     }
 
+    void serverPatch(bool server = false);
+
   private:
     bool m_Init;
     bool m_Error;
+
     std::string m_Pd4WebRoot;   // TODO: is fs::path
     std::string m_OutputFolder; // TODO: is fs::path
     fs::path m_Pd4WebFiles;
@@ -211,6 +246,7 @@ class Pd4Web {
     bool initPaths();
     std::string getEmsdkPath();
     bool checkAllPaths();
+    bool getNinja();
     bool getCmakeBinary();
     std::string m_Cmake;
     std::string m_EmsdkInstaller;
@@ -219,6 +255,7 @@ class Pd4Web {
     std::string m_Emconfigure;
     std::string m_Emmake;
     std::string m_Ninja;
+    std::string m_Clang;
 
     // Git
     bool gitRepoExists(const std::string &path);
@@ -276,6 +313,11 @@ class Pd4Web {
     std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     bool findSetupFunction(std::string objName, std::string Lib);
 
+    void processCallExpression(std::string &content,
+                           TSNode node,
+                           std::vector<std::string> &objectNames,
+                           std::vector<std::string> &setupNames,
+                           std::vector<std::string> &setupSignatures);
     void treesitterCheckForSetupFunction(std::string &content, TSNode node,
                                          std::vector<std::string> &objectNames,
                                          std::vector<std::string> &setupNames,

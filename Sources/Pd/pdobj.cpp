@@ -33,6 +33,14 @@ struct Pd4WebDetachedPost {
 static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
     if (strcmp(s->s_name, "patch") == 0) {
         x->pd4web->setPatchFile(atom_getsymbol(av)->s_name);
+
+        // Convert to fs::path for better path handling
+        fs::path patchPath(atom_getsymbol(av)->s_name);
+        if (!fs::exists(patchPath)) {
+            logpost(x, 1, "[pd4web] patch file %s does not exist", atom_getsymbol(av)->s_name);
+            return;
+        }
+        x->pd4web->setOutputFolder(patchPath.parent_path().string());
         logpost(x, 2, "[pd4web] set patch to %s", atom_getsymbol(av)->s_name);
     } else if (strcmp(s->s_name, "memory") == 0) {
         int mem = atom_getint(av);
@@ -68,12 +76,23 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
         x->pd4web->setCleanBuild(clean);
     } else if (strcmp(s->s_name, "verbose") == 0) {
         logpost(x, 2, "[pd4web] not implemented yet!");
+    } else if (strcmp(s->s_name, "server") == 0) {
+        bool server = atom_getint(av) != 0;
+        x->pd4web->serverPatch(server);
+        logpost(x, 2, "[pd4web] server %s", server ? "enabled" : "disabled");
+        if (server) {
+            pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
+        }
+    } else {
+        logpost(x, 1, "[pd4web] unknown option: %s", s->s_name);
     }
 }
 
 // ─────────────────────────────────────
 static void pd4web_compile(Pd4WebObj *x) {
-    std::thread([x]() { x->pd4web->compilePatch(); }).detach();
+    std::thread([x]() { 
+        x->pd4web->compilePatch(); 
+    }).detach();
 }
 
 // ─────────────────────────────────────
@@ -95,6 +114,8 @@ static void pd4web_logcallback(t_pd *obj, void *data) {
 // ─────────────────────────────────────
 static void *pd4web_new() {
     Pd4WebObj *x = (Pd4WebObj *)pd_new(pd4web_class);
+    
+    std::string pd4web_obj_root = std::string(pd4web_class->c_externdir->s_name) + "/Pd4Web/";
 
 #if defined(__APPLE__) || defined(__linux__)
     std::string home = std::getenv("HOME");
@@ -108,7 +129,7 @@ static void *pd4web_new() {
 
     // process
     x->pd4web = new Pd4Web(pd4webHome.string());
-    x->pd4web->setPd4WebFilesFolder("/home/neimog/Documents/Git/pd4web/Sources/Pd4Web");
+    x->pd4web->setPd4WebFilesFolder(pd4web_obj_root);
     x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel color, int level) {
         Pd4WebDetachedPost *d = new Pd4WebDetachedPost();
         d->msg = msg;
@@ -147,6 +168,7 @@ extern "C" void setup_pd4web0x2ecompiler(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("verbose"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("clean"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("gui"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("server"), A_GIMME, 0);
 
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }

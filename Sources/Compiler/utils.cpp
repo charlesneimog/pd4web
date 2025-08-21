@@ -1,47 +1,85 @@
 #include "pd4web_compiler.hpp"
 
+#define BOOST_PROCESS_VERSION 2
 #include <fstream>
 #include <boost/asio.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/v2/stdio.hpp>
+#include <boost/process.hpp>
 #include <iostream>
 
-namespace bp = boost::process::v2;
+namespace bp = boost::process::v2; 
 namespace asio = boost::asio;
 
 // ─────────────────────────────────────
-int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &args) {
-
-    std::ostringstream oss;
-    for (const auto &arg : args) {
-        oss << arg << " ";
+int Pd4Web::execProcess(const std::string& command, std::vector<std::string>& args) {
+    // Log amigável (idealmente com quotes nos args)
+    {
+        std::ostringstream oss;
+        for (const auto& a : args) {
+            // faça quote se precisar
+            oss << a << ' ';
+        }
+        print(command + " " + oss.str());
     }
 
-    std::string fullCommand = command + " " + oss.str();
-    print("\n\n" + fullCommand + "\n\n");
-
     asio::io_context ctx;
-    asio::readable_pipe out{ctx};
-    bp::process proc(ctx, command, args, bp::process_stdio{{}, out, {}});
-    auto buffer = std::make_shared<std::string>();
-    std::function<void()> do_read = [&]() {
-        asio::async_read_until(out, asio::dynamic_buffer(*buffer), '\n',
-                               [&](boost::system::error_code ec, std::size_t n) {
-                                   if (!ec) {
-                                       std::string line(buffer->substr(0, n));
-                                       buffer->erase(0, n);
-                                       if (!line.empty() && line.back() == '\n') {
-                                           line.pop_back();
-                                       }
-                                       print(line);
-                                       do_read();
-                                   }
-                               });
+
+    // RECOMENDADO: clonar ambiente atual e sobrescrever só o necessário
+    // (adapte ao seu bp::environment se suportar)
+    std::unordered_map<bp::environment::key, bp::environment::value> env = {
+        {"CC", m_Emcc},
+        {"CXX", m_Emcc},
+        {"EMSDK", m_Pd4WebRoot + "emsdk"},
+        {"LLVM_ROOT", m_Pd4WebRoot + "emsdk/upstream/bin/"},
+        {"BINARYEN_ROOT", m_Pd4WebRoot + "emsdk/upstream/binaryen/"},
     };
 
-    do_read();
-    ctx.run();
-    proc.wait();
+    boost::asio::readable_pipe out{ctx};
+    boost::asio::readable_pipe err{ctx};
+
+    bp::process proc(
+        ctx,
+        command,
+        args,
+        bp::process_stdio{ .in = {}, .out = out, .err = err },
+        env
+    );
+
+    auto read_loop = [&](boost::asio::readable_pipe& pipe, Pd4WebLogLevel level) {
+        std::array<char, 4096> buf;
+        for (;;) {
+            boost::system::error_code ec;
+            std::size_t n = pipe.read_some(boost::asio::buffer(buf), ec);
+            if (ec == boost::asio::error::eof) break;
+            if (ec) throw boost::system::system_error(ec);
+            if (n == 0) continue;
+
+            std::string_view sv(buf.data(), n);
+            if (sv.back() == '\n') {
+                sv.remove_suffix(1);
+            }
+            if (sv.empty()) continue;
+
+            print(std::string(sv), level);
+        }
+    };
+
+    std::exception_ptr ex_out, ex_err;
+    std::thread t_out([&] {
+        try { read_loop(out, Pd4WebLogLevel::PD4WEB_LOG2); }
+        catch (...) { ex_out = std::current_exception(); }
+    });
+    std::thread t_err([&] {
+        try { read_loop(err, Pd4WebLogLevel::PD4WEB_LOG2); }
+        catch (...) { ex_err = std::current_exception(); }
+    });
+
+    proc.wait();          // espera o processo terminar
+    t_out.join();
+    t_err.join();
+
+    if (ex_out) std::rethrow_exception(ex_out);
+    if (ex_err) std::rethrow_exception(ex_err);
+
     return proc.exit_code();
 }
 
@@ -147,5 +185,38 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
         }
         break;
     }
+    }
+}
+
+// ──────────────────────────────────────────
+void Pd4Web::serverPatch(bool toggle) {
+    static std::unique_ptr<httplib::Server> server;
+
+    if (toggle) {
+        if (!server) {
+            server = std::make_unique<httplib::Server>();
+        }
+
+        std::thread t([this]() {
+            server->set_mount_point("/", m_OutputFolder);
+            server->Get("/", [](const httplib::Request &, httplib::Response &res) {
+                res.set_redirect("/index.html");
+            });
+            server->Get("/stop", [&](const httplib::Request &, httplib::Response &res) {
+                server->stop();
+            });
+            std::string site = "http://localhost:8080";
+            print("Starting server at " + site, Pd4WebLogLevel::PD4WEB_LOG1);
+            if (!server->listen("0.0.0.0", 8080)) {
+                print("Failed to start server at " + site, Pd4WebLogLevel::PD4WEB_ERROR);
+                m_Error = true;
+                return;
+            }
+        });
+        t.detach();
+    } else {
+        httplib::Client client("http://localhost:8080");
+        auto res = client.Get("/stop");
+        server.reset(); // libera a memória
     }
 }

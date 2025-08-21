@@ -107,11 +107,7 @@ cpmaddpackage(
   EXCLUDE_FROM_ALL
   YES)
 
-# Include
-
-if(tree-sitter_ADDED)
-  include_directories("${tree-sitter_SOURCE_DIR}/lib/include")
-endif()
+cpmaddpackage("gh:libarchive/libarchive#v3.8.1")
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
@@ -127,7 +123,7 @@ add_library(
   "${CMAKE_CURRENT_SOURCE_DIR}/builder.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/pd4web_compiler.cpp")
 
-target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR})
+target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR} "${tree-sitter_SOURCE_DIR}/lib/include")
 target_link_libraries(
   pd4web_compiler
   PUBLIC tree-sitter
@@ -141,7 +137,9 @@ target_link_libraries(
          libgit2package
          OpenSSL::SSL
          OpenSSL::Crypto
-         Boost::process)
+         Boost::process
+         archive_static
+         )
 
 target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
 
