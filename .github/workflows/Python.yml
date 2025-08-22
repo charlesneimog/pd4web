@@ -2,8 +2,6 @@ name: Pd4web Compiler
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main, dev]
 
 jobs:
   pd4web-compiler:

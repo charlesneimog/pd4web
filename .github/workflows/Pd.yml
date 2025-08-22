@@ -1,0 +1,79 @@
+---
+name: PureData Pd4web Compiler
+on:
+  workflow_dispatch:
+env:
+  BUILD_TYPE: Release
+  CMAKE_BUILD_PARALLEL_LEVEL: 4
+jobs:
+  pd4web-compiler:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Setup ccache (macOS/Linux)
+        if: runner.os != 'Windows'
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: ${{ runner.os }}-pd4web
+      - name: Setup sccache (Windows)
+        if: runner.os == 'Windows'
+        uses: mozilla-actions/sccache-action@v0.0.3
+      - name: Install NASM (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/setup-nasm@v1
+      - name: Install Perl and Ninja (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          choco install strawberryperl -y
+          choco install ninja -y
+          perl -v
+          nasm -v
+          ninja --version
+          where nasm
+          where perl
+          where ninja
+      - name: Ensure winget available (Windows)
+        if: runner.os == 'Windows'
+        uses: Cyberboss/install-winget@v1
+      - name: Install PureData for Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
+      - name: Install PureData for macOS
+        if: runner.os == 'macOS'
+        run: |
+          brew update
+          brew install --cask pd
+      - name: Install PureData for Linux
+        if: runner.os == 'Linux'
+        run: |
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:pure-data/pure-data -y || true
+          sudo apt-get update
+          sudo apt-get install -y puredata
+      - name: Configure (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      - name: Configure (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+      - name: Build
+        run: |
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+      - name: Install
+        run: |-
+          cmake --install build --config ${{ env.BUILD_TYPE }}
