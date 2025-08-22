@@ -176,7 +176,6 @@ add_library(
   "${CMAKE_CURRENT_SOURCE_DIR}/patch.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/utils.cpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/cmd.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/builder.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/pd4web_compiler.cpp")
 

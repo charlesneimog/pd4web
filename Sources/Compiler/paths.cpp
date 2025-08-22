@@ -401,8 +401,6 @@ bool Pd4Web::getCmakeBinary() {
     auto res = cli.Get(url.c_str());
     
     if (!res) {
-        // res is nullptr, so res.error() is valid to call on the object, not on res itself
-        auto err = cli.get_openssl_verify_result(); // or use res.error() if using latest cpp-httplib
         print("Failed to connect to GitHub to download CMake binary. Error code: " +
                   std::to_string(static_cast<int>(res.error())),
               Pd4WebLogLevel::PD4WEB_ERROR);
@@ -420,9 +418,6 @@ bool Pd4Web::getCmakeBinary() {
     ofs << res->body;
     ofs.close();
 
-#if defined(_WIN32)
-   #error "CMake binary extraction on Windows is not implemented yet."
-#else
     std::string destDir = m_Pd4WebRoot + "cmake";
     if (!fs::exists(destDir)) {
         fs::create_directories(destDir);
@@ -442,14 +437,13 @@ bool Pd4Web::getCmakeBinary() {
     }
 
     return true;
-#endif
 }
 
 // ─────────────────────────────────────
 std::string Pd4Web::getEmsdkPath() {
     PD4WEB_LOGGER();
     std::string path = m_Pd4WebRoot + "emsdk/emsdk";
-#ifdef _WIN32
+#if defined(_WIN32)
     path += ".bat";
 #endif
     return path;

@@ -391,7 +391,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 
     fs::create_directories(buildDir);
 
-#ifdef _WIN32
+#if defined(_WIN32)
     DWORD attrs = GetFileAttributes(buildDir.string().c_str());
     if (attrs != INVALID_FILE_ATTRIBUTES) {
         SetFileAttributes(buildDir.string().c_str(), attrs | FILE_ATTRIBUTE_HIDDEN);
