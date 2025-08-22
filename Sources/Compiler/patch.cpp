@@ -40,8 +40,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         return false;
     }
 
-    std::vector<std::string> Line;
-    Line = pl.OriginalTokens;
+    std::vector<std::string> Line = pl.OriginalTokens;
     if (Line.size() < 2) {
         return true;
     }
@@ -50,6 +49,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         m_inArray = false;
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
+            // Reative o CanvasLevel se você precisa que a troca de GUI funcione
             p->CanvasLevel--;
         } else if (Line[1] == "declare") {
             pl.Type = PatchLine::DECLARE;
@@ -77,13 +77,13 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
     } else if (m_inArray) {
         // Nothing To-Do;
     } else if (Line[0] == "#N") {
+        // Reative o CanvasLevel se você precisa que a troca de GUI funcione
         p->CanvasLevel++;
     } else if (Line[0][0] == '#') {
         print("Class unknown " + Line[0] + " in " + p->PatchFile.string(),
               Pd4WebLogLevel::PD4WEB_ERROR);
     } else {
-        // print("Class unknown " + Line[0] + " in " + p->PatchFile.string(),
-        // Pd4WebLogLevel::PD4WEB_ERROR);
+        // Unknown, ignore
     }
 
     return true;
@@ -309,14 +309,15 @@ void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
 // ─────────────────────────────────────
 void Pd4Web::isPdObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     PD4WEB_LOGGER();
+
     bool isPdObj = std::find(m_PdObjects.begin(), m_PdObjects.end(), pl.Name) != m_PdObjects.end();
-    if (!isPdObj) {
+    if (!isPdObj || !pl.Lib.empty()) {
         pl.isExternal = true;
         pl.Found = false;
         pl.isLuaExternal = false;
         return;
     }
-
+    // is not pd object, but can be a number or special objects
     pl.isExternal = false;
     if (isNumber(pl.Name)) {
         pl.Found = true;
@@ -354,10 +355,6 @@ void Pd4Web::isMidiObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
 // ─────────────────────────────────────
 std::string Pd4Web::getObjLib(std::string &objToken) {
     PD4WEB_LOGGER();
-    if (objToken == "/" || objToken == "//") {
-        return "";
-    }
-
     size_t slashPos = objToken.find_last_of('/');
     if (slashPos != std::string::npos) {
         return objToken.substr(0, slashPos);
@@ -369,22 +366,19 @@ std::string Pd4Web::getObjLib(std::string &objToken) {
 // ─────────────────────────────────────
 std::string Pd4Web::getObjName(std::string &objToken) {
     PD4WEB_LOGGER();
-    if (objToken == "/" || objToken == "//" || objToken == "/;") {
-        if (!objToken.empty() && objToken.back() == ';') {
-            objToken.pop_back();
-        }
-        return objToken;
-    }
 
     std::string Obj = objToken;
     Obj.erase(std::remove(Obj.begin(), Obj.end(), ','), Obj.end());
     Obj.erase(std::remove(Obj.begin(), Obj.end(), ';'), Obj.end());
 
+    if (Obj == "/" || Obj == "/~") {
+        return Obj;
+    }
+
     size_t slashPos = Obj.find_last_of('/');
     if (slashPos != std::string::npos) {
         Obj = Obj.substr(slashPos + 1);
     }
-
     return Obj;
 }
 
@@ -600,75 +594,88 @@ bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
     PD4WEB_LOGGER();
 
-    // Strip a potential "lib/" prefix while preserving a trailing ';' if present.
     auto strip_lib_preserve_semicolon = [](std::string s) -> std::string {
         bool had_semicolon = !s.empty() && s.back() == ';';
-        if (had_semicolon) s.pop_back();
-
+        if (had_semicolon) {
+            s.pop_back();
+        }
         size_t pos = s.rfind('/');
-        if (pos != std::string::npos) s = s.substr(pos + 1);
-
-        if (had_semicolon) s.push_back(';');
+        if (pos != std::string::npos) {
+            s = s.substr(pos + 1);
+        }
+        if (had_semicolon) {
+            s.push_back(';');
+        }
         return s;
     };
 
-    // Optionally use this if you need a version that never carries a semicolon
     auto strip_lib = [](std::string s) -> std::string {
         size_t pos = s.rfind('/');
-        if (pos != std::string::npos) s = s.substr(pos + 1);
+        if (pos != std::string::npos) {
+            s = s.substr(pos + 1);
+        }
         return s;
     };
 
     auto is_number = [](const std::string &s) {
-        if (s.empty()) return false;
+        if (s.empty()) {
+            return false;
+        }
         size_t start = (s[0] == '-' ? 1 : 0);
-        if (start == s.size()) return false; // was just "-"
+        if (start == s.size()) {
+            return false;
+        }
         return std::all_of(s.begin() + start, s.end(),
-                           [](unsigned char c){ return std::isdigit(c); });
+                           [](unsigned char c) { return std::isdigit(c); });
     };
 
     std::string editPatch;
 
     for (auto &pl : p->PatchLines) {
-        // Normalize object name token to strip any "lib/" prefix (e.g., else/message;) while keeping a trailing ';'.
-        if (pl.OriginalTokens.size() > 4) {
+        // 1) Remover prefixo de lib em '#X obj' quando houver '/' no token do objeto,
+        //    independente de pl.isExternal/pl.isAbstraction. Exceção: 'clone' (tratado abaixo).
+        if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
             auto &objNameTok = pl.OriginalTokens[4];
-            if (pl.isExternal) {
-                print("Editing external object '" + objNameTok + "'",
-                      Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
-                objNameTok = strip_lib_preserve_semicolon(objNameTok);
-            } else if (pl.isAbstraction && pl.Name != "clone") {
-                print("Editing Abstraction object '" + objNameTok + "'",
-                      Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
-                objNameTok = strip_lib_preserve_semicolon(objNameTok);
-            } else if (pl.Name == "clone") {
-                print("Editing clone object '" + objNameTok + "'",
-                      Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
-                static const std::unordered_set<std::string> reserved{
-                    "#X","obj","clone","-do","-di","-x","-s"
-                };
+
+            if (pl.Name == "clone") {
+                // 2) Tratamento especial para clone: remover prefixos dos tokens que representam
+                //    o nome da abstração, preservando ';' e ignorando flags e números.
+                print("Editing clone object from '" + objNameTok + "'");
+                static const std::unordered_set<std::string> reserved{"#X",  "obj", "clone", "-do",
+                                                                      "-di", "-x",  "-s",    "f"};
                 for (std::size_t i = 0; i < pl.OriginalTokens.size(); ++i) {
                     auto &tok = pl.OriginalTokens[i];
                     if (reserved.count(tok) == 0 && !is_number(tok)) {
+                        std::string before = tok;
                         tok = strip_lib_preserve_semicolon(tok);
+                        if (before != tok) {
+                            print("  clone arg: '" + before + "' -> '" + tok + "'",
+                                  Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+                        }
                     }
+                }
+            } else {
+                // 3) Para qualquer outro objeto, se houver prefixo 'lib/', remova.
+                if (objNameTok.find('/') != std::string::npos) {
+                    std::string oldTok = objNameTok;
+                    objNameTok = strip_lib_preserve_semicolon(objNameTok);
+                    // Corrige ordem do log: de velho -> novo
+                    print("Editing external/abstraction object: '" + oldTok + "' -> '" +
+                              objNameTok + "'",
+                          Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
                 }
             }
         }
 
-        // check and replace gui objects
+        // 4) Substituição de objetos de GUI no canvas raiz do patch principal
         if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
-            static const std::unordered_set<std::string> guiObjs{
-                "vsl","hsl","vradio","hradio","tgl","bng","keyboard","vu"
-            };
+            static const std::unordered_set<std::string> guiObjs{"vsl", "hsl", "vradio",   "hradio",
+                                                                 "tgl", "bng", "keyboard", "vu"};
 
-            // Determine base object name (no library prefix, no semicolon)
             std::string baseName = strip_lib(pl.Name);
             if (guiObjs.count(baseName) && mainPatch && p->CanvasLevel == 1) {
-                // Preserve a trailing semicolon if present on the original token
                 const auto &oldTok = pl.OriginalTokens[4];
                 bool hadSemi = !oldTok.empty() && oldTok.back() == ';';
-
                 pl.OriginalTokens[4] = "l." + baseName + (hadSemi ? ";" : "");
                 p->PdLua = true;
                 p->LuaGuiObjects = true;
@@ -677,30 +684,29 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             }
         }
 
-        for (const auto &token : pl.OriginalTokens) editPatch += token + " ";
+        for (const auto &token : pl.OriginalTokens) {
+            editPatch += token + " ";
+        }
         editPatch += "\n";
     }
 
-    // write file(s)
     if (mainPatch) {
         print("\n");
-        print("Saving " + p->PatchFile.filename().string() + " as index.pd", Pd4WebLogLevel::PD4WEB_LOG1);
+        print("Saving " + p->PatchFile.filename().string() + " as index.pd",
+              Pd4WebLogLevel::PD4WEB_LOG1);
         writeFile((p->WebPatchFolder / "WebPatch" / "index.pd").string(), editPatch);
     } else {
         print("Creating modified version of " + p->PatchFile.filename().string(),
               Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
-        fs::create_directories(p->WebPatchFolder / ".tmp"); // handles existing dir
+        fs::create_directories(p->WebPatchFolder / ".tmp");
         writeFile((p->WebPatchFolder / ".tmp" / p->PatchFile.filename()).string(), editPatch);
     }
-
-    print("Stop processing patch " + p->PatchFile.filename().string(),
-          Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p) {
     PD4WEB_LOGGER();
-    
+
     for (auto &c : f->Childs) {
         if (c->PatchFile == p->PatchFile) {
             return true;
@@ -752,6 +758,10 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         if (pl.isExternal || pl.isAbstraction) {
             p->Father->ExternalPatchLines.push_back(pl);
         }
+    }
+
+    for (auto &pl : p->ExternalPatchLines) {
+        p->Father->ExternalPatchLines.push_back(pl);
     }
 
     updatePatchFile(p);
@@ -834,8 +844,9 @@ bool Pd4Web::compilePatch() {
     for (PatchLine &PatchLine : p->PatchLines) {
         ok = processLine(p, PatchLine);
         if (!ok) {
-            print("Failed to process Patch of line " + std::to_string(i) + ": " + p->PatchFile.string(), Pd4WebLogLevel::PD4WEB_ERROR,
-                  p->printLevel + 1);
+            print("Failed to process Patch of line " + std::to_string(i) + ": " +
+                      p->PatchFile.string(),
+                  Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
             return false;
         }
 

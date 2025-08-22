@@ -8,10 +8,6 @@
 #include <boost/process.hpp>
 #include <boost/asio.hpp>
 
-#include <boost/asio.hpp>
-#include <boost/process/v2/process.hpp>
-#include <boost/process/v2/stdio.hpp>
-
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
                            "set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)\n"
@@ -240,7 +236,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     }
 
     for (auto &pl : p->ExternalPatchLines) {
-        if (pl.isExternal && !pl.isAbstraction) {
+        if (pl.isExternal) {
             std::string str = pl.Name;
             size_t pos = 0;
             while ((pos = str.find('~', pos)) != std::string::npos) {
@@ -408,18 +404,18 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 1: Configure with emcmake
-    std::vector<std::string> configureArgs = {
-        m_Cmake,
-        p->WebPatchFolder.string(),
-        "-B", buildDir.string(),
-        "-G", "Ninja",
-        "-DPDCMAKE_DIR=Pd4Web/Externals/",
-        "-DCMAKE_BUILD_TYPE=" + buildType,
-        "-DEMCONFIGURE=" + m_Emconfigure,
-        "-DEMMAKE=" + m_Emmake,
-        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
-        "-Wno-dev"
-    };
+    std::vector<std::string> configureArgs = {m_Cmake,
+                                              p->WebPatchFolder.string(),
+                                              "-B",
+                                              buildDir.string(),
+                                              "-G",
+                                              "Ninja",
+                                              "-DPDCMAKE_DIR=Pd4Web/Externals/",
+                                              "-DCMAKE_BUILD_TYPE=" + buildType,
+                                              "-DEMCONFIGURE=" + m_Emconfigure,
+                                              "-DEMMAKE=" + m_Emmake,
+                                              "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
+                                              "-Wno-dev"};
 
     int result = execProcess(m_Emcmake, configureArgs);
     if (result != 0) {
@@ -429,11 +425,8 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 
     // Step 2: Build
     int cpuCount = std::thread::hardware_concurrency();
-    std::vector<std::string> buildArgs = {
-        "--build", buildDir.string(),
-        "-j" + std::to_string(cpuCount),
-        "--target", "pd4web"
-    };
+    std::vector<std::string> buildArgs = {"--build", buildDir.string(),
+                                          "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
     result = execProcess(m_Cmake, buildArgs);
     if (result != 0) {
@@ -447,7 +440,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 // ─────────────────────────────────────
 void Pd4Web::createAppManifest(std::shared_ptr<Patch> &p) {
     PD4WEB_LOGGER();
-    
+
     fs::path webpatch = p->WebPatchFolder / "WebPatch";
     std::vector<std::string> fileList;
     for (const auto &entry : fs::directory_iterator(webpatch)) {

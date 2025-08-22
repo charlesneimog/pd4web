@@ -1,7 +1,7 @@
 #include "pd4web_compiler.hpp"
 
 #include <fstream>
-#include <stack> 
+#include <stack>
 
 // ─────────────────────────────────────
 bool Pd4Web::libIsSupported(std::string libName) {
@@ -159,7 +159,7 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
                 return keys;
             }
         }
-    } 
+    }
 
     // std::string completPath = m_Pd4WebRoot + Lib;
     fs::path completPath = p->Pd4WebRoot / Lib;
@@ -204,9 +204,9 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
 
 // ─────────────────────────────────────
 void treesitterCheckForSetupFunction(std::string &content, TSNode node,
-                                             std::vector<std::string> &objectNames,
-                                             std::vector<std::string> &setupNames,
-                                             std::vector<std::string> &setupSignatures) {
+                                     std::vector<std::string> &objectNames,
+                                     std::vector<std::string> &setupNames,
+                                     std::vector<std::string> &setupSignatures) {
     PD4WEB_LOGGER();
     if (ts_node_is_null(node)) {
         return;
@@ -334,65 +334,89 @@ void treesitterCheckForSetupFunction(std::string &content, TSNode node,
                                         setupNames, setupSignatures);
     }
 }
-    
+
 // ─────────────────────────────────────
-void Pd4Web::processCallExpression(std::string &content,
-                           TSNode node,
-                           std::vector<std::string> &objectNames,
-                           std::vector<std::string> &setupNames,
-                           std::vector<std::string> &setupSignatures) {
+void Pd4Web::processCallExpression(std::string &content, TSNode node,
+                                   std::vector<std::string> &objectNames,
+                                   std::vector<std::string> &setupNames,
+                                   std::vector<std::string> &setupSignatures) {
     TSNode func_node = ts_node_child_by_field_name(node, "function", 8);
-    if (ts_node_is_null(func_node)) return;
+    if (ts_node_is_null(func_node)) {
+        return;
+    }
 
     std::string func_text(content.data() + ts_node_start_byte(func_node),
                           ts_node_end_byte(func_node) - ts_node_start_byte(func_node));
 
     bool is_class_new = func_text.find("class_new") != std::string::npos;
     bool is_class_addcreator = func_text.find("class_addcreator") != std::string::npos;
-    if (!is_class_new && !is_class_addcreator) return;
+    if (!is_class_new && !is_class_addcreator) {
+        return;
+    }
 
     TSNode args_node = ts_node_child_by_field_name(node, "arguments", 9);
-    if (ts_node_is_null(args_node)) return;
+    if (ts_node_is_null(args_node)) {
+        return;
+    }
 
     uint32_t args_count = ts_node_named_child_count(args_node);
     uint32_t target_arg_index = is_class_new ? 0 : 1;
-    if (args_count <= target_arg_index) return;
+    if (args_count <= target_arg_index) {
+        return;
+    }
 
     TSNode target_arg = ts_node_named_child(args_node, target_arg_index);
-    if (strcmp(ts_node_type(target_arg), "call_expression") != 0) return;
+    if (strcmp(ts_node_type(target_arg), "call_expression") != 0) {
+        return;
+    }
 
     TSNode inner_func = ts_node_child_by_field_name(target_arg, "function", 8);
-    if (ts_node_is_null(inner_func)) return;
+    if (ts_node_is_null(inner_func)) {
+        return;
+    }
 
     std::string inner_func_text(content.data() + ts_node_start_byte(inner_func),
                                 ts_node_end_byte(inner_func) - ts_node_start_byte(inner_func));
-    if (inner_func_text != "gensym") return;
+    if (inner_func_text != "gensym") {
+        return;
+    }
 
     TSNode gensym_args = ts_node_child_by_field_name(target_arg, "arguments", 9);
-    if (ts_node_named_child_count(gensym_args) < 1) return;
+    if (ts_node_named_child_count(gensym_args) < 1) {
+        return;
+    }
 
     TSNode string_arg = ts_node_named_child(gensym_args, 0);
-    if (strcmp(ts_node_type(string_arg), "string_literal") != 0) return;
+    if (strcmp(ts_node_type(string_arg), "string_literal") != 0) {
+        return;
+    }
 
     std::string object_name(content.data() + ts_node_start_byte(string_arg) + 1,
                             ts_node_end_byte(string_arg) - ts_node_start_byte(string_arg) - 2);
 
-    if (std::find(objectNames.begin(), objectNames.end(), object_name) != objectNames.end()) return;
+    if (std::find(objectNames.begin(), objectNames.end(), object_name) != objectNames.end()) {
+        return;
+    }
     objectNames.push_back(object_name);
 
     // Find parent function_definition
     TSNode current = node;
     while (!ts_node_is_null(current)) {
-        if (strcmp(ts_node_type(current), "function_definition") == 0) break;
+        if (strcmp(ts_node_type(current), "function_definition") == 0) {
+            break;
+        }
         current = ts_node_parent(current);
     }
-    if (ts_node_is_null(current)) return;
+    if (ts_node_is_null(current)) {
+        return;
+    }
 
     // Extract function name
     std::string func_name;
     TSNode declarator = ts_node_child_by_field_name(current, "declarator", strlen("declarator"));
     if (!ts_node_is_null(declarator)) {
-        TSNode identifier = ts_node_child_by_field_name(declarator, "identifier", strlen("identifier"));
+        TSNode identifier =
+            ts_node_child_by_field_name(declarator, "identifier", strlen("identifier"));
         if (!ts_node_is_null(identifier)) {
             func_name.assign(content.data() + ts_node_start_byte(identifier),
                              ts_node_end_byte(identifier) - ts_node_start_byte(identifier));
@@ -439,7 +463,9 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode root,
         TSNode node = stack.top();
         stack.pop();
 
-        if (ts_node_is_null(node)) continue;
+        if (ts_node_is_null(node)) {
+            continue;
+        }
 
         if (strcmp(ts_node_type(node), "call_expression") == 0) {
             processCallExpression(content, node, objectNames, setupNames, setupSignatures);
@@ -499,18 +525,20 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
 
     for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
         // Skip non-regular files early (symlinks / directories)
-         count++;
+        count++;
         if (count % 100 == 0) {
             print("Processed " + std::to_string(count) + " files in library '" + Lib + "'",
                   Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
         }
 
-        if (!entry.is_regular_file())
+        if (!entry.is_regular_file()) {
             continue;
+        }
 
         // Skip git submodules (keeps behaviour from original)
-        if (isFileFromGitSubmodule(completPath.string(), entry.path()))
+        if (isFileFromGitSubmodule(completPath.string(), entry.path())) {
             continue;
+        }
 
         fs::path pth = entry.path();
         std::string ext = pth.extension().string();
@@ -537,14 +565,14 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
         }
 
         std::string content;
-        content.assign((std::istreambuf_iterator<char>(inFile)),
-                       std::istreambuf_iterator<char>());
+        content.assign((std::istreambuf_iterator<char>(inFile)), std::istreambuf_iterator<char>());
 
         // Guard parse call: ts_parser_parse_string may return nullptr on failure
         TSTree *tree = nullptr;
         try {
             // Cast length to uint32_t to match Tree-sitter C API
-            tree = ts_parser_parse_string(parser, nullptr, content.c_str(), static_cast<uint32_t>(content.size()));
+            tree = ts_parser_parse_string(parser, nullptr, content.c_str(),
+                                          static_cast<uint32_t>(content.size()));
         } catch (...) {
             tree = nullptr;
         }
@@ -556,18 +584,21 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
 
         TSNode root_node = ts_tree_root_node(tree);
         // treesitterCheckForSetupFunction likely expects a valid root node
-        treesitterCheckForSetupFunction(content, root_node, objectNames, setupNames, setupSignatures);
+        treesitterCheckForSetupFunction(content, root_node, objectNames, setupNames,
+                                        setupSignatures);
 
         ts_tree_delete(tree);
     }
 
     // Ensure sizes match before writing back to JSON
-    if (objectNames.size() == setupSignatures.size() && setupSignatures.size() == setupNames.size()) {
+    if (objectNames.size() == setupSignatures.size() &&
+        setupSignatures.size() == setupNames.size()) {
         for (size_t i = 0; i < objectNames.size(); ++i) {
             full_json[Lib]["objects"][objectNames[i]] = {setupSignatures[i], setupNames[i]};
         }
     } else {
-        print("Mismatched vector sizes when collecting objects; aborting JSON update", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Mismatched vector sizes when collecting objects; aborting JSON update",
+              Pd4WebLogLevel::PD4WEB_ERROR);
         p->ExternalObjectsJson = full_json;
         return objectNames;
     }
@@ -579,10 +610,12 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
             out << full_json.dump(2);
             out.close();
         } else {
-            print("Unable to open objects.json for writing: " + jsonFile, Pd4WebLogLevel::PD4WEB_ERROR);
+            print("Unable to open objects.json for writing: " + jsonFile,
+                  Pd4WebLogLevel::PD4WEB_ERROR);
         }
     } catch (const std::exception &e) {
-        print(std::string("Failed writing objects.json: ") + e.what(), Pd4WebLogLevel::PD4WEB_ERROR);
+        print(std::string("Failed writing objects.json: ") + e.what(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
     }
 
     p->ExternalObjectsJson = full_json;

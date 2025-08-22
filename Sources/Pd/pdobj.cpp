@@ -33,8 +33,6 @@ struct Pd4WebDetachedPost {
 static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
     if (strcmp(s->s_name, "patch") == 0) {
         x->pd4web->setPatchFile(atom_getsymbol(av)->s_name);
-
-        // Convert to fs::path for better path handling
         fs::path patchPath(atom_getsymbol(av)->s_name);
         if (!fs::exists(patchPath)) {
             logpost(x, 1, "[pd4web] patch file %s does not exist", atom_getsymbol(av)->s_name);
@@ -46,7 +44,7 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
         int mem = atom_getint(av);
         x->pd4web->setInitialMemory(mem);
         logpost(x, 2, "[pd4web] set memory to %d", mem);
-    } else if (strcmp(s->s_name, "zoom") == 0) {
+    } else if (strcmp(s->s_name, "patchzoom") == 0) {
         int zoom = atom_getint(av);
         x->pd4web->setPatchZoom(zoom);
         logpost(x, 2, "[pd4web] set zoom to %d", zoom);
@@ -90,9 +88,7 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
 
 // ─────────────────────────────────────
 static void pd4web_compile(Pd4WebObj *x) {
-    std::thread([x]() { 
-        x->pd4web->compilePatch(); 
-    }).detach();
+    std::thread([x]() { x->pd4web->compilePatch(); }).detach();
 }
 
 // ─────────────────────────────────────
@@ -114,13 +110,11 @@ static void pd4web_logcallback(t_pd *obj, void *data) {
 // ─────────────────────────────────────
 static void *pd4web_new() {
     Pd4WebObj *x = (Pd4WebObj *)pd_new(pd4web_class);
-    
     std::string pd4web_obj_root = std::string(pd4web_class->c_externdir->s_name) + "/Pd4Web/";
 
 #if defined(__APPLE__) || defined(__linux__)
     std::string home = std::getenv("HOME");
     std::filesystem::path pd4webHome = std::filesystem::path(home) / ".local" / "share" / "pd4web";
-    std::filesystem::create_directories(pd4webHome);
 #else
     std::string appdata = std::getenv("APPDATA");
     std::filesystem::path pd4webHome = std::filesystem::path(appdata) / "pd4web";
@@ -142,7 +136,7 @@ static void *pd4web_new() {
     // pd4web config
     x->cancel = false;
     x->verbose = false;
-    x->memory = 32;
+    x->memory = 256;
     x->gui = true;
     x->zoom = 2;
     x->patch_template = 0;
@@ -150,7 +144,9 @@ static void *pd4web_new() {
 }
 
 // ─────────────────────────────────────
-static void pd4web_free(Pd4WebObj *x) {}
+static void pd4web_free(Pd4WebObj *x) {
+    delete x->pd4web;
+}
 
 // ─────────────────────────────────────
 extern "C" void setup_pd4web0x2ecompiler(void) {
@@ -160,7 +156,7 @@ extern "C" void setup_pd4web0x2ecompiler(void) {
 
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("patch"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("memory"), A_GIMME, 0);
-    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("zoom"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("patchzoom"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("output"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("template"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("debug"), A_GIMME, 0);
