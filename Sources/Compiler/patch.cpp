@@ -805,6 +805,7 @@ bool Pd4Web::compilePatch() {
     p->Zoom = m_PatchZoom;
     p->PdVersion = m_PdVersion;
     p->ProcessedSubpatches.clear();
+    p->MemorySize = m_Memory;
 
     if (m_Pd4WebFiles == "") {
         print("m_Pd4WebFiles not set", Pd4WebLogLevel::PD4WEB_ERROR);

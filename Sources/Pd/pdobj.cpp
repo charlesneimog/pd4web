@@ -95,6 +95,7 @@ static void pd4web_compile(Pd4WebObj *x) {
 static void pd4web_logcallback(t_pd *obj, void *data) {
     Pd4WebDetachedPost *d = (Pd4WebDetachedPost *)data;
 
+    std::cout << d->msg << std::endl;
     if (d->loglevel == Pd4WebLogLevel::PD4WEB_ERROR) {
         logpost(obj, 1, "[pd4web] %s", d->msg.c_str());
     } else if (d->loglevel != Pd4WebLogLevel::PD4WEB_VERBOSE) {
@@ -111,15 +112,10 @@ static void pd4web_logcallback(t_pd *obj, void *data) {
 static void *pd4web_new() {
     Pd4WebObj *x = (Pd4WebObj *)pd_new(pd4web_class);
     std::string pd4web_obj_root = std::string(pd4web_class->c_externdir->s_name) + "/Pd4Web/";
-
-#if defined(__APPLE__) || defined(__linux__)
-    std::string home = std::getenv("HOME");
-    std::filesystem::path pd4webHome = std::filesystem::path(home) / ".local" / "share" / "pd4web";
-#else
-    std::string appdata = std::getenv("APPDATA");
-    std::filesystem::path pd4webHome = std::filesystem::path(appdata) / "pd4web";
-    std::filesystem::create_directories(pd4webHome);
-#endif
+    fs::path pd4web_path = std::string(pd4web_class->c_externdir->s_name);
+    fs::path pd4webHome = pd4web_path / "compilerdata";
+    fs::create_directories(pd4webHome);
+    std::cout << pd4webHome.string() << std::endl;
 
     // process
     x->pd4web = new Pd4Web(pd4webHome.string());
@@ -138,13 +134,22 @@ static void *pd4web_new() {
     x->verbose = false;
     x->memory = 256;
     x->gui = true;
-    x->zoom = 2;
+    x->zoom = 1;
     x->patch_template = 0;
+
+    x->pd4web->setInitialMemory(x->memory);
+    x->pd4web->setPatchZoom(x->zoom);
+    x->pd4web->setTemplateId(x->patch_template);
+    x->pd4web->setDebugMode(false);
+    x->pd4web->setFailFast(false);
+    x->pd4web->setCleanBuild(true);
+    
     return x;
 }
 
 // ─────────────────────────────────────
 static void pd4web_free(Pd4WebObj *x) {
+    x->pd4web->serverPatch(false);
     delete x->pd4web;
 }
 

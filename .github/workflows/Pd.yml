@@ -1,6 +1,9 @@
-name: PureData Pd4web Compiler
+---
+name: PureData Pd4Web Compiler
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
 env:
   BUILD_TYPE: Release
   CMAKE_BUILD_PARALLEL_LEVEL: 4
@@ -10,59 +13,41 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest] #, macos-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
-
-      # Restore compiler caches (ccache/sccache)
-      - name: Restore ccache (macOS/Linux)
-        if: runner.os != 'Windows'
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
-          restore-keys: |
-            ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
-            ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-
-
       - name: Restore sccache (Windows)
         if: runner.os == 'Windows'
         uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
+            github.sha }}
           restore-keys: |
             sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
             sccache-windows-
-
-      # Setup ccache/sccache
       - name: Setup ccache (macOS/Linux)
         if: runner.os != 'Windows'
         uses: hendrikmuhs/ccache-action@v1.2
-
       - name: Setup sccache (Windows)
         if: runner.os == 'Windows'
         uses: mozilla-actions/sccache-action@v0.0.3
-
-      # Restore build directory to resume builds
       - name: Restore build cache
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+            '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
             build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
             build-${{ runner.os }}-${{ env.BUILD_TYPE }}-
-
-      # Build process
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
-
       - name: Install Perl and Ninja (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -75,24 +60,21 @@ jobs:
           where nasm
           where perl
           where ninja
-
       - name: Ensure winget available (Windows)
         if: runner.os == 'Windows'
         uses: Cyberboss/install-winget@v1
-
       - name: Install PureData for Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
-
       - name: Install PureData for macOS
         if: runner.os == 'macOS'
         run: |
           brew update
           brew install --cask pd
           brew install ccache || true
-
+          rm -dfr build
       - name: Install PureData for Linux
         if: runner.os == 'Linux'
         run: |
@@ -102,43 +84,42 @@ jobs:
           sudo add-apt-repository ppa:pure-data/pure-data -y || true
           sudo apt-get update
           sudo apt-get install -y puredata
-
       - name: Configure (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
+          cmake -S . -B build `
+            -DPDLIBDIR=${{ github.workspace }} `
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+            -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}"
       - name: Configure (macOS/Linux)
         if: runner.os != 'Windows'
         run: |
           cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-
       - name: Build
         run: |
           cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
-
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
-
-      # Save caches even if the build fails
-      - name: Save ccache (macOS/Linux)
-        if: always() && runner.os != 'Windows'
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.ccache
-          key: ccache-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
-
-      - name: Save sccache (Windows)
-        if: always() && runner.os == 'Windows'
-        uses: actions/cache/save@v4
-        with:
-          path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
-
       - name: Save build cache
         if: always()
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+            '**/*.cmake') }}-${{ github.sha }}
+      - name: Upload Object (Linux/macOS)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: pd4web
+      - name: Upload Object (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: ${{ github.workspace }}\pd4web

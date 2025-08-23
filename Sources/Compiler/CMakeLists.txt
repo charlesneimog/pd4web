@@ -123,7 +123,22 @@ set(OPENSSL_USE_STATIC_LIBS TRUE CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 cpmaddpackage("gh:jimmy-park/openssl-cmake#3.5.2")
 cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
-cpmaddpackage("gh:libarchive/libarchive#v3.8.1")
+cpmaddpackage(
+  NAME libarchive
+  GITHUB_REPOSITORY libarchive/libarchive
+  VERSION 3.8.1
+  OPTIONS
+    "ENABLE_TEST:BOOL=OFF"
+    "ENABLE_INSTALL:BOOL=OFF"
+)
+
+if(TARGET archive_static)
+  get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
+  if(_iface_defs)
+    list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
+    set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
+  endif()
+endif()
 
 # boost (process)
 cpmaddpackage(
@@ -172,7 +187,7 @@ target_link_libraries(
 target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT LIBARCHIVE_STATIC)
 
 if(MSVC)
-  add_link_options(/LTCG)
+    add_link_options(/LTCG)
 endif()
 
 

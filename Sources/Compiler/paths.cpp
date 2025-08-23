@@ -237,7 +237,7 @@ bool Pd4Web::getNinja() {
 #if defined(__linux__)
     std::string ninjaBin = m_Pd4WebRoot + "ninja/ninja";
 #elif defined(_WIN32)
-    std::string ninjaBin += m_Pd4WebRoot + "ninja.exe";
+    std::string ninjaBin = m_Pd4WebRoot + "ninja.exe";
 #elif defined(__APPLE__)
     std::string ninjaBin = m_Pd4WebRoot + "ninja/ninja";
 #else
@@ -356,7 +356,7 @@ bool Pd4Web::getCmakeBinary() {
 #if defined(__linux__)
     std::string cmakeBinary = m_Pd4WebRoot + "cmake/bin/cmake";
 #elif defined(_WIN32)
-    std::string cmakeBinary += m_Pd4WebRoot + "cmake/bin/cmake"+".exe";
+    std::string cmakeBinary = m_Pd4WebRoot + "cmake/bin/cmake"+".exe";
 #elif defined(__APPLE__)
     std::string cmakeBinary = m_Pd4WebRoot + "cmake/CMake.app/Contents/bin/cmake";
 #else

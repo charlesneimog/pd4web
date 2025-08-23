@@ -3,7 +3,7 @@ project(pd4web)
 
 # ──────────────────────────────────────
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-set(PDCMAKE_VERSION "v0.2.2")
+set(PDCMAKE_VERSION "v0.2.4")
 if(NOT EXISTS "${PDCMAKE_FILE}")
   file(
     DOWNLOAD
@@ -20,6 +20,10 @@ target_link_libraries(pd4web.compiler PRIVATE pd4web_compiler)
 target_include_directories(pd4web.compiler
                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
 set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
+# if on linux
+if(UNIX AND NOT APPLE)
+    target_compile_definitions(archive_static PRIVATE __tm_gmtoff=tm_gmtoff)
+endif()
 
 # Pd4Web Data
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp")

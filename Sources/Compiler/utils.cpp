@@ -11,38 +11,38 @@ namespace asio = boost::asio;
 
 // ─────────────────────────────────────
 int Pd4Web::execProcess(const std::string& command, std::vector<std::string>& args) {
-    // Log amigável (idealmente com quotes nos args)
     {
         std::ostringstream oss;
         for (const auto& a : args) {
-            // faça quote se precisar
             oss << a << ' ';
         }
         print(command + " " + oss.str());
     }
 
     asio::io_context ctx;
-
-    // RECOMENDADO: clonar ambiente atual e sobrescrever só o necessário
-    // (adapte ao seu bp::environment se suportar)
-    std::unordered_map<bp::environment::key, bp::environment::value> env = {
-        {"CC", m_Emcc},
-        {"CXX", m_Emcc},
-        {"EMSDK", m_Pd4WebRoot + "emsdk"},
-        {"LLVM_ROOT", m_Pd4WebRoot + "emsdk/upstream/bin/"},
-        {"BINARYEN_ROOT", m_Pd4WebRoot + "emsdk/upstream/binaryen/"},
-    };
-
     boost::asio::readable_pipe out{ctx};
     boost::asio::readable_pipe err{ctx};
 
+#if defined(_WIN32)
+    std::vector<std::string> fullArgs;
+    fullArgs.push_back("/C");
+    fullArgs.push_back(command);
+    fullArgs.insert(fullArgs.end(), args.begin(), args.end());
+
+    bp::process proc(
+        ctx,
+        "cmd.exe",
+        fullArgs,
+        bp::process_stdio{ .in = {}, .out = out, .err = err }
+    );
+#else
     bp::process proc(
         ctx,
         command,
         args,
-        bp::process_stdio{ .in = {}, .out = out, .err = err },
-        env
+        bp::process_stdio{ .in = {}, .out = out, .err = err }
     );
+#endif
 
     auto read_loop = [&](boost::asio::readable_pipe& pipe, Pd4WebLogLevel level) {
         std::array<char, 4096> buf;
@@ -73,7 +73,7 @@ int Pd4Web::execProcess(const std::string& command, std::vector<std::string>& ar
         catch (...) { ex_err = std::current_exception(); }
     });
 
-    proc.wait();          // espera o processo terminar
+    proc.wait();
     t_out.join();
     t_err.join();
 
