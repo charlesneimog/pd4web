@@ -22,6 +22,7 @@ set(ENABLE_WERROR OFF CACHE BOOL "" FORCE)
 # Criptografia
 set(ENABLE_MBEDTLS OFF CACHE BOOL "" FORCE)
 set(ENABLE_NETTLE OFF CACHE BOOL "" FORCE)
+set(ENABLE_OPENSSL OFF CACHE BOOL "" FORCE)
 set(ENABLE_CNG OFF CACHE BOOL "" FORCE)
 
 # Compressão / hashing
@@ -30,7 +31,6 @@ set(ENABLE_LZ4 OFF CACHE BOOL "" FORCE)
 set(ENABLE_LZO OFF CACHE BOOL "" FORCE)
 set(ENABLE_LZMA OFF CACHE BOOL "" FORCE)
 set(ENABLE_ZSTD OFF CACHE BOOL "" FORCE)
-set(ENABLE_ZLIB OFF CACHE BOOL "" FORCE)
 set(ENABLE_BZip2 OFF CACHE BOOL "" FORCE)
 
 # Parsers
@@ -169,7 +169,22 @@ target_link_libraries(
          archive_static
          )
 
-target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT)
+target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT LIBARCHIVE_STATIC)
+
+if(MSVC)
+  add_link_options(/LTCG)
+endif()
+
+
+#if(TARGET archive_static)
+#  get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
+ # if(_iface_defs)
+ #   list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
+  #  set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
+ # endif()
+  #target_compile_definitions(archive_static PRIVATE HAVE_CONFIG_H)
+  #target_compile_definitions(archive_static INTERFACE LIBARCHIVE_STATIC)
+#endif()
 
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
