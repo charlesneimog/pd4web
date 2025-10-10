@@ -81,6 +81,7 @@ FetchContent_Declare(
   URL https://github.com/charlesneimog/nanovg/archive/refs/heads/main.zip)
 
 FetchContent_MakeAvailable(nanovg)
+include_directories(${nanovg_SOURCE_DIR}/src)
 
 # ╭──────────────────────────────────────╮
 # │              Executable              │
