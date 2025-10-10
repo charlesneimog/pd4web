@@ -121,7 +121,7 @@ cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
 # libgit
 set(OPENSSL_USE_STATIC_LIBS TRUE CACHE BOOL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-cpmaddpackage("gh:jimmy-park/openssl-cmake#3.5.2")
+cpmaddpackage("gh:jimmy-park/openssl-cmake#3.6.0")
 cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
 cpmaddpackage(
   NAME libarchive
@@ -191,15 +191,15 @@ if(MSVC)
 endif()
 
 
-#if(TARGET archive_static)
-#  get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
- # if(_iface_defs)
- #   list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
-  #  set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
- # endif()
-  #target_compile_definitions(archive_static PRIVATE HAVE_CONFIG_H)
-  #target_compile_definitions(archive_static INTERFACE LIBARCHIVE_STATIC)
-#endif()
+if(TARGET archive_static)
+ get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
+ if(_iface_defs)
+   list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
+   set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
+ endif()
+  target_compile_definitions(archive_static PRIVATE HAVE_CONFIG_H)
+  target_compile_definitions(archive_static INTERFACE LIBARCHIVE_STATIC)
+endif()
 
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
