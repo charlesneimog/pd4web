@@ -1999,7 +1999,7 @@ void Loop(void *userData) {
 void Pd4Web::Init() {
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate = m_SampleRate,
+        .sampleRate =  static_cast<uint32_t>(m_SampleRate),
     };
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
