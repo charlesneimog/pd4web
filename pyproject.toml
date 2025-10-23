@@ -11,19 +11,17 @@ requires-python = ">=3.10"
 pd4web = "pd4web:main"
 
 [tool.setuptools]
-package-dir = {"" = "Sources/Compiler"}
+package-dir = {"" = "build/dist"}
+packages = ["pd4web"]
+include-package-data = true
 
-[tool.setuptools.packages.find]
-where = ["Sources/Compiler"]
+[tool.setuptools.package-data]
+"pd4web" = [
+    "*.so",
+    "Pd4Web/**/*",   # inclui tudo dentro da pasta Pd4Web
+]
 
 [build-system]
-requires = ["scikit-build-core", "pybind11"]
-build-backend = "scikit_build_core.build"
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.scikit-build]
-build-dir = "build"
-cmake.args = [
-    "-DPD4WEB_BUILD_COMPILER=OFF",
-    "-DPD4WEB_BUILD_PYBIND11=ON",
-    "-DPD4WEB_BUILD_PD_EXTERNAL=OFF",
-]
