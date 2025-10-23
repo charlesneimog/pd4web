@@ -39,11 +39,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-
+            build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
+            build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
@@ -110,13 +110,12 @@ jobs:
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
-          ls -la build
       - name: Save build cache
         if: always()
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
       - name: Upload Object (Linux/macOS)
         if: runner.os != 'Windows'
