@@ -6,14 +6,13 @@ on:
     branches: [main]
 env:
   BUILD_TYPE: Release
-  CMAKE_BUILD_PARALLEL_LEVEL: 4
 jobs:
   pd4web-compiler:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest] #, macos-latest]
+        os: [ubuntu-latest, macos-latest, macos-13, windows-latest]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,11 +24,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
+          key: sccache-windows-v2-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
             github.sha }}
           restore-keys: |
-            sccache-windows-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
-            sccache-windows-
+            sccache-windows-v2-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
+            sccache-windows-v2-
       - name: Setup ccache (macOS/Linux)
         if: runner.os != 'Windows'
         uses: hendrikmuhs/ccache-action@v1.2
@@ -40,11 +39,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-${{ runner.os }}-${{ env.BUILD_TYPE }}-
+            build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
+            build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
@@ -95,9 +94,19 @@ jobs:
         if: runner.os != 'Windows'
         run: |
           cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-      - name: Build
-        run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+      - name: Build on Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: cmake --build build --config $env:BUILD_TYPE --parallel $env:NUMBER_OF_PROCESSORS
+
+      - name: Build on Linux
+        if: runner.os == 'Linux'
+        run: cmake --build build -- -j$(nproc)
+
+      - name: Build on macOS
+        if: runner.os == 'macOS'
+        run: cmake --build build -- -j$(sysctl -n hw.ncpu)
+
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
@@ -106,7 +115,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v2-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
       - name: Upload Object (Linux/macOS)
         if: runner.os != 'Windows'
