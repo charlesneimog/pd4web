@@ -90,6 +90,10 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}"
+      - name: Disable openssl3
+        if: runner.os == 'macOS'
+        run: |
+          brew uninstall --ignore-dependencies openssl@3
       - name: Configure (macOS/Linux)
         if: runner.os != 'Windows'
         run: |
@@ -101,7 +105,9 @@ jobs:
 
       - name: Build on Linux
         if: runner.os == 'Linux'
-        run: cmake --build build -- -j$(nproc)
+        run: |
+          cmake --build build -- -j$(nproc)
+
 
       - name: Build on macOS
         if: runner.os == 'macOS'
