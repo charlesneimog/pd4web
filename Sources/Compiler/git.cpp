@@ -3,8 +3,9 @@
 // ──────────────────────────────────────────
 static int progress_callback(const git_transfer_progress *stats, void *payload) {
     PD4WEB_LOGGER();
-    if (stats->total_objects == 0)
+    if (stats->total_objects == 0) {
         return 0;
+    }
 
     int percent = (stats->received_objects * 100) / stats->total_objects;
     int *last_percent = static_cast<int *>(payload);
@@ -31,8 +32,9 @@ bool Pd4Web::gitRepoExists(const std::string &path) {
     git_libgit2_init();
     git_repository *repo = nullptr;
     int result = git_repository_open_ext(&repo, path.c_str(), 0, nullptr);
-    if (repo)
+    if (repo) {
         git_repository_free(repo);
+    }
 
     return result == 0;
 }
@@ -74,6 +76,16 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
 // ─────────────────────────────────────
 bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
     PD4WEB_LOGGER();
+
+#if defined(__linux__)
+    std::string cert = getCertFile();
+    if (cert.empty()) {
+        print("Failed to configure libgit2", Pd4WebLogLevel::PD4WEB_WARNING);
+        return false;
+    }
+    bool rc = git_libgit2_opts(GIT_OPT_SET_SSL_CERT_LOCATIONS, cert.c_str(), nullptr);
+#endif
+
     std::string path = m_Pd4WebRoot + gitFolder;
     if (gitRepoExists(path)) {
         gitCheckout(url, gitFolder, tag);
@@ -90,39 +102,40 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
     fetch_opts.callbacks.payload = &last_percent;
 
     clone_opts.fetch_opts = fetch_opts;
-    clone_opts.checkout_branch = nullptr; // Não faz checkout automático
+    clone_opts.checkout_branch = nullptr; // No automatic checkout
 
     int error = git_clone(&repo, url.c_str(), path.c_str(), &clone_opts);
     if (error != 0) {
         const git_error *e = git_error_last();
-        fprintf(stderr, "git_clone error %d/%d: %s\n", error, e ? e->klass : 0,
-                e ? e->message : "unknown");
+        print("git_clone error " + std::to_string(error) + " " + e->message,
+              Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
-    // Atualiza submódulos (clone recursivo)
+    // Update submodules (recursive clone)
     git_submodule_foreach(
         repo,
         [](git_submodule *sm, const char *name, void *payload) -> int {
+            Pd4Web *self = static_cast<Pd4Web *>(payload);
             std::string submodname = name;
             int err = git_submodule_update(sm, 1, nullptr); // 1 = initialize
             if (err != 0) {
                 const git_error *e = git_error_last();
-                fprintf(stderr, "Failed to update submodule '%s': %s\n", name,
-                        e ? e->message : "unknown");
+                self->print("Failed to update submodule '" + std::string(name) + "'",
+                            Pd4WebLogLevel::PD4WEB_ERROR);
             }
             return err;
         },
-        nullptr);
+        this);
 
-    // Checkout manual da tag
+    // Manual tag checkout
     git_object *obj = nullptr;
     std::string ref = "refs/tags/" + tag;
     error = git_revparse_single(&obj, repo, ref.c_str());
     if (error != 0) {
         error = git_revparse_single(&obj, repo, tag.c_str());
         if (error != 0) {
-            fprintf(stderr, "Error resolving tag or commit '%s'\n", tag.c_str());
+            print("Error resolving tag or commit '" + tag + "'", Pd4WebLogLevel::PD4WEB_ERROR);
             git_repository_free(repo);
             return false;
         }
@@ -130,7 +143,7 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
 
     error = git_checkout_tree(repo, obj, nullptr);
     if (error != 0) {
-        fprintf(stderr, "Error checking out tree for tag '%s'\n", tag.c_str());
+        print("Error checking out tree for tag '" + tag + "'", Pd4WebLogLevel::PD4WEB_ERROR);
         git_object_free(obj);
         git_repository_free(repo);
         return false;

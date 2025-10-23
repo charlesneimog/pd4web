@@ -10,6 +10,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <filesystem>
 #include <sys/stat.h>
 
 #include <cxxopts.hpp>
@@ -53,7 +54,7 @@ class Pd4WebLogger {
     std::string m_Name;
 };
 
-// #define PD4WEB_LOGGER_ENABLED
+#define PD4WEB_LOGGER_ENABLED
 #if defined(PD4WEB_LOGGER_ENABLED)
 #define PD4WEB_LOGGER() Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
 #else
@@ -264,7 +265,7 @@ class Pd4Web {
     bool isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath);
 
     // Cmd
-    bool cmdExecute(std::string cmd);
+   // bool cmdExecute(std::string cmd);
     bool cmdInstallEmsdk();
 
     // Patch
@@ -341,6 +342,7 @@ class Pd4Web {
     void createAppManifest(std::shared_ptr<Patch> &p);
 
     // Utils
+    std::string getCertFile();
     int execProcess(const std::string &command, std::vector<std::string> &args);
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);

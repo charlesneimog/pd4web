@@ -190,6 +190,10 @@ target_link_libraries(
          Boost::process
          archive_static)
 
+if(WIN32)
+  target_link_libraries(pd4web_compiler PUBLIC Crypt32)
+endif()
+
 target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT
                                                    LIBARCHIVE_STATIC)
 

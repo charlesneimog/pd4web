@@ -17,6 +17,15 @@ bool Pd4Web::init() {
     // libgit2
     git_libgit2_init();
 
+#if defined(_WIN32)
+    print("Checking Python installation", Pd4WebLogLevel::PD4WEB_LOG2);
+    std::vector<std::string> cmd = {"install", "-e", "--id=Python.Python.3.11"};
+    bool winget_ok = execProcess("winget", cmd);
+    if (!winget_ok) {
+        print("Failed to install Python via winget", Pd4WebLogLevel::PD4WEB_ERROR);
+    }
+#endif
+
     // libtree-sitter
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();
