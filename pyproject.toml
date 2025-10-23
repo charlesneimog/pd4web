@@ -1,7 +1,7 @@
 [project]
 name = "pd4web"
 version = "2.4.0"
-description = "pd4web compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
+description = "pd4web is a tool that compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
 authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"
 license = { text = "GPL3" }
@@ -25,4 +25,5 @@ build-dir = "build"
 cmake.args = [
     "-DPD4WEB_BUILD_COMPILER=OFF",
     "-DPD4WEB_BUILD_PYBIND11=ON",
+    "-DPD4WEB_BUILD_PD_EXTERNAL=OFF",
 ]

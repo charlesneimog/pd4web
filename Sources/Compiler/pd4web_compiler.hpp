@@ -1,12 +1,11 @@
 #pragma once
 
-/* 
+/*
     TODO: Update template files
     TODO: Implement support to templates
     TODO: Check Windows compatibility
     TODO: Check MacOS compatibility
 */
-
 
 #include <functional>
 #include <memory>
@@ -42,26 +41,26 @@ namespace fs = std::filesystem;
 // ──────────────────────────────────────────
 class Pd4WebLogger {
   public:
-    Pd4WebLogger(const char *name){
+    Pd4WebLogger(const char *name) {
         m_Name = name;
         std::cout << "[Enter] " << name << std::endl;
     }
     ~Pd4WebLogger() {
         std::cout << "[Exit] " << m_Name << std::endl;
     }
-private:
+
+  private:
     std::string m_Name;
 };
 
-#define PD4WEB_LOGGER_ENABLED
+// #define PD4WEB_LOGGER_ENABLED
 #if defined(PD4WEB_LOGGER_ENABLED)
-#define PD4WEB_LOGGER() \
-    Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
+#define PD4WEB_LOGGER() Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
 #else
-#define PD4WEB_LOGGER() \
-    do {} while(0)
+#define PD4WEB_LOGGER()                                                                            \
+    do {                                                                                           \
+    } while (0)
 #endif
-
 
 // ──────────────────────────────────────────
 enum class Pd4WebLogLevel {
@@ -222,7 +221,7 @@ class Pd4Web {
     bool m_Verbose;
     std::string m_PdVersion;
     std::string m_EmsdkVersion;
-    bool m_Debug;
+    bool m_Debug = false;
     bool m_DevDebug = false;
     bool m_FailFast = false;
     bool m_CleanBuild = false;
@@ -313,11 +312,10 @@ class Pd4Web {
     std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     bool findSetupFunction(std::string objName, std::string Lib);
 
-    void processCallExpression(std::string &content,
-                           TSNode node,
-                           std::vector<std::string> &objectNames,
-                           std::vector<std::string> &setupNames,
-                           std::vector<std::string> &setupSignatures);
+    void processCallExpression(std::string &content, TSNode node,
+                               std::vector<std::string> &objectNames,
+                               std::vector<std::string> &setupNames,
+                               std::vector<std::string> &setupSignatures);
     void treesitterCheckForSetupFunction(std::string &content, TSNode node,
                                          std::vector<std::string> &objectNames,
                                          std::vector<std::string> &setupNames,
@@ -347,7 +345,8 @@ class Pd4Web {
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);
-    void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::PD4WEB_LOG2, int level = 1);
+    void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::PD4WEB_LOG2,
+               int level = 1);
 
     std::string readFile(const std::string &path);
     void writeFile(const std::string &path, const std::string &content);

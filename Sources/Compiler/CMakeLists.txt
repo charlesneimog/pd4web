@@ -17,48 +17,6 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF)
 
-# libarchive
-set(ENABLE_WERROR OFF CACHE BOOL "" FORCE)
-# Criptografia
-set(ENABLE_MBEDTLS OFF CACHE BOOL "" FORCE)
-set(ENABLE_NETTLE OFF CACHE BOOL "" FORCE)
-set(ENABLE_OPENSSL OFF CACHE BOOL "" FORCE)
-set(ENABLE_CNG OFF CACHE BOOL "" FORCE)
-
-# Compressão / hashing
-set(ENABLE_LIBB2 OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZ4 OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZO OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZMA OFF CACHE BOOL "" FORCE)
-set(ENABLE_ZSTD OFF CACHE BOOL "" FORCE)
-set(ENABLE_BZip2 OFF CACHE BOOL "" FORCE)
-
-# Parsers
-set(ENABLE_LIBXML2 OFF CACHE BOOL "" FORCE)
-set(ENABLE_EXPAT OFF CACHE BOOL "" FORCE)
-set(ENABLE_WIN32_XMLLITE OFF CACHE BOOL "" FORCE)
-set(ENABLE_PCREPOSIX OFF CACHE BOOL "" FORCE)
-set(ENABLE_PCRE2POSIX OFF CACHE BOOL "" FORCE)
-
-# Arquivos / utilitários
-set(ENABLE_TAR OFF CACHE BOOL "" FORCE)
-set(ENABLE_TAR_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_CPIO OFF CACHE BOOL "" FORCE)
-set(ENABLE_CPIO_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_CAT OFF CACHE BOOL "" FORCE)
-set(ENABLE_CAT_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_UNZIP_SHARED OFF CACHE BOOL "" FORCE)
-
-# Sistema
-set(ENABLE_XATTR OFF CACHE BOOL "" FORCE)
-set(ENABLE_ACL OFF CACHE BOOL "" FORCE)
-
-# Testes / instalação
-set(ENABLE_TEST OFF CACHE BOOL "" FORCE)
-set(ENABLE_COVERAGE OFF CACHE BOOL "" FORCE)
-set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-set(ENABLE_ZLIB OFF)
-
 set(TREE_SITTER_CLI "")
 # ╭──────────────────────────────────────╮
 # │             CPM Package              │
@@ -133,10 +91,9 @@ set(BUILD_SHARED_LIBS
     OFF
     CACHE BOOL "" FORCE)
 
-
 FetchContent_Declare(
-    openssl-cmake
-    URL https://github.com/jimmy-park/openssl-cmake/archive/refs/tags/3.6.0.tar.gz
+  openssl-cmake
+  URL https://github.com/jimmy-park/openssl-cmake/archive/refs/tags/3.6.0.tar.gz
 )
 FetchContent_MakeAvailable(openssl-cmake)
 
@@ -240,8 +197,37 @@ if(PD4WEB_BUILD_PYBIND11)
   target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
   set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
 
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
+  file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dist/pd4web")
+  add_custom_target(
+    copy_pypd4web ALL
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pypd4web>
+            "${CMAKE_BINARY_DIR}/dist/pd4web"
+    COMMAND
+      ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
+      "${CMAKE_BINARY_DIR}/dist/pd4web"
+    COMMAND
+      ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/
+      "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web"
+    COMMENT "Copying pypd4web module and __init__.py to dist/"
+    DEPENDS pypd4web
+    VERBATIM)
+
   install(TARGETS pypd4web DESTINATION pd4web)
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
-          DESTINATION pd4web)
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web DESTINATION pd4web)
+          DESTINATION ${CMAKE_BINARY_DIR}/dist)
+  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web
+          DESTINATION ${CMAKE_BINARY_DIR}/dist)
+
+  if(UNIX AND NOT APPLE)
+    target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(pypd4web PRIVATE -Wl,--gc-sections)
+  elseif(APPLE)
+    target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(pypd4web PRIVATE -Wl,-dead_strip)
+  elseif(MSVC)
+    target_compile_options(pypd4web PRIVATE /Gy)
+    target_link_options(pypd4web PRIVATE /OPT:REF /OPT:ICF)
+  endif()
+
 endif()

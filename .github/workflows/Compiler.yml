@@ -129,3 +129,10 @@ jobs:
         with:
           name: ${{ matrix.os }}
           path: ${{ github.workspace }}\pd4web
+
+      - name: Upload Python Module
+        uses: actions/upload-artifact@v4
+        with:
+          name: pd4web-${{ matrix.os }}
+          path: build/dist/pd4web 
+
