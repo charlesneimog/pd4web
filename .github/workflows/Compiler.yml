@@ -110,6 +110,7 @@ jobs:
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
+          ls -la build
       - name: Save build cache
         if: always()
         uses: actions/cache/save@v4
@@ -134,5 +135,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pd4web-${{ matrix.os }}
-          path: build/dist/pd4web 
+          path: ${{ github.workspace }}/build/dist/pd4web 
 
