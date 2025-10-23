@@ -60,9 +60,6 @@ jobs:
           where nasm
           where perl
           where ninja
-      - name: Ensure winget available (Windows)
-        if: runner.os == 'Windows'
-        uses: Cyberboss/install-winget@v1
       - name: Install PureData for Windows
         if: runner.os == 'Windows'
         shell: pwsh

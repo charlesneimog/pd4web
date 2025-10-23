@@ -50,3 +50,4 @@ Sources/Pd/1-hello-world/WebPatch
 Sources/Pd/1-hello-world/CMakeLists.txt
 Sources/Pd/1-hello-world/favicon.ico
 Sources/Pd/1-hello-world/index.html
+Sources/Compiler/objects.json
