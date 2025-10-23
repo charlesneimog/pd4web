@@ -18,45 +18,102 @@ set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF)
 
 # libarchive
-set(ENABLE_WERROR OFF CACHE BOOL "" FORCE)
+set(ENABLE_WERROR
+    OFF
+    CACHE BOOL "" FORCE)
 # Criptografia
-set(ENABLE_MBEDTLS OFF CACHE BOOL "" FORCE)
-set(ENABLE_NETTLE OFF CACHE BOOL "" FORCE)
-set(ENABLE_OPENSSL OFF CACHE BOOL "" FORCE)
-set(ENABLE_CNG OFF CACHE BOOL "" FORCE)
+set(ENABLE_MBEDTLS
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_NETTLE
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_OPENSSL
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_CNG
+    OFF
+    CACHE BOOL "" FORCE)
 
 # Compressão / hashing
-set(ENABLE_LIBB2 OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZ4 OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZO OFF CACHE BOOL "" FORCE)
-set(ENABLE_LZMA OFF CACHE BOOL "" FORCE)
-set(ENABLE_ZSTD OFF CACHE BOOL "" FORCE)
-set(ENABLE_BZip2 OFF CACHE BOOL "" FORCE)
+set(ENABLE_LIBB2
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_LZ4
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_LZO
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_LZMA
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_ZSTD
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_BZip2
+    OFF
+    CACHE BOOL "" FORCE)
 
 # Parsers
-set(ENABLE_LIBXML2 OFF CACHE BOOL "" FORCE)
-set(ENABLE_EXPAT OFF CACHE BOOL "" FORCE)
-set(ENABLE_WIN32_XMLLITE OFF CACHE BOOL "" FORCE)
-set(ENABLE_PCREPOSIX OFF CACHE BOOL "" FORCE)
-set(ENABLE_PCRE2POSIX OFF CACHE BOOL "" FORCE)
+set(ENABLE_LIBXML2
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_EXPAT
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_WIN32_XMLLITE
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_PCREPOSIX
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_PCRE2POSIX
+    OFF
+    CACHE BOOL "" FORCE)
 
 # Arquivos / utilitários
-set(ENABLE_TAR OFF CACHE BOOL "" FORCE)
-set(ENABLE_TAR_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_CPIO OFF CACHE BOOL "" FORCE)
-set(ENABLE_CPIO_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_CAT OFF CACHE BOOL "" FORCE)
-set(ENABLE_CAT_SHARED OFF CACHE BOOL "" FORCE)
-set(ENABLE_UNZIP_SHARED OFF CACHE BOOL "" FORCE)
+set(ENABLE_TAR
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_TAR_SHARED
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_CPIO
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_CPIO_SHARED
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_CAT
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_CAT_SHARED
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_UNZIP_SHARED
+    OFF
+    CACHE BOOL "" FORCE)
 
 # Sistema
-set(ENABLE_XATTR OFF CACHE BOOL "" FORCE)
-set(ENABLE_ACL OFF CACHE BOOL "" FORCE)
+set(ENABLE_XATTR
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_ACL
+    OFF
+    CACHE BOOL "" FORCE)
 
 # Testes / instalação
-set(ENABLE_TEST OFF CACHE BOOL "" FORCE)
-set(ENABLE_COVERAGE OFF CACHE BOOL "" FORCE)
-set(ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+set(ENABLE_TEST
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_COVERAGE
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_INSTALL
+    OFF
+    CACHE BOOL "" FORCE)
+set(ENABLE_ZLIB OFF)
 
 set(TREE_SITTER_CLI "")
 # ╭──────────────────────────────────────╮
@@ -78,16 +135,6 @@ include(${CPM_FILE})
 # ╰──────────────────────────────────────╯
 # download unpack cmake and ninja binaries
 cpmaddpackage("gh:yhirose/cpp-httplib#v0.25.0")
-if(TARGET archive_static)
-  get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
-  if(_iface_defs)
-    list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
-    set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
-  endif()
-  target_compile_definitions(archive_static PRIVATE HAVE_CONFIG_H)
-endif()
-
-# parse c and cpp files and find _setup functions
 cpmaddpackage(
   NAME
   tree-sitter
@@ -100,16 +147,32 @@ cpmaddpackage(
   EXCLUDE_FROM_ALL
   YES)
 
-# Tree-sitter 
+# Tree-sitter
 cpmaddpackage("gh:tree-sitter/tree-sitter-c#v0.24.1")
 cpmaddpackage(
-    NAME tree-sitter-cpp
-    VERSION 0.23.4
-    GITHUB_REPOSITORY tree-sitter/tree-sitter-cpp
-    PATCH_COMMAND ${CMAKE_COMMAND} -E echo "Applying patch..." &&
-                  patch -p1 -N -d ${CMAKE_BINARY_DIR}/_deps/tree-sitter-cpp-src -i ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch || true
-    EXCLUDE_FROM_ALL YES
-)
+  NAME
+  tree-sitter-cpp
+  VERSION
+  0.23.4
+  GITHUB_REPOSITORY
+  tree-sitter/tree-sitter-cpp
+  PATCH_COMMAND
+  ${CMAKE_COMMAND}
+  -E
+  echo
+  "Applying patch..."
+  &&
+  patch
+  -p1
+  -N
+  -d
+  ${CMAKE_BINARY_DIR}/_deps/tree-sitter-cpp-src
+  -i
+  ${CMAKE_SOURCE_DIR}/Resources/rename-ts-test.patch
+  ||
+  true
+  EXCLUDE_FROM_ALL
+  YES)
 
 # args (for pybind11 and pd4web executable)
 cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
@@ -119,26 +182,50 @@ cpmaddpackage("gh:nlohmann/json#v3.12.0") # read/save json files
 cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
 
 # libgit
-set(OPENSSL_USE_STATIC_LIBS TRUE CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(OPENSSL_USE_STATIC_LIBS
+    TRUE
+    CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS
+    OFF
+    CACHE BOOL "" FORCE)
 cpmaddpackage("gh:jimmy-park/openssl-cmake#3.6.0")
 cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
 cpmaddpackage(
-  NAME libarchive
-  GITHUB_REPOSITORY libarchive/libarchive
-  VERSION 3.8.1
+  NAME
+  libarchive
+  GITHUB_REPOSITORY
+  libarchive/libarchive
+  GIT_TAG
+  v3.8.2
   OPTIONS
-    "ENABLE_TEST:BOOL=OFF"
-    "ENABLE_INSTALL:BOOL=OFF"
-)
-
-if(TARGET archive_static)
-  get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
-  if(_iface_defs)
-    list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
-    set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
-  endif()
-endif()
+  "ENABLE_MBEDTLS OFF"
+  "ENABLE_NETTLE OFF"
+  "ENABLE_OPENSSL OFF"
+  "ENABLE_CNG OFF"
+  "ENABLE_LIBB2 OFF"
+  "ENABLE_LZ4 OFF"
+  "ENABLE_LZO OFF"
+  "ENABLE_LZMA OFF"
+  "ENABLE_ZSTD OFF"
+  "ENABLE_BZip2 OFF"
+  "ENABLE_LIBXML2 OFF"
+  "ENABLE_EXPAT OFF"
+  "ENABLE_WIN32_XMLLITE OFF"
+  "ENABLE_PCREPOSIX OFF"
+  "ENABLE_PCRE2POSIX OFF"
+  "ENABLE_TAR OFF"
+  "ENABLE_TAR_SHARED OFF"
+  "ENABLE_CPIO OFF"
+  "ENABLE_CPIO_SHARED OFF"
+  "ENABLE_CAT OFF"
+  "ENABLE_CAT_SHARED OFF"
+  "ENABLE_UNZIP_SHARED OFF"
+  "ENABLE_XATTR OFF"
+  "ENABLE_ACL OFF"
+  "ENABLE_TEST OFF"
+  "ENABLE_COVERAGE OFF"
+  "ENABLE_INSTALL OFF"
+  "HAVE_ID_T ON")
 
 # boost (process)
 cpmaddpackage(
@@ -166,7 +253,9 @@ add_library(
   "${CMAKE_CURRENT_SOURCE_DIR}/builder.cpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/pd4web_compiler.cpp")
 
-target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR} "${tree-sitter_SOURCE_DIR}/lib/include")
+target_include_directories(
+  pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR}
+                         "${tree-sitter_SOURCE_DIR}/lib/include")
 target_link_libraries(
   pd4web_compiler
   PUBLIC tree-sitter
@@ -181,24 +270,13 @@ target_link_libraries(
          OpenSSL::SSL
          OpenSSL::Crypto
          Boost::process
-         archive_static
-         )
+         archive_static)
 
-target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT LIBARCHIVE_STATIC)
+target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT
+                                                   LIBARCHIVE_STATIC)
 
 if(MSVC)
-    add_link_options(/LTCG)
-endif()
-
-
-if(TARGET archive_static)
- get_target_property(_iface_defs archive_static INTERFACE_COMPILE_DEFINITIONS)
- if(_iface_defs)
-   list(REMOVE_ITEM _iface_defs HAVE_CONFIG_H)
-   set_target_properties(archive_static PROPERTIES INTERFACE_COMPILE_DEFINITIONS "${_iface_defs}")
- endif()
-  target_compile_definitions(archive_static PRIVATE HAVE_CONFIG_H)
-  target_compile_definitions(archive_static INTERFACE LIBARCHIVE_STATIC)
+  add_link_options(/LTCG)
 endif()
 
 # ╭──────────────────────────────────────╮
