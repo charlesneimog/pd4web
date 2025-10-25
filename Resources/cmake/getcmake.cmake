@@ -1,13 +1,4 @@
-# ──────────────────────────────
-# getcmake.cmake
-# ──────────────────────────────
-cmake_minimum_required(VERSION 3.25)
-project(GetCMakeBinary)
-
-# --------------------------
-# Configuration
-# --------------------------
-set(CMAKE_VERSION "4.0.3")
+set(PD4WEB_CMAKE_VERSION "4.0.3")
 set(CMAKE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/cmake")
 set(CMAKE_ARCHIVE_DIR "${CMAKE_BINARY_DIR}")
 
@@ -16,17 +7,17 @@ set(CMAKE_ARCHIVE_DIR "${CMAKE_BINARY_DIR}")
 # --------------------------
 if(WIN32)
   if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(CMAKE_ASSET "cmake-${CMAKE_VERSION}-windows-x86_64.zip")
+    set(CMAKE_ASSET "cmake-${PD4WEB_CMAKE_VERSION}-windows-x86_64.zip")
   else()
     message(FATAL_ERROR "Unsupported Windows architecture")
   endif()
 elseif(APPLE)
-  set(CMAKE_ASSET "cmake-${CMAKE_VERSION}-macos-universal.tar.gz")
+  set(CMAKE_ASSET "cmake-${PD4WEB_CMAKE_VERSION}-macos-universal.tar.gz")
 elseif(UNIX)
   if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-    set(CMAKE_ASSET "cmake-${CMAKE_VERSION}-linux-x86_64.tar.gz")
+    set(CMAKE_ASSET "cmake-${PD4WEB_CMAKE_VERSION}-linux-x86_64.tar.gz")
   elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(CMAKE_ASSET "cmake-${CMAKE_VERSION}-linux-aarch64.tar.gz")
+    set(CMAKE_ASSET "cmake-${PD4WEB_CMAKE_VERSION}-linux-aarch64.tar.gz")
   else()
     message(
       FATAL_ERROR "Unsupported Linux architecture: ${CMAKE_SYSTEM_PROCESSOR}")
@@ -36,7 +27,7 @@ else()
 endif()
 
 set(CMAKE_URL
-    "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/${CMAKE_ASSET}"
+    "https://github.com/Kitware/CMake/releases/download/v${PD4WEB_CMAKE_VERSION}/${CMAKE_ASSET}"
 )
 set(CMAKE_ARCHIVE "${CMAKE_ARCHIVE_DIR}/${CMAKE_ASSET}")
 

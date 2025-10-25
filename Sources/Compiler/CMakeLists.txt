@@ -160,8 +160,6 @@ target_link_libraries(
          OpenSSL::Crypto
          Boost::process)
 
-target_link_libraries(pd4web_compiler PUBLIC -Wl,-Bstatic m -Wl,-Bdynamic)
-
 if(WIN32)
   target_link_libraries(pd4web_compiler PUBLIC Crypt32)
 endif()
