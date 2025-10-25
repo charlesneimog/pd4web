@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.28)
 project(pd4web)
 
 # ──────────────────────────────────────
@@ -21,10 +21,6 @@ target_include_directories(pd4web.compiler
                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
 set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
                                                  ON)
-# if on linux
-if(UNIX AND NOT APPLE)
-  target_compile_definitions(archive_static PRIVATE __tm_gmtoff=tm_gmtoff)
-endif()
 
 # Pd4Web Data
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp")
@@ -35,15 +31,22 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-ml5")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
                 DESTINATION "Pd4Web")
 
-if(UNIX AND NOT APPLE) # Linux
+pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION
+                "bin/cmake/")
+pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION
+                "bin/cmake/")
+
+pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "bin")
+
+if(UNIX AND NOT APPLE)
   target_compile_options(pd4web.compiler PRIVATE -ffunction-sections
                                                  -fdata-sections)
   target_link_options(pd4web.compiler PRIVATE -Wl,--gc-sections)
-elseif(APPLE) # macOS
+elseif(APPLE)
   target_compile_options(pd4web.compiler PRIVATE -ffunction-sections
                                                  -fdata-sections)
   target_link_options(pd4web.compiler PRIVATE -Wl,-dead_strip)
-elseif(MSVC) # Windows
-  target_compile_options(pd4web.compiler PRIVATE /Gy) # Function-level linking
+elseif(MSVC)
+  target_compile_options(pd4web.compiler PRIVATE /Gy)
   target_link_options(pd4web.compiler PRIVATE /OPT:REF /OPT:ICF)
 endif()

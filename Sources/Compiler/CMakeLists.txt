@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 3.13)
 project(pd4web-compiler)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -36,7 +35,7 @@ include(${CPM_FILE})
 # │             Dependencies             │
 # ╰──────────────────────────────────────╯
 # download unpack cmake and ninja binaries
-cpmaddpackage("gh:yhirose/cpp-httplib#v0.25.0")
+cpmaddpackage("gh:yhirose/cpp-httplib#v0.26.0")
 cpmaddpackage(
   NAME
   tree-sitter
@@ -102,48 +101,19 @@ cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
 # ╭──────────────────────────────────────╮
 # │              LibArchive              │
 # ╰──────────────────────────────────────╯
-set(LIBARCHIVE_OPTIONS
-    "ENABLE_MBEDTLS OFF"
-    "ENABLE_NETTLE OFF"
-    "ENABLE_OPENSSL OFF"
-    "ENABLE_CNG OFF"
-    "ENABLE_LIBB2 OFF"
-    "ENABLE_LZ4 OFF"
-    "ENABLE_LZO OFF"
-    "ENABLE_LZMA OFF"
-    "ENABLE_ZSTD OFF"
-    "ENABLE_BZip2 OFF"
-    "ENABLE_LIBXML2 OFF"
-    "ENABLE_EXPAT OFF"
-    "ENABLE_WIN32_XMLLITE OFF"
-    "ENABLE_PCREPOSIX OFF"
-    "ENABLE_PCRE2POSIX OFF"
-    "ENABLE_TAR OFF"
-    "ENABLE_TAR_SHARED OFF"
-    "ENABLE_CPIO OFF"
-    "ENABLE_CPIO_SHARED OFF"
-    "ENABLE_CAT OFF"
-    "ENABLE_CAT_SHARED OFF"
-    "ENABLE_UNZIP_SHARED OFF"
-    "ENABLE_XATTR OFF"
-    "ENABLE_ACL OFF"
-    "ENABLE_TEST OFF"
-    "ENABLE_COVERAGE OFF"
-    "ENABLE_INSTALL OFF")
-
-if(UNIX AND NOT WIN32)
-  list(APPEND LIBARCHIVE_OPTIONS "HAVE_ID_T ON")
-endif()
-
-cpmaddpackage(
-  NAME
-  libarchive
-  GITHUB_REPOSITORY
-  libarchive/libarchive
-  GIT_TAG
-  v3.8.2
-  OPTIONS
-  ${LIBARCHIVE_OPTIONS})
+# set(LIBARCHIVE_OPTIONS "ENABLE_MBEDTLS OFF" "ENABLE_NETTLE OFF"
+# "ENABLE_OPENSSL OFF" "ENABLE_CNG OFF" "ENABLE_LIBB2 OFF" "ENABLE_LZ4 OFF"
+# "ENABLE_LZO OFF" "ENABLE_LZMA OFF" "ENABLE_ZSTD OFF" "ENABLE_BZip2 OFF"
+# "ENABLE_LIBXML2 OFF" "ENABLE_EXPAT OFF" "ENABLE_WIN32_XMLLITE OFF"
+# "ENABLE_PCREPOSIX OFF" "ENABLE_PCRE2POSIX OFF" "ENABLE_TAR OFF"
+# "ENABLE_TAR_SHARED OFF" "ENABLE_CPIO OFF" "ENABLE_CPIO_SHARED OFF" "ENABLE_CAT
+# OFF" "ENABLE_CAT_SHARED OFF" "ENABLE_UNZIP_SHARED OFF" "ENABLE_XATTR OFF"
+# "ENABLE_ACL OFF" "ENABLE_TEST OFF" "ENABLE_COVERAGE OFF" "ENABLE_INSTALL OFF")
+#
+# if(UNIX AND NOT WIN32) list(APPEND LIBARCHIVE_OPTIONS "HAVE_ID_T ON") endif()
+#
+# cpmaddpackage( NAME libarchive GITHUB_REPOSITORY libarchive/libarchive GIT_TAG
+# v3.8.2 OPTIONS ${LIBARCHIVE_OPTIONS})
 
 # boost (process)
 cpmaddpackage(
@@ -174,6 +144,7 @@ add_library(
 target_include_directories(
   pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR}
                          "${tree-sitter_SOURCE_DIR}/lib/include")
+
 target_link_libraries(
   pd4web_compiler
   PUBLIC tree-sitter
@@ -187,8 +158,9 @@ target_link_libraries(
          libgit2package
          OpenSSL::SSL
          OpenSSL::Crypto
-         Boost::process
-         archive_static)
+         Boost::process)
+
+target_link_libraries(pd4web_compiler PUBLIC -Wl,-Bstatic m -Wl,-Bdynamic)
 
 if(WIN32)
   target_link_libraries(pd4web_compiler PUBLIC Crypt32)
@@ -226,12 +198,6 @@ if(PD4WEB_BUILD_PYBIND11)
     COMMENT "Copying pypd4web module and __init__.py to dist/"
     DEPENDS pypd4web
     VERBATIM)
-
-  install(TARGETS pypd4web DESTINATION pd4web)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
-          DESTINATION ${CMAKE_BINARY_DIR}/dist)
-  install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web
-          DESTINATION ${CMAKE_BINARY_DIR}/dist)
 
   if(UNIX AND NOT APPLE)
     target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)

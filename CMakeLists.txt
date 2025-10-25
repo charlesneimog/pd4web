@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25)
+cmake_minimum_required(VERSION 3.28)
 project(pd4web LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -27,6 +27,12 @@ cmake_policy(SET CMP0077 NEW)
 
 option(PD4WEB_BUILD_PD_EXTERNAL "Build the Pure Data external" ON)
 option(PD4WEB_BUILD_PYBIND11 "Build the Python module via pybind11" OFF)
+
+# ╭──────────────────────────────────────╮
+# │      Download Binary Resources       │
+# ╰──────────────────────────────────────╯
+include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/cmake/getcmake.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/cmake/getninja.cmake)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   message(STATUS "Compilando com Emscripten")

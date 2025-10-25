@@ -113,9 +113,9 @@ static void *pd4web_new() {
     Pd4WebObj *x = (Pd4WebObj *)pd_new(pd4web_class);
     std::string pd4web_obj_root = std::string(pd4web_class->c_externdir->s_name) + "/Pd4Web/";
     fs::path pd4web_path = std::string(pd4web_class->c_externdir->s_name);
-    fs::path pd4webHome = pd4web_path / "compilerdata";
-    fs::create_directories(pd4webHome);
-    std::cout << pd4webHome.string() << std::endl;
+    fs::path pd4webHome = pd4web_path;
+    // fs::create_directories(pd4webHome);
+    // std::cout << pd4webHome.string() << std::endl;
 
     // process
     x->pd4web = new Pd4Web(pd4webHome.string());
@@ -127,7 +127,16 @@ static void *pd4web_new() {
         pd_queue_mess(&pd_maininstance, &x->obj.te_g.g_pd, d, pd4web_logcallback);
     });
 
-    std::thread([x]() { x->pd4web->init(); }).detach();
+    std::thread([x]() {
+        try {
+            x->pd4web->init();
+        } catch (const std::exception &e) {
+            logpost(nullptr, 0, "%s: %s", "Exception during pd4web initialization", e.what());
+        } catch (...) {
+            logpost(nullptr, 0, "Unknown exception during pd4web initialization.");
+            return;
+        }
+    }).detach();
 
     // pd4web config
     x->cancel = false;
@@ -143,7 +152,7 @@ static void *pd4web_new() {
     x->pd4web->setDebugMode(false);
     x->pd4web->setFailFast(false);
     x->pd4web->setCleanBuild(true);
-    
+
     return x;
 }
 

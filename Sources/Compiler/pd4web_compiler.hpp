@@ -13,11 +13,10 @@
 #include <filesystem>
 #include <sys/stat.h>
 
+#include <httplib.h>
 #include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
 #include <fkYAML/node.hpp>
-
-#include <httplib.h>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -257,6 +256,8 @@ class Pd4Web {
     std::string m_Ninja;
     std::string m_Clang;
 
+    // httplib::SSLClient m_GithubCli;
+
     // Git
     bool gitRepoExists(const std::string &path);
     bool gitClone(std::string git, std::string path, std::string tag);
@@ -265,7 +266,6 @@ class Pd4Web {
     bool isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath);
 
     // Cmd
-   // bool cmdExecute(std::string cmd);
     bool cmdInstallEmsdk();
 
     // Patch
