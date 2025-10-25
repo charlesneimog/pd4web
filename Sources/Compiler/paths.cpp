@@ -154,12 +154,10 @@ bool Pd4Web::getCmakeBinary() {
 
     // Determine platform-specific CMake binary path
     std::string cmakeBinary;
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
     cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake";
 #elif defined(_WIN32)
     cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake.exe";
-#elif defined(__APPLE__)
-    cmakeBinary = m_Pd4WebRoot + "/bin/CMake.app/Contents/bin/cmake";
 #else
     print("Unsupported platform for CMake binary.", Pd4WebLogLevel::PD4WEB_ERROR);
     return false;

@@ -31,11 +31,13 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-ml5")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
                 DESTINATION "Pd4Web")
 
-pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION
-                "bin/cmake/")
-pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION
-                "bin/cmake/")
-
+if (APPLE)
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "bin/cmake/")
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share" DESTINATION "bin/cmake/")
+else()
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION "bin/cmake/")
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION "bin/cmake/")
+endif()
 pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "bin")
 
 if(UNIX AND NOT APPLE)
