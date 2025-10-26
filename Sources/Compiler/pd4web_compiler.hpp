@@ -247,6 +247,8 @@ class Pd4Web {
     bool checkAllPaths();
     bool getNinja();
     bool getCmakeBinary();
+    bool getNode();
+
     std::string m_Cmake;
     std::string m_EmsdkInstaller;
     std::string m_Emcmake;
@@ -255,6 +257,9 @@ class Pd4Web {
     std::string m_Emmake;
     std::string m_Ninja;
     std::string m_Clang;
+    std::string m_NodeJs;
+    std::string m_PythonWindows;
+
 
     // httplib::SSLClient m_GithubCli;
 

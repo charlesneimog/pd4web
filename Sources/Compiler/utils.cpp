@@ -14,115 +14,36 @@
 #if defined(_WIN32)
 #include <Windows.h>
 #include <wincrypt.h>
+#include <shlobj.h>
 #endif
 
 namespace bp = boost::process::v2;
 namespace asio = boost::asio;
 
-// ──────────────────────────────────────────
-#if defined(_WIN32)
-namespace {
-bool appendWindowsStoreToPem(const wchar_t *storeName, DWORD storeLocation, std::ofstream &out) {
-    HCERTSTORE store = CertOpenStore(
-        CERT_STORE_PROV_SYSTEM_W,
-        0,
-        static_cast<HCRYPTPROV_LEGACY>(NULL),
-        storeLocation | CERT_STORE_READONLY_FLAG,
-        storeName);
-
-    if (!store) {
-        return false;
-    }
-
-    PCCERT_CONTEXT context = nullptr;
-    bool wroteCertificates = false;
-    while ((context = CertEnumCertificatesInStore(store, context)) != nullptr) {
-        DWORD requiredSize = 0;
-        if (!CryptBinaryToStringA(context->pbCertEncoded, context->cbCertEncoded,
-                                  CRYPT_STRING_BASE64HEADER | CRYPT_STRING_NOCRLF, nullptr,
-                                  &requiredSize)) {
-            continue;
-        }
-
-        std::string pem(requiredSize, '\0');
-        if (!CryptBinaryToStringA(context->pbCertEncoded, context->cbCertEncoded,
-                                  CRYPT_STRING_BASE64HEADER | CRYPT_STRING_NOCRLF, pem.data(),
-                                  &requiredSize)) {
-            continue;
-        }
-
-        if (!pem.empty() && pem.back() == '\0') {
-            pem.pop_back();
-        }
-
-        out << pem << "\n";
-        wroteCertificates = true;
-    }
-
-    CertCloseStore(store, 0);
-    return wroteCertificates;
-}
-
-bool exportWindowsRootCertificates(const std::filesystem::path &targetPath) {
-    std::ofstream out(targetPath, std::ios::binary);
-    if (!out) {
-        return false;
-    }
-
-    bool wroteAny = false;
-    wroteAny |= appendWindowsStoreToPem(L"ROOT", CERT_SYSTEM_STORE_CURRENT_USER, out);
-    wroteAny |= appendWindowsStoreToPem(L"ROOT", CERT_SYSTEM_STORE_LOCAL_MACHINE, out);
-
-    out.flush();
-    return wroteAny;
-}
-} // namespace
-#endif
-
+// ─────────────────────────────────────
 std::string Pd4Web::getCertFile() {
-    namespace fs = std::filesystem;
-
-    auto envCertPath = [&](const char *name) -> std::string {
-        if (const char *value = std::getenv(name)) {
-            std::error_code ec;
-            if (fs::exists(value, ec)) {
-                return value;
-            }
-        }
-        return "";
-    };
-
-    if (auto env = envCertPath("SSL_CERT_FILE"); !env.empty()) {
-        return env;
-    }
-    if (auto env = envCertPath("REQUESTS_CA_BUNDLE"); !env.empty()) {
-        return env;
-    }
-    if (auto env = envCertPath("CURL_CA_BUNDLE"); !env.empty()) {
-        return env;
-    }
-
 #if defined(_WIN32)
-    fs::path certDir = fs::path(m_Pd4WebRoot) / "certificates";
-    std::error_code ec;
-    fs::create_directories(certDir, ec);
-
-    fs::path certFile = certDir / "windows-root.pem";
-    auto fileSize = fs::file_size(certFile, ec);
-    if (ec || fileSize == 0) {
-        if (!exportWindowsRootCertificates(certFile)) {
-            print("Unable to export Windows root certificates. TLS downloads may fail.",
-                  Pd4WebLogLevel::PD4WEB_WARNING);
-            return "";
+    wchar_t path[MAX_PATH];
+    if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
+        std::filesystem::path certPath = std::filesystem::path(path) /
+            L"Programs" / L"Python" / L"Python311" / L"Lib" / L"site-packages" / L"certifi" / L"cacert.pem";
+        if (!fs::exists(certPath)) {
+            print("Certificate file does not exist: " + std::string(certPath.string().begin(), certPath.string().end()), Pd4WebLogLevel::PD4WEB_ERROR);
+            return {};
         }
+        // Convert wide path to UTF-8 string
+        int size_needed = WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        std::string certPathUtf8(size_needed - 1, 0);
+        WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, certPathUtf8.data(), size_needed, nullptr, nullptr);
+        return certPathUtf8;
     }
-    return certFile.string();
+    return {};
+
 #else
+    std::string result = "";
     static const std::vector<std::string> cafiles = {
-        "/etc/ssl/certs/ca-certificates.crt",
-        "/etc/pki/tls/certs/ca-bundle.crt",
-        "/etc/ssl/cert.pem",
-        "/etc/ssl/certs/ca-bundle.crt"};
+        "/etc/ssl/certs/ca-certificates.crt", "/etc/pki/tls/certs/ca-bundle.crt",
+        "/etc/ssl/cert.pem", "/etc/ssl/certs/ca-bundle.crt"};
 
     for (const auto &candidate : cafiles) {
         std::error_code ecCandidate;
@@ -131,112 +52,149 @@ std::string Pd4Web::getCertFile() {
         }
     }
 
-    return "";
+    return {};
 #endif
 }
 
 // ─────────────────────────────────────
 int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &args) {
-    {
-        std::ostringstream oss;
-        for (const auto &a : args) {
-            oss << a << ' ';
-        }
-        print(command + " " + oss.str());
-    }
+    std::ostringstream oss;
+    for (const auto &a : args) oss << a << ' ';
+#if defined(_WIN32)
+    print("WIN32: " + command + " " + oss.str());
+#else
+    print(command + " " + oss.str());
+#endif
 
     std::string certPath = getCertFile();
-    if (!certPath.empty()) {
-        auto ensureEnv = [&](const char *name) {
-            if (const char *current = std::getenv(name)) {
-                std::error_code ec;
-                if (std::filesystem::exists(current, ec)) {
-                    return;
-                }
-            }
-#if defined(_WIN32)
-            _putenv_s(name, certPath.c_str());
-#else
-            setenv(name, certPath.c_str(), 1);
-#endif
-        };
 
-        ensureEnv("SSL_CERT_FILE");
-        ensureEnv("REQUESTS_CA_BUNDLE");
-        ensureEnv("CURL_CA_BUNDLE");
-    }
-
+#if defined(__linux__) || defined(__APPLE__)
     asio::io_context ctx;
-    boost::asio::readable_pipe out{ctx};
-    boost::asio::readable_pipe err{ctx};
+    boost::asio::readable_pipe out{ctx}, err{ctx};
 
-#if defined(_WIN32)
-    std::vector<std::string> fullArgs;
-    fullArgs.push_back("/C");
-    fullArgs.push_back(command);
-    fullArgs.insert(fullArgs.end(), args.begin(), args.end());
+    std::unordered_map<std::string,std::string> env = { {"SSL_CERT_FILE", certPath} };
 
-    bp::process proc(ctx, "cmd.exe", fullArgs, bp::process_stdio{.in = {}, .out = out, .err = err});
-#else
-    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
-#endif
+    bp::process proc(ctx,
+                     command,
+                     args,
+                     bp::process_stdio{.in = {}, .out = out, .err = err},
+                     bp::process_environment{env});
 
-    auto read_loop = [&](boost::asio::readable_pipe &pipe, Pd4WebLogLevel level) {
+    auto read_loop = [&](boost::asio::readable_pipe &pipe) {
         std::array<char, 4096> buf;
         for (;;) {
             boost::system::error_code ec;
-            std::size_t n = pipe.read_some(boost::asio::buffer(buf), ec);
-            if (ec == boost::asio::error::eof) {
-                break;
-            }
-            if (ec) {
-                throw boost::system::system_error(ec);
-            }
-            if (n == 0) {
-                continue;
-            }
-
+            std::size_t n = pipe.read_some(asio::buffer(buf), ec);
+            if (ec == boost::asio::error::eof) break;
+            if (ec) throw boost::system::system_error(ec);
+            if (n == 0) continue;
             std::string_view sv(buf.data(), n);
-            if (sv.back() == '\n') {
-                sv.remove_suffix(1);
-            }
-            if (sv.empty()) {
-                continue;
-            }
-
-            print(std::string(sv), level);
+            if (!sv.empty() && sv.back() == '\n') sv.remove_suffix(1);
+            if (!sv.empty()) print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
         }
     };
 
     std::exception_ptr ex_out, ex_err;
-    std::thread t_out([&] {
-        try {
-            read_loop(out, Pd4WebLogLevel::PD4WEB_LOG2);
-        } catch (...) {
-            ex_out = std::current_exception();
-        }
-    });
-    std::thread t_err([&] {
-        try {
-            read_loop(err, Pd4WebLogLevel::PD4WEB_LOG2);
-        } catch (...) {
-            ex_err = std::current_exception();
-        }
-    });
+    std::thread t_out([&]{ try { read_loop(out); } catch(...) { ex_out = std::current_exception(); } });
+    std::thread t_err([&]{ try { read_loop(err); } catch(...) { ex_err = std::current_exception(); } });
 
+    t_out.join();
+    t_err.join();
     proc.wait();
+
+    if (ex_out) std::rethrow_exception(ex_out);
+    if (ex_err) std::rethrow_exception(ex_err);
+    return proc.exit_code();
+
+#else // Windows branch
+    // Set SSL_CERT_FILE for this process and children
+    _putenv_s("SSL_CERT_FILE", certPath.c_str());
+
+    // Lambda to quote arguments if they contain spaces or quotes
+    auto quoteArg = [](const std::string &arg) -> std::string {
+        if (arg.empty()) return "\"\"";
+        bool needQuotes = arg.find_first_of(" \t\"") != std::string::npos;
+        if (!needQuotes) return arg;
+
+        std::string result = "\"";
+        for (char c : arg) {
+            if (c == '"') result += "\\\""; // escape quotes
+            else result += c;
+        }
+        result += "\"";
+        return result;
+    };
+
+    // Build command line safely
+    std::ostringstream cmdLine;
+    cmdLine << "cmd.exe /C " << quoteArg(command);
+    for (const auto &a : args) {
+        cmdLine << " " << quoteArg(a);
+    }
+    std::string cmdLineStr = cmdLine.str();
+
+    // Create pipes
+    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
+    HANDLE outRead, outWrite;
+    HANDLE errRead, errWrite;
+    if (!CreatePipe(&outRead, &outWrite, &sa, 0) ||
+        !CreatePipe(&errRead, &errWrite, &sa, 0)) {
+        throw std::runtime_error("Failed to create pipes");
+    }
+    SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
+
+    // Setup startup info
+    STARTUPINFOA si{};
+    si.cb = sizeof(si);
+    si.hStdOutput = outWrite;
+    si.hStdError  = errWrite;
+    si.dwFlags |= STARTF_USESTDHANDLES;
+
+    PROCESS_INFORMATION pi{};
+    if (!CreateProcessA(
+            nullptr,
+            cmdLineStr.data(),
+            nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
+        CloseHandle(outRead); CloseHandle(outWrite);
+        CloseHandle(errRead); CloseHandle(errWrite);
+        throw std::runtime_error("CreateProcess failed");
+    }
+
+    CloseHandle(outWrite);
+    CloseHandle(errWrite);
+
+    // Lambda to read from a pipe and forward to print callback
+    auto read_pipe = [this](HANDLE pipe){
+        char buffer[4096];
+        DWORD n;
+        while (ReadFile(pipe, buffer, sizeof(buffer)-1, &n, nullptr) && n > 0) {
+            buffer[n] = '\0';
+            std::string_view sv(buffer, n);
+            while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) sv.remove_suffix(1);
+            if (!sv.empty()) this->print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+        }
+        CloseHandle(pipe);
+    };
+
+    // Start threads to read stdout and stderr concurrently
+    std::thread t_out(read_pipe, outRead);
+    std::thread t_err(read_pipe, errRead);
+
+    WaitForSingleObject(pi.hProcess, INFINITE);
     t_out.join();
     t_err.join();
 
-    if (ex_out) {
-        std::rethrow_exception(ex_out);
-    }
-    if (ex_err) {
-        std::rethrow_exception(ex_err);
-    }
+    DWORD exitCode = 0;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
 
-    return proc.exit_code();
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return static_cast<int>(exitCode);
+#endif
 }
+
 
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {

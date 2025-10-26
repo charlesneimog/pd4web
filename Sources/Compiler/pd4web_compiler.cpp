@@ -18,12 +18,61 @@ bool Pd4Web::init() {
     git_libgit2_init();
 
 #if defined(_WIN32)
-    print("Checking Python installation", Pd4WebLogLevel::PD4WEB_LOG2);
-    std::vector<std::string> cmd = {"install", "-e", "--id=Python.Python.3.11"};
-    bool winget_ok = execProcess("winget", cmd);
-    if (!winget_ok) {
-        print("Failed to install Python via winget", Pd4WebLogLevel::PD4WEB_ERROR);
+    char pythonPath[MAX_PATH];
+    DWORD pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
+
+    // Inline check for Python stub (Windows Store) or missing
+    bool needInstall = false;
+    if (pyLen == 0) {
+        needInstall = true;
+    } else {
+        HANDLE hFile = CreateFileA(pythonPath, GENERIC_READ, FILE_SHARE_READ, nullptr,
+                                   OPEN_EXISTING, 0, nullptr);
+        if (hFile == INVALID_HANDLE_VALUE) {
+            needInstall = true;
+        } else {
+            DWORD fileSize = GetFileSize(hFile, nullptr);
+            CloseHandle(hFile);
+            if (fileSize < 5000) {
+                needInstall = true;
+            }
+        }
     }
+
+    if (needInstall) {
+        print("Python not found or is a Windows Store stub. Attempting to install via winget...",
+              Pd4WebLogLevel::PD4WEB_LOG2);
+
+        char wingetPath[MAX_PATH];
+        DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
+        if (len == 0) {
+            print("winget not found. Please install Python manually! Go to https://www.python.org/downloads/",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";
+        std::vector<std::string> wingetCheckCmd = {"install", "-e", "--id=Python.Python.3.11", "--accept-source-agreements", "--accept-package-agreements"};
+        int wingetResult = execProcess(wingetExe, wingetCheckCmd);
+        if (wingetResult != 0) {
+            print("Failed to install Python via winget. Please install Python manually! Go to https://www.python.org/downloads/",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        print("Python installed successfully via winget.", Pd4WebLogLevel::PD4WEB_LOG2);
+    } else {
+        print("Python installation appears valid.", Pd4WebLogLevel::PD4WEB_LOG2);
+    }
+
+    pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
+    if (pyLen == 0) {
+        print("Python interpreter not found after installation attempt. Please install Python manually. Go to https://www.python.org/downloads/",
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+    m_PythonWindows = pythonPath;
+    _putenv_s("EMSDK_PY", pythonPath);
+    print("Using Python interpreter at: " + std::string(pythonPath), Pd4WebLogLevel::PD4WEB_LOG2);
+    print("SSL certificate: " + getCertFile(), Pd4WebLogLevel::PD4WEB_LOG2);
 #endif
 
     // libtree-sitter
