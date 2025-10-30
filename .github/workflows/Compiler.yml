@@ -5,7 +5,7 @@ on:
   push:
     branches: [main]
 env:
-  BUILD_TYPE: Debug
+  BUILD_TYPE: Release
 jobs:
   pd4web-compiler:
     runs-on: ${{ matrix.os }}
