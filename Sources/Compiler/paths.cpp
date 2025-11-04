@@ -87,7 +87,7 @@ bool Pd4Web::checkAllPaths() {
         out << "SSL_CERT_FILE = r'" << getCertFile() << "'\n";
         out << "NODE_JS = r'" << m_NodeJs << "'\n";
 #endif
-        out.close();    
+        out.close();
     }
 
     return true;
@@ -96,7 +96,16 @@ bool Pd4Web::checkAllPaths() {
 // ─────────────────────────────────────
 bool Pd4Web::cmdInstallEmsdk() {
     PD4WEB_LOGGER();
-    
+
+#if defined(_WIN32)
+    print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
+    std::vector<std::string> cmd = {"install", "node-22.16.0-64bits"};
+    int result = execProcess(m_EmsdkInstaller, cmd);
+    if (result != 0) {
+        print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+#else
     print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
     std::vector<std::string> cmd = {"install", EMSDK_VERSION};
     int result = execProcess(m_EmsdkInstaller, cmd);
@@ -104,6 +113,7 @@ bool Pd4Web::cmdInstallEmsdk() {
         print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
+#endif
     print("");
     return true;
 }
@@ -112,7 +122,8 @@ bool Pd4Web::cmdInstallEmsdk() {
 bool Pd4Web::getNode() {
     PD4WEB_LOGGER();
     fs::path nodePath = m_Pd4WebRoot + "/emsdk/node";
-    // list all folders inside nodePath, and find the first one that contains bin/node or bin/node.exe 
+    // list all folders inside nodePath, and find the first one that contains bin/node or
+    // bin/node.exe
     for (const auto &entry : fs::directory_iterator(nodePath)) {
         if (fs::is_directory(entry.path())) {
             fs::path nodeBin;

@@ -32,56 +32,104 @@ struct Pd4WebDetachedPost {
 // ─────────────────────────────────────
 static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
     if (strcmp(s->s_name, "patch") == 0) {
-        x->pd4web->setPatchFile(atom_getsymbol(av)->s_name);
-        fs::path patchPath(atom_getsymbol(av)->s_name);
+        const char *patchName = atom_getsymbol(av)->s_name;
+        fs::path patchPath(patchName);
+
         if (!fs::exists(patchPath)) {
-            logpost(x, 1, "[pd4web] patch file %s does not exist", atom_getsymbol(av)->s_name);
+            logpost(x, 1, "[pd4web] patch file %s does not exist", patchName);
             return;
         }
-        x->pd4web->setOutputFolder(patchPath.parent_path().string());
-        logpost(x, 2, "[pd4web] set patch to %s", atom_getsymbol(av)->s_name);
-    } else if (strcmp(s->s_name, "memory") == 0) {
+        if (x->object_root != patchName) {
+            x->pd4web->setPatchFile(patchName);
+            x->pd4web->setOutputFolder(patchPath.parent_path().string());
+            logpost(x, 2, "[pd4web] set patch to %s", patchName);
+            x->object_root = patchName;
+        }
+    }
+
+    else if (strcmp(s->s_name, "memory") == 0) {
         int mem = atom_getint(av);
         x->pd4web->setInitialMemory(mem);
-        logpost(x, 2, "[pd4web] set memory to %d", mem);
-    } else if (strcmp(s->s_name, "patchzoom") == 0) {
-        int zoom = atom_getint(av);
+        if (mem != (int)x->memory) {
+            logpost(x, 2, "[pd4web] set memory to %d", mem);
+        }
+        x->memory = mem;
+    }
+
+    else if (strcmp(s->s_name, "patchzoom") == 0) {
+        float zoom = atom_getfloat(av);
         x->pd4web->setPatchZoom(zoom);
-        logpost(x, 2, "[pd4web] set zoom to %d", zoom);
-    } else if (strcmp(s->s_name, "output") == 0) {
-        x->pd4web->setOutputFolder(atom_getsymbol(av)->s_name);
-        logpost(x, 2, "[pd4web] set output folder to %s", atom_getsymbol(av)->s_name);
-    } else if (strcmp(s->s_name, "template") == 0) {
-        int tid = atom_getint(av);
+        if (zoom != x->zoom) {
+            logpost(x, 2, "[pd4web] set zoom to %.2f", zoom);
+        }
+        x->zoom = zoom;
+    }
+
+    else if (strcmp(s->s_name, "output") == 0) {
+        const char *folder = atom_getsymbol(av)->s_name;
+        x->pd4web->setOutputFolder(folder);
+        if (x->object_root != folder) {
+            logpost(x, 2, "[pd4web] set output folder to %s", folder);
+        }
+        x->object_root = folder;
+    }
+
+    else if (strcmp(s->s_name, "template") == 0) {
+        unsigned tid = atom_getint(av);
         x->pd4web->setTemplateId(tid);
-        logpost(x, 2, "[pd4web] set template ID to %d", tid);
-    } else if (strcmp(s->s_name, "debug") == 0) {
+        if (tid != x->patch_template) {
+            logpost(x, 2, "[pd4web] set template ID to %u", tid);
+        }
+        x->patch_template = tid;
+    }
+
+    else if (strcmp(s->s_name, "debug") == 0) {
         bool dbg = atom_getint(av) != 0;
         x->pd4web->setDebugMode(dbg);
-        logpost(x, 2, "[pd4web] debug mode %s", dbg ? "enabled" : "disabled");
-    } else if (strcmp(s->s_name, "failfast") == 0) {
+        if (dbg != x->verbose) {
+            logpost(x, 2, "[pd4web] debug mode %s", dbg ? "enabled" : "disabled");
+        }
+        x->verbose = dbg;
+    }
+
+    else if (strcmp(s->s_name, "failfast") == 0) {
         bool ff = atom_getint(av) != 0;
         x->pd4web->setFailFast(ff);
+        // Nenhum campo armazenado, apenas log
         logpost(x, 2, "[pd4web] failfast %s", ff ? "enabled" : "disabled");
-    } else if (strcmp(s->s_name, "gui") == 0) {
+    }
+
+    else if (strcmp(s->s_name, "gui") == 0) {
         bool gui = atom_getint(av) != 0;
         if (!gui) {
             x->pd4web->disableGuiRender();
         }
-        logpost(x, 2, "[pd4web] GUI rendering %s", gui ? "enabled" : "disabled");
-    } else if (strcmp(s->s_name, "clean") == 0) {
+        if (gui != x->gui) {
+            logpost(x, 2, "[pd4web] GUI rendering %s", gui ? "enabled" : "disabled");
+        }
+        x->gui = gui;
+    }
+
+    else if (strcmp(s->s_name, "clean") == 0) {
         bool clean = atom_getint(av) != 0;
         x->pd4web->setCleanBuild(clean);
-    } else if (strcmp(s->s_name, "verbose") == 0) {
-        logpost(x, 2, "[pd4web] not implemented yet!");
-    } else if (strcmp(s->s_name, "server") == 0) {
+        // sem log, pois não há campo armazenado
+    }
+
+    else if (strcmp(s->s_name, "server") == 0) {
         bool server = atom_getint(av) != 0;
         x->pd4web->serverPatch(server);
         logpost(x, 2, "[pd4web] server %s", server ? "enabled" : "disabled");
         if (server) {
             pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
         }
-    } else {
+    }
+
+    else if (strcmp(s->s_name, "verbose") == 0) {
+        logpost(x, 2, "[pd4web] not implemented yet!");
+    }
+
+    else {
         logpost(x, 1, "[pd4web] unknown option: %s", s->s_name);
     }
 }
@@ -104,6 +152,12 @@ static void pd4web_logcallback(t_pd *obj, void *data) {
         } else {
             post("");
         }
+    } else if (d->loglevel == Pd4WebLogLevel::PD4WEB_VERBOSE) {
+        if (d->msg != "\n") {
+            logpost(obj, 3, "[pd4web] %s", d->msg.c_str());
+        } else {
+            post("");
+        }
     }
     delete d;
 }
@@ -120,10 +174,10 @@ static void *pd4web_new() {
     // process
     x->pd4web = new Pd4Web(pd4webHome.string());
     x->pd4web->setPd4WebFilesFolder(pd4web_obj_root);
-    x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel color, int level) {
+    x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel loglevel, int level) {
         Pd4WebDetachedPost *d = new Pd4WebDetachedPost();
         d->msg = msg;
-        d->loglevel = color;
+        d->loglevel = loglevel;
         pd_queue_mess(&pd_maininstance, &x->obj.te_g.g_pd, d, pd4web_logcallback);
     });
 
@@ -164,7 +218,7 @@ static void pd4web_free(Pd4WebObj *x) {
 
 // ─────────────────────────────────────
 extern "C" void setup_pd4web0x2ecompiler(void) {
-    post("pd4web by Charles K. Neimog");
+    post("[pd4web] by Charles K. Neimog");
     pd4web_class = class_new(gensym("pd4web.compiler"), (t_newmethod)pd4web_new,
                              (t_method)pd4web_free, sizeof(Pd4WebObj), CLASS_DEFAULT, A_NULL);
 

@@ -25,16 +25,21 @@ std::string Pd4Web::getCertFile() {
 #if defined(_WIN32)
     wchar_t path[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
-        std::filesystem::path certPath = std::filesystem::path(path) /
-            L"Programs" / L"Python" / L"Python311" / L"Lib" / L"site-packages" / L"certifi" / L"cacert.pem";
+        std::filesystem::path certPath = std::filesystem::path(path) / L"Programs" / L"Python" /
+                                         L"Python311" / L"Lib" / L"site-packages" / L"certifi" /
+                                         L"cacert.pem";
         if (!fs::exists(certPath)) {
-            print("Certificate file does not exist: " + std::string(certPath.string().begin(), certPath.string().end()), Pd4WebLogLevel::PD4WEB_ERROR);
+            print("Certificate file does not exist: " +
+                      std::string(certPath.string().begin(), certPath.string().end()),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
             return {};
         }
         // Convert wide path to UTF-8 string
-        int size_needed = WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        int size_needed =
+            WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, nullptr, 0, nullptr, nullptr);
         std::string certPathUtf8(size_needed - 1, 0);
-        WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, certPathUtf8.data(), size_needed, nullptr, nullptr);
+        WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, certPathUtf8.data(), size_needed,
+                            nullptr, nullptr);
         return certPathUtf8;
     }
     return {};
@@ -48,9 +53,11 @@ std::string Pd4Web::getCertFile() {
     for (const auto &candidate : cafiles) {
         std::error_code ecCandidate;
         if (fs::exists(candidate, ecCandidate)) {
+            print("Certificate file found: " + candidate, Pd4WebLogLevel::PD4WEB_VERBOSE);
             return candidate;
         }
     }
+    print("Certificate file not found", Pd4WebLogLevel::PD4WEB_WARNING);
 
     return {};
 #endif
@@ -59,7 +66,9 @@ std::string Pd4Web::getCertFile() {
 // ─────────────────────────────────────
 int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &args) {
     std::ostringstream oss;
-    for (const auto &a : args) oss << a << ' ';
+    for (const auto &a : args) {
+        oss << a << ' ';
+    }
 #if defined(_WIN32)
     print("WIN32: " + command + " " + oss.str());
 #else
@@ -72,12 +81,9 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     asio::io_context ctx;
     boost::asio::readable_pipe out{ctx}, err{ctx};
 
-    std::unordered_map<std::string,std::string> env = { {"SSL_CERT_FILE", certPath} };
+    std::unordered_map<std::string, std::string> env = {{"SSL_CERT_FILE", certPath}};
 
-    bp::process proc(ctx,
-                     command,
-                     args,
-                     bp::process_stdio{.in = {}, .out = out, .err = err},
+    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err},
                      bp::process_environment{env});
 
     auto read_loop = [&](boost::asio::readable_pipe &pipe) {
@@ -85,25 +91,51 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
         for (;;) {
             boost::system::error_code ec;
             std::size_t n = pipe.read_some(asio::buffer(buf), ec);
-            if (ec == boost::asio::error::eof) break;
-            if (ec) throw boost::system::system_error(ec);
-            if (n == 0) continue;
+            if (ec == boost::asio::error::eof) {
+                break;
+            }
+            if (ec) {
+                throw boost::system::system_error(ec);
+            }
+            if (n == 0) {
+                continue;
+            }
             std::string_view sv(buf.data(), n);
-            if (!sv.empty() && sv.back() == '\n') sv.remove_suffix(1);
-            if (!sv.empty()) print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+            if (!sv.empty() && sv.back() == '\n') {
+                sv.remove_suffix(1);
+            }
+            if (!sv.empty()) {
+                print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+            }
         }
     };
 
     std::exception_ptr ex_out, ex_err;
-    std::thread t_out([&]{ try { read_loop(out); } catch(...) { ex_out = std::current_exception(); } });
-    std::thread t_err([&]{ try { read_loop(err); } catch(...) { ex_err = std::current_exception(); } });
+    std::thread t_out([&] {
+        try {
+            read_loop(out);
+        } catch (...) {
+            ex_out = std::current_exception();
+        }
+    });
+    std::thread t_err([&] {
+        try {
+            read_loop(err);
+        } catch (...) {
+            ex_err = std::current_exception();
+        }
+    });
 
     t_out.join();
     t_err.join();
     proc.wait();
 
-    if (ex_out) std::rethrow_exception(ex_out);
-    if (ex_err) std::rethrow_exception(ex_err);
+    if (ex_out) {
+        std::rethrow_exception(ex_out);
+    }
+    if (ex_err) {
+        std::rethrow_exception(ex_err);
+    }
     return proc.exit_code();
 
 #else // Windows branch
@@ -112,14 +144,21 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
 
     // Lambda to quote arguments if they contain spaces or quotes
     auto quoteArg = [](const std::string &arg) -> std::string {
-        if (arg.empty()) return "\"\"";
+        if (arg.empty()) {
+            return "\"\"";
+        }
         bool needQuotes = arg.find_first_of(" \t\"") != std::string::npos;
-        if (!needQuotes) return arg;
+        if (!needQuotes) {
+            return arg;
+        }
 
         std::string result = "\"";
         for (char c : arg) {
-            if (c == '"') result += "\\\""; // escape quotes
-            else result += c;
+            if (c == '"') {
+                result += "\\\""; // escape quotes
+            } else {
+                result += c;
+            }
         }
         result += "\"";
         return result;
@@ -137,8 +176,7 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
     HANDLE outRead, outWrite;
     HANDLE errRead, errWrite;
-    if (!CreatePipe(&outRead, &outWrite, &sa, 0) ||
-        !CreatePipe(&errRead, &errWrite, &sa, 0)) {
+    if (!CreatePipe(&outRead, &outWrite, &sa, 0) || !CreatePipe(&errRead, &errWrite, &sa, 0)) {
         throw std::runtime_error("Failed to create pipes");
     }
     SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
@@ -148,16 +186,16 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     STARTUPINFOA si{};
     si.cb = sizeof(si);
     si.hStdOutput = outWrite;
-    si.hStdError  = errWrite;
+    si.hStdError = errWrite;
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     PROCESS_INFORMATION pi{};
-    if (!CreateProcessA(
-            nullptr,
-            cmdLineStr.data(),
-            nullptr, nullptr, TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi)) {
-        CloseHandle(outRead); CloseHandle(outWrite);
-        CloseHandle(errRead); CloseHandle(errWrite);
+    if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+                        nullptr, nullptr, &si, &pi)) {
+        CloseHandle(outRead);
+        CloseHandle(outWrite);
+        CloseHandle(errRead);
+        CloseHandle(errWrite);
         throw std::runtime_error("CreateProcess failed");
     }
 
@@ -165,14 +203,18 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     CloseHandle(errWrite);
 
     // Lambda to read from a pipe and forward to print callback
-    auto read_pipe = [this](HANDLE pipe){
+    auto read_pipe = [this](HANDLE pipe) {
         char buffer[4096];
         DWORD n;
-        while (ReadFile(pipe, buffer, sizeof(buffer)-1, &n, nullptr) && n > 0) {
+        while (ReadFile(pipe, buffer, sizeof(buffer) - 1, &n, nullptr) && n > 0) {
             buffer[n] = '\0';
             std::string_view sv(buffer, n);
-            while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) sv.remove_suffix(1);
-            if (!sv.empty()) this->print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+            while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) {
+                sv.remove_suffix(1);
+            }
+            if (!sv.empty()) {
+                this->print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+            }
         }
         CloseHandle(pipe);
     };
@@ -194,7 +236,6 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     return static_cast<int>(exitCode);
 #endif
 }
-
 
 // ─────────────────────────────────────
 std::string Pd4Web::readFile(const std::string &path) {

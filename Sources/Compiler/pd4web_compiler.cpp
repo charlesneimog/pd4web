@@ -102,6 +102,13 @@ bool Pd4Web::init() {
         return false;
     }
 
+    // clone pd.cmake
+    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v0.2.6");
+    if (!ok) {
+        print("Failed to clone pd.cmake", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
     // install emscripten
     print("Initializing paths", Pd4WebLogLevel::PD4WEB_LOG2);
     ok = initPaths();
