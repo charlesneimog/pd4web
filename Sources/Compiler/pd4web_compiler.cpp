@@ -46,15 +46,19 @@ bool Pd4Web::init() {
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
         if (len == 0) {
-            print("winget not found. Please install Python manually! Go to https://www.python.org/downloads/",
+            print("winget not found. Please install Python manually! Go to "
+                  "https://www.python.org/downloads/",
                   Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
         std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";
-        std::vector<std::string> wingetCheckCmd = {"install", "-e", "--id=Python.Python.3.11", "--accept-source-agreements", "--accept-package-agreements"};
+        std::vector<std::string> wingetCheckCmd = {"install", "-e", "--id=Python.Python.3.11",
+                                                   "--accept-source-agreements",
+                                                   "--accept-package-agreements"};
         int wingetResult = execProcess(wingetExe, wingetCheckCmd);
         if (wingetResult != 0) {
-            print("Failed to install Python via winget. Please install Python manually! Go to https://www.python.org/downloads/",
+            print("Failed to install Python via winget. Please install Python manually! Go to "
+                  "https://www.python.org/downloads/",
                   Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
@@ -65,14 +69,16 @@ bool Pd4Web::init() {
 
     pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
     if (pyLen == 0) {
-        print("Python interpreter not found after installation attempt. Please install Python manually. Go to https://www.python.org/downloads/",
+        print("Python interpreter not found after installation attempt. Please install Python "
+              "manually. Go to https://www.python.org/downloads/",
               Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
     m_PythonWindows = pythonPath;
     _putenv_s("EMSDK_PY", pythonPath);
-    print("Using Python interpreter at: " + std::string(pythonPath), Pd4WebLogLevel::PD4WEB_LOG2);
-    print("SSL certificate: " + getCertFile(), Pd4WebLogLevel::PD4WEB_LOG2);
+    print("Using Python interpreter at: " + std::string(pythonPath),
+          Pd4WebLogLevel::PD4WEB_VERBOSE);
+    print("SSL certificate: " + getCertFile(), Pd4WebLogLevel::PD4WEB_VERBOSE);
 #endif
 
     // libtree-sitter
@@ -106,6 +112,14 @@ bool Pd4Web::init() {
     ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v0.2.6");
     if (!ok) {
         print("Failed to clone pd.cmake", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    // nanovg
+    ok = gitClone("https://github.com/charlesneimog/nanovg.git", "nanovg",
+                  "a4d6be4822299ff12d3c6dc0c6ad5d16e2241c29");
+    if (!ok) {
+        print("Failed to clone nanovg", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 

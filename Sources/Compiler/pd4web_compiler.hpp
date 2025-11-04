@@ -3,8 +3,7 @@
 /*
     TODO: Update template files
     TODO: Implement support to templates
-    TODO: Check Windows compatibility
-    TODO: Check MacOS compatibility
+    TODO: Implement lua objects
 */
 
 #include <functional>
@@ -260,7 +259,6 @@ class Pd4Web {
     std::string m_NodeJs;
     std::string m_PythonWindows;
 
-
     // httplib::SSLClient m_GithubCli;
 
     // Git
@@ -345,6 +343,7 @@ class Pd4Web {
     void copySources(std::shared_ptr<Patch> &p);
     void buildPatch(std::shared_ptr<Patch> &p);
     void createAppManifest(std::shared_ptr<Patch> &p);
+    void copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir);
 
     // Utils
     std::string getCertFile();

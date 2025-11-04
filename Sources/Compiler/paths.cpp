@@ -81,7 +81,6 @@ bool Pd4Web::checkAllPaths() {
         fs::remove(envemscripten);
         std::ofstream out(envemscripten);
         out << "LLVM_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/bin") << "'\n";
-        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/binaryen") << "'\n";
         out << "NODE_JS = r'" << m_NodeJs << "'\n";
 #if defined(_WIN32)
         out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";

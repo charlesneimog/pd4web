@@ -374,6 +374,19 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 }
 
 // ─────────────────────────────────────
+void Pd4Web::copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir) {
+    // pd.cmake
+    fs::path pdcmake = p->Pd4WebRoot / "pd.cmake" / "pd.cmake";
+    fs::copy(pdcmake, buildDir, fs::copy_options::skip_existing);
+
+    // nanovg
+    fs::path nanovg = p->Pd4WebRoot / "nanovg";
+    fs::path dest = buildDir / "nanovg";
+    fs::create_directories(dest);
+    fs::copy(nanovg, dest, fs::copy_options::recursive | fs::copy_options::skip_existing);
+}
+
+// ─────────────────────────────────────
 void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     PD4WEB_LOGGER();
 
@@ -388,8 +401,9 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     if (m_CleanBuild && fs::exists(buildDir)) {
         fs::remove_all(buildDir);
     }
-
     fs::create_directories(buildDir);
+
+    copyExtraSources(p, buildDir);
 
 #if defined(_WIN32)
     DWORD attrs = GetFileAttributes(buildDir.string().c_str());
