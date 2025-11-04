@@ -1,4 +1,4 @@
-#N canvas 0 0 943 1005 12;
+#N canvas 578 59 439 389 12;
 #X declare -path ./../../build/pd/;
 #X obj 10 112 nbx 5 14 8 2048 0 1 r-memory s-memory empty 0 -10 0 8 #ffffff #000000 #000000 256 256;
 #X obj 52 274 bng 25 250 50 0 s-compile r-compile empty -15 -10 0 12 #ffc7c6 #ff0400 #000000;
