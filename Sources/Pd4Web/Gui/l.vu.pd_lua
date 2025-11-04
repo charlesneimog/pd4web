@@ -39,9 +39,21 @@ function vu:initialize(_, args)
 	self.clock = pd.Clock:new():register(self, "tick")
 	self.clock:delay(0)
 
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
+	end
+
 	self.rms = -100
 	self:set_size(self.width, self.height)
 	return true
+end
+
+-- ──────────────────────────────────────────
+function vu:_receiver(sel, atoms)
+	if sel == "float" then
+		self.rms = atoms[1]
+		self:outlet(1, "float", atoms)
+	end
 end
 
 -- ──────────────────────────────────────────
@@ -74,6 +86,7 @@ end
 -- ──────────────────────────────────────────
 function vu:in_1_float(args)
 	self.rms = args
+	self:outlet(1, "float", { args })
 	-- self:repaint(2)
 	-- self:repaint(3)
 end

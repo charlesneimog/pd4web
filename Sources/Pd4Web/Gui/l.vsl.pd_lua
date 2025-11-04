@@ -46,11 +46,31 @@ function vsl:initialize(_, args)
 		self.need_update_args = true
 	end
 
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
+	end
+
 	self:set_size(self.width, self.height)
 	local initial_value = self.init or self.default_value or 0
 	self.pos = self:value_to_pos(initial_value)
 
 	return true
+end
+
+-- ─────────────────────────────────────
+function vsl:_receiver(sel, atoms)
+	if sel == "float" then
+		self.rms = atoms[1]
+		self:outlet(1, "float", atoms)
+	end
+end
+
+-- ─────────────────────────────────────
+function vsl:in_1_float(f)
+	local p = self:value_to_pos(f)
+	self.pos = self:clamp_pos(p)
+	self:outlet(1, "float", { f })
+	self:repaint(2)
 end
 
 -- ─────────────────────────────────────
