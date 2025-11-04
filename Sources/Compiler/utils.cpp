@@ -80,11 +80,7 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
 #if defined(__linux__) || defined(__APPLE__)
     asio::io_context ctx;
     boost::asio::readable_pipe out{ctx}, err{ctx};
-
-    std::unordered_map<std::string, std::string> env = {{"SSL_CERT_FILE", certPath}};
-
-    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err},
-                     bp::process_environment{env});
+    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
 
     auto read_loop = [&](boost::asio::readable_pipe &pipe) {
         std::array<char, 4096> buf;
