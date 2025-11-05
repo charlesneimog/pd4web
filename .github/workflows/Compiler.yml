@@ -114,6 +114,11 @@ jobs:
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
+      - name: Build wheels
+        shell: pwsh
+        run: | 
+          pip install build
+          python -m build --wheel
       - name: Save build cache
         if: always()
         uses: actions/cache/save@v4
@@ -130,4 +135,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: python-pd4web-${{ matrix.os }}
-          path: build/dist/pd4web
+          path: dist/*.whl
