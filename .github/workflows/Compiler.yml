@@ -27,8 +27,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
-            github.sha }}
+          key: sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
             sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
             sccache-windows-v4-
@@ -42,11 +41,12 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
-            '**/*.cmake') }}-${{ github.sha }}
+          # v5 + include matrix.os and runner.arch to avoid cross-arch cache reuse (e.g., macOS Intel vs ARM)
+          key: build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-
+            build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
+            build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-v5-${{ matrix.os }}-${{ runner.arch }}-
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
@@ -104,7 +104,13 @@ jobs:
       - name: Configure (macOS/Linux)
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DPD4WEB_BUILD_PYBIND11=ON
+          cmake -S . -B build \
+            -DPDLIBDIR=./ \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DPD4WEB_BUILD_PYBIND11=ON \
+            -DGIT_EXECUTABLE=/usr/bin/git
       - name: Build on Windows
         if: runner.os == 'Windows'
         shell: pwsh
@@ -128,8 +134,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
-            '**/*.cmake') }}-${{ github.sha }}
+          key: build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
       - name: Upload PureData Object
         uses: actions/upload-artifact@v4
         with:
