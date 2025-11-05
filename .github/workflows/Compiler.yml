@@ -12,7 +12,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # os: [windows-latest]
         os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
     steps:
       - name: Checkout
@@ -20,6 +19,9 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
       - name: Restore sccache (Windows)
         if: runner.os == 'Windows'
         uses: actions/cache/restore@v4
@@ -71,7 +73,8 @@ jobs:
           brew update
           brew install --cask pd
           brew install ccache || true
-          rm -dfr build
+          brew install pybind11
+          brew uninstall --ignore-dependencies openssl@3
       - name: Install PureData for Linux
         if: runner.os == 'Linux'
         run: |
@@ -81,6 +84,7 @@ jobs:
           sudo add-apt-repository ppa:pure-data/pure-data -y || true
           sudo apt-get update
           sudo apt-get install -y puredata
+          sudo apt-get install -y pybind11-dev
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -90,30 +94,23 @@ jobs:
             -DCMAKE_C_COMPILER_LAUNCHER=sccache `
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-            -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}"
-      - name: Disable openssl3
-        if: runner.os == 'macOS'
-        run: |
-          brew uninstall --ignore-dependencies openssl@3
+            -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}" `
+            -DPD4WEB_BUILD_PYBIND11=ON
       - name: Configure (macOS/Linux)
         if: runner.os != 'Windows'
         run: |
-          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          cmake -S . -B build -DPDLIBDIR=./ -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DPD4WEB_BUILD_PYBIND11=ON
       - name: Build on Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: cmake --build build --config $env:BUILD_TYPE --parallel $env:NUMBER_OF_PROCESSORS
-
       - name: Build on Linux
         if: runner.os == 'Linux'
         run: |
           cmake --build build -- -j$(nproc)
-
-
       - name: Build on macOS
         if: runner.os == 'macOS'
         run: cmake --build build -- -j$(sysctl -n hw.ncpu)
-
       - name: Install
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
@@ -124,22 +121,13 @@ jobs:
           path: build
           key: build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
-      - name: Upload Object (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Upload PureData Object
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
           path: pd4web
-      - name: Upload Object (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.os }}
-          path: ${{ github.workspace }}\pd4web
-
       - name: Upload Python Module
         uses: actions/upload-artifact@v4
         with:
-          name: pd4web-${{ matrix.os }}
-          path: ${{ github.workspace }}/build/dist/pd4web 
-
+          name: python-pd4web-${{ matrix.os }}
+          path: build/dist/pd4web
