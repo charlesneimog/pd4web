@@ -101,21 +101,6 @@ cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
 # ╭──────────────────────────────────────╮
 # │              LibArchive              │
 # ╰──────────────────────────────────────╯
-# set(LIBARCHIVE_OPTIONS "ENABLE_MBEDTLS OFF" "ENABLE_NETTLE OFF"
-# "ENABLE_OPENSSL OFF" "ENABLE_CNG OFF" "ENABLE_LIBB2 OFF" "ENABLE_LZ4 OFF"
-# "ENABLE_LZO OFF" "ENABLE_LZMA OFF" "ENABLE_ZSTD OFF" "ENABLE_BZip2 OFF"
-# "ENABLE_LIBXML2 OFF" "ENABLE_EXPAT OFF" "ENABLE_WIN32_XMLLITE OFF"
-# "ENABLE_PCREPOSIX OFF" "ENABLE_PCRE2POSIX OFF" "ENABLE_TAR OFF"
-# "ENABLE_TAR_SHARED OFF" "ENABLE_CPIO OFF" "ENABLE_CPIO_SHARED OFF" "ENABLE_CAT
-# OFF" "ENABLE_CAT_SHARED OFF" "ENABLE_UNZIP_SHARED OFF" "ENABLE_XATTR OFF"
-# "ENABLE_ACL OFF" "ENABLE_TEST OFF" "ENABLE_COVERAGE OFF" "ENABLE_INSTALL OFF")
-#
-# if(UNIX AND NOT WIN32) list(APPEND LIBARCHIVE_OPTIONS "HAVE_ID_T ON") endif()
-#
-# cpmaddpackage( NAME libarchive GITHUB_REPOSITORY libarchive/libarchive GIT_TAG
-# v3.8.2 OPTIONS ${LIBARCHIVE_OPTIONS})
-
-# boost (process)
 cpmaddpackage(
   NAME
   Boost
@@ -164,8 +149,7 @@ if(WIN32)
   target_link_libraries(pd4web_compiler PUBLIC Crypt32)
 endif()
 
-target_compile_definitions(pd4web_compiler PRIVATE CPPHTTPLIB_OPENSSL_SUPPORT
-                                                   LIBARCHIVE_STATIC)
+target_compile_definitions(pd4web_compiler PRIVATE LIBARCHIVE_STATIC)
 
 if(MSVC)
   add_link_options(/LTCG)
