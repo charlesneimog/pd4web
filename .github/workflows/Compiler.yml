@@ -76,6 +76,7 @@ jobs:
           brew install pybind11
           brew install git
           brew uninstall --ignore-dependencies openssl@3
+          rm -dfr build
       - name: Install PureData for Linux
         if: runner.os == 'Linux'
         run: |
