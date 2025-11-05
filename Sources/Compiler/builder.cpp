@@ -463,18 +463,25 @@ void Pd4Web::createAppManifest(std::shared_ptr<Patch> &p) {
         }
     }
 
+    /*
+        id
+    */
+
     // Construct PWA manifest
     json manifest = {
-        {"name", "WebPatch"},
-        {"short_name", "WebPatch"},
+        {"name", p->ProjectName},
+        {"short_name", p->ProjectName},
         {"start_url", "index.html"},
         {"display", "standalone"},
         {"background_color", "#ffffff"},
         {"theme_color", "#000000"},
+        {"screenshots", ""},
+        {"description", ""},
+        {"display", "standalone"},
         {"icons",
          {{{"src", "icon-192.png"}, {"sizes", "192x192"}, {"type", "image/png"}},
           {{"src", "icon-512.png"}, {"sizes", "512x512"}, {"type", "image/png"}}}},
-        {"files", fileList} // optional: not part of PWA spec
+        {"orientation", "any"},
     };
 
     // Write manifest to disk

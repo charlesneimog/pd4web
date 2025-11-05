@@ -822,6 +822,7 @@ bool Pd4Web::compilePatch() {
     }
     p->ProjectName = p->PatchFile.parent_path().filename().string();
     p->Pd4WebRoot = m_Pd4WebRoot;
+    print("Project name is: '" + p->ProjectName + "'", Pd4WebLogLevel::PD4WEB_LOG1);
 
     bool ok = openPatch(p);
     if (!ok) {
