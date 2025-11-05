@@ -52,7 +52,7 @@ class Pd4WebLogger {
     std::string m_Name;
 };
 
-#define PD4WEB_LOGGER_ENABLED
+// #define PD4WEB_LOGGER_ENABLED
 #if defined(PD4WEB_LOGGER_ENABLED)
 #define PD4WEB_LOGGER() Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
 #else

@@ -175,7 +175,11 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-  set(PYBIND11_FINDPYTHON ON)
+  set(PYBIND11_FINDPYTHON OFF)
+  find_package(
+    Python 3.13 EXACT
+    COMPONENTS Interpreter Development
+    REQUIRED)
   find_package(pybind11 REQUIRED)
   add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
   target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
