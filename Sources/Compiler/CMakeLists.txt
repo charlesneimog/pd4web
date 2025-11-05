@@ -180,6 +180,17 @@ if(PD4WEB_BUILD_PYBIND11)
     Python 3.13 EXACT
     COMPONENTS Interpreter Development
     REQUIRED)
+
+  if(WIN32)
+    set(PYBIND11_FINDPYTHON OFF)
+    execute_process(
+      COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+      OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
+    find_package(pybind11 CONFIG REQUIRED)
+  endif()
+
   find_package(pybind11 REQUIRED)
   add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
   target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)

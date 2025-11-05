@@ -27,11 +27,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-v2-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
+          key: sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{
             github.sha }}
           restore-keys: |
-            sccache-windows-v2-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
-            sccache-windows-v2-
+            sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
+            sccache-windows-v4-
       - name: Setup ccache (macOS/Linux)
         if: runner.os != 'Windows'
         uses: hendrikmuhs/ccache-action@v1.2
@@ -42,11 +42,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          key: build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-
+            build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
+            build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
@@ -85,6 +85,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y puredata
           sudo apt-get install -y pybind11-dev
+      - name: Install Python Packages
+        run: | 
+          pip install build
+          pip install pybind11
       - name: Configure (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
@@ -115,7 +119,6 @@ jobs:
         run: |
           cmake --install build --config ${{ env.BUILD_TYPE }}
       - name: Build wheels
-        shell: pwsh
         run: | 
           pip install build
           python -m build --wheel
@@ -124,7 +127,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-v3-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
+          key: build-v4-${{ runner.os }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt',
             '**/*.cmake') }}-${{ github.sha }}
       - name: Upload PureData Object
         uses: actions/upload-artifact@v4
