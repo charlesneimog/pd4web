@@ -27,7 +27,7 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-ml5")
+# pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-ml5")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
                 DESTINATION "Pd4Web")
 
