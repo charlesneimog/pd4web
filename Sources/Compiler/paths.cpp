@@ -83,7 +83,6 @@ bool Pd4Web::checkAllPaths() {
         out << "LLVM_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/bin") << "'\n";
         out << "NODE_JS = r'" << m_NodeJs << "'\n";
         out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/") << "'\n";
-
 #if defined(_WIN32)
         out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";
         out << "SSL_CERT_FILE = r'" << getCertFile() << "'\n";

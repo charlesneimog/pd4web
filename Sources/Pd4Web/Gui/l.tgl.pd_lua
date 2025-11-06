@@ -20,8 +20,8 @@ function tgl:initialize(_, args)
 		self.bg_color = args[10]
 		self.fg_color = args[11]
 		self.label_color = args[12]
-		self.init_value = args[13]
-		self.default_value = args[14]
+		self.init_value = args[13] -- initial value
+		self.default_value = args[14] -- value for "on" state
 	else
 		self.size = 18
 		self.init = 0
@@ -40,8 +40,25 @@ function tgl:initialize(_, args)
 		self.need_update_args = true
 	end
 
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
+	end
+
 	self:set_size(self.size, self.size)
 	return true
+end
+
+-- ─────────────────────────────────────
+function tgl:_receiver(sel, atoms)
+	if sel == "float" then
+		if atoms[1] == 0 then
+			self.on = false
+		else
+			self.on = true
+		end
+		self:repaint()
+		self:outlet(1, "float", { atoms[1] })
+	end
 end
 
 -- ──────────────────────────────────────────
@@ -88,9 +105,20 @@ function tgl:mouse_down(x, y)
 	self.on = not self.on
 	if self.on then
 		self:outlet(1, "float", { self.default_value })
+		if self.init then
+			self.init_value = self.default_value
+		end
 	else
 		self:outlet(1, "float", { 0 })
+		if self.init then
+			self.init_value = 0
+		end
 	end
+
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", self.on and self.default_value or 0)
+	end
+
 	self:repaint()
 end
 
