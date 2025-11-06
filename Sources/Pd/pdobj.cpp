@@ -121,7 +121,7 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
         x->pd4web->serverPatch(server);
         logpost(x, 2, "[pd4web] Server %s", server ? "enabled" : "disabled");
         if (server) {
-            pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8080");
+            pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8082");
         }
     }
 

@@ -323,6 +323,10 @@ void Pd4Web::isPdObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
         pl.Found = true;
     }
 
+    if (pl.Name[0] == '/') {
+        pl.Found = true;
+    }
+
     if (pl.Name[0] == '\\' && pl.Name[1] == '$') {
         pl.Found = true;
     }
@@ -379,6 +383,7 @@ std::string Pd4Web::getObjName(std::string &objToken) {
     if (slashPos != std::string::npos) {
         Obj = Obj.substr(slashPos + 1);
     }
+    print("Processing object '" + Obj + "'", Pd4WebLogLevel::PD4WEB_LOG2);
     return Obj;
 }
 
@@ -654,12 +659,13 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
                         }
                     }
                 }
+
             } else {
                 // 3) Para qualquer outro objeto, se houver prefixo 'lib/', remova.
-                if (objNameTok.find('/') != std::string::npos) {
+                if (objNameTok.find('/') != std::string::npos && objNameTok != "/" &&
+                    objNameTok != "/~") {
                     std::string oldTok = objNameTok;
                     objNameTok = strip_lib_preserve_semicolon(objNameTok);
-                    // Corrige ordem do log: de velho -> novo
                     print("Editing external/abstraction object: '" + oldTok + "' -> '" +
                               objNameTok + "'",
                           Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
@@ -669,8 +675,8 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
 
         // 4) Substituição de objetos de GUI no canvas raiz do patch principal
         if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
-            static const std::unordered_set<std::string> guiObjs{"vsl", "hsl", "vradio",   "hradio",
-                                                                 "tgl", "bng", "keyboard", "vu"};
+            static const std::unordered_set<std::string> guiObjs{
+                "vsl", "hsl", "vradio", "hradio", "nbx", "tgl", "bng", "keyboard", "vu"};
 
             std::string baseName = strip_lib(pl.Name);
             if (guiObjs.count(baseName) && mainPatch && p->CanvasLevel == 1) {

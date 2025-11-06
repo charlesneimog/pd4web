@@ -354,9 +354,9 @@ void Pd4Web::serverPatch(bool toggle) {
             });
             server->Get("/stop",
                         [&](const httplib::Request &, httplib::Response &res) { server->stop(); });
-            std::string site = "http://localhost:8080";
+            std::string site = "http://localhost:8082";
             print("Starting server at " + site, Pd4WebLogLevel::PD4WEB_LOG1);
-            if (!server->listen("0.0.0.0", 8080)) {
+            if (!server->listen("0.0.0.0", 8082)) {
                 print("Failed to start server at " + site, Pd4WebLogLevel::PD4WEB_ERROR);
                 m_Error = true;
                 return;
@@ -364,7 +364,7 @@ void Pd4Web::serverPatch(bool toggle) {
         });
         t.detach();
     } else {
-        httplib::Client client("http://localhost:8080");
+        httplib::Client client("http://localhost:8082");
         auto res = client.Get("/stop");
         server.reset();
     }
