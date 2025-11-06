@@ -108,7 +108,6 @@ struct Patch {
     fs::path BuildFolder;
     fs::path Pd4WebFiles;
     fs::path Pd4WebRoot;
-    fs::path mainRoot;
 
     std::string ProjectName;
 
@@ -180,7 +179,7 @@ class Pd4Web {
         m_PatchZoom = zoom;
     };
     void setOutputFolder(std::string folder) {
-        m_OutputFolder = folder;
+        m_BuildFolder = folder;
     };
     void setTemplateId(int id) {
         m_TemplateId = id;
@@ -212,8 +211,8 @@ class Pd4Web {
     bool m_Init;
     bool m_Error;
 
-    std::string m_Pd4WebRoot;   // TODO: is fs::path
-    std::string m_OutputFolder; // TODO: is fs::path
+    std::string m_Pd4WebRoot;  // TODO: is fs::path
+    std::string m_BuildFolder; // TODO: is fs::path
     fs::path m_Pd4WebFiles;
 
     std::string m_PatchFile;     // TODO: is fs::path

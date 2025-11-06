@@ -198,7 +198,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
         ("o,output-folder", "Output folder.", 
-            cxxopts::value<std::string>(m_OutputFolder))
+            cxxopts::value<std::string>(m_BuildFolder))
 
         ("patch_file", "Patch file to be compiled.", 
             cxxopts::value<std::string>(m_PatchFile))

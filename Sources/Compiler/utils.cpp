@@ -348,7 +348,7 @@ void Pd4Web::serverPatch(bool toggle) {
         }
 
         std::thread t([this]() {
-            server->set_mount_point("/", m_OutputFolder);
+            server->set_mount_point("/", m_BuildFolder);
             server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });

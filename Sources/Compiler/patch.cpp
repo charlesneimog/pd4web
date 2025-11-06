@@ -189,7 +189,7 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
     // with declared paths
     fs::path AbsPath;
     for (auto path : p->DeclaredPaths) {
-        AbsPath = p->mainRoot / path / (pl.Name + ".pd");
+        AbsPath = p->PatchFolder / path / (pl.Name + ".pd");
         if (fs::exists(AbsPath)) {
             auto Abstraction = std::make_shared<Patch>();
             Abstraction->PatchFile = AbsPath;
@@ -209,7 +209,7 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
     }
 
     // with prefix
-    AbsPath = p->mainRoot / pl.Lib / (pl.Name + ".pd");
+    AbsPath = p->PatchFolder / pl.Lib / (pl.Name + ".pd");
     if (fs::exists(AbsPath)) {
         auto Abstraction = std::make_shared<Patch>();
         Abstraction->PatchFile = AbsPath;
@@ -720,7 +720,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     }
 
     p->Father = f;
-    p->mainRoot = f->mainRoot;
+    p->PatchFolder = f->PatchFolder;
     p->DeclaredPaths = f->DeclaredPaths;
     p->DeclaredLibs = f->DeclaredLibs;
     p->printLevel = p->printLevel + 1;
@@ -823,7 +823,6 @@ bool Pd4Web::compilePatch() {
     auto p = std::make_shared<Patch>();
     p->PatchFile = fs::path(m_PatchFile);
     p->PatchFolder = p->PatchFile.parent_path();
-    p->mainRoot = p->PatchFolder;
     p->Zoom = m_PatchZoom;
     p->PdVersion = m_PdVersion;
     p->ProcessedSubpatches.clear();
@@ -842,10 +841,9 @@ bool Pd4Web::compilePatch() {
     p->Pd4WebRoot = m_Pd4WebRoot;
     print("Project name is: '" + p->ProjectName + "'", Pd4WebLogLevel::PD4WEB_LOG1);
 
-    if (m_OutputFolder != "") {
-        p->BuildFolder = fs::path(m_OutputFolder);
+    if (m_BuildFolder != "") {
+        p->BuildFolder = fs::path(m_BuildFolder);
     } else {
-        // BUG: This is wrong
         p->BuildFolder = p->PatchFolder;
     }
 
