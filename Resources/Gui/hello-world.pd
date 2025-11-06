@@ -1,7 +1,9 @@
-#N canvas 415 75 1073 919 12;
-#X obj 5 6 vsl 20 110 0 127 0 0 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 0 1;
-#X obj 41 6 nbx 5 25 -1e+37 1e+37 0 0 empty empty empty 0 -10 0 24 #fcfcfc #000000 #000000 0 256;
-#X obj 41 52 tgl 40 1 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 0.4;
+#N canvas 283 148 1073 919 12;
+#X declare -lib pdlua;
+#X declare -path ./../../Sources/Pd4Web/Gui;
+#X obj 5 6 l.vsl 20 110 0 127 0 0 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 0 1;
+#X obj 41 6 l.nbx 5 25 -1e+37 1e+37 0 0 empty empty empty 0 -10 0 24 #fcfcfc #000000 #000000 0 256;
+#X obj 41 52 l.tgl 40 1 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 0.4;
 #X obj 177 91 osc~;
 #X obj 310 158 / 127;
 #X obj 310 101 loadbang;
@@ -15,6 +17,8 @@
 #X text 84 65 On/Off;
 #X text 39 105 1 - Hello World;
 #X obj 177 211 *~ 0.4;
+#X obj 528 29 declare -lib pdlua;
+#X obj 528 52 declare -path ./../../Sources/Pd4Web/Gui;
 #X connect 0 0 4 0;
 #X connect 1 0 3 0;
 #X connect 2 0 15 1;
