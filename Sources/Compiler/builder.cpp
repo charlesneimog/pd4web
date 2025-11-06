@@ -25,6 +25,8 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     print("Creating config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
+
+    // TODO: Update version
     replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"2\"");
     replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"4\"");
     replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.dev\"");
@@ -35,16 +37,8 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     replaceAll(configFile, "@PD4WEB_CHS_OUT@", std::to_string(p->Output < 1 ? 1 : p->Output));
     replaceAll(configFile, "@PD4WEB_SR@", std::to_string(p->Sr));
 
-    replaceAll(configFile, "@PD4WEB_GUI@", "true");
+    replaceAll(configFile, "@PD4WEB_GUI@", p->RenderGui ? "1" : "0");
     replaceAll(configFile, "@PD4WEB_PATCH_ZOOM@", std::to_string(p->Zoom));
-    replaceAll(configFile, "@PD4WEB_FPS@", "60");
-    replaceAll(configFile, "@PD4WEB_AUTO_THEME@", "1");
-    if (p->PdLua) {
-        replaceAll(configFile, "@PD4WEB_LUA@", "1");
-    } else {
-        replaceAll(configFile, "@PD4WEB_LUA@", "0");
-    }
-
     replaceAll(configFile, "@PD4WEB_MIDI@", std::to_string(p->Midi));
 
     writeFile((p->WebPatchFolder / "Pd4Web" / "config.h").string(), configFile);

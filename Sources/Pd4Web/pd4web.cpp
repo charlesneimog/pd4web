@@ -1031,7 +1031,6 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     ud->libpd = ud->libpd;
     pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
 
-
     return EM_FALSE;
 }
 
@@ -1133,14 +1132,15 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
 
     m_CanvasId = "";
     m_SoundToggleId = "";
-    m_ProjectName = "";
-    m_ChannelCountIn = 0;
-    m_ChannelCountOut = 0;
-    m_SampleRate = 48000.0f;
-    m_PatchZoom = 1.0f;
-    m_RenderGui = true;
-    m_Fps = 0;
-    m_UseMidi = false;
+    m_ProjectName = PD4WEB_PROJECT_NAME;
+    m_ChannelCountIn = PD4WEB_CHS_IN;
+    m_ChannelCountOut = PD4WEB_CHS_OUT;
+    m_SampleRate = PD4WEB_SR;
+    m_RenderGui = PD4WEB_GUI;
+    m_PatchZoom = PD4WEB_PATCH_ZOOM;
+    m_UseMidi = PD4WEB_MIDI;
+
+    m_Fps = 60;
 
     if (JS_IsDarkMode()) {
         m_BgColor = "#303030";
@@ -1999,7 +1999,7 @@ void Loop(void *userData) {
 void Pd4Web::Init() {
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate =  static_cast<uint32_t>(m_SampleRate),
+        .sampleRate = static_cast<uint32_t>(m_SampleRate),
     };
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];

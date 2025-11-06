@@ -132,6 +132,7 @@ struct Patch {
     bool Midi;
     bool PdLua;
     bool LuaGuiObjects;
+    bool RenderGui;
     unsigned Input;
     unsigned Output;
     unsigned Sr = 48000;

@@ -6,10 +6,26 @@
 extern "C" {
 #endif
 
+// clang-format off
 // Pd4Web Version
 #define PD4WEB_VERSION_MAJOR @PD4WEB_VERSION_MAJOR@
 #define PD4WEB_VERSION_MINOR @PD4WEB_VERSION_MINOR@
 #define PD4WEB_VERSION_PATCH @PD4WEB_VERSION_PATCH@
+
+// Sound
+#define PD4WEB_PROJECT_NAME @PD4WEB_PROJECT_NAME@
+#define PD4WEB_CHS_IN @PD4WEB_CHS_IN@
+#define PD4WEB_CHS_OUT @PD4WEB_CHS_OUT@
+#define PD4WEB_SR @PD4WEB_SR@
+
+// Gui
+#define PD4WEB_GUI @PD4WEB_GUI@
+#define PD4WEB_PATCH_ZOOM @PD4WEB_PATCH_ZOOM@
+
+// Midi
+#define PD4WEB_MIDI @PD4WEB_MIDI@
+
+// clang-format on
 
 // ╭─────────────────────────────────────╮
 // │             Sound Icons             │

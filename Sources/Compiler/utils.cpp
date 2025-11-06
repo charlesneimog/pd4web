@@ -366,6 +366,6 @@ void Pd4Web::serverPatch(bool toggle) {
     } else {
         httplib::Client client("http://localhost:8080");
         auto res = client.Get("/stop");
-        server.reset(); // libera a memória
+        server.reset();
     }
 }

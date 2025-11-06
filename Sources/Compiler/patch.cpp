@@ -806,6 +806,7 @@ bool Pd4Web::compilePatch() {
     p->PdVersion = m_PdVersion;
     p->ProcessedSubpatches.clear();
     p->MemorySize = m_Memory;
+    p->RenderGui = m_RenderGui;
 
     if (m_Pd4WebFiles == "") {
         print("m_Pd4WebFiles not set", Pd4WebLogLevel::PD4WEB_ERROR);
@@ -873,6 +874,7 @@ bool Pd4Web::compilePatch() {
     print("Start building Patch", Pd4WebLogLevel::PD4WEB_LOG1);
     buildPatch(p);
     createAppManifest(p);
+
     if (!m_Error) {
         print("Finished", Pd4WebLogLevel::PD4WEB_LOG1);
     }
