@@ -151,6 +151,29 @@ bool Pd4Web::init() {
 }
 
 // ─────────────────────────────────────
+void Pd4Web::validateArgs() {
+    if (!fs::exists(m_PatchFile)) {
+        if (m_PatchFile == "") {
+            print("Please provide a patch file", Pd4WebLogLevel::PD4WEB_ERROR);
+        } else {
+            print("Patch file " + m_PatchFile + " not found", Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+        return;
+    }
+
+    if (!(m_TemplateId >= 0 && m_TemplateId <= 5)) {
+        print("Invalid template id, must be between 0 and 5", Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
+    }
+
+    if (!(m_Memory >= 4 && m_TemplateId <= 2048)) {
+        print("Invalid memory value, must be between 4 and 2048mb", Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
+    }
+
+    return;
+}
+// ─────────────────────────────────────
 void Pd4Web::parseArgs(int argc, char *argv[]) {
     cxxopts::Options options("pd4web", "pd4web compiles PureData patches with external objects for "
                                        "Wasm, allowing to run entire patches in web browsers.\n");
@@ -182,7 +205,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
         // TODO:
         ("t,template-id", "Set template id check https://charlesneimog.github.io/pd4web/patch/templates/.",
-            cxxopts::value<int>(m_TemplateId))
+            cxxopts::value<unsigned>(m_TemplateId))
 
 
         // TEST:
@@ -204,6 +227,8 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
     m_RenderGui = !disableGui;
     m_FailFast = failFast;
+
+    validateArgs();
 
     if (result.count("help")) {
         options.set_width(120);

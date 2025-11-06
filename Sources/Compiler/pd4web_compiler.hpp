@@ -10,6 +10,7 @@
 #include <memory>
 #include <string>
 #include <filesystem>
+
 #include <sys/stat.h>
 
 #include <httplib.h>
@@ -104,7 +105,7 @@ struct PatchLine {
 struct Patch {
     fs::path PatchFile;
     fs::path PatchFolder;
-    fs::path WebPatchFolder;
+    fs::path BuildFolder;
     fs::path Pd4WebFiles;
     fs::path Pd4WebRoot;
     fs::path mainRoot;
@@ -136,6 +137,7 @@ struct Patch {
     unsigned Input;
     unsigned Output;
     unsigned Sr = 48000;
+    unsigned TemplateId;
 
     std::shared_ptr<Patch> Father;
     std::vector<std::shared_ptr<Patch>> Childs;
@@ -216,7 +218,7 @@ class Pd4Web {
 
     std::string m_PatchFile;     // TODO: is fs::path
     std::string m_LibrariesPath; // TODO: is fs::path
-    int m_TemplateId;
+    unsigned int m_TemplateId;
     bool m_BypassUnsuported;
     bool m_Verbose;
     std::string m_PdVersion;
@@ -240,6 +242,8 @@ class Pd4Web {
 
     std::function<void(const std::string &, Pd4WebLogLevel, int)> m_PrintCallback;
     bool m_inArray = false;
+
+    void validateArgs();
 
     // Paths
     bool initPaths();
@@ -345,6 +349,7 @@ class Pd4Web {
     void buildPatch(std::shared_ptr<Patch> &p);
     void createAppManifest(std::shared_ptr<Patch> &p);
     void copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir);
+    void updateTemplate(std::shared_ptr<Patch> &p);
 
     // Utils
     std::string getCertFile();
