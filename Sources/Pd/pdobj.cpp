@@ -205,7 +205,7 @@ static void *pd4web_new() {
     x->pd4web->setTemplateId(x->patch_template);
     x->pd4web->setDebugMode(false);
     x->pd4web->setFailFast(false);
-    x->pd4web->setCleanBuild(true);
+    x->pd4web->setCleanBuild(false);
 
     return x;
 }
