@@ -133,17 +133,13 @@
                 document.documentElement.requestFullscreen();
             });
 
-            var Pd4Web = null; // Pd4Web object must be declared in the global scope
+            // Init Pd4Web
+            var Pd4Web = null;
             Pd4WebModule().then((Pd4WebModulePromise) => {
                 Pd4Web = new Pd4WebModulePromise.Pd4Web();
-            });
-
-            document.getElementById("Pd4WebAudioSwitch").addEventListener("click", async () => {
-                // Pd4Web.init(), when using audio input, must be called after a user gesture
-                Pd4Web.init();
-
-                Pd4Web.onSymbolReceived("pd4web-score", function (symbol) {
-                    document.getElementById("Pd4WebScore").src = symbol;
+                Pd4Web.openPatch("index.pd", {
+                    canvasId: "Pd4WebCanvas",
+                    soundToggleId: "Pd4WebAudioSwitch",
                 });
             });
         </script>

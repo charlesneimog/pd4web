@@ -43,21 +43,24 @@
                 if (Pd4Web) {
                     return;
                 }
+
                 Pd4WebModule().then((Pd4WebModulePromise) => {
                     Pd4Web = new Pd4WebModulePromise.Pd4Web();
-                    const message = document.getElementById("message");
-                    if (message) {
-                        message.style.display = "none";
-                    }
+                    Pd4Web.openPatch("index.pd", {
+                        canvasId: "Pd4WebCanvas",
+                        soundToggleId: "Pd4WebAudioSwitch",
+                    });
                 });
-                // remove event listener
+
+                const message = document.getElementById("message");
+                if (message) {
+                    message.style.display = "none";
+                }
                 document.removeEventListener("click", () => {});
             });
 
             document.getElementById("Pd4WebAudioSwitch").addEventListener("click", async () => {
                 startVideo();
-                Pd4Web.init();
-                console.log("Pd4Web", Pd4Web);
             });
         </script>
     </body>
