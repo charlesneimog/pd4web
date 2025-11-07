@@ -102,9 +102,9 @@ Libraries:
 # ───────────────── else ─────────────────
   - Name: else
     Source: GITHUB
-    Developer: porres
+    Developer: charlesneimog
     Repository: pd-else
-    Version: v.1.0-rc12
+    Version: 0be9a4fdf78a90b728facfbad367f73d1cac3644
     Unsupported:
       # Need implementation
       - sfz~
