@@ -117,17 +117,20 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, PatchLine &pl) {
         }
     }
 
-    for (auto Lib : p->DeclaredPaths) {
-        if (Lib != "") {
-            if (p->ExternalObjectsJson.contains(Lib)) {
-                if (p->ExternalObjectsJson[Lib].contains("abstractions")) {
-                    if (p->ExternalObjectsJson[Lib]["abstractions"].contains(objName)) {
-                        fullPath = p->ExternalObjectsJson[Lib]["abstractions"][objName][1];
+    for (auto Path : p->DeclaredPaths) {
+        if (Path != "") {
+            // if is something like declare -path else
+            if (p->ExternalObjectsJson.contains(Path)) {
+                if (p->ExternalObjectsJson[Path].contains("abstractions")) {
+                    if (p->ExternalObjectsJson[Path]["abstractions"].contains(objName)) {
+                        fullPath = p->ExternalObjectsJson[Path]["abstractions"][objName][1];
                         if (fs::exists(fullPath)) {
                             return fullPath;
                         }
                     }
                 }
+            } else if (fs::exists(p->PatchFolder / Path / (objName + ".pd"))) {
+                return p->PatchFolder / Path / (objName + ".pd");
             }
         }
     }
