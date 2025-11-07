@@ -14,94 +14,96 @@ const maxFlow = 50; // Adjusted for a wider range of flow
 const breakDuration = 200; // How long the break pattern lasts
 
 function setup() {
-  let w = window.innerWidth;
-  let h = window.innerHeight;
+    noLoop();
+    let w = window.innerWidth;
+    let h = window.innerHeight;
 
-  let canvas = createCanvas(w, h);
-  canvas.parent("p5js");
+    let canvas = createCanvas(w, h);
+    canvas.parent("p5js");
 
-  // Center the canvas
-  canvas.style('display', 'block');
-  canvas.style('margin', 'auto');
+    // Center the canvas
+    canvas.style("display", "block");
+    canvas.style("margin", "auto");
 
-  background(255);
+    background(255);
 
-  // Initialize random intervals
-  drawInterval = 0;
-  clearInterval = floor(random(5, 35)); // Clear after 5 to 35 circles
+    // Initialize random intervals
+    drawInterval = 0;
+    clearInterval = floor(random(5, 35)); // Clear after 5 to 35 circles
 }
 
 function draw() {
-  // Use a combination of sine and noise to control flow
-  let speedModifier = noise(noiseTime) * 0.5 + 0.5; // Noise-based modulation
-  let sineWave = sin(time) * 0.5 + 0.5; // Sine wave modulation between 0 and 1
-  flow = map(sineWave * speedModifier, 0, 1, minFlow, maxFlow); 
-  time += 0.03; // Adjust main sine wave speed
-  noiseTime += 0.01; // Adjust noise function speed
-
-  // Handle the pattern breaker
-  if (breakingFlow) {
-    flow = maxFlow * 2; // Force a fast flow during the break
-    breakCounter++;
-    if (breakCounter > breakDuration) {
-      breakingFlow = false;
-      breakCounter = 0;
+    if (Pd4Web === "undefined" || Pd4Web === null) {
+        return;
     }
-  } else {
-    // Randomly decide to break the pattern
-    if (random() < 0.005) { // Low probability of breaking
-      breakingFlow = true;
-    }
-  }
+    // Use a combination of sine and noise to control flow
+    let speedModifier = noise(noiseTime) * 0.5 + 0.5; // Noise-based modulation
+    let sineWave = sin(time) * 0.5 + 0.5; // Sine wave modulation between 0 and 1
+    flow = map(sineWave * speedModifier, 0, 1, minFlow, maxFlow);
+    time += 0.03; // Adjust main sine wave speed
+    noiseTime += 0.01; // Adjust noise function speed
 
-  if (drawCounter >= drawInterval) {
-    drawSomething();
-    drawCounter = 0;
-    drawInterval = floor(random(1, flow));
-    clearCounter++;
-
-    if (typeof Pd4Web !== 'undefined') {
-      if (Pd4Web.sendList) {
-        let models = [10, 11, 12, 13, 14, 15, 16];
-        let model = models[floor(random(0, 21))];
-        Pd4Web.sendFloat("s-m", model);
-        Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
-        Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
-
-        cloneInstance++;
-        if (cloneInstance > 9) {
-          cloneInstance = 0;
-          Pd4Web.sendBang("clear");
+    // Handle the pattern breaker
+    if (breakingFlow) {
+        flow = maxFlow * 2; // Force a fast flow during the break
+        breakCounter++;
+        if (breakCounter > breakDuration) {
+            breakingFlow = false;
+            breakCounter = 0;
         }
-      }
+    } else {
+        if (random() < 0.005) {
+            breakingFlow = true;
+        }
     }
 
-    if (clearCounter >= clearInterval) {
-      background(255);
-      clearCounter = 0;
-      clearInterval = floor(random(5, 25));
-    }
-  }
+    if (drawCounter >= drawInterval) {
+        drawSomething();
+        drawCounter = 0;
+        drawInterval = floor(random(1, flow));
+        clearCounter++;
 
-  drawCounter++;
+        if (typeof Pd4Web !== "undefined") {
+            if (Pd4Web.sendList) {
+                let models = [10, 11, 12, 13, 14, 15, 16];
+                let model = models[floor(random(0, 21))];
+                Pd4Web.sendFloat("s-m", model);
+                Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
+                Pd4Web.sendList("note", [cloneInstance, random(48, 84), random(40, 80)]);
+                cloneInstance++;
+                if (cloneInstance > 9) {
+                    cloneInstance = 0;
+                    Pd4Web.sendBang("clear");
+                }
+            }
+        }
+
+        if (clearCounter >= clearInterval) {
+            background(255);
+            clearCounter = 0;
+            clearInterval = floor(random(5, 25));
+        }
+    }
+
+    drawCounter++;
 }
 
 // Function to draw a random shape
 function drawSomething() {
-  let form = floor(random(1, 4)); // Random shape selector
-  fill(random(0, 255), random(0, 255), random(0, 255));
+    let form = floor(random(1, 4)); // Random shape selector
+    fill(random(0, 255), random(0, 255), random(0, 255));
 
-  let width = window.innerWidth;
-  let height = window.innerHeight;
-  let d = random(20, 100);
-  let x = random(d / 2, width - d / 2);
-  let y = random(d / 2, height - d / 2);
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let d = random(20, 100);
+    let x = random(d / 2, width - d / 2);
+    let y = random(d / 2, height - d / 2);
 
-  if (form === 1) {
-    ellipse(x, y, d);
-  } else if (form === 2) {
-    rect(x, y, d, d);
-  } else if (form === 3) {
-    triangle(x, y, x + d, y, x + d / 2, y + d);
-  }
+    if (form === 1) {
+        ellipse(x, y, d);
+    } else if (form === 2) {
+        rect(x, y, d, d);
+    } else if (form === 3) {
+        triangle(x, y, x + d, y, x + d / 2, y + d);
+    }
 }
