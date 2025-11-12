@@ -83,6 +83,7 @@ struct PatchLine {
         ARRAY,
         COORDS,
         FLOATATOM,
+        FLOAT,
         TEXT,
         INVALID
     };

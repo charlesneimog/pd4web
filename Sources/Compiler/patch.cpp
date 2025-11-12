@@ -69,6 +69,8 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
             pl.Type = PatchLine::COORDS;
         } else if (Line[1] == "floatatom") {
             pl.Type = PatchLine::FLOATATOM;
+        } else if (Line[1] == "f") {
+            pl.Type = PatchLine::FLOAT;
         } else {
             print("t_canvas class unknown " + Line[1], Pd4WebLogLevel::PD4WEB_ERROR);
         }
