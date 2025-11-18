@@ -207,7 +207,9 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
     std::vector<uint8_t> buffer(length);
-    uint8Array.call<void>("set", emscripten::typed_memory_view(length, buffer.data()));
+    for (size_t i = 0; i < length; i++) {
+        buffer[i] = uint8Array[i].as<uint8_t>();
+    }
     std::ofstream out(filename, std::ios::binary);
     if (!out) {
         emscripten_log(EM_LOG_ERROR, "Failed to open output file");
