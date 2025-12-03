@@ -670,7 +670,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
         // 4) Substituição de objetos de GUI no canvas raiz do patch principal
         if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
             static const std::unordered_set<std::string> guiObjs{"vsl", "hsl", "vradio",   "hradio",
-                                                                 "tgl", "bng", "keyboard", "vu"};
+                                                                 "tgl", "nbx", "bng", "keyboard", "vu"};
 
             std::string baseName = strip_lib(pl.Name);
             if (guiObjs.count(baseName) && mainPatch && p->CanvasLevel == 1) {

@@ -72,7 +72,9 @@ nav:
   - Home: index.md
   - Compile your patch:
       - Installation: patch/install.md
-      - Gui Objects: [patch/gui.md]
+      - Objects: 
+        - GUI Objects: patch/gui.md
+        - Externals Objects: patch/externals.md
       - Compilation: [patch/compile.md]
       - Website Templates:
           - patch/templates/index.md

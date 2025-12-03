@@ -15,7 +15,7 @@ If you have problems to compile, the easiear way to solve is to report what is t
 --- 
 <div class="grid cards" markdown>
 -   :construction: __Object not found__:
-    -   __Solution:__ You must remove the object not found. If it is in a library that is supported, report the issue.
+    -   __Solution:__ 1) Check if the library of that object is supported [Supported libraries](#libraries). 2) Check how `pd4web` detects objects in [Externals Objects](#externals). If the library is not supported remove the object, if the library is supported, and you did what is in [Externals Objects](#externals), report the issue.
 -   :construction: __Object not supported__:
     -   __Solution:__ You must remove the object not supported.
 </div>
