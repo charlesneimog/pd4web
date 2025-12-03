@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <script data-goatcounter="https://pd4web.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        <meta charset="UTF-8" />
+        <script src="./pd4web.threads.js"></script>
+        <!-- Just necessary if you are using Github Pages -->
+        <script src="./pd4web.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vexflow/build/cjs/vexflow.js"></script>
+    </head>
+    <style>
+        @media (min-width: 1080px) {
+            body {
+                max-width: 700px;
+                margin: 0 auto;
+                overflow-x: hidden;
+            }
+        }
+        /* The switch - the box around the slider */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: 0.4s;
+            transition: 0.4s;
+        }
+
+        input:checked + .slider {
+            background-color: #2196f3;
+        }
+
+        input:focus + .slider {
+            box-shadow: 0 0 1px #2196f3;
+        }
+
+        input:checked + .slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+        canvas {
+            background: rgb(206, 203, 203);
+            padding: 0px;
+        }
+
+        div.egcode {
+            font-family: Courier;
+            font-size: 14px;
+        }
+
+        select#naipe-select {
+            margin-top: 20px;
+            display: inline-block;
+            outline: 0;
+            border: 0;
+            cursor: pointer;
+            transition:
+                box-shadow 0.15s ease,
+                transform 0.15s ease;
+            will-change: box-shadow, transform;
+            text-align: center;
+            background: rgb(70, 70, 70);
+            box-shadow:
+                0px 2px 4px rgb(45 35 66 / 40%),
+                0px 4px 2px -3px rgba(108, 108, 108, 0.3),
+                inset 0px -3px 0px #5b5b5b;
+            height: 46px;
+            padding: 0 30px;
+            font-size: 16px;
+            border-radius: 6px;
+            color: #ffffff;
+            transition:
+                box-shadow 0.15s ease,
+                transform 0.15s ease;
+        }
+    </style>
+
+    <body style="height: 100%; background-color: rgb(48, 48, 48)">
+        <div id="control-gui" style="background-color: rgb(48, 48, 48); text-align: center; border-radius: 10px">
+            <h1 id="mytitle" style="color: white; font-size: 48px"></h1>
+            <p id="thecomposer" style="color: white; font-size: 24px"></p>
+
+            <label class="switch">
+                <input type="checkbox" id="myCheckbox" />
+                <span class="slider round"></span>
+            </label>
+            <br />
+            <select id="naipe-select" onchange="chooseNaipe()">
+                <option value="none">Escolha seu Naipe!</option>
+                <option value="Soprano">Soprano</option>
+                <option value="Contralto">Contralto</option>
+                <option value="Tenor">Tenor</option>
+                <option value="Baixo">Baixo</option>
+            </select>
+            <hr style="width: 90%; margin-top: 20px; background-color: rgb(226, 225, 225)" />
+            <div
+                id="duration-bar"
+                style="
+                    margin-top: 20px;
+                    width: 100%;
+                    border-radius: 5px;
+
+                    height: 20px;
+                    background-color: white;
+                "
+            ></div>
+            <div id="VexFlowNote"></div>
+            <script>
+                var VF = Vex.Flow;
+                var CLEF = "treble";
+                Vex.Flow.setMusicFont("Bravura");
+
+                var div = document.getElementById("VexFlowNote");
+                var renderer = new VF.Renderer(div, VF.Renderer.Backends.SVG);
+
+                // check if I am on a mobile device
+                if (/Mobi/.test(navigator.userAgent)) {
+                    var scaleFactor = 5;
+                } else {
+                    var scaleFactor = 2;
+                }
+
+                const scoreWidth = 160;
+                const scoreHeight = 130;
+
+                renderer.resize(scoreWidth * scaleFactor, scoreHeight * scaleFactor);
+
+                // Get the rendering context
+                const context = renderer.getContext();
+                var DEFAULT_COLOR = "white";
+                context.setFillStyle(DEFAULT_COLOR);
+                context.setStrokeStyle(DEFAULT_COLOR);
+                context.scale(scaleFactor, scaleFactor);
+                var group = renderer.getContext().openGroup();
+
+                var note = null;
+                var stave = new VF.Stave(0, 0, scoreWidth, { fill_style: "white" });
+                stave.setEndBarType(VF.Barline.type.END);
+                stave.addClef(CLEF).setContext(context).draw();
+
+                function setNaipe() {
+                    const naipe = document.getElementById("naipe-select").value;
+                    if (naipe == "Baixo") {
+                        window.naipe = 1;
+                        CLEF = "bass";
+                    } else if (naipe == "Tenor") {
+                        Pd4Web.sendFloat("naipe", 2);
+                        window.naipe = 2;
+                        CLEF = "bass";
+                    } else if (naipe == "Contralto") {
+                        window.naipe = 3;
+                        Pd4Web.sendFloat("naipe", 3);
+                        CLEF = "treble";
+                    } else if (naipe == "Soprano") {
+                        window.naipe = 4;
+                        Pd4Web.sendFloat("naipe", 4);
+                        CLEF = "treble";
+                    }
+                }
+                // remove CLEF from the stave
+
+                function setNoteAndSilaba(pitch, silaba) {
+                    if (window.naipe == 1) {
+                        CLEF = "bass";
+                        Pd4Web.sendFloat("naipe", 1);
+                    } else if (window.naipe == 2) {
+                        CLEF = "bass";
+                        Pd4Web.sendFloat("naipe", 2);
+                    } else if (window.naipe == 3) {
+                        CLEF = "treble";
+                        Pd4Web.sendFloat("naipe", 3);
+                    } else if (window.naipe == 4) {
+                        Pd4Web.sendFloat("naipe", 4);
+                        CLEF = "treble";
+                    } else {
+                        setNaipe();
+                    }
+
+                    const pitchname = pitch[0];
+                    let remainingPitch = pitch.slice(1);
+                    const pitchoctave = remainingPitch[remainingPitch.length - 1];
+                    var acc = remainingPitch.slice(0, -1);
+                    var vexPitch = pitchname;
+                    if (acc.length != 0) {
+                        if (acc == "#+") {
+                            acc = "++";
+                        } else if (acc == "b-") {
+                            acc = "db";
+                        } else if ((acc = "-")) {
+                            acc = "d";
+                        }
+                    }
+
+                    //vexPitch += remainingPitch;
+                    vexPitch += "/";
+                    vexPitch += pitchoctave;
+
+                    //return;
+                    const notes = document.querySelectorAll(".vf-stavenote");
+                    notes.forEach((note) => {
+                        note.remove();
+                    });
+                    stave.setContext(context).draw();
+                    note = new VF.StaveNote({
+                        clef: CLEF,
+                        keys: [vexPitch],
+                        duration: "w",
+                        align_center: true,
+                    });
+                    note.setAttribute("id", "mynote");
+                    note.setLedgerLineStyle({ fillStyle: "white", strokeStyle: "white" });
+                    note.setFlagStyle({ fillStyle: "white", strokeStyle: "white" });
+
+                    var silaba = silaba;
+                    const lyricsAnnotation = new VF.Annotation(silaba);
+                    lyricsAnnotation.setFont("Serif", 12, "");
+
+                    lyricsAnnotation.setVerticalJustification(VF.Annotation.VerticalJustify.BOTTOM);
+                    lyricsAnnotation.setJustification(VF.Annotation.HorizontalJustify.CENTER);
+
+                    note.addModifier(lyricsAnnotation, 0);
+
+                    // Accidental
+                    // https://github.com/0xfe/vexflow/wiki/Microtonal-Support
+                    if (acc.length != 0) {
+                        const vexAcc = new VF.Accidental(acc);
+                        note.addModifier(vexAcc, 0);
+                    }
+
+                    voice = new VF.Voice({ num_beats: 4, beat_value: 4 });
+                    voice.addTickables([note]);
+
+                    var formatter = new VF.Formatter()
+                        .joinVoices([voice])
+                        .format([voice], scoreWidth - scoreWidth * 0.5);
+
+                    voice.draw(context, stave);
+                }
+            </script>
+        </div>
+
+        <hr style="width: 90%; margin-top: 20px; background-color: rgb(226, 225, 225)" />
+        <div id="Phrase" style="height: 50%; margin-left: 0%; margin-top: 0%">
+            <h1 id="phrase" style="font-size: 30px; color: white; text-align: center; height: 30px"></h1>
+        </div>
+        <hr style="width: 90%; margin-top: 20px; background-color: rgb(226, 225, 225)" />
+        <div
+            id="piece-duration-bar"
+            style="margin-top: 20px; width: 100%; border-radius: 10px; height: 5px; background-color: white"
+        ></div>
+        <script>
+            document.getElementById("phrase").innerText = "Escolha seu Naipe!";
+
+            function chooseNaipe() {
+                const naipe = document.getElementById("naipe-select").value;
+                if (naipe === "none") {
+                    return;
+                }
+                if (Pd4Web === null) {
+                    alert("Pd4Web is not loaded yet. Please wait a few seconds and try again.");
+                    return;
+                }
+                setNaipe();
+
+                const clefs = document.querySelectorAll(".vf-clef");
+                clefs.forEach((clef) => {
+                    clef.remove();
+                });
+                stave = new VF.Stave(0, 0, scoreWidth, { fill_style: "white" });
+                stave.setEndBarType(VF.Barline.type.END);
+                stave.addClef(CLEF).setContext(context).draw();
+                return;
+            }
+        </script>
+        <script>
+            function generateNumbersWithSum(total, numElements, minValue, maxValue) {
+                // Thanks to llama
+                let numbers = Array.from(
+                    { length: numElements },
+                    () => Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue,
+                );
+                let currentSum = numbers.reduce((acc, num) => acc + num, 0);
+                let difference = total - currentSum;
+                while (difference !== 0) {
+                    for (let i = 0; i < numElements; i++) {
+                        if (difference === 0) break;
+                        if (difference > 0) {
+                            let increment = Math.min(difference, maxValue - numbers[i]);
+                            numbers[i] += increment;
+                            difference -= increment;
+                        } else if (difference < 0) {
+                            let decrement = Math.min(-difference, numbers[i] - minValue);
+                            numbers[i] -= decrement;
+                            difference += decrement;
+                        }
+                    }
+                }
+                return numbers;
+            }
+
+            var poemDur = generateNumbersWithSum(270000, 21, 8000, 20000);
+            poemDur.unshift(30000);
+            const sum = poemDur.reduce((acc, num) => acc + num, 0);
+            if (sum !== 300000) {
+                alert("Error: sum is not 300000");
+            }
+
+            const msInitEnd = 30000;
+            var globalDur = [];
+            globalDur.push(msInitEnd);
+            const chords = generateNumbersWithSum(180000, 6, 20000, 35000);
+            const transitions = generateNumbersWithSum(60000, 6, 5000, 15000);
+            for (let i = 0; i < 6; i++) {
+                globalDur.push(chords[i]);
+                globalDur.push(transitions[i]);
+            }
+            globalDur.push(msInitEnd);
+
+            // Generate a random list of 4 numbers that sum 100
+
+            let Pd4Web = null;
+            Pd4WebModule().then((Pd4WebModulePromise) => {
+                Pd4Web = new Pd4WebModulePromise.Pd4Web();
+            });
+
+            var Pd4WebInitiate = false;
+
+            // ================== INIT ==================
+            async function Pd4WebOnClick(event) {
+                if (Pd4WebInitiate) {
+                    console.log("Pd4Web already initiated");
+                    return;
+                }
+                Pd4WebInitiate = true;
+                Pd4Web.init();
+
+                Pd4Web.onListReceived("pitch-syl", function (list) {
+                    console.log(list);
+                    //return;
+                    const pitch = list[0];
+                    const silaba = list[1];
+                    setNoteAndSilaba(pitch, silaba);
+                });
+
+                Pd4Web.onListReceived("poem-phrase", function (list) {
+                    const poemPhrase = list.join(" ");
+                    document.getElementById("phrase").innerText = poemPhrase;
+                    if (poemPhrase === "Respire!") {
+                        const notes = document.querySelectorAll(".vf-stavenote");
+                        notes.forEach((note) => {
+                            note.remove();
+                        });
+                    }
+                    if (poemPhrase === "Fim!") {
+                        const notes = document.querySelectorAll(".vf-stavenote");
+                        notes.forEach((note) => {
+                            note.remove();
+                        });
+                    }
+                });
+
+                Pd4Web.onSymbolReceived("poem-phrase", function (symbol) {
+                    const poemPhrase = symbol;
+                    c;
+                    document.getElementById("phrase").innerText = poemPhrase;
+                    if (poemPhrase === "Respire!") {
+                        const notes = document.querySelectorAll(".vf-stavenote");
+                        notes.forEach((note) => {
+                            note.remove();
+                        });
+                    }
+                    if (poemPhrase === "Fim!") {
+                        const notes = document.querySelectorAll(".vf-stavenote");
+                        notes.forEach((note) => {
+                            note.remove();
+                        });
+                    }
+                });
+
+                Pd4Web.onFloatReceived("duration-bar", function (number) {
+                    const durationBar = document.getElementById("duration-bar");
+                    durationBar.style.width = number + "%";
+                });
+
+                Pd4Web.onFloatReceived("piece-duration-bar", function (number) {
+                    const durationBar = document.getElementById("piece-duration-bar");
+                    durationBar.style.width = number + "%";
+                });
+
+                Pd4Web.onListReceived("composer", function (list) {
+                    const composer = list.join(" ");
+                    document.getElementById("thecomposer").innerText = composer;
+                });
+
+                Pd4Web.onListReceived("title", function (list) {
+                    document.getElementById("mytitle").innerText = list.join(" ");
+                });
+
+                Pd4Web.onSymbolReceived("title", function (symbol) {
+                    document.getElementById("mytitle").innerText = symbol;
+                });
+            }
+
+            const checkbox = document.getElementById("myCheckbox");
+            checkbox.addEventListener("click", function () {
+                const naipe = document.getElementById("naipe-select").value;
+                if (naipe === "none") {
+                    checkbox.checked = false;
+                    alert("Please choose a naipe!");
+                    return;
+                }
+                Pd4WebOnClick().then(() => {
+                    if (checkbox.checked) {
+                        document.getElementById("phrase").innerText = "Inicializando...";
+                        setTimeout(() => {
+                            setNaipe();
+                            Pd4Web.sendList("duration-list", poemDur);
+                            Pd4Web.sendList("sectiondur-list", globalDur);
+                        }, 100);
+                        setTimeout(() => {
+                            Pd4Web.sendFloat("on-off", 1);
+                        }, 500);
+                    } else {
+                        Pd4Web.sendFloat("on-off", 0);
+                    }
+                });
+            });
+            //document.addEventListener("click", initPd4WebOnClick);
+        </script>
+    </body>
+</html>

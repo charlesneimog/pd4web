@@ -15,7 +15,7 @@ include(${PDCMAKE_FILE})
 # ╭──────────────────────────────────────╮
 # │                Objeto                │
 # ╰──────────────────────────────────────╯
-pd_add_external(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp")
+pd_add_external(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.compiler.cpp")
 target_link_libraries(pd4web.compiler PRIVATE pd4web_compiler)
 target_include_directories(pd4web.compiler
                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
@@ -23,20 +23,26 @@ set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
                                                  ON)
 
 # Pd4Web Data
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pdobj.cpp")
+pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.compiler.cpp")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
-# pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-ml5")
+pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
                 DESTINATION "Pd4Web")
 
-if (APPLE)
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "bin/cmake/")
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share" DESTINATION "bin/cmake/")
+if(APPLE)
+  pd_add_datafile(
+    pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION
+    "bin/cmake/")
+  pd_add_datafile(
+    pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share"
+    DESTINATION "bin/cmake/")
 else()
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION "bin/cmake/")
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION "bin/cmake/")
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION
+                  "bin/cmake/")
+  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION
+                  "bin/cmake/")
 endif()
 pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "bin")
 

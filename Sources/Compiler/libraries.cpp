@@ -514,7 +514,8 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
             }
         }
     } catch (const std::exception &e) {
-        print(std::string("Failed reading objects.json: ") + e.what(), Pd4WebLogLevel::PD4WEB_LOG1);
+        print(std::string("Failed reading objects.json: ") + e.what(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
     }
 
     print("Listing all Objects inside '" + Lib +

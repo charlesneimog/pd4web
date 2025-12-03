@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <script data-goatcounter="https://pd4web.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+        <meta charset="UTF-8" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
+        <script src="https://unpkg.com/ml5@1/dist/ml5.js"></script>
+        <script src="./pd4web.threads.js"></script>
+        <script src="./pd4web.js"></script>
+        <script src="./sketch.js"></script>
+        <style>
+            canvas {
+                border-radius: 30px;
+            }
+        </style>
+    </head>
+    <body>
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+        <div id="Pd4WebPatchDiv" class="Pd4WebPatchDiv">
+            <svg id="Pd4WebCanvas"></svg>
+        </div>
+        <hr />
+        <p id="message" style="text-align: center; font-size: 20px">
+            Click on the page to request access to the camera and microphone.
+        </p>
+        <div style="display: flex; justify-content: center; border-radius: 30px">
+            <div id="p5js" style="border-radius: 30px"></div>
+        </div>
+
+        <script>
+            // ╭─────────────────────────────────────╮
+            // │        Gui Bottoms Interface        │
+            // ╰─────────────────────────────────────╯
+            var Pd4Web = null;
+
+            // add window click event to start video
+            document.addEventListener("click", async () => {
+                navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true,
+                });
+                if (Pd4Web) {
+                    return;
+                }
+
+                Pd4WebModule().then((Pd4WebModulePromise) => {
+                    Pd4Web = new Pd4WebModulePromise.Pd4Web();
+                    Pd4Web.openPatch("index.pd", {
+                        canvasId: "Pd4WebCanvas",
+                        soundToggleId: "Pd4WebAudioSwitch",
+                    });
+                });
+
+                const message = document.getElementById("message");
+                if (message) {
+                    message.style.display = "none";
+                }
+                document.removeEventListener("click", () => {});
+            });
+
+            document.getElementById("Pd4WebAudioSwitch").addEventListener("click", async () => {
+                startVideo();
+            });
+        </script>
+    </body>
+</html>

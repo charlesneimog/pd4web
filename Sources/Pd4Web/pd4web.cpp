@@ -63,105 +63,143 @@ EM_JS(void, JS_SuspendAudioWorklet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 // ╭─────────────────────────────────────╮
 // │            Senders Hooks            │
 // ╰─────────────────────────────────────╯
+// Note: This callback is no longer used - messages are processed directly
+// in the Process() function on the Audio Worklet thread
 void SenderCallback(t_pd *obj, void *data) {
-    std::unique_ptr<Pd4WebSender> sender(static_cast<Pd4WebSender *>(data));
-
-    switch (sender->type) {
-    case BANG:
-        libpd_bang(sender->receiver);
-        break;
-    case FLOAT:
-        libpd_float(sender->receiver, sender->f);
-        break;
-    case SYMBOL:
-        libpd_symbol(sender->receiver, sender->m);
-        break;
-    case LIST: {
-        size_t llen = sender->l["length"].as<size_t>();
-        if (libpd_start_message(llen)) {
-            JS_Alert("Failed to start message for sendList");
-            return;
-        }
-        for (unsigned i = 0; i < llen; ++i) {
-            emscripten::val v = sender->l[i];
-            if (v.isNumber()) {
-                libpd_add_float(v.as<double>());
-            } else if (v.isString()) {
-                libpd_add_symbol(v.as<std::string>().c_str());
-            } else {
-                std::cerr << "Unsupported type at index " << i << " for sendList\n";
-            }
-        }
-        if (libpd_finish_list(sender->receiver)) {
-            JS_Alert("Failed to send message for sendList");
-        }
-        break;
-    }
-    case MESSAGE: {
-        const unsigned len = sender->l["length"].as<unsigned>();
-        t_atom atoms[len];
-        for (unsigned i = 0; i < len; ++i) {
-            emscripten::val v = sender->l[i];
-            if (v.isNumber()) {
-                libpd_set_float(&atoms[i], v.as<double>());
-            } else if (v.isString()) {
-                libpd_set_symbol(&atoms[i], v.as<std::string>().c_str());
-            } else {
-                std::cerr << "Unsupported type at index " << i << " for sendMessage\n";
-            }
-        }
-        libpd_message(sender->receiver, sender->sel, len, atoms);
-        break;
-    }
-    default:
-        JS_Alert("Memory corruption, please report");
-        break;
-    }
+    // Deprecated - kept for compatibility
+    return;
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a bang message to Pure Data (thread-safe).
+ * 
+ * This function is called from the main thread and queues a bang message
+ * to be processed on the Audio Worklet thread before the next audio block.
+ * 
+ * @param s The receiver symbol in Pure Data.
+ */
 void Pd4Web::SendBang(std::string s) {
-    auto sender = std::make_unique<Pd4WebSender>();
-    sender->type = BANG;
-    t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+    auto sender = Pd4WebSender::CreateBang(s);
+    std::lock_guard<std::mutex> lock(m_ToSendMutex);
+    m_ToSendData.push_back(sender);
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a float message to Pure Data (thread-safe).
+ * 
+ * This function is called from the main thread and queues a float message
+ * to be processed on the Audio Worklet thread before the next audio block.
+ * 
+ * @param s The receiver symbol in Pure Data.
+ * @param f The float value to send.
+ */
 void Pd4Web::SendFloat(std::string s, float f) {
-    auto sender = std::make_unique<Pd4WebSender>();
-    sender->type = FLOAT;
-    sender->f = f;
-    t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+    auto sender = Pd4WebSender::CreateFloat(s, f);
+    std::lock_guard<std::mutex> lock(m_ToSendMutex);
+    m_ToSendData.push_back(sender);
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a symbol message to Pure Data (thread-safe).
+ * 
+ * This function is called from the main thread and queues a symbol message
+ * to be processed on the Audio Worklet thread before the next audio block.
+ * String data is copied into the sender structure for thread safety.
+ * 
+ * @param s The receiver symbol in Pure Data.
+ * @param thing The symbol string to send.
+ */
 void Pd4Web::SendSymbol(std::string s, std::string thing) {
-    auto sender = std::make_unique<Pd4WebSender>();
-    sender->type = SYMBOL;
-    sender->m = thing.c_str();
-    t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+    auto sender = Pd4WebSender::CreateSymbol(s, thing);
+    std::lock_guard<std::mutex> lock(m_ToSendMutex);
+    m_ToSendData.push_back(sender);
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a list message to Pure Data (thread-safe).
+ * 
+ * This function is called from the main thread. It converts the JavaScript
+ * array (emscripten::val) into a thread-safe vector of atoms on the main
+ * thread, then queues the message for processing on the Audio Worklet thread.
+ * 
+ * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
+ * so all conversion must happen here on the main thread.
+ * 
+ * @param s The receiver symbol in Pure Data.
+ * @param a JavaScript array containing numbers and/or strings.
+ */
 void Pd4Web::SendList(std::string s, emscripten::val a) {
-    auto sender = std::make_unique<Pd4WebSender>();
-    sender->type = LIST;
-    sender->l = a;
-    t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+    // Convert emscripten::val array to std::vector<Pd4WebAtom> on main thread
+    if (!a.isArray()) {
+        emscripten_log(EM_LOG_ERROR, "SendList: argument is not an array");
+        return;
+    }
+    
+    size_t length = a["length"].as<size_t>();
+    std::vector<Pd4WebAtom> atoms;
+    atoms.reserve(length);
+    
+    for (size_t i = 0; i < length; ++i) {
+        emscripten::val v = a[i];
+        if (v.isNumber()) {
+            atoms.push_back(Pd4WebAtom(v.as<float>()));
+        } else if (v.isString()) {
+            atoms.push_back(Pd4WebAtom(v.as<std::string>()));
+        } else {
+            emscripten_log(EM_LOG_WARN, "SendList: unsupported type at index %zu", i);
+        }
+    }
+    
+    auto sender = Pd4WebSender::CreateList(s, atoms);
+    std::lock_guard<std::mutex> lock(m_ToSendMutex);
+    m_ToSendData.push_back(sender);
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a typed message to Pure Data (thread-safe).
+ * 
+ * This function is called from the main thread. It converts the JavaScript
+ * array (emscripten::val) into a thread-safe vector of atoms on the main
+ * thread, then queues the message with a selector for processing on the 
+ * Audio Worklet thread.
+ * 
+ * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
+ * so all conversion must happen here on the main thread.
+ * 
+ * @param r The receiver symbol in Pure Data.
+ * @param s The message selector (e.g., "set", "connect", etc.).
+ * @param a JavaScript array containing numbers and/or strings.
+ */
 void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
-    auto sender = std::make_unique<Pd4WebSender>();
-    sender->type = MESSAGE;
-    sender->l = a;
-    sender->sel = s.c_str();
-    t_pd *receiver = gensym(s.c_str())->s_thing;
-    pd_queue_mess(m_PdInstance, receiver, sender.release(), SenderCallback);
+    // Convert emscripten::val array to std::vector<Pd4WebAtom> on main thread
+    if (!a.isArray()) {
+        emscripten_log(EM_LOG_ERROR, "SendMessage: argument is not an array");
+        return;
+    }
+    
+    size_t length = a["length"].as<size_t>();
+    std::vector<Pd4WebAtom> atoms;
+    atoms.reserve(length);
+    
+    for (size_t i = 0; i < length; ++i) {
+        emscripten::val v = a[i];
+        if (v.isNumber()) {
+            atoms.push_back(Pd4WebAtom(v.as<float>()));
+        } else if (v.isString()) {
+            atoms.push_back(Pd4WebAtom(v.as<std::string>()));
+        } else {
+            emscripten_log(EM_LOG_WARN, "SendMessage: unsupported type at index %zu", i);
+        }
+    }
+    
+    auto sender = Pd4WebSender::CreateMessage(r, s, atoms);
+    std::lock_guard<std::mutex> lock(m_ToSendMutex);
+    m_ToSendData.push_back(sender);
 }
 
 // ─────────────────────────────────────
@@ -169,7 +207,9 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
     std::vector<uint8_t> buffer(length);
-    uint8Array.call<void>("set", emscripten::typed_memory_view(length, buffer.data()));
+    for (size_t i = 0; i < length; i++) {
+        buffer[i] = uint8Array[i].as<uint8_t>();
+    }
     std::ofstream out(filename, std::ios::binary);
     if (!out) {
         emscripten_log(EM_LOG_ERROR, "Failed to open output file");
@@ -473,15 +513,23 @@ void ReceivedProgramChange(int channel, int program) {
 /**
  * Process the audio block.
  *
- * This function processes the audio block using libpd_process_float.
+ * This function runs on the Audio Worklet thread and is called for each audio block.
+ * It processes all queued messages from the main thread BEFORE processing audio,
+ * ensuring thread-safe communication with libpd.
+ *
+ * Thread Safety:
+ * - Messages are queued on the main thread with owned string data (no pointers)
+ * - The mutex protects access to m_ToSendData vector
+ * - All libpd calls happen on this Audio Worklet thread only
+ * - emscripten::val objects are converted to POD types on the main thread
  *
  * @param numInputs Number of input buffers.
- * @param inputs Array of input audio frames.
+ * @param In Array of input audio frames.
  * @param numOutputs Number of output buffers.
- * @param outputs Array of output audio frames.
+ * @param Out Array of output audio frames.
  * @param numParams Number of audio parameters.
  * @param params Array of audio parameters.
- * @param userData Pointer to user data (not used in this function).
+ * @param userData Pointer to Pd4WebUserData.
  * @return true if processing succeeded, false otherwise.
  */
 EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
@@ -489,6 +537,106 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
 
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
+
+    {
+        std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
+        auto &data = ud->pd4web->getToSendData();
+        
+        for (auto *sender : data) {
+            if (!sender) continue;
+            
+            switch (sender->type) {
+            case BANG:
+                libpd_bang(sender->receiver.c_str());
+                break;
+                
+            case FLOAT:
+                libpd_float(sender->receiver.c_str(), sender->f_value);
+                break;
+                
+            case SYMBOL:
+                libpd_symbol(sender->receiver.c_str(), sender->s_value.c_str());
+                break;
+                
+            case LIST: {
+                size_t len = sender->list_data.size();
+                if (len == 0) {
+                    // Empty list - send as bang
+                    libpd_bang(sender->receiver.c_str());
+                } else {
+                    // Start building the list message
+                    if (libpd_start_message(len) == 0) {
+                        for (const auto& atom : sender->list_data) {
+                            if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
+                                libpd_add_float(atom.f_value);
+                            } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
+                                libpd_add_symbol(atom.s_value.c_str());
+                            }
+                        }
+                        
+                        if (libpd_finish_list(sender->receiver.c_str()) != 0) {
+                            emscripten_log(EM_LOG_ERROR, "Failed to send list to %s", 
+                                         sender->receiver.c_str());
+                        }
+                    } else {
+                        emscripten_log(EM_LOG_ERROR, "Failed to start list message");
+                    }
+                }
+                break;
+            }
+            
+            case MESSAGE: {
+                size_t len = sender->list_data.size();
+                if (len > 0) {
+                    // Allocate atoms on stack for performance
+                    t_atom *atoms = (t_atom *)alloca(len * sizeof(t_atom));
+                    
+                    for (size_t i = 0; i < len; ++i) {
+                        const auto& atom = sender->list_data[i];
+                        if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
+                            SETFLOAT(&atoms[i], atom.f_value);
+                        } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
+                            SETSYMBOL(&atoms[i], gensym(atom.s_value.c_str()));
+                        }
+                    }
+                    
+                    libpd_message(sender->receiver.c_str(), 
+                                 sender->selector.c_str(), 
+                                 len, 
+                                 atoms);
+                } else {
+                    // Message with no arguments
+                    libpd_message(sender->receiver.c_str(), 
+                                 sender->selector.c_str(), 
+                                 0, 
+                                 nullptr);
+                }
+                break;
+            }
+            
+            case MOUSE_EVENT:
+                ProcessMouseEvent(ud, sender->mouse_data);
+                break;
+            
+            case KEY_EVENT:
+                ProcessKeyEvent(ud, sender->key_data);
+                break;
+            
+            case TOUCH_EVENT:
+                ProcessTouchEvent(ud, sender->touch_data);
+                break;
+            
+            default:
+                emscripten_log(EM_LOG_ERROR, "Unknown sender type: %d", sender->type);
+                break;
+            }
+            
+            delete sender;
+        }
+        
+        // Clear the queue
+        data.clear();
+    }
 
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
@@ -813,37 +961,52 @@ std::string Pd4Web::GetFGColor() {
 // ╭─────────────────────────────────────╮
 // │             USER EVENTS             │
 // ╰─────────────────────────────────────╯
-void QueueMouseClick(t_pd *obj, void *data) {
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(data);
+/**
+ * Process mouse click event on the Audio Worklet thread.
+ * This is called from the Process() function, not from pd_queue_mess.
+ * 
+ * @param ud Pointer to Pd4WebUserData containing event information.
+ * @param data Mouse event data with position and button info.
+ */
+void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data) {
     libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
-        fprintf(stderr, "No pd canvas found\n");
         return;
     }
 
+    // Store event data in user data for canvas hit testing
+    ud->xpos = data.x;
+    ud->ypos = data.y;
+    ud->canvas = canvas;
+    ud->doit = (data.event_type == MouseEventData::MOUSE_DOWN || 
+                (data.event_type == MouseEventData::MOUSE_MOVE && ud->mousedown));
+    
+    if (data.event_type == MouseEventData::MOUSE_DOWN) {
+        ud->mousedown = true;
+    } else if (data.event_type == MouseEventData::MOUSE_UP) {
+        ud->mousedown = false;
+    }
+
+    // Process mouse click on canvas objects
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, ud->xpos, ud->ypos, &x1, &y1, &x2, &y2, 0)) {
-            (void)gobj_click(obj, canvas, ud->xpos, ud->ypos, 0, 0, 0, ud->doit);
+        if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
+            (void)gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, ud->doit);
         }
     }
-    return;
 }
 
 // ─────────────────────────────────────
 /**
- * Queues a keydown event to be processed by Lua within the Pd4Web environment on Audio Worklet
- Thread. On Pd4Web, when using pdlua objects is possible to define a method key_down,
- nbx:key_down(x, y, key), this function is called here for all lua objects when there is a keydown
- event.
- *
- * @param obj       Pointer to the Pure Data object triggering the event.
- * @param userData  Pointer to Pd4WebUserData containing the key string and libpd instance.
+ * Process key event on the Audio Worklet thread.
+ * Calls key_down method on pdlua objects.
+ * 
+ * @param ud Pointer to Pd4WebUserData.
+ * @param data Key event data.
  */
-void QueueKeyDown(t_pd *obj, void *userData) {
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData& data) {
     libpd_set_instance(ud->libpd);
 
     lua_State *L = __L();
@@ -852,19 +1015,17 @@ void QueueKeyDown(t_pd *obj, void *userData) {
     lua_remove(L, -2);
     lua_pushnil(L);
 
-    int count = 0;
     while (lua_next(L, -2) != 0) {
-        count++;
         if (lua_istable(L, -1)) {
             lua_getfield(L, -1, "key_down");
             if (lua_isfunction(L, -1)) {
                 lua_pushvalue(L, -2);
                 lua_pushinteger(L, 20);
                 lua_pushinteger(L, 20);
-                lua_pushstring(L, ud->key.c_str());
+                lua_pushstring(L, data.key.c_str());
                 if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
                     const char *err = lua_tostring(L, -1);
-                    emscripten_log(EM_LOG_ERROR, "Erro when calling key_down: %s", err);
+                    emscripten_log(EM_LOG_ERROR, "Error calling key_down: %s", err);
                     lua_pop(L, 1);
                 }
             } else {
@@ -878,9 +1039,52 @@ void QueueKeyDown(t_pd *obj, void *userData) {
 
 // ─────────────────────────────────────
 /**
+ * Process touch event on the Audio Worklet thread.
+ * 
+ * @param ud Pointer to Pd4WebUserData.
+ * @param data Touch event data.
+ */
+void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData& data) {
+    libpd_set_instance(ud->libpd);
+
+    t_canvas *canvas = pd_getcanvaslist();
+    if (!canvas) {
+        return;
+    }
+
+    ud->xpos = data.x;
+    ud->ypos = data.y;
+    ud->canvas = canvas;
+    
+    switch (data.event_type) {
+    case TouchEventData::TOUCH_START:
+        ud->mousedown = true;
+        ud->doit = true;
+        break;
+    case TouchEventData::TOUCH_END:
+    case TouchEventData::TOUCH_CANCEL:
+        ud->mousedown = false;
+        ud->doit = false;
+        break;
+    case TouchEventData::TOUCH_MOVE:
+        ud->doit = ud->mousedown;
+        break;
+    }
+
+    // Process touch as mouse click on canvas objects
+    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+        int x1, y1, x2, y2;
+        if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
+            (void)gobj_click(obj, canvas, data.x, data.y, 0, 0, 0, ud->doit);
+        }
+    }
+}
+
+// ─────────────────────────────────────
+/**
  * Keyboard event listener callback for Emscripten environment.
  *
- * Processes keyboard events and updates Pd4Web state accordingly inside Audio Worklet thread.
+ * Queues keyboard events to be processed on the Audio Worklet thread.
  *
  * @param eventType  The type of keyboard event (e.g., keydown, keyup).
  * @param e          Pointer to the EmscriptenKeyboardEvent containing event details.
@@ -889,25 +1093,21 @@ void QueueKeyDown(t_pd *obj, void *userData) {
  */
 EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-    libpd_set_instance(ud->libpd);
 
-    t_canvas *canvas = pd_getcanvaslist();
-    if (!canvas) {
-        fprintf(stderr, "No pd canvas found\n");
-        return EM_FALSE;
-    }
+    // Create event data on main thread
+    KeyEventData keyData;
+    keyData.key = e->key;
+    keyData.keyCode = e->keyCode;
+    keyData.shift = e->shiftKey;
+    keyData.ctrl = e->ctrlKey;
+    keyData.alt = e->altKey;
+    keyData.event_type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? 
+                         KeyEventData::KEY_DOWN : KeyEventData::KEY_UP;
 
-    ud->pd4web->GetLastMousePosition(&ud->xpos, &ud->ypos);
-    ud->canvas = canvas;
-    ud->doit = false;
-    ud->key = e->key;
-
-    t_class *obj = canvas->gl_list->g_pd->c_next;
-    int x1, y1, x2, y2;
-    ud->doit = ud->doit;
-    ud->mousedown = ud->mousedown;
-    ud->libpd = ud->libpd;
-    pd_queue_mess(ud->libpd, &obj, ud, QueueKeyDown);
+    // Queue event for processing on Audio Worklet thread
+    auto sender = Pd4WebSender::CreateKeyEvent(keyData);
+    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
+    ud->pd4web->getToSendData().push_back(sender);
 
     return EM_TRUE;
 }
@@ -916,8 +1116,7 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
 /**
  * Touch event listener callback for Emscripten environment.
  *
- * Handles touch events and updates Pd4Web state accordingly.
- * Intended to be registered with Emscripten's touch event system.
+ * Queues touch events to be processed on the Audio Worklet thread.
  *
  * @param eventType  The type of touch event (e.g., touchstart, touchend).
  * @param e          Pointer to the EmscriptenTouchEvent containing event details.
@@ -926,51 +1125,47 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
  */
 EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-    libpd_set_instance(ud->libpd);
-    t_canvas *canvas = pd_getcanvaslist();
-    if (!canvas) {
-        fprintf(stderr, "No pd canvas found\n");
-        return EM_TRUE;
-    }
 
     if (e->numTouches < 1) {
         return EM_TRUE;
     }
 
+    // Get canvas to calculate positions
+    t_canvas *canvas = pd_getcanvaslist();
+    if (!canvas) {
+        return EM_TRUE;
+    }
+
+    // Calculate position with zoom and margins
     int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
     int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
-    ud->xpos = xpos;
-    ud->ypos = ypos;
-    ud->canvas = canvas;
-    ud->doit = false;
+
+    // Create event data on main thread
+    TouchEventData touchData;
+    touchData.x = xpos;
+    touchData.y = ypos;
+    touchData.identifier = e->touches[0].identifier;
 
     switch (eventType) {
     case EMSCRIPTEN_EVENT_TOUCHSTART:
-        ud->mousedown = true;
-        ud->doit = true;
+        touchData.event_type = TouchEventData::TOUCH_START;
         ud->pd4web->SetLastMousePosition(xpos, ypos);
         break;
-
     case EMSCRIPTEN_EVENT_TOUCHEND:
-    case EMSCRIPTEN_EVENT_TOUCHCANCEL:
-        ud->mousedown = false;
-        ud->doit = false;
+        touchData.event_type = TouchEventData::TOUCH_END;
         break;
-
+    case EMSCRIPTEN_EVENT_TOUCHCANCEL:
+        touchData.event_type = TouchEventData::TOUCH_CANCEL;
+        break;
     case EMSCRIPTEN_EVENT_TOUCHMOVE:
-        ud->doit = ud->mousedown;
+        touchData.event_type = TouchEventData::TOUCH_MOVE;
         break;
     }
 
-    t_class *obj = canvas->gl_list->g_pd->c_next;
-    int x1, y1, x2, y2;
-    ud->canvas = canvas;
-    ud->xpos = xpos;
-    ud->ypos = ypos;
-    ud->doit = ud->doit;
-    ud->mousedown = ud->mousedown;
-    ud->libpd = ud->libpd;
-    pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
+    // Queue event for processing on Audio Worklet thread
+    auto sender = Pd4WebSender::CreateTouchEvent(touchData);
+    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
+    ud->pd4web->getToSendData().push_back(sender);
 
     return EM_FALSE;
 }
@@ -979,8 +1174,7 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
 /**
  * Mouse event listener callback for Emscripten environment.
  *
- * Handles mouse events and updates Pd4Web state accordingly.
- * Intended to be registered with Emscripten's mouse event system.
+ * Queues mouse events to be processed on the Audio Worklet thread.
  *
  * @param eventType  The type of mouse event (e.g., click, mousemove).
  * @param e          Pointer to the EmscriptenMouseEvent containing event details.
@@ -989,48 +1183,43 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
  */
 EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-    libpd_set_instance(ud->libpd);
 
+    // Get canvas to calculate positions
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
-        fprintf(stderr, "Pd canvas is not valid for mouse event\n");
         return EM_TRUE;
     }
 
+    // Calculate position with zoom and margins
     int xpos = round((e->targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
     int ypos = round((e->targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
 
-    ud->xpos = xpos;
-    ud->ypos = ypos;
-    ud->canvas = canvas;
+    // Create event data on main thread
+    MouseEventData mouseData;
+    mouseData.x = xpos;
+    mouseData.y = ypos;
+    mouseData.button = e->button;
+    mouseData.shift = e->shiftKey;
+    mouseData.ctrl = e->ctrlKey;
+    mouseData.alt = e->altKey;
 
     switch (eventType) {
     case EMSCRIPTEN_EVENT_MOUSEDOWN:
-        ud->mousedown = true;
-        ud->doit = true;
+        mouseData.event_type = MouseEventData::MOUSE_DOWN;
         break;
-
     case EMSCRIPTEN_EVENT_MOUSEUP:
-        ud->mousedown = false;
-        ud->doit = false;
+        mouseData.event_type = MouseEventData::MOUSE_UP;
         ud->pd4web->SetLastMousePosition(xpos, ypos);
         break;
-
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
-        ud->doit = ud->mousedown; // Always Process mousemove events
+        mouseData.event_type = MouseEventData::MOUSE_MOVE;
         break;
     }
 
-    t_class *obj = canvas->gl_list->g_pd->c_next;
-    int x1, y1, x2, y2;
-    ud->canvas = canvas;
-    ud->xpos = xpos;
-    ud->ypos = ypos;
-    ud->doit = ud->doit;
-    ud->mousedown = ud->mousedown;
-    ud->libpd = ud->libpd;
-    pd_queue_mess(ud->libpd, &obj, ud, QueueMouseClick);
-
+    // Queue event for processing on Audio Worklet thread
+    auto sender = Pd4WebSender::CreateMouseEvent(mouseData);
+    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
+    ud->pd4web->getToSendData().push_back(sender);
 
     return EM_FALSE;
 }
@@ -1133,14 +1322,15 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
 
     m_CanvasId = "";
     m_SoundToggleId = "";
-    m_ProjectName = "";
-    m_ChannelCountIn = 0;
-    m_ChannelCountOut = 0;
-    m_SampleRate = 48000.0f;
-    m_PatchZoom = 1.0f;
-    m_RenderGui = true;
-    m_Fps = 0;
-    m_UseMidi = false;
+    m_ProjectName = PD4WEB_PROJECT_NAME;
+    m_ChannelCountIn = PD4WEB_CHS_IN;
+    m_ChannelCountOut = PD4WEB_CHS_OUT;
+    m_SampleRate = PD4WEB_SR;
+    m_RenderGui = PD4WEB_GUI;
+    m_PatchZoom = PD4WEB_PATCH_ZOOM;
+    m_UseMidi = PD4WEB_MIDI;
+
+    m_Fps = 60;
 
     if (JS_IsDarkMode()) {
         m_BgColor = "#303030";
@@ -1227,8 +1417,9 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     (void)libpd_queued_init();
 
+    libpd_set_printhook(ReceivedPrintMsg);
+    libpd_set_concatenated_printhook(ReceivedPrintMsg);
     libpd_set_queued_printhook(ReceivedPrintMsg);
-
     libpd_set_queued_banghook(ReceivedBang);
     libpd_set_queued_floathook(ReceivedFloat);
     libpd_set_queued_symbolhook(ReceivedSymbol);
@@ -1333,13 +1524,17 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
 
-        //
+        // TODO: When canvas is on focus
         // emscripten_set_focus_callback(sel, m_UserData.get(), EM_FALSE, FocusListener);
 
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
         m_UserData->canvasSel = PatchCanvaSel;
         emscripten_async_call(setAsyncMainLoop, m_UserData.get(), 0);
+    } else {
+        m_UserData->libpd = m_PdInstance;
+        m_UserData->pd4web = this;
+        emscripten_set_main_loop_arg(FakeLoop, m_UserData.get(), 60, false);
     }
 }
 
@@ -1807,6 +2002,15 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
 }
 
 // ─────────────────────────────────────
+void FakeLoop(void *userData) {
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+
+    libpd_set_instance(ud->libpd);
+    libpd_queued_receive_pd_messages();
+    libpd_queued_receive_midi_messages();
+}
+
+// ─────────────────────────────────────
 /**
  * Main Loop function called repeatedly by Emscripten.
  *
@@ -1816,6 +2020,7 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
  */
 void Loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
@@ -1997,9 +2202,13 @@ void Loop(void *userData) {
  * creates user data, and starts the audio worklet thread asynchronously.
  */
 void Pd4Web::Init() {
+    if (UseMidi()) {
+        SetupMIDI();
+    }
+
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
-        .sampleRate =  static_cast<uint32_t>(m_SampleRate),
+        .sampleRate = static_cast<uint32_t>(m_SampleRate),
     };
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
@@ -2028,12 +2237,18 @@ void Pd4Web::Init() {
  * @return 0 on successful execution.
  */
 int main() {
-    libpd_set_printhook(ReceivedPrintMsg);
+
+    libpd_set_printhook(libpd_print_concatenator);
+    libpd_set_concatenated_printhook(&ReceivedPrintMsg);
+
     int result = libpd_init();
     if (result != 0) {
         JS_Alert("Failed to initialize libpd, please report to pd4web");
         abort();
     }
+
+    libpd_set_printhook(libpd_print_concatenator);
+    libpd_set_concatenated_printhook(&ReceivedPrintMsg);
 
     std::cout << std::format("pd4web version {}.{}.{}", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
                              PD4WEB_VERSION_PATCH)

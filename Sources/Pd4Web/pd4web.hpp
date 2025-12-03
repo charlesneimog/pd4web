@@ -63,7 +63,55 @@ extern void pdlua_setup();
 #endif
 
 // ────────── User Data Struct ──────────
-enum Pd4WebSenderType { BANG = 0, FLOAT, SYMBOL, LIST, MESSAGE };
+enum Pd4WebSenderType { 
+    BANG = 0, 
+    FLOAT, 
+    SYMBOL, 
+    LIST, 
+    MESSAGE,
+    MOUSE_EVENT,
+    KEY_EVENT,
+    TOUCH_EVENT
+};
+
+// Thread-safe atom structure for passing list/message data
+struct Pd4WebAtom {
+    enum Type { FLOAT_TYPE, SYMBOL_TYPE };
+    Type type;
+    float f_value;
+    std::string s_value;
+    
+    Pd4WebAtom() : type(FLOAT_TYPE), f_value(0.0f) {}
+    explicit Pd4WebAtom(float f) : type(FLOAT_TYPE), f_value(f) {}
+    explicit Pd4WebAtom(const std::string& s) : type(SYMBOL_TYPE), s_value(s) {}
+};
+
+// Event data structures
+struct MouseEventData {
+    int x;
+    int y;
+    int button;
+    bool shift;
+    bool ctrl;
+    bool alt;
+    enum EventType { MOUSE_DOWN, MOUSE_UP, MOUSE_MOVE } event_type;
+};
+
+struct KeyEventData {
+    std::string key;
+    int keyCode;
+    bool shift;
+    bool ctrl;
+    bool alt;
+    enum EventType { KEY_DOWN, KEY_UP } event_type;
+};
+
+struct TouchEventData {
+    int x;
+    int y;
+    int identifier;
+    enum EventType { TOUCH_START, TOUCH_END, TOUCH_MOVE, TOUCH_CANCEL } event_type;
+};
 
 struct Pd4WebUserData {
     class Pd4Web *pd4web;
@@ -148,14 +196,86 @@ using PdLuaObjsGui = std::unordered_map<std::string, PdLuaObjLayers>;
 using PdInstanceGui = std::unordered_map<t_pdinstance *, PdLuaObjsGui>;
 
 // ─────── Senders and Receivers ────
+// Thread-safe sender structure with owned string data
 struct Pd4WebSender {
-    const char *receiver;
+    std::string receiver;  // Owned string, safe across threads
     Pd4WebSenderType type;
-    const char *sel;
-
-    float f;
-    const char *m;
-    emscripten::val l;
+    std::string selector;  // For MESSAGE type
+    
+    // Type-specific data (owned, not pointers)
+    float f_value;
+    std::string s_value;
+    std::vector<Pd4WebAtom> list_data;  // For LIST and MESSAGE types
+    
+    // Event data
+    MouseEventData mouse_data;
+    KeyEventData key_data;
+    TouchEventData touch_data;
+    
+    Pd4WebSender() : type(BANG), f_value(0.0f) {}
+    
+    // Factory methods for type-safe construction
+    static Pd4WebSender* CreateBang(const std::string& recv) {
+        auto* sender = new Pd4WebSender();
+        sender->type = BANG;
+        sender->receiver = recv;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateFloat(const std::string& recv, float value) {
+        auto* sender = new Pd4WebSender();
+        sender->type = FLOAT;
+        sender->receiver = recv;
+        sender->f_value = value;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateSymbol(const std::string& recv, const std::string& sym) {
+        auto* sender = new Pd4WebSender();
+        sender->type = SYMBOL;
+        sender->receiver = recv;
+        sender->s_value = sym;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateList(const std::string& recv, const std::vector<Pd4WebAtom>& atoms) {
+        auto* sender = new Pd4WebSender();
+        sender->type = LIST;
+        sender->receiver = recv;
+        sender->list_data = atoms;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateMessage(const std::string& recv, const std::string& sel, 
+                                       const std::vector<Pd4WebAtom>& atoms) {
+        auto* sender = new Pd4WebSender();
+        sender->type = MESSAGE;
+        sender->receiver = recv;
+        sender->selector = sel;
+        sender->list_data = atoms;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateMouseEvent(const MouseEventData& data) {
+        auto* sender = new Pd4WebSender();
+        sender->type = MOUSE_EVENT;
+        sender->mouse_data = data;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateKeyEvent(const KeyEventData& data) {
+        auto* sender = new Pd4WebSender();
+        sender->type = KEY_EVENT;
+        sender->key_data = data;
+        return sender;
+    }
+    
+    static Pd4WebSender* CreateTouchEvent(const TouchEventData& data) {
+        auto* sender = new Pd4WebSender();
+        sender->type = TOUCH_EVENT;
+        sender->touch_data = data;
+        return sender;
+    }
 };
 
 static std::unordered_map<t_pdinstance *, std::unordered_map<std::string, emscripten::val>>
@@ -226,12 +346,18 @@ class Pd4Web {
 
     bool RenderGui();
     bool UseMidi();
+    std::vector<Pd4WebSender *> &getToSendData() {
+        return m_ToSendData;
+    }
+
+    std::mutex m_ToSendMutex; // 🔒 proteção
 
   private:
     void OpenPatch(std::string patchPath, std::string patchCanvasId, std::string soundToggleId);
     void StartMidi();
 
     std::vector<void *> m_BindSymbols;
+    std::vector<Pd4WebSender *> m_ToSendData;
 
     // Theme
     std::string m_BgColor;
@@ -269,9 +395,13 @@ class Pd4Web {
 // ╭─────────────────────────────────────╮
 // │           Function Prototypes       │
 // ╰─────────────────────────────────────╯
+void FakeLoop(void *userData);
 void Loop(void *userData);
 void GetGLContext(Pd4WebUserData *ud);
 void RenderPatchComments(Pd4WebUserData *ud);
+void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data);
+void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData& data);
+void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData& data); 
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
@@ -290,6 +420,7 @@ EMSCRIPTEN_BINDINGS(Pd4WebModule) {
 
     emscripten::class_<Pd4Web>("Pd4Web")
         .constructor<>() // Default constructor
+        .function("init", &Pd4Web::Init)
         .function("openPatch", &Pd4Web::OpenPatchJS)
         .function("toggleAudio", &Pd4Web::ToggleAudio)
 

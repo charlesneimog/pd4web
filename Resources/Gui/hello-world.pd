@@ -1,4 +1,4 @@
-#N canvas 283 148 1073 919 12;
+#N canvas 0 0 943 1005 12;
 #X declare -lib pdlua;
 #X declare -path ./../../Sources/Pd4Web/Gui;
 #X obj 5 6 l.vsl 20 110 0 127 0 0 empty empty empty 0 -9 0 12 #fcfcfc #000000 #000000 0 1;
@@ -10,7 +10,7 @@
 #X msg 310 126 80;
 #X obj 177 262 *~;
 #X msg 310 183 \$1 60;
-#X obj 310 208 line~;
+#X obj 316 246 line~;
 #X obj 239 2 loadbang;
 #X msg 239 27 440;
 #X obj 177 360 dac~;
@@ -19,6 +19,7 @@
 #X obj 177 211 *~ 0.4;
 #X obj 528 29 declare -lib pdlua;
 #X obj 528 52 declare -path ./../../Sources/Pd4Web/Gui;
+#X obj 382 220 print;
 #X connect 0 0 4 0;
 #X connect 1 0 3 0;
 #X connect 2 0 15 1;
@@ -29,6 +30,7 @@
 #X connect 7 0 12 0;
 #X connect 7 0 12 1;
 #X connect 8 0 9 0;
+#X connect 8 0 18 0;
 #X connect 9 0 7 1;
 #X connect 10 0 11 0;
 #X connect 11 0 3 0;

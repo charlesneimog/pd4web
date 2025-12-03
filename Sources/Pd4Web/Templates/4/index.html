@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <meta charset="UTF-8" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.min.js"></script>
+        <script src="./pd4web.threads.js"></script>
+        <script src="./pd4web.js"></script>
+        <style>
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: rgb(255, 255, 255);
+                    --fg: rgb(0, 0, 0, 0.9);
+                }
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg: rgb(48, 48, 48);
+                    --fg: rgb(255, 255, 255, 0.9);
+
+                    .pd4web-sound-switch {
+                        filter: invert(1);
+                    }
+                }
+            }
+
+            body {
+                font-size: 10px;
+                touch-action: pan-x pan-y;
+                background-color: var(--bg);
+            }
+
+            .pd4web-patch-canvas {
+                tabindex: 0;
+                margin: 10px auto;
+                display: flex;
+                border-radius: 5px;
+                box-shadow:
+                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            .pd4web-patch-canvas:focus {
+                box-shadow:
+                    rgba(100, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(100, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            .pd4web-sound-switch {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 25px;
+                height: 25px;
+                margin: 0 auto;
+                transform: none;
+            }
+
+            /* Animation */
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .pulse-icon {
+                animation: pulse 1s infinite;
+            }
+
+            canvas {
+                border-radius: 20px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="p5js"></div>
+        <script>
+            var Pd4Web = null;
+            Pd4WebModule().then((Pd4WebModulePromise) => {
+                Pd4Web = new Pd4WebModulePromise.Pd4Web();
+                Pd4Web.openPatch("index.pd", {
+                    renderGui: false,
+                });
+
+                document.addEventListener(
+                    "click",
+                    () => {
+                        console.log("Pd4Web init");
+                        Pd4Web.init();
+                        loop();
+                    },
+                    { once: true },
+                );
+            });
+        </script>
+    </body>
+    <script src="./sketch.js"></script>
+</html>
