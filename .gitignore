@@ -51,3 +51,8 @@ Sources/Pd/1-hello-world/CMakeLists.txt
 Sources/Pd/1-hello-world/favicon.ico
 Sources/Pd/1-hello-world/index.html
 Sources/Compiler/objects.json
+Tests/Basic/extra/.build
+Tests/Basic/extra/Pd4Web
+Tests/Basic/extra/WebPatch
+Tests/Basic/extra/favicon.ico
+Tests/Basic/extra/index.html

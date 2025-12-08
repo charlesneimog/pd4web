@@ -38,7 +38,6 @@ if(NOT EXISTS "${CMAKE_ARCHIVE}")
   message(STATUS "Downloading CMake from ${CMAKE_URL}")
   file(
     DOWNLOAD "${CMAKE_URL}" "${CMAKE_ARCHIVE}"
-    SHOW_PROGRESS
     STATUS status)
   list(GET status 0 status_code)
   if(NOT status_code EQUAL 0)

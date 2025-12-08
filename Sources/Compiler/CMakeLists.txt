@@ -26,7 +26,6 @@ if(NOT EXISTS "${CPM_FILE}")
   file(
     DOWNLOAD
     "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake"
-    SHOW_PROGRESS
     ${CPM_FILE})
 endif()
 include(${CPM_FILE})
@@ -206,5 +205,7 @@ if(PD4WEB_BUILD_PYBIND11)
     target_compile_options(pypd4web PRIVATE /Gy)
     target_link_options(pypd4web PRIVATE /OPT:REF /OPT:ICF)
   endif()
-
 endif()
+
+add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+target_link_libraries(pd4web PRIVATE pd4web_compiler)
