@@ -46,6 +46,32 @@ function hradio:initialize(_, args)
 end
 
 -- ──────────────────────────────────────────
+function hradio:postinitialize()
+	if self.init == 1 then
+		self:outlet(1, "float", { self.default_value })
+		if self.send ~= "empty" then
+			pd.send(self.send, "float", { self.default_value })
+		end
+	end
+
+	self.recv = nil
+	if self.receive ~= "empty" then
+		self.recv = pd.Receive:new():register(self, self.receive, "receive_callback")
+	end
+end
+
+-- ──────────────────────────────────────────
+function hradio:receive_callback(sel, atoms)
+	if sel == "float" then
+		local f = atoms[1]
+		self.selected = f
+		self:outlet(1, "float", { f })
+		pd.send(self.send, "float", { f })
+		self:repaint(2)
+	end
+end
+
+-- ──────────────────────────────────────────
 function hradio:mouse_down(x, y)
 	local pos = math.floor(x / self.size)
 	self.selected = pos

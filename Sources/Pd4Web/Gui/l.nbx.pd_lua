@@ -55,6 +55,13 @@ function nbx:in_1_float(args)
 end
 
 -- ──────────────────────────────────────────
+function nbx:in_1_list(args)
+	self.number = args[1]
+	self:outlet(1, "float", { tonumber(self.number) })
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
 function nbx:paint(g)
 	local width, height = self:get_size()
 

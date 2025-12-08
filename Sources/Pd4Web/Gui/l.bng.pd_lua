@@ -99,7 +99,7 @@ function bng:blink(x, y)
 end
 
 -- ──────────────────────────────────────────
-function bng:in_1_bang()
+function bng:in_1(_)
     self.value = not self.value
 	self.filled = true
 	self:repaint()

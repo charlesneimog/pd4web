@@ -33,7 +33,7 @@ function vradio:initialize(_, args)
 		self.font = 0
 		self.fontsize = 10
 		self.bg_color = "#fcfcfc"
-		self.fg_color = "#ff0000"
+		self.fg_color = "#000000"
 		self.label_color = "#000000"
 		self.default_value = 0
 	end
