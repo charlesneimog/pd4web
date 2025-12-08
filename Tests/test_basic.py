@@ -38,12 +38,12 @@ def compiler(pd4web_home):
         shutil.rmtree(output_folder)
     output_folder.mkdir(parents=True, exist_ok=True)
 
-    comp = pd4web.pypd4web.Pd4Web(str(pd4web_home))
+    comp = pd4web.pypd4web.Pd4Web("/home/neimog/Documents/Pd/externals/pd4web/")
     comp.setOutputFolder(str(output_folder))
     comp.setDebugMode(True)
     comp.setFailFast(True)
     # Ajuste para seu caminho local Pd4Web sources, modifique se necessário
-    comp.setPd4WebFilesFolder("/home/neimog/Documents/Git/pd4web/Sources/Pd4Web")
+    comp.setPd4WebFilesFolder("/home/neimog/Documents/Pd/externals/pd4web/Pd4Web")
     comp.init()
 
     yield comp
@@ -82,7 +82,7 @@ def run_flask_server(directory, port):
         Path("Basic/messages/main.pd"),
         Path("Basic/vsl/main.pd"),
         Path("Basic/vu/main.pd"),
-        # Adicione mais patches aqui
+        Path("Basic/extra/extra.pd"),
     ],
 )
 def test_compile_and_open_patch(compiler, patch):
