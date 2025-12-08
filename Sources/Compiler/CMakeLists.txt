@@ -6,10 +6,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 cmake_policy(SET CMP0077 NEW)
-set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTS OFF)
 set(BUILD_CLI OFF)
 set(USE_NSEC OFF)
+set(BUILD_SHARED_LIBS
+    OFF
+    CACHE BOOL "" FORCE)
 
 # http
 set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF)
@@ -75,26 +77,15 @@ cpmaddpackage(
   YES)
 
 # args (for pybind11 and pd4web executable)
-cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1") # parse command line
+cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1")
+cpmaddpackage("gh:nlohmann/json#v3.12.0")
+cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2")
 
-# files
-cpmaddpackage("gh:nlohmann/json#v3.12.0") # read/save json files
-cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2") # read/save yaml files
-
-# libgit
-set(OPENSSL_USE_STATIC_LIBS
-    TRUE
-    CACHE BOOL "" FORCE)
-set(BUILD_SHARED_LIBS
-    OFF
-    CACHE BOOL "" FORCE)
-
-FetchContent_Declare(
-  openssl-cmake
-  URL https://github.com/jimmy-park/openssl-cmake/archive/refs/tags/3.6.0.tar.gz
-)
-FetchContent_MakeAvailable(openssl-cmake)
-cpmaddpackage("gh:libgit2/libgit2#v1.9.2")
+# # libgit
+cpmaddpackage(URI "gh:jimmy-park/openssl-cmake#3.6.0" OPTIONS
+              "OPENSSL_USE_STATIC_LIBS ON" "BUILD_SHARED_LIBS OFF")
+cpmaddpackage(URI "gh:libgit2/libgit2#v1.9.2" OPTIONS
+              "openssl_use_static_libs on" "build_shared_libs off")
 
 # ╭──────────────────────────────────────╮
 # │                Boost                 │
@@ -106,21 +97,22 @@ if(MSVC)
   set(BOOST_BUILD_FLAGS
       "runtime-link=static;link=static"
       CACHE STRING "" FORCE)
-
   set(CMAKE_MSVC_RUNTIME_LIBRARY
       "MultiThreaded"
       CACHE STRING "" FORCE)
 endif()
 
+set(BOOST_VERSION "1.89.0")
 cpmaddpackage(
   NAME
   Boost
   VERSION
-  1.89.0
+  ${BOOST_VERSION}
   URL
-  https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.xz
-  EXCLUDE_FROM_ALL
-  YES)
+  "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}-cmake.tar.xz"
+  OPTIONS
+  "BOOST_ENABLE_CMAKE ON"
+  "BUILD_SHARED_LIBS OFF")
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
@@ -138,6 +130,7 @@ add_library(
 target_include_directories(
   pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR}
                          "${tree-sitter_SOURCE_DIR}/lib/include")
+target_compile_definitions(pd4web_compiler PRIVATE BOOST_ALL_NO_LIB)
 
 target_link_libraries(
   pd4web_compiler
@@ -165,9 +158,8 @@ if(MSVC)
 endif()
 
 if(APPLE)
-    target_link_libraries(
-    pd4web_compiler
-    PUBLIC "-framework CoreFoundation" "-framework CFNetwork")
+  target_link_libraries(pd4web_compiler PUBLIC "-framework CoreFoundation"
+                                               "-framework CFNetwork")
 endif()
 
 # ╭──────────────────────────────────────╮
