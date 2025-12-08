@@ -141,7 +141,9 @@ For example, suppose your HTML page includes:
 
 ```html
 <input id="someAudioInput" type="file" accept="audio/*" />
-````
+```
+
+
 
 You can then use this JavaScript code:
 

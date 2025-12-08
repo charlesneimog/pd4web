@@ -1,4 +1,4 @@
-# Adding Externals Support (Devs)
+# Adding Externals Support (Pd Externals Devs)
 
 !!! warning "For Developers of Pd Objects"
     This section is intended for those developing Pd objects and looking to add the object to `pd4web`. If this doesn't apply to you, feel free to skip this section.
