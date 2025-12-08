@@ -56,3 +56,4 @@ Tests/Basic/extra/Pd4Web
 Tests/Basic/extra/WebPatch
 Tests/Basic/extra/favicon.ico
 Tests/Basic/extra/index.html
+Tests/Basic/internal/.build
