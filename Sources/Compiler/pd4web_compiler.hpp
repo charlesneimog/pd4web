@@ -226,7 +226,7 @@ class Pd4Web {
 
     std::string m_PatchFile;     // TODO: is fs::path
     std::string m_LibrariesPath; // TODO: is fs::path
-    unsigned int m_TemplateId;
+    unsigned int m_TemplateId = 0;
     bool m_BypassUnsuported;
     bool m_Verbose;
     std::string m_PdVersion;
@@ -235,7 +235,7 @@ class Pd4Web {
     bool m_DevDebug = false;
     bool m_FailFast = false;
     bool m_CleanBuild = false;
-    int m_Memory;
+    int m_Memory = 128;
 
     unsigned m_ChnsOutCount;
     unsigned m_ChnsInCount;

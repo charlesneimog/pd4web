@@ -180,7 +180,6 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
     bool disableGui = false;
     bool failFast = false;
-    m_TemplateId = 0;
 
     // clang-format off
     options.add_options()
