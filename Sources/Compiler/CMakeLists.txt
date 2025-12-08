@@ -94,21 +94,31 @@ FetchContent_Declare(
   URL https://github.com/jimmy-park/openssl-cmake/archive/refs/tags/3.6.0.tar.gz
 )
 FetchContent_MakeAvailable(openssl-cmake)
-
-cpmaddpackage("gh:libgit2/libgit2#v1.9.1")
+cpmaddpackage("gh:libgit2/libgit2#v1.9.2")
 
 # ╭──────────────────────────────────────╮
-# │              LibArchive              │
+# │                Boost                 │
 # ╰──────────────────────────────────────╯
+if(MSVC)
+  set(Boost_USE_STATIC_LIBS
+      ON
+      CACHE BOOL "" FORCE)
+  set(BOOST_BUILD_FLAGS
+      "runtime-link=static;link=static"
+      CACHE STRING "" FORCE)
+
+  set(CMAKE_MSVC_RUNTIME_LIBRARY
+      "MultiThreaded"
+      CACHE STRING "" FORCE)
+endif()
+
 cpmaddpackage(
   NAME
   Boost
   VERSION
-  1.86.0
+  1.89.0
   URL
-  https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.tar.xz
-  URL_HASH
-  SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
+  https://github.com/boostorg/boost/releases/download/boost-1.89.0/boost-1.89.0-cmake.tar.xz
   EXCLUDE_FROM_ALL
   YES)
 
@@ -148,33 +158,38 @@ if(WIN32)
   target_link_libraries(pd4web_compiler PUBLIC Crypt32)
 endif()
 
-target_compile_definitions(pd4web_compiler PRIVATE LIBARCHIVE_STATIC)
+target_compile_definitions(pd4web_compiler PUBLIC LIBARCHIVE_STATIC)
 
 if(MSVC)
   add_link_options(/LTCG)
+endif()
+
+if(APPLE)
+    target_link_libraries(
+    pd4web_compiler
+    PUBLIC "-framework CoreFoundation" "-framework CFNetwork")
 endif()
 
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-  set(PYBIND11_FINDPYTHON OFF)
-  find_package(
-    Python 3.13 EXACT
-    COMPONENTS Interpreter Development
-    REQUIRED)
+  find_package(Python REQUIRED COMPONENTS Interpreter Development)
+  execute_process(
+    COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
-  if(WIN32)
-    set(PYBIND11_FINDPYTHON OFF)
-    execute_process(
-      COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
-      OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(PYBIND11_CMAKE_DIR)
     list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
     find_package(pybind11 CONFIG REQUIRED)
+  else()
+    set(PYBIND11_FINDPYTHON
+        ON
+        CACHE BOOL "" FORCE)
+    find_package(pybind11 REQUIRED)
   endif()
 
-  find_package(pybind11 REQUIRED)
   add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
   target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
   set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")

@@ -59,8 +59,6 @@ else()
                    -DCMAKE_CXX_COMPILER=${EMCPP_EXECUTABLE}
                    -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/Sources/Pd4Web
         BINARY_DIR ${CMAKE_BINARY_DIR}/Sources/Pd4Web)
-    else()
-      message(WARNING "Pd4Web not built, emcc or em++ not found")
     endif()
   else()
     message(STATUS "Skipping Pd external build; PD4WEB_BUILD_PD_EXTERNAL=OFF")

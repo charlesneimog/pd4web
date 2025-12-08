@@ -73,9 +73,14 @@ jobs:
           brew update
           brew install --cask pd
           brew install ccache
-          brew install pybind11
           brew install git
           brew uninstall --ignore-dependencies openssl@3
+
+          # brew install python@3.13
+          # brew install python-tk@3.13
+          # brew link --overwrite --force python@3.13
+          brew install pybind11
+          python3.13 -m pip install pybind11
       - name: Install PureData for Linux
         if: runner.os == 'Linux'
         run: |
@@ -101,8 +106,8 @@ jobs:
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
             -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}" `
             -DPD4WEB_BUILD_PYBIND11=ON
-      - name: Configure (macOS/Linux)
-        if: runner.os != 'Windows'
+      - name: Configure Linux
+        if: runner.os == 'Linux'
         run: |
           cmake -S . -B build \
             -DPDLIBDIR=./ \
@@ -110,6 +115,18 @@ jobs:
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
             -DPD4WEB_BUILD_PYBIND11=ON \
+            -DGIT_EXECUTABLE=/usr/bin/git
+      - name: Configure macOS
+        if: runner.os == 'macOS'
+        run: |
+          cmake -S . -B build \
+            -DPDLIBDIR=./ \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+            -DPD4WEB_BUILD_PYBIND11=ON \
+            -DPYBIND11_FINDPYTHON=ON \
+            -DPython_EXECUTABLE=$(brew --prefix)/bin/python3.13 \
             -DGIT_EXECUTABLE=/usr/bin/git
       - name: Build on Windows
         if: runner.os == 'Windows'
