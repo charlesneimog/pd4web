@@ -80,9 +80,8 @@ def run_flask_server(directory, port):
         Path("Basic/gui/main.pd"),
         Path("Basic/gui2/main.pd"),
         Path("Basic/messages/main.pd"),
-        Path("Basic/vsl/main.pd"),
-        Path("Basic/vu/main.pd"),
-        Path("Basic/extra/extra.pd"),
+        Path("Basic/extra/main.pd"),
+        Path("Basic/guiinternal/main.pd"),
     ],
 )
 def test_compile_and_open_patch(compiler, patch):
@@ -98,7 +97,9 @@ def test_compile_and_open_patch(compiler, patch):
     return
 
     # Start Flask server in another process
-    server_process = multiprocessing.Process(target=run_flask_server, args=(output_dir, port))
+    server_process = multiprocessing.Process(
+        target=run_flask_server, args=(output_dir, port)
+    )
     server_process.start()
     time.sleep(2)  # Wait for server to start
 
