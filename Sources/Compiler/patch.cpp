@@ -279,7 +279,7 @@ void Pd4Web::isExtraObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
         CompiledObjects.end()) {
 
         fs::path ExtraPath = p->Pd4WebRoot / "pure-data" / "extra" / pl.Name;
-        fs::path DestinationPath = p->PatchFolder / "Pd4Web" / "pure-data" / "extra" / pl.Name;
+        fs::path DestinationPath = p->BuildFolder / "Pd4Web" / "pure-data" / "extra" / pl.Name;
         fs::create_directories(DestinationPath.parent_path()); // garante dirs acima
         fs::copy(ExtraPath, DestinationPath,
                  fs::copy_options::recursive | fs::copy_options::skip_existing);
