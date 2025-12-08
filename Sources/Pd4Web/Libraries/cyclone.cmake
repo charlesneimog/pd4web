@@ -159,7 +159,6 @@ pd_add_external(slide~ "${LIB_DIR}/cyclone_objects/binaries/audio/slide.c")
 pd_add_external(snapshot~ "${LIB_DIR}/cyclone_objects/binaries/audio/snapshot.c")
 pd_add_external(spike~ "${LIB_DIR}/cyclone_objects/binaries/audio/spike.c")
 pd_add_external(svf~ "${LIB_DIR}/cyclone_objects/binaries/audio/svf.c")
-pd_add_external(tanh~ "${LIB_DIR}/cyclone_objects/binaries/audio/tanh.c")
 pd_add_external(tanx~ "${LIB_DIR}/cyclone_objects/binaries/audio/tanx.c")
 pd_add_external(teeth~ "${LIB_DIR}/cyclone_objects/binaries/audio/teeth.c")
 pd_add_external(togedge "${LIB_DIR}/cyclone_objects/binaries/control/togedge.c")
@@ -186,6 +185,12 @@ pd_add_external(round~ "${LIB_DIR}/cyclone_objects/binaries/audio/round.c")
 pd_add_external(scale~ "${LIB_DIR}/cyclone_objects/binaries/audio/scale.c")
 pd_add_external(thresh~ "${LIB_DIR}/cyclone_objects/binaries/audio/thresh.c")
 #pd_add_external(trunc~ "${LIB_DIR}/cyclone_objects/binaries/audio/trunc.c")
+
+if(NOT TARGET tanh_tilde)
+    pd_add_external(tanh~ "${LIB_DIR}/cyclone_objects/binaries/audio/tanh.c")
+else()
+    message(WARNING "tanh~ from pd-else")
+endif()
 
 # ╭──────────────────────────────────────╮
 # │      Classes with Dependencies       │
