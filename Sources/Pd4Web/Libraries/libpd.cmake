@@ -109,18 +109,26 @@ set(PD_SOURCES
     ${PD_SOURCE_DIR}/x_vexp_fun.c
     ${PD_SOURCE_DIR}/x_vexp_if.c)
 
-# TODO: Add the following sources
-set(PD_BOB_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/bob~/bob~.c)
-set(PD_BONK_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/bonk~/bonk~.c)
-set(PD_CHOICE_SOURCE ${PD_SOURCE_DIR}/../extra/choice/choice.c)
-set(PD_FIDDLE_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/fiddle~/fiddle~.c)
-set(PD_LOOP_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/loop~/loop~.c)
-set(PD_LRSHIFT_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/lrshift~/lrshift~.c)
-set(PD_PDSCHED_SOURCE ${PD_SOURCE_DIR}/../extra/pd~/pdsched.c)
-# set(PD_PD_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/pd~/pd~.c)
-set(PD_PIQUE_SOURCE ${PD_SOURCE_DIR}/../extra/pique/pique.c)
-set(PD_SIGMUND_TILDE_SOURCE ${PD_SOURCE_DIR}/../extra/sigmund~/sigmund~.c)
-set(PD_STDOUT_SOURCE ${PD_SOURCE_DIR}/../extra/stdout/stdout.c)
+function(pd_add_external_if_source_exists name source)
+  if(EXISTS ${source})
+    pd_add_external(${name} ${source})
+  endif()
+endfunction()
+
+pd_add_external_if_source_exists(bob~ ${PD_SOURCE_DIR}/../extra/bob~/bob~.c)
+pd_add_external_if_source_exists(bonk~ ${PD_SOURCE_DIR}/../extra/bonk~/bonk~.c)
+pd_add_external_if_source_exists(choice
+                                 ${PD_SOURCE_DIR}/../extra/choice/choice.c)
+pd_add_external_if_source_exists(fiddle~
+                                 ${PD_SOURCE_DIR}/../extra/fiddle~/fiddle~.c)
+pd_add_external_if_source_exists(loop~ ${PD_SOURCE_DIR}/../extra/loop~/loop~.c)
+pd_add_external_if_source_exists(lrshift~
+                                 ${PD_SOURCE_DIR}/../extra/lrshift~/lrshift~.c)
+pd_add_external_if_source_exists(pique ${PD_SOURCE_DIR}/../extra/pique/pique.c)
+pd_add_external_if_source_exists(sigmund~
+                                 ${PD_SOURCE_DIR}/../extra/sigmund~/sigmund~.c)
+# pd_add_external_if_source_exists(stdout
+# ${PD_SOURCE_DIR}/../extra/stdout/stdout.c)
 
 # ╭──────────────────────────────────────╮
 # │            Libpd Sources             │

@@ -226,7 +226,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         externalTargets += "\n" + std::string(32, ' ') + "pdlua";
     }
 
-    for (auto &pl : p->ExternalPatchLines) {
+    for (auto &pl : p->ExternalObjects) {
         if (pl.isExternal) {
             std::string str = pl.Name;
             size_t pos = 0;
@@ -236,6 +236,16 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
             }
             externalTargets += "\n" + std::string(32, ' ') + str;
         }
+    }
+
+    for (auto &pl : p->ExtraObjects) {
+        std::string str = pl.Name;
+        size_t pos = 0;
+        while ((pos = str.find('~', pos)) != std::string::npos) {
+            str.replace(pos, 1, "_tilde");
+            pos += 6;
+        }
+        externalTargets += "\n" + std::string(32, ' ') + str;
     }
 
     std::string ExternalsTargets = "target_link_libraries(pd4web PRIVATE " + externalTargets + ")";
@@ -296,8 +306,14 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
         }
     }
 
-    for (PatchLine &pl : p->ExternalPatchLines) {
+    std::vector<std::string> ExternalsAlreadyAdded;
+    for (PatchLine &pl : p->ExternalObjects) {
         if (pl.isAbstraction && pl.Type != PatchLine::OBJ && pl.OriginalTokens[1] != "obj") {
+            continue;
+        }
+
+        if (std::find(ExternalsAlreadyAdded.begin(), ExternalsAlreadyAdded.end(), pl.Name) !=
+            ExternalsAlreadyAdded.end()) {
             continue;
         }
 
@@ -340,6 +356,18 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                 }
             }
         }
+        ExternalsAlreadyAdded.push_back(pl.Name);
+    }
+
+    for (PatchLine &pl : p->ExtraObjects) {
+        std::string setupName = pl.Name;
+        size_t pos = 0;
+        while ((pos = setupName.find("~", pos)) != std::string::npos) {
+            setupName.replace(pos, 1, "_tilde");
+            pos += 6;
+        }
+        Declaration += "extern \"C\" void " + setupName + "_setup(void);\n";
+        Call += "    " + setupName + "_setup();\n";
     }
 
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_EXTRA@", extraDefinitions);

@@ -31,7 +31,11 @@ const TSLanguage *tree_sitter_cpp(void);
 const TSLanguage *tree_sitter_c(void);
 }
 
-#define PUREDATA_VERSION "0.56-0"
+#define PD4WEB_VERSION_MAJOR 2
+#define PD4WEB_VERSION_MINOR 4
+#define PD4WEB_VERSION_PATCH 2
+
+#define PUREDATA_VERSION "0.56-2"
 #define EMSDK_VERSION "4.0.10"
 
 using json = nlohmann::json;
@@ -83,6 +87,8 @@ struct PatchLine {
         ARRAY,
         COORDS,
         FLOATATOM,
+        SYMBOLATOM,
+        LISTATOM,
         FLOAT,
         TEXT,
         INVALID
@@ -92,10 +98,11 @@ struct PatchLine {
     std::vector<std::string> OriginalTokens;
     std::vector<std::string> ModifiedTokens;
 
-    bool isLuaExternal = false;
-    bool isExternal = false;
-    bool isAbstraction = false;
     bool Found = false;
+    bool isAbstraction = false;
+    bool isExtraExternal = false;
+    bool isExternal = false;
+    bool isLuaExternal = false;
 
     std::string Name;
     std::string Lib;
@@ -115,12 +122,13 @@ struct Patch {
     int MemorySize = 64;
     int Zoom = 1;
     std::vector<PatchLine> PatchLines;
-    std::vector<PatchLine> ExternalPatchLines;
+    // std::vector<PatchLine> ExternalPatchLines;
     std::string PdVersion = PUREDATA_VERSION;
 
     json ExternalObjectsJson;
 
     // Objects
+    std::vector<PatchLine> ExtraObjects;
     std::vector<PatchLine> ExternalObjects;
     std::vector<std::string> DeclaredPaths;
     std::vector<std::string> DeclaredLibs;
