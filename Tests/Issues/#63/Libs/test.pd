@@ -1,0 +1,18 @@
+#N canvas 506 163 961 300 12;
+#X declare -path ../Libs/;
+#X obj 41 27 declare -path ../Libs/;
+#X obj 362 43 noise~;
+#X obj 411 91 s \$1-value;
+#X obj 283 25 bng 19 250 50 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000;
+#X obj 287 0 loadbang;
+#X floatatom 362 91 5 0 0 0 - - - 0;
+#X obj 362 67 snapshot~;
+#X obj 276 48 metro 1000;
+#X obj 179 139 myabs test2 \$1;
+#X connect 1 0 6 0;
+#X connect 3 0 7 0;
+#X connect 4 0 3 0;
+#X connect 6 0 2 0;
+#X connect 6 0 5 0;
+#X connect 6 0 8 0;
+#X connect 7 0 6 0;
