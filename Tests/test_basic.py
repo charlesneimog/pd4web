@@ -82,6 +82,12 @@ def run_flask_server(directory, port):
         Path("Basic/messages/main.pd"),
         Path("Basic/extra/main.pd"),
         Path("Basic/guiinternal/main.pd"),
+        # issues
+        Path("Issues/#22-1/main.pd"),
+        Path("Issues/#22-2/main.pd"),
+        Path("Issues/#23/main.pd"),
+        Path("Issues/#63/main.pd"),
+        Path("Issues/#65/folder with space/main.pd"),
     ],
 )
 def test_compile_and_open_patch(compiler, patch):
