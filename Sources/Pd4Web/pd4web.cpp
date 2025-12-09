@@ -1415,11 +1415,11 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     m_UserData->libpd = m_PdInstance;
     m_UserData->lastFrame = emscripten_get_now();
 
+
     (void)libpd_queued_init();
 
-    libpd_set_printhook(ReceivedPrintMsg);
-    libpd_set_concatenated_printhook(ReceivedPrintMsg);
-    libpd_set_queued_printhook(ReceivedPrintMsg);
+    libpd_set_concatenated_printhook(&ReceivedPrintMsg);
+    libpd_set_queued_printhook(libpd_print_concatenator);
     libpd_set_queued_banghook(ReceivedBang);
     libpd_set_queued_floathook(ReceivedFloat);
     libpd_set_queued_symbolhook(ReceivedSymbol);
@@ -2004,7 +2004,6 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
 // ─────────────────────────────────────
 void FakeLoop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
-
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
@@ -2246,9 +2245,6 @@ int main() {
         JS_Alert("Failed to initialize libpd, please report to pd4web");
         abort();
     }
-
-    libpd_set_printhook(libpd_print_concatenator);
-    libpd_set_concatenated_printhook(&ReceivedPrintMsg);
 
     std::cout << std::format("pd4web version {}.{}.{}", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
                              PD4WEB_VERSION_PATCH)
