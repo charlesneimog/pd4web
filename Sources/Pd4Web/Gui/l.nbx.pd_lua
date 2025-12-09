@@ -5,9 +5,76 @@ function nbx:initialize(_, args)
 	self.inlets = 1
 	self.outlets = 1
 	self.select = false
-	self:set_size(5 * 10 + 4, 16)
 	self.number = "0"
+	self.needclear = false
+	self.recv = nil
+
+	-- defaults
+	self.digs_len = 5
+	self.height = 14
+	self.lower = -1e+37
+	self.upper = 1e+37
+	self.liner = 0
+	self.init = 0
+	self.send = "empty"
+	self.receive = "empty"
+	self.label = ""
+	self.x_off = 0
+	self.y_off = -8
+	self.font_style = 0
+	self.font = "sys_font"
+	self.fontsize = 12
+	self.bg_color = "#ffffff"
+	self.fg_color = "#000000"
+	self.label_color = "#000000"
+	self.default_value = 0
+	self.steady_on_click = false
+	self.log_height = 256
+
+	if args and #args >= 17 then
+		self.digs_len = args[1] or self.digs_len -- argv[0]
+		self.height = args[2] or self.height -- argv[1]
+		self.lower = args[3] or self.lower -- argv[2]
+		self.upper = args[4] or self.upper -- argv[3]
+		self.liner = (args[5] ~= 0) and 1 or 0 -- argv[4]
+		self.init = args[6] or self.init -- argv[6]
+		self.send = args[7] or self.send -- argv[7]
+		self.receive = args[8] or self.receive -- argv[8]
+		self.label = args[9] or self.label -- argv[9]
+		self.x_off = args[10] or self.x_off -- argv[10]
+		self.y_off = args[11] or self.y_off -- argv[11]
+		self.font_style = args[12] or self.font_style -- argv[12]
+		self.fontsize = args[13] or self.fontsize -- argv[13]
+		self.bg_color = args[14] or self.bg_color -- argv[14]
+		self.fg_color = args[15] or self.fg_color -- argv[15]
+		self.label_color = args[16] or self.label_color -- argv[16]
+		self.default_value = tonumber(args[17]) or self.default_value -- argv[17]
+		if #args >= 18 then
+			self.steady_on_click = (args[19] ~= 0)
+		end
+	end
+
+	-- receptor
+	if self.receive ~= "empty" then
+		self.recv = pd.Receive:new():register(self, self.receive, "receive_value")
+	end
+
+	-- enviar valor inicial
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.default_value })
+	end
+
+	self.number = self.default_value
+
+	self:set_size(self.digs_len * self.fontsize, self.height)
 	return true
+end
+
+-- ──────────────────────────────────────────
+function nbx:finalize()
+	if self.recv then
+		self.recv:destruct()
+	end
 end
 
 -- ──────────────────────────────────────────
@@ -15,6 +82,10 @@ function nbx:mouse_down(x, y)
 	self.select = not self.select
 	self.needclear = true
 	self:repaint()
+
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.number })
+	end
 end
 
 -- ──────────────────────────────────────────
@@ -29,9 +100,12 @@ function nbx:key_down(_, _, key)
 	end
 
 	if key == "Enter" then
-		self.needclear = false
 		self.select = false
-		self:outlet(1, "float", { tonumber(self.number) })
+		local val = tonumber(self.number) or 0
+		if self.send ~= "empty" then
+			pd.send(self.send, "float", { self.number })
+		end
+		self:outlet(1, "float", { val })
 		self:repaint()
 		return
 	elseif key == "Backspace" or key == "Delete" then
@@ -48,16 +122,40 @@ function nbx:key_down(_, _, key)
 end
 
 -- ──────────────────────────────────────────
-function nbx:in_1_float(args)
-	self.number = args
-	self:outlet(1, "float", { tonumber(self.number) })
+function nbx:in_1_float(val)
+	self.number = val
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.number })
+	end
+	self:outlet(1, "float", { val })
 	self:repaint()
 end
 
 -- ──────────────────────────────────────────
 function nbx:in_1_list(args)
-	self.number = args[1]
-	self:outlet(1, "float", { tonumber(self.number) })
+	if #args < 1 then
+		return
+	end
+	local val = tonumber(args[1])
+	self.number = val
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { val })
+	end
+	self:outlet(1, "float", { val })
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
+function nbx:receive_value(sel, atoms)
+	if #atoms < 1 then
+		return
+	end
+	local val = atoms[1]
+	self.number = val
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.number })
+	end
+	self:outlet(1, "float", { val })
 	self:repaint()
 end
 
@@ -84,7 +182,19 @@ function nbx:paint(g)
 		g:set_color(0, 0, 0)
 	end
 
-	local number_str = string.format("%.5f", self.number):gsub("0+$", ""):gsub("%.$", "")
+	local number_str = string.format("%.5f", tonumber(self.number) or 0)
+	number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+
+	if number_str:find("%.") then
+		-- cortar até self.digs_len
+		number_str = string.sub(number_str, 1, self.digs_len)
+	else
+		if #number_str > self.digs_len then
+			number_str = "+"
+		end
+		-- caso contrário mantém a string
+	end
+
 	g:draw_text(number_str, 10, height / 4, 50, 10)
 
 	g:set_color(0, 0, 0)
