@@ -370,29 +370,35 @@ void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
 void Pd4Web::isPdObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     PD4WEB_LOGGER();
 
+    // is not pd object, but can be a number or special objects
+    if (isNumber(pl.Name)) {
+        pl.Found = true;
+        return;
+    }
+
+    if (pl.Name[0] == '/') {
+        pl.Found = true;
+        return;
+    }
+
+    if (pl.Name.rfind("\\$", 0) == 0) {
+        pl.Found = true;
+        return;
+    }
+
+    // check for midi and audio objects
+    isMidiObj(Patch, pl);
+
     bool isPdObj = std::find(m_PdObjects.begin(), m_PdObjects.end(), pl.Name) != m_PdObjects.end();
     if (!isPdObj || !pl.Lib.empty()) {
         pl.isExternal = true;
         pl.Found = false;
         pl.isLuaExternal = false;
         return;
-    }
-    // is not pd object, but can be a number or special objects
-    pl.isExternal = false;
-    if (isNumber(pl.Name)) {
+    } else {
+        pl.isExternal = false;
         pl.Found = true;
     }
-
-    if (pl.Name[0] == '/') {
-        pl.Found = true;
-    }
-
-    if (pl.Name[0] == '\\' && pl.Name[1] == '$') {
-        pl.Found = true;
-    }
-
-    // check for midi and audio objects
-    isMidiObj(Patch, pl);
 }
 
 // ─────────────────────────────────────
@@ -456,7 +462,6 @@ bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
     if (Obj == "adc~") {
         unsigned int input = 0;
-
         if (length > 5) {
             for (size_t i = 5; i < pl.OriginalTokens.size(); ++i) {
                 std::string token = pl.OriginalTokens[i];

@@ -10,14 +10,14 @@
 
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
-                           "set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)\n"
+                           "set(PDCMAKE_FILE \"${CMAKE_BINARY_DIR}/pd.cmake\")\n"
                            "set(PDCMAKE_VERSION \"v0.2.0\")\n"
                            "if(NOT EXISTS \"${PDCMAKE_FILE}\")\n"
                            "    file(DOWNLOAD "
                            "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/"
                            "${PDCMAKE_VERSION}/pd.cmake ${PDCMAKE_FILE})\n"
                            "endif()\n"
-                           "include(${PDCMAKE_FILE})";
+                           "include(\"${PDCMAKE_FILE}\")";
 
 // ─────────────────────────────────────
 void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
@@ -266,19 +266,26 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     };
 
     std::string preloadFlags;
-    preloadFlags += "\n --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd";
+
+    // index.pd
+    preloadFlags +=
+        "\n\t--preload-file \\\"${CMAKE_CURRENT_SOURCE_DIR}/WebPatch/index.pd@/index.pd\\\"";
+
+    // additional preload files
     for (const auto &[srcRel, dstRel] : preloadMap) {
         fs::path fullSrc = fs::path(baseDir) / srcRel;
         if (fs::exists(fullSrc)) {
-            preloadFlags += " --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/" + srcRel + "@" + dstRel;
+            preloadFlags += "\n\t--preload-file \\\"${CMAKE_CURRENT_SOURCE_DIR}/" + srcRel + "@" +
+                            dstRel + "\\\"";
         }
     }
 
+    // optional Lua GUI
     if (p->LuaGuiObjects) {
-        preloadFlags += " --preload-file ${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Gui@/Gui/";
+        preloadFlags += "\n\t--preload-file \\\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Gui@/Gui/\\\"";
     }
 
-    // Generate the full CMake snippet
+    // generate CMake snippet
     PreloadedFiles += "set_target_properties(pd4web PROPERTIES LINK_FLAGS \"${EMCC_LINK_FLAGS}" +
                       preloadFlags + "\")\n";
 

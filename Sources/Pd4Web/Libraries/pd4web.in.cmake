@@ -9,12 +9,12 @@ include(FetchContent)
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-include(${PDCMAKE_FILE})
+include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
 # │                Nanovg                │
 # ╰──────────────────────────────────────╯
-FetchContent_Declare(nanovg SOURCE_DIR ${CMAKE_BINARY_DIR}/nanovg)
+FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_BINARY_DIR}/nanovg")
 FetchContent_MakeAvailable(nanovg)
 
 # ╭──────────────────────────────────────╮
@@ -66,7 +66,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua")
 endif()
 
-target_include_directories(pd4web PRIVATE Pd4Web/pure-data/src)
+target_include_directories(pd4web PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src"Jk)
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                         "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 
