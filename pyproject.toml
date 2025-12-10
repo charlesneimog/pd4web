@@ -1,6 +1,6 @@
 [project]
 name = "pd4web"
-version = "2.4.2"
+version = "3.0.0"
 description = "pd4web is a tool that compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
 authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"

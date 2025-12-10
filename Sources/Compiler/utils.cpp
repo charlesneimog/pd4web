@@ -25,12 +25,36 @@ std::string Pd4Web::getCertFile() {
 #if defined(_WIN32)
     wchar_t path[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
-        std::filesystem::path certPath = std::filesystem::path(path) / L"Programs" / L"Python" /
-                                         L"Python311" / L"Lib" / L"site-packages" / L"certifi" /
-                                         L"cacert.pem";
-        if (!fs::exists(certPath)) {
+        int python_minor = 10;
+        int python_major = 99;
+        std::filesystem::path certPath;
+        for (int i = python_minor; i < python_major; i++) {
+            std::filesystem::path possiblePath = std::filesystem::path(path) / L"Programs" /
+                                                 L"Python" / (L"Python3" + std::to_wstring(i)) /
+                                                 L"Lib" / L"site-packages" / L"certifi" /
+                                                 L"cacert.pem";
+
+            if (fs::exists(possiblePath)) {
+                certPath = possiblePath;
+                break;
+            }
+        }
+        if (certPath.empty()) {
+            print("Certificate not found, installing certifi package for SSL certificates...",
+                  Pd4WebLogLevel::PD4WEB_LOG2);
+            std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
+            int pipResult = execProcess(m_PythonWindows, pipInstallCmd);
+            if (pipResult != 0) {
+                print("Failed to install certifi package via pip. SSL connections may fail.",
+                      Pd4WebLogLevel::PD4WEB_WARNING);
+            } else {
+                print("certifi package installed successfully.", Pd4WebLogLevel::PD4WEB_LOG2);
+                print("Please restart the Pd/Python", Pd4WebLogLevel::PD4WEB_ERROR);
+            }
             return {};
         }
+
+        // Convert wide to UTF-8
         int size_needed =
             WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, nullptr, 0, nullptr, nullptr);
         if (size_needed <= 0) {

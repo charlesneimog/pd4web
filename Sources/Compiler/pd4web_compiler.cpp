@@ -52,9 +52,10 @@ bool Pd4Web::init() {
             return false;
         }
         std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";
-        std::vector<std::string> wingetCheckCmd = {"install", "-e", "--id=Python.Python.3.11",
-                                                   "--accept-source-agreements",
-                                                   "--accept-package-agreements"};
+        std::vector<std::string> wingetCheckCmd = {
+            "install", "-e", std::string("--id=") + PYTHON_WINGET_VERSION,
+            "--accept-source-agreements", "--accept-package-agreements"};
+
         int wingetResult = execProcess(wingetExe, wingetCheckCmd);
         if (wingetResult != 0) {
             print("Failed to install Python via winget. Please install Python manually! Go to "
@@ -82,11 +83,11 @@ bool Pd4Web::init() {
         if (pipResult != 0) {
             print("Failed to install certifi package via pip. SSL connections may fail.",
                   Pd4WebLogLevel::PD4WEB_WARNING);
-        } else {   
+        } else {
             print("certifi package installed successfully.", Pd4WebLogLevel::PD4WEB_LOG2);
         }
     }
-    
+
     _putenv_s("EMSDK_PY", pythonPath);
     print("Using Python interpreter at: " + std::string(pythonPath),
           Pd4WebLogLevel::PD4WEB_VERBOSE);
