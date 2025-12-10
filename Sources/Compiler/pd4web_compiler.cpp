@@ -75,12 +75,22 @@ bool Pd4Web::init() {
         return false;
     }
     m_PythonWindows = pythonPath;
+    if (needInstall) {
+        print("Installing certifi package for SSL certificates...", Pd4WebLogLevel::PD4WEB_LOG2);
+        std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
+        int pipResult = execProcess(pythonPath, pipInstallCmd);
+        if (pipResult != 0) {
+            print("Failed to install certifi package via pip. SSL connections may fail.",
+                  Pd4WebLogLevel::PD4WEB_WARNING);
+        } else {   
+            print("certifi package installed successfully.", Pd4WebLogLevel::PD4WEB_LOG2);
+        }
+    }
+    
     _putenv_s("EMSDK_PY", pythonPath);
     print("Using Python interpreter at: " + std::string(pythonPath),
           Pd4WebLogLevel::PD4WEB_VERBOSE);
-    print("SSL certificate: " + getCertFile(), Pd4WebLogLevel::PD4WEB_VERBOSE);
 #endif
-
     // libtree-sitter
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();

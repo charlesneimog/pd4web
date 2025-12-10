@@ -29,17 +29,20 @@ std::string Pd4Web::getCertFile() {
                                          L"Python311" / L"Lib" / L"site-packages" / L"certifi" /
                                          L"cacert.pem";
         if (!fs::exists(certPath)) {
-            print("Certificate file does not exist: " +
-                      std::string(certPath.string().begin(), certPath.string().end()),
-                  Pd4WebLogLevel::PD4WEB_ERROR);
             return {};
         }
-        // Convert wide path to UTF-8 string
         int size_needed =
             WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, nullptr, 0, nullptr, nullptr);
+        if (size_needed <= 0) {
+            print("Failed to convert certificate path to UTF-8", Pd4WebLogLevel::PD4WEB_WARNING);
+            return {};
+        }
         std::string certPathUtf8(size_needed - 1, 0);
-        WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, certPathUtf8.data(), size_needed,
-                            nullptr, nullptr);
+        if (WideCharToMultiByte(CP_UTF8, 0, certPath.c_str(), -1, certPathUtf8.data(), size_needed,
+                                nullptr, nullptr) == 0) {
+            print("Failed to convert certificate path to UTF-8", Pd4WebLogLevel::PD4WEB_WARNING);
+            return {};
+        }
         return certPathUtf8;
     }
     return {};
@@ -69,15 +72,10 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     for (const auto &a : args) {
         oss << a << ' ';
     }
-#if defined(_WIN32)
-    print("WIN32: " + command + " " + oss.str());
-#else
     print(command + " " + oss.str());
-#endif
-
-    std::string certPath = getCertFile();
 
 #if defined(__linux__) || defined(__APPLE__)
+    std::string certPath = getCertFile();
     asio::io_context ctx;
     boost::asio::readable_pipe out{ctx}, err{ctx};
     bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
@@ -135,9 +133,10 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     return proc.exit_code();
 
 #else // Windows branch
-    // Set SSL_CERT_FILE for this process and children
-    _putenv_s("SSL_CERT_FILE", certPath.c_str());
-
+    const std::string certPath = getCertFile();
+    if (!certPath.empty()) {
+        _putenv_s("SSL_CERT_FILE", certPath.c_str());
+    }
     // Lambda to quote arguments if they contain spaces or quotes
     auto quoteArg = [](const std::string &arg) -> std::string {
         if (arg.empty()) {
@@ -209,7 +208,15 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
                 sv.remove_suffix(1);
             }
             if (!sv.empty()) {
-                this->print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+                std::string s(sv);
+                const size_t MAX = 1024; // safe size for Pd
+                while (s.size() > MAX) {
+                    this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_LOG2);
+                    s.erase(0, MAX);
+                }
+                if (!s.empty()) {
+                    this->print(s, Pd4WebLogLevel::PD4WEB_LOG2);
+                }
             }
         }
         CloseHandle(pipe);

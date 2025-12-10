@@ -25,6 +25,14 @@ bool Pd4Web::initPaths() {
     m_Ninja = m_Pd4WebRoot + "emsdk/ninja/git-release_64bit/bin/ninja";
     m_Clang = m_Pd4WebRoot + "emsdk/upstream/bin/clang";
 
+#if defined(_WIN32)
+    m_Emcmake = m_Emcmake + ".bat";
+    m_Emcc = m_Emcc + ".bat";
+    m_Emconfigure = m_Emconfigure + ".bat";
+    m_Emmake = m_Emmake + ".bat";
+    m_Clang = m_Clang + ".exe";
+#endif
+
     return true;
 }
 
@@ -85,7 +93,6 @@ bool Pd4Web::checkAllPaths() {
         out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/") << "'\n";
 #if defined(_WIN32)
         out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";
-        out << "SSL_CERT_FILE = r'" << getCertFile() << "'\n";
 #endif
         out.close();
     }
@@ -98,11 +105,19 @@ bool Pd4Web::cmdInstallEmsdk() {
     PD4WEB_LOGGER();
 
 #if defined(_WIN32)
-    print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
-    std::vector<std::string> cmd = {"install", "node-22.16.0-64bits"};
+    print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
+    std::vector<std::string> cmd = {"install", EMSDK_VERSION};
     int result = execProcess(m_EmsdkInstaller, cmd);
     if (result != 0) {
         print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
+    cmd = {"install", "node-22.16.0-64bit"};
+    result = execProcess(m_EmsdkInstaller, cmd);
+    if (result != 0) {
+        print("Failed to install Node.js", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 #else

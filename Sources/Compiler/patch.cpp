@@ -183,6 +183,12 @@ void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
         std::vector<std::string> subdirs = {"Extras", "Libs"};
         for (const auto &subdir : subdirs) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
+            if (pl.Found) {
+                break;
+            }
+        }
+        for (const auto &subdir : Patch->DeclaredPaths) {
+            findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
         }
     }
 }
@@ -425,11 +431,14 @@ void Pd4Web::isMidiObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
 // ─────────────────────────────────────
 std::string Pd4Web::getObjLib(std::string &objToken) {
     PD4WEB_LOGGER();
+    if (objToken == "/" && objToken.size() == 1) {
+        return "";
+    }
+
     size_t slashPos = objToken.find_last_of('/');
     if (slashPos != std::string::npos) {
         return objToken.substr(0, slashPos);
     }
-
     return "";
 }
 
@@ -731,8 +740,8 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
 
             } else {
                 // 3) Para qualquer outro objeto, se houver prefixo 'lib/', remova.
-                if (objNameTok.find('/') != std::string::npos && objNameTok != "/" &&
-                    objNameTok != "/~") {
+                if (objNameTok.find('/') != std::string::npos && pl.Name != "/" &&
+                    pl.Name != "/~") {
                     std::string oldTok = objNameTok;
                     objNameTok = strip_lib_preserve_semicolon(objNameTok);
                     print("Editing external/abstraction object: '" + oldTok + "' -> '" +
