@@ -6,6 +6,7 @@ function vsl:initialize(_, args)
 	self.outlets = 1
 	self.need_update_args = false
 	if args ~= nil and #args > 0 then
+        -- 248 29 0 0.99 0 0 empty empty empty -2 -8 0 10 #ffffff #000000 #373737 0 1
 		self.width = args[1]
 		self.height = args[2]
 		self.bottom = args[3]

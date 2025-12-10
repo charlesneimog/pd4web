@@ -7,6 +7,7 @@ function hsl:initialize(_, args)
 	self.pos = 20
 
 	if args ~= nil and #args > 0 then
+		-- 248 29 0 0.99 0 0 empty empty empty -2 -8 0 10 #ffffff #000000 #373737 0 1
 		self.width = args[1]
 		self.height = args[2]
 		self.bottom = args[3]
@@ -122,7 +123,8 @@ end
 
 -- ──────────────────────────────────────
 function hsl:hex_to_rgb(hex)
-	if hex[1] ~= "#" then
+	local first = string.sub(hex, 1, 1)
+	if first ~= "#" then
 		self:error("Hex color must start with #")
 		return { 0, 0, 0 }
 	end
@@ -158,3 +160,4 @@ function hsl:in_1_reload()
 	self:dofilex(self._scriptname)
 	self:initialize()
 end
+

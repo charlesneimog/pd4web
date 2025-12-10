@@ -105,7 +105,7 @@ function bng:in_1(_)
 	self:repaint()
 	self.clock:delay(1)
 	self.blink_delay = 0
-	self:outlet(1, "bang", {})
+	self:outlet(1, "bang", {"bang"})
 end
 
 -- ──────────────────────────────────────────

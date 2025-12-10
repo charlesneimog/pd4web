@@ -59,15 +59,31 @@ function nbx:initialize(_, args)
 		self.recv = pd.Receive:new():register(self, self.receive, "receive_value")
 	end
 
+	self.keyrecv = pd.Receive:new():register(self, "#key", "keydown")
+
 	-- enviar valor inicial
 	if self.send ~= "empty" then
 		pd.send(self.send, "float", { self.default_value })
 	end
 
-	self.number = self.default_value
+	self.number = tostring(self.default_value)
 
 	self:set_size(self.digs_len * self.fontsize, self.height)
 	return true
+end
+
+-- ──────────────────────────────────────────
+function nbx:keydown(sel, atoms)
+	local key_num = atoms[1]
+
+	local key_char
+	if key_num == 13 or key_num == 10 then
+		key_char = "Enter"
+	else
+		key_char = string.char(key_num)
+	end
+
+	self:key_down(_, _, key_char)
 end
 
 -- ──────────────────────────────────────────
@@ -82,10 +98,6 @@ function nbx:mouse_down(x, y)
 	self.select = not self.select
 	self.needclear = true
 	self:repaint()
-
-	if self.send ~= "empty" then
-		pd.send(self.send, "float", { self.number })
-	end
 end
 
 -- ──────────────────────────────────────────
@@ -103,17 +115,17 @@ function nbx:key_down(_, _, key)
 		self.select = false
 		local val = tonumber(self.number) or 0
 		if self.send ~= "empty" then
-			pd.send(self.send, "float", { self.number })
+			pd.post("sending")
+			pd.send(self.send, "float", { val })
 		end
+		pd.post("outlet")
 		self:outlet(1, "float", { val })
-		self:repaint()
-		return
 	elseif key == "Backspace" or key == "Delete" then
 		self.number = self.number:sub(1, -2)
 	elseif key == "." then
 		self.number = self.number .. key
 	elseif tonumber(key) then
-		self.number = self.number .. key
+		self.number = self.number .. tostring(key)
 	else
 		return
 	end
@@ -122,10 +134,18 @@ function nbx:key_down(_, _, key)
 end
 
 -- ──────────────────────────────────────────
-function nbx:in_1_float(val)
-	self.number = val
+function nbx:in_1_bang(val)
 	if self.send ~= "empty" then
-		pd.send(self.send, "float", { self.number })
+		pd.send(self.send, "float", { tonumber(self.number) })
+	end
+	self:outlet(1, "float", { tonumber(self.number) })
+end
+
+-- ──────────────────────────────────────────
+function nbx:in_1_float(val)
+	self.number = tostring(val)
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { val })
 	end
 	self:outlet(1, "float", { val })
 	self:repaint()
@@ -137,7 +157,7 @@ function nbx:in_1_list(args)
 		return
 	end
 	local val = tonumber(args[1])
-	self.number = val
+	self.number = tostring(val)
 	if self.send ~= "empty" then
 		pd.send(self.send, "float", { val })
 	end
@@ -151,9 +171,9 @@ function nbx:receive_value(sel, atoms)
 		return
 	end
 	local val = atoms[1]
-	self.number = val
+	self.number = tostring(val)
 	if self.send ~= "empty" then
-		pd.send(self.send, "float", { self.number })
+		pd.send(self.send, "float", { val })
 	end
 	self:outlet(1, "float", { val })
 	self:repaint()
@@ -182,21 +202,21 @@ function nbx:paint(g)
 		g:set_color(0, 0, 0)
 	end
 
-	local number_str = string.format("%.5f", tonumber(self.number) or 0)
-	number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+	local number_str = tostring(self.number)
 
 	if number_str:find("%.") then
-		-- cortar até self.digs_len
+		-- remove zeros à direita e ponto final, se houver
+		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+		-- corta até self.digs_len
 		number_str = string.sub(number_str, 1, self.digs_len)
 	else
+		-- se inteiro, mantém todos os dígitos
 		if #number_str > self.digs_len then
 			number_str = "+"
 		end
-		-- caso contrário mantém a string
 	end
 
-	g:draw_text(number_str, 10, height / 4, 50, 10)
-
+	g:draw_text(number_str, 10, height / 4, self.digs_len * self.fontsize, self.fontsize)
 	g:set_color(0, 0, 0)
 	g:stroke_rect(0, 0, width, height, 1)
 end
