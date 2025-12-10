@@ -186,11 +186,12 @@ pd_add_external(scale~ "${LIB_DIR}/cyclone_objects/binaries/audio/scale.c")
 pd_add_external(thresh~ "${LIB_DIR}/cyclone_objects/binaries/audio/thresh.c")
 #pd_add_external(trunc~ "${LIB_DIR}/cyclone_objects/binaries/audio/trunc.c")
 
-if(NOT TARGET tanh_tilde)
-    pd_add_external(tanh~ "${LIB_DIR}/cyclone_objects/binaries/audio/tanh.c")
-else()
-    message(WARNING "tanh~ from pd-else")
-endif()
+
+# if(NOT TARGET tanh_tilde)
+#     pd_add_external(tanh~ "${LIB_DIR}/cyclone_objects/binaries/audio/tanh.c")
+# else()
+#     message(WARNING "tanh~ from pd-else")
+# endif()
 
 # ╭──────────────────────────────────────╮
 # │      Classes with Dependencies       │
