@@ -73,10 +73,10 @@ void SenderCallback(t_pd *obj, void *data) {
 // ─────────────────────────────────────
 /**
  * Send a bang message to Pure Data (thread-safe).
- * 
+ *
  * This function is called from the main thread and queues a bang message
  * to be processed on the Audio Worklet thread before the next audio block.
- * 
+ *
  * @param s The receiver symbol in Pure Data.
  */
 void Pd4Web::SendBang(std::string s) {
@@ -88,10 +88,10 @@ void Pd4Web::SendBang(std::string s) {
 // ─────────────────────────────────────
 /**
  * Send a float message to Pure Data (thread-safe).
- * 
+ *
  * This function is called from the main thread and queues a float message
  * to be processed on the Audio Worklet thread before the next audio block.
- * 
+ *
  * @param s The receiver symbol in Pure Data.
  * @param f The float value to send.
  */
@@ -104,11 +104,11 @@ void Pd4Web::SendFloat(std::string s, float f) {
 // ─────────────────────────────────────
 /**
  * Send a symbol message to Pure Data (thread-safe).
- * 
+ *
  * This function is called from the main thread and queues a symbol message
  * to be processed on the Audio Worklet thread before the next audio block.
  * String data is copied into the sender structure for thread safety.
- * 
+ *
  * @param s The receiver symbol in Pure Data.
  * @param thing The symbol string to send.
  */
@@ -121,14 +121,14 @@ void Pd4Web::SendSymbol(std::string s, std::string thing) {
 // ─────────────────────────────────────
 /**
  * Send a list message to Pure Data (thread-safe).
- * 
+ *
  * This function is called from the main thread. It converts the JavaScript
  * array (emscripten::val) into a thread-safe vector of atoms on the main
  * thread, then queues the message for processing on the Audio Worklet thread.
- * 
+ *
  * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
  * so all conversion must happen here on the main thread.
- * 
+ *
  * @param s The receiver symbol in Pure Data.
  * @param a JavaScript array containing numbers and/or strings.
  */
@@ -138,11 +138,11 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
         emscripten_log(EM_LOG_ERROR, "SendList: argument is not an array");
         return;
     }
-    
+
     size_t length = a["length"].as<size_t>();
     std::vector<Pd4WebAtom> atoms;
     atoms.reserve(length);
-    
+
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
@@ -153,7 +153,7 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
             emscripten_log(EM_LOG_WARN, "SendList: unsupported type at index %zu", i);
         }
     }
-    
+
     auto sender = Pd4WebSender::CreateList(s, atoms);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
@@ -162,15 +162,15 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
 // ─────────────────────────────────────
 /**
  * Send a typed message to Pure Data (thread-safe).
- * 
+ *
  * This function is called from the main thread. It converts the JavaScript
  * array (emscripten::val) into a thread-safe vector of atoms on the main
- * thread, then queues the message with a selector for processing on the 
+ * thread, then queues the message with a selector for processing on the
  * Audio Worklet thread.
- * 
+ *
  * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
  * so all conversion must happen here on the main thread.
- * 
+ *
  * @param r The receiver symbol in Pure Data.
  * @param s The message selector (e.g., "set", "connect", etc.).
  * @param a JavaScript array containing numbers and/or strings.
@@ -181,11 +181,11 @@ void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
         emscripten_log(EM_LOG_ERROR, "SendMessage: argument is not an array");
         return;
     }
-    
+
     size_t length = a["length"].as<size_t>();
     std::vector<Pd4WebAtom> atoms;
     atoms.reserve(length);
-    
+
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
@@ -196,7 +196,7 @@ void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
             emscripten_log(EM_LOG_WARN, "SendMessage: unsupported type at index %zu", i);
         }
     }
-    
+
     auto sender = Pd4WebSender::CreateMessage(r, s, atoms);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
@@ -541,23 +541,25 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
     {
         std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
         auto &data = ud->pd4web->getToSendData();
-        
+
         for (auto *sender : data) {
-            if (!sender) continue;
-            
+            if (!sender) {
+                continue;
+            }
+
             switch (sender->type) {
             case BANG:
                 libpd_bang(sender->receiver.c_str());
                 break;
-                
+
             case FLOAT:
                 libpd_float(sender->receiver.c_str(), sender->f_value);
                 break;
-                
+
             case SYMBOL:
                 libpd_symbol(sender->receiver.c_str(), sender->s_value.c_str());
                 break;
-                
+
             case LIST: {
                 size_t len = sender->list_data.size();
                 if (len == 0) {
@@ -566,17 +568,17 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
                 } else {
                     // Start building the list message
                     if (libpd_start_message(len) == 0) {
-                        for (const auto& atom : sender->list_data) {
+                        for (const auto &atom : sender->list_data) {
                             if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
                                 libpd_add_float(atom.f_value);
                             } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
                                 libpd_add_symbol(atom.s_value.c_str());
                             }
                         }
-                        
+
                         if (libpd_finish_list(sender->receiver.c_str()) != 0) {
-                            emscripten_log(EM_LOG_ERROR, "Failed to send list to %s", 
-                                         sender->receiver.c_str());
+                            emscripten_log(EM_LOG_ERROR, "Failed to send list to %s",
+                                           sender->receiver.c_str());
                         }
                     } else {
                         emscripten_log(EM_LOG_ERROR, "Failed to start list message");
@@ -584,56 +586,50 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
                 }
                 break;
             }
-            
+
             case MESSAGE: {
                 size_t len = sender->list_data.size();
                 if (len > 0) {
                     // Allocate atoms on stack for performance
                     t_atom *atoms = (t_atom *)alloca(len * sizeof(t_atom));
-                    
+
                     for (size_t i = 0; i < len; ++i) {
-                        const auto& atom = sender->list_data[i];
+                        const auto &atom = sender->list_data[i];
                         if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
                             SETFLOAT(&atoms[i], atom.f_value);
                         } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
                             SETSYMBOL(&atoms[i], gensym(atom.s_value.c_str()));
                         }
                     }
-                    
-                    libpd_message(sender->receiver.c_str(), 
-                                 sender->selector.c_str(), 
-                                 len, 
-                                 atoms);
+
+                    libpd_message(sender->receiver.c_str(), sender->selector.c_str(), len, atoms);
                 } else {
                     // Message with no arguments
-                    libpd_message(sender->receiver.c_str(), 
-                                 sender->selector.c_str(), 
-                                 0, 
-                                 nullptr);
+                    libpd_message(sender->receiver.c_str(), sender->selector.c_str(), 0, nullptr);
                 }
                 break;
             }
-            
+
             case MOUSE_EVENT:
                 ProcessMouseEvent(ud, sender->mouse_data);
                 break;
-            
+
             case KEY_EVENT:
                 ProcessKeyEvent(ud, sender->key_data);
                 break;
-            
+
             case TOUCH_EVENT:
                 ProcessTouchEvent(ud, sender->touch_data);
                 break;
-            
+
             default:
                 emscripten_log(EM_LOG_ERROR, "Unknown sender type: %d", sender->type);
                 break;
             }
-            
+
             delete sender;
         }
-        
+
         // Clear the queue
         data.clear();
     }
@@ -964,11 +960,11 @@ std::string Pd4Web::GetFGColor() {
 /**
  * Process mouse click event on the Audio Worklet thread.
  * This is called from the Process() function, not from pd_queue_mess.
- * 
+ *
  * @param ud Pointer to Pd4WebUserData containing event information.
  * @param data Mouse event data with position and button info.
  */
-void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data) {
+void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
     libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
@@ -980,9 +976,9 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data) {
     ud->xpos = data.x;
     ud->ypos = data.y;
     ud->canvas = canvas;
-    ud->doit = (data.event_type == MouseEventData::MOUSE_DOWN || 
+    ud->doit = (data.event_type == MouseEventData::MOUSE_DOWN ||
                 (data.event_type == MouseEventData::MOUSE_MOVE && ud->mousedown));
-    
+
     if (data.event_type == MouseEventData::MOUSE_DOWN) {
         ud->mousedown = true;
     } else if (data.event_type == MouseEventData::MOUSE_UP) {
@@ -993,7 +989,8 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data) {
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
-            (void)gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, ud->doit);
+            (void)gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt,
+                             ud->doit);
         }
     }
 }
@@ -1002,11 +999,11 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData& data) {
 /**
  * Process key event on the Audio Worklet thread.
  * Calls key_down method on pdlua objects.
- * 
+ *
  * @param ud Pointer to Pd4WebUserData.
  * @param data Key event data.
  */
-void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData& data) {
+void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data) {
     libpd_set_instance(ud->libpd);
 
     lua_State *L = __L();
@@ -1040,11 +1037,11 @@ void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData& data) {
 // ─────────────────────────────────────
 /**
  * Process touch event on the Audio Worklet thread.
- * 
+ *
  * @param ud Pointer to Pd4WebUserData.
  * @param data Touch event data.
  */
-void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData& data) {
+void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data) {
     libpd_set_instance(ud->libpd);
 
     t_canvas *canvas = pd_getcanvaslist();
@@ -1055,7 +1052,7 @@ void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData& data) {
     ud->xpos = data.x;
     ud->ypos = data.y;
     ud->canvas = canvas;
-    
+
     switch (data.event_type) {
     case TouchEventData::TOUCH_START:
         ud->mousedown = true;
@@ -1101,8 +1098,8 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
     keyData.shift = e->shiftKey;
     keyData.ctrl = e->ctrlKey;
     keyData.alt = e->altKey;
-    keyData.event_type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? 
-                         KeyEventData::KEY_DOWN : KeyEventData::KEY_UP;
+    keyData.event_type =
+        (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? KeyEventData::KEY_DOWN : KeyEventData::KEY_UP;
 
     // Queue event for processing on Audio Worklet thread
     auto sender = Pd4WebSender::CreateKeyEvent(keyData);
@@ -1414,7 +1411,6 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;
     m_UserData->lastFrame = emscripten_get_now();
-
 
     (void)libpd_queued_init();
 
@@ -1816,9 +1812,141 @@ void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c) {
         copy.path_size = 0;
     }
 
+    if (c->command == DRAW_SVG) {
+        copy.svg = strdup(c->svg);
+        free(c->svg);
+        c->svg = NULL; // evita uso acidental após free
+    }
+
     obj_layer.gui_commands.push_back(copy);
     obj_layer.dirty = true;
     obj_layer.drawing = true;
+}
+
+// ─────────────────────────────────────
+// Drawing svg with nanovg + nanosvg borrowed from:
+//     https://github.com/VCVRack/Rack/blob/v2/src/window/Svg.cpp
+static void Pd4WebDrawSVG(NVGcontext *nvg, const char *svgText) {
+    auto *svg = nsvgParse(const_cast<char *>(svgText), "px", 96);
+    auto getNVGColor = [](uint32_t color) -> NVGcolor {
+        return nvgRGBA((color >> 0) & 0xff, (color >> 8) & 0xff, (color >> 16) & 0xff,
+                       (color >> 24) & 0xff);
+    };
+    auto getLineCrossing = [](Point<float> p0, Point<float> p1, Point<float> p2,
+                              Point<float> p3) -> float {
+        auto b = p2 - p0;
+        auto d = p1 - p0;
+        auto e = p3 - p2;
+        float m = d.x * e.y - d.y * e.x;
+        if (fabsf(m) < 1e-6) {
+            return NAN;
+        }
+        return -(d.x * b.y - d.y * b.x) / m;
+    };
+
+    auto getPaint = [&getNVGColor](NVGcontext *nvg, NSVGpaint *p) -> NVGpaint {
+        assert(p->type == NSVG_PAINT_LINEAR_GRADIENT || p->type == NSVG_PAINT_RADIAL_GRADIENT);
+        NSVGgradient *g = p->gradient;
+        assert(g->nstops >= 1);
+        NVGcolor icol = getNVGColor(g->stops[0].color);
+        NVGcolor ocol = getNVGColor(g->stops[g->nstops - 1].color);
+
+        float inverse[6];
+        nvgTransformInverse(inverse, g->xform);
+
+        Point<float> s, e;
+        // Is it always the case that the gradient should be transformed from (0, 0) to (0, 1)?
+        nvgTransformPoint(&s.x, &s.y, inverse, 0, 0);
+        nvgTransformPoint(&e.x, &e.y, inverse, 0, 1);
+
+        NVGpaint paint;
+        if (p->type == NSVG_PAINT_LINEAR_GRADIENT) {
+            paint = nvgLinearGradient(nvg, s.x, s.y, e.x, e.y, icol, ocol);
+        } else {
+            paint = nvgRadialGradient(nvg, s.x, s.y, 0.0, 160, icol, ocol);
+        }
+        return paint;
+    };
+
+    int shapeIndex = 0;
+    for (NSVGshape *shape = svg->shapes; shape; shape = shape->next, shapeIndex++) {
+        if (!(shape->flags & NSVG_FLAGS_VISIBLE)) {
+            continue;
+        }
+        nvgSave(nvg);
+        if (shape->opacity < 1.0) {
+            nvgGlobalAlpha(nvg, shape->opacity);
+        }
+        nvgBeginPath(nvg);
+        for (NSVGpath *path = shape->paths; path; path = path->next) {
+            nvgMoveTo(nvg, path->pts[0], path->pts[1]);
+            for (int i = 1; i < path->npts; i += 3) {
+                float *p = &path->pts[2 * i];
+                nvgBezierTo(nvg, p[0], p[1], p[2], p[3], p[4], p[5]);
+            }
+            if (path->closed) {
+                nvgClosePath(nvg);
+            }
+            int crossings = 0;
+            Point<float> p0 = Point<float>(path->pts[0], path->pts[1]);
+            Point<float> p1 = Point<float>(path->bounds[0] - 1.0, path->bounds[1] - 1.0);
+            for (NSVGpath *path2 = shape->paths; path2; path2 = path2->next) {
+                if (path2 == path) {
+                    continue;
+                }
+                if (path2->npts < 4) {
+                    continue;
+                }
+                for (int i = 1; i < path2->npts + 3; i += 3) {
+                    float *p = &path2->pts[2 * i];
+                    Point<float> p2 = Point<float>(p[-2], p[-1]);
+                    Point<float> p3 = (i < path2->npts)
+                                          ? Point<float>(p[4], p[5])
+                                          : Point<float>(path2->pts[0], path2->pts[1]);
+                    float crossing = getLineCrossing(p0, p1, p2, p3);
+                    float crossing2 = getLineCrossing(p2, p3, p0, p1);
+                    if (0.0 <= crossing && crossing < 1.0 && 0.0 <= crossing2) {
+                        crossings++;
+                    }
+                }
+            }
+
+            if (crossings % 2 == 0) {
+                nvgPathWinding(nvg, NVG_SOLID);
+            } else {
+                nvgPathWinding(nvg, NVG_HOLE);
+            }
+        }
+
+        if (shape->fill.type) {
+            switch (shape->fill.type) {
+            case NSVG_PAINT_COLOR: {
+                nvgFillColor(nvg, getNVGColor(shape->fill.color));
+            } break;
+            case NSVG_PAINT_LINEAR_GRADIENT:
+            case NSVG_PAINT_RADIAL_GRADIENT: {
+                nvgFillPaint(nvg, getPaint(nvg, &shape->fill));
+            } break;
+            }
+            nvgFill(nvg);
+        }
+
+        if (shape->stroke.type) {
+            nvgStrokeWidth(nvg, shape->strokeWidth);
+            nvgLineCap(nvg, (NVGlineCap)shape->strokeLineCap);
+            nvgLineJoin(nvg, (int)shape->strokeLineJoin);
+            switch (shape->stroke.type) {
+            case NSVG_PAINT_COLOR: {
+                nvgStrokeColor(nvg, getNVGColor(shape->stroke.color));
+            } break;
+            case NSVG_PAINT_LINEAR_GRADIENT: {
+                nvgStrokePaint(nvg, getPaint(nvg, &shape->stroke));
+            } break;
+            }
+            nvgStroke(nvg);
+        }
+        nvgRestore(nvg);
+    }
 }
 
 // ─────────────────────────────────────
@@ -1985,6 +2113,15 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgFill(ud->vg);
         break;
+    }
+    case DRAW_SVG: {
+        float const x = cmd->x1;
+        float const y = cmd->x2;
+        nvgSave(ud->vg);
+        nvgTranslate(ud->vg, x, y);
+        Pd4WebDrawSVG(ud->vg, cmd->svg);
+        nvgRestore(ud->vg);
+        free(cmd->svg);
     }
     case DRAW_TEXT: {
         if (cmd->text[0] == '\0' || cmd->w <= 0 || cmd->font_size <= 0) {

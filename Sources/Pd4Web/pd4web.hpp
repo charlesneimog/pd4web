@@ -44,9 +44,42 @@ extern "C" {
 #include <lualib.h>
 
 #include <pdlua.h>
+#define NANOSVG_IMPLEMENTATION
+#include <svg/nanosvg.h>
 extern lua_State *__L();
 extern void pdlua_setup();
 }
+
+// TODO: Remove
+template<typename T>
+struct Point {
+    T x;
+    T y;
+
+    Point() : x(0), y(0) {}
+    Point(T x_, T y_) : x(x_), y(y_) {}
+
+    // soma
+    Point operator+(const Point& other) const {
+        return Point(x + other.x, y + other.y);
+    }
+
+    // subtração
+    Point operator-(const Point& other) const {
+        return Point(x - other.x, y - other.y);
+    }
+
+    // multiplicação por escalar
+    Point operator*(T scalar) const {
+        return Point(x * scalar, y * scalar);
+    }
+
+    // divisão por escalar
+    Point operator/(T scalar) const {
+        return Point(x / scalar, y / scalar);
+    }
+};
+
 
 // ╭─────────────────────────────────────╮
 // │            Graphics / GL Setup      │

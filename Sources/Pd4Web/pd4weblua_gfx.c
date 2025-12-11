@@ -121,10 +121,18 @@ void pdlua_gfx_mouse_event(t_pdlua *o, int x, int y, int type) {
 // │           Mouse Movements           │
 // ╰─────────────────────────────────────╯
 // NOTE: We keep this 4 functions to avoid change pdlua.c
-void pdlua_gfx_mouse_down(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 0); }
-void pdlua_gfx_mouse_up(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 1); }
-void pdlua_gfx_mouse_move(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 2); }
-void pdlua_gfx_mouse_drag(t_pdlua *o, int x, int y) { pdlua_gfx_mouse_event(o, x, y, 3); }
+void pdlua_gfx_mouse_down(t_pdlua *o, int x, int y) {
+    pdlua_gfx_mouse_event(o, x, y, 0);
+}
+void pdlua_gfx_mouse_up(t_pdlua *o, int x, int y) {
+    pdlua_gfx_mouse_event(o, x, y, 1);
+}
+void pdlua_gfx_mouse_move(t_pdlua *o, int x, int y) {
+    pdlua_gfx_mouse_event(o, x, y, 2);
+}
+void pdlua_gfx_mouse_drag(t_pdlua *o, int x, int y) {
+    pdlua_gfx_mouse_event(o, x, y, 3);
+}
 
 // ─────────────────────────────────────
 typedef struct _path_state {
@@ -164,7 +172,7 @@ static const luaL_Reg gfx_methods[] = {{"fill_ellipse", fill_ellipse},
                                        {"stroke_rounded_rect", stroke_rounded_rect},
                                        {"draw_line", draw_line},
                                        {"draw_text", draw_text},
-                                       // {"draw_svg", draw_svg}, // TODO:
+                                       {"draw_svg", draw_svg},
                                        {"stroke_path", stroke_path},
                                        {"fill_path", fill_path},
                                        {"fill_all", fill_all},
@@ -365,7 +373,6 @@ static int start_paint(lua_State *L) {
 
     int x = text_xpix((t_object *)obj, obj->canvas);
     int y = text_ypix((t_object *)obj, obj->canvas);
-
 
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
@@ -691,6 +698,44 @@ static int draw_text(lua_State *L) {
     char obj_layer_id[64];
     snprintf(obj_layer_id, 64, "layer_%p", obj);
     AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    return 0;
+}
+
+// ─────────────────────────────────────
+static int draw_svg(lua_State *L) {
+    t_pdlua_gfx *gfx = pop_graphics_context(L);
+    t_pdlua *obj = gfx->object;
+    t_canvas *cnv = glist_getcanvas(obj->canvas);
+
+    const char *svg = luaL_checkstring(L, 1);
+    int x = luaL_checknumber(L, 2);
+    int y = luaL_checknumber(L, 3);
+
+    transform_point(gfx, &x, &y);
+
+    GuiCommand cmd = {0};
+    cmd.command = DRAW_SVG;
+
+    strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
+    strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
+
+    size_t len = strlen(svg);
+    cmd.svg = malloc(len + 1);
+    if (!cmd.svg) {
+        return luaL_error(L, "Out of memory allocating SVG");
+    }
+    memcpy(cmd.svg, svg, len + 1);
+
+    cmd.x1 = x;
+    cmd.y1 = y;
+    cmd.objx = text_xpix((t_object *)obj, obj->canvas);
+    cmd.objy = text_ypix((t_object *)obj, obj->canvas);
+
+    char obj_layer_id[64];
+    snprintf(obj_layer_id, sizeof(obj_layer_id), "layer_%p", obj);
+
+    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+
     return 0;
 }
 

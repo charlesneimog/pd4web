@@ -78,6 +78,7 @@ enum LuaGuiCommands {
     STROKE_ROUNDED_RECT,
     DRAW_LINE,
     DRAW_TEXT,
+    DRAW_SVG,
     STROKE_PATH,
     FILL_PATH,
     FILL_ALL,
@@ -110,6 +111,7 @@ typedef struct {
     float canvas_width;
     float canvas_height;
     float *path_coords;
+    char *svg;
     int path_size;
 } GuiCommand;
 
