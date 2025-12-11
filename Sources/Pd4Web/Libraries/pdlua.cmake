@@ -15,6 +15,8 @@ endif()
 
 target_link_libraries(pdlua PUBLIC lua nanovg)
 target_include_directories(pdlua PUBLIC "${PD4WEB_EXTERNAL_DIR}/../")
+include_directories(${LIB_DIR})
+
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${LIB_DIR}/pd.lua@/pd.lua\"")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${LIB_DIR}/pdlua/tutorial/examples/pdx.lua@/pdx.lua\"")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file \"${LIB_DIR}/DejaVuSans.ttf@/DejaVuSans.ttf\"")
