@@ -11,7 +11,7 @@
 // ─────────────────────────────────────
 std::string pdCMakeBlock = "# Pd Cmake\n"
                            "set(PDCMAKE_FILE \"${CMAKE_BINARY_DIR}/pd.cmake\")\n"
-                           "set(PDCMAKE_VERSION \"v0.2.0\")\n"
+                           "set(PDCMAKE_VERSION \"v0.2.9\")\n"
                            "if(NOT EXISTS \"${PDCMAKE_FILE}\")\n"
                            "    file(DOWNLOAD "
                            "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/"
@@ -323,7 +323,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
 
     std::vector<std::string> ExternalsAlreadyAdded;
     for (PatchLine &pl : p->ExternalObjects) {
-        if (pl.isAbstraction && pl.Type != PatchLine::OBJ && pl.OriginalTokens[1] != "obj") {
+        if (pl.isAbstraction && pl.Type != PatchLine::OBJ && pl.Tokens[1] != "obj") {
             continue;
         }
 
