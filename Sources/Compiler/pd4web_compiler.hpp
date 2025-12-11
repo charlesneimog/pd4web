@@ -95,9 +95,8 @@ struct PatchLine {
         INVALID
     };
     PatchTokenType Type = INVALID;
-    std::string OriginalLine;
-    std::vector<std::string> OriginalTokens;
-    std::vector<std::string> ModifiedTokens;
+    std::string Line;
+    std::vector<std::string> Tokens;
 
     bool Found = false;
     bool isAbstraction = false;
@@ -288,6 +287,7 @@ class Pd4Web {
     // Patch
     bool openPatch(std::shared_ptr<Patch> &Patch);
     bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl);
+    bool processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p);
 
     fs::path getAbsPath(std::shared_ptr<Patch> &Patch, PatchLine &pl);

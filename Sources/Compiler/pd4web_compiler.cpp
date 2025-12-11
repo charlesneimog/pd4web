@@ -113,7 +113,8 @@ bool Pd4Web::init() {
     }
 
     // clone pd-lua
-    ok = gitClone("https://github.com/agraef/pd-lua.git", "pdlua", "0.12.23");
+    ok = gitClone("https://github.com/EL-LOCUS-SOLUS/pd-lua.git", "pdlua",
+                  "54e941ff901473986a5e4ce1197c0dbc0d96e3ed");
     if (!ok) {
         print("Failed to clone pd-lua", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

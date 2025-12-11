@@ -25,8 +25,8 @@ bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
             tokens.push_back(token);
         }
         PatchLine pl;
-        pl.OriginalTokens = tokens;
-        pl.OriginalLine = line;
+        pl.Tokens = tokens;
+        pl.Line = line;
         p->PatchLines.push_back(pl);
     }
 
@@ -40,7 +40,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         return false;
     }
 
-    std::vector<std::string> Line = pl.OriginalTokens;
+    std::vector<std::string> Line = pl.Tokens;
     if (Line.size() < 2) {
         return true;
     }
@@ -68,10 +68,13 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
             pl.Type = PatchLine::COORDS;
         } else if (Line[1] == "floatatom") {
             pl.Type = PatchLine::FLOATATOM;
+            processCanvasAtoms(p, pl);
         } else if (Line[1] == "symbolatom") {
             pl.Type = PatchLine::SYMBOLATOM;
+            processCanvasAtoms(p, pl);
         } else if (Line[1] == "listbox") {
             pl.Type = PatchLine::LISTATOM;
+            processCanvasAtoms(p, pl);
         } else if (Line[1] == "f") {
             pl.Type = PatchLine::FLOAT;
         } else {
@@ -337,8 +340,7 @@ void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
             std::vector<std::string> objects = listObjectsInLibrary(p, pl.Lib);
             for (std::string obj : objects) {
                 if (obj == pl.Name) {
-                    print("Found external object '" + pl.Name +
-                              "' via prefix lib: " + pl.OriginalTokens[4],
+                    print("Found external object '" + pl.Name + "' via prefix lib: " + pl.Tokens[4],
                           Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
                     pl.isExternal = true;
                     pl.isAbstraction = false;
@@ -463,17 +465,49 @@ std::string Pd4Web::getObjName(std::string &objToken) {
 }
 
 // ─────────────────────────────────────
+bool Pd4Web::processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl) {
+    if (p->CanvasLevel == 1) {
+        std::string xpix = pl.Tokens[2];
+        std::string ypix = pl.Tokens[3];
+        std::vector<std::string> updatedTokens = {"#X", "obj", xpix, ypix};
+        switch (pl.Type) {
+        case PatchLine::FLOATATOM:
+            updatedTokens.push_back("floatatom");
+            break;
+        case PatchLine::SYMBOLATOM:
+            updatedTokens.push_back("symbolatom");
+            break;
+        case PatchLine::LISTATOM:
+            updatedTokens.push_back("listatom");
+            break;
+        default:
+            print("Wrong assumption, please report", Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+
+        p->PdLua = true;
+        p->LuaGuiObjects = true;
+        print("Replacing " + updatedTokens[4] + " by pdlua " + updatedTokens[4],
+              Pd4WebLogLevel::PD4WEB_LOG2);
+        for (int i = 4; i < pl.Tokens.size(); i++) {
+            updatedTokens.push_back(pl.Tokens[i]);
+        }
+        pl.Tokens = updatedTokens;
+    }
+    return true;
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
-    int length = pl.OriginalTokens.size();
-    std::string Obj = getObjName(pl.OriginalTokens[4]);
-    std::string Lib = getObjLib(pl.OriginalTokens[4]);
+    int length = pl.Tokens.size();
+    std::string Obj = getObjName(pl.Tokens[4]);
+    std::string Lib = getObjLib(pl.Tokens[4]);
 
     if (Obj == "adc~") {
         unsigned int input = 0;
         if (length > 5) {
-            for (size_t i = 5; i < pl.OriginalTokens.size(); ++i) {
-                std::string token = pl.OriginalTokens[i];
+            for (size_t i = 5; i < pl.Tokens.size(); ++i) {
+                std::string token = pl.Tokens[i];
                 if (isNumber(token)) {
                     input = std::stoi(token);
                 }
@@ -490,8 +524,8 @@ bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
         unsigned int output = 0;
 
         if (length > 5) {
-            for (size_t i = 5; i < pl.OriginalTokens.size(); ++i) {
-                std::string token = pl.OriginalTokens[i];
+            for (size_t i = 5; i < pl.Tokens.size(); ++i) {
+                std::string token = pl.Tokens[i];
                 if (isNumber(token)) {
                     output = std::stoi(token);
                 }
@@ -543,7 +577,7 @@ bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
     std::unordered_set<std::string> args = {"#X", "obj", "clone", "-do", "-di", "-x", "-s", "f"};
 
     std::vector<std::string> filtered;
-    std::copy_if(pl.OriginalTokens.begin(), pl.OriginalTokens.end(), std::back_inserter(filtered),
+    std::copy_if(pl.Tokens.begin(), pl.Tokens.end(), std::back_inserter(filtered),
                  [&](const std::string &token) { return isCloneSubPatchToken(args, token); });
 
     if (filtered.size() != 1) {
@@ -578,8 +612,8 @@ bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
 // ─────────────────────────────────────
 bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
-    std::string Obj = getObjName(pl.OriginalTokens[4]);
-    std::string Lib = getObjLib(pl.OriginalTokens[4]);
+    std::string Obj = getObjName(pl.Tokens[4]);
+    std::string Lib = getObjLib(pl.Tokens[4]);
     if (libIsSupported(Lib)) {
         (void)downloadSupportedLib(Lib);
     }
@@ -620,7 +654,7 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
                       "'. If this is an external object check "
                       "https://charlesneimog.github.io/pd4web/patch/externals/",
                   Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
-            print(pl.OriginalLine, Pd4WebLogLevel::PD4WEB_ERROR);
+            print(pl.Line, Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
     }
@@ -632,9 +666,9 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 bool Pd4Web::processDeclareClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
     size_t index = 2;
-    while (index < pl.OriginalTokens.size()) {
-        std::string Token = pl.OriginalTokens[index];
-        std::string Lib = pl.OriginalTokens[index + 1];
+    while (index < pl.Tokens.size()) {
+        std::string Token = pl.Tokens[index];
+        std::string Lib = pl.Tokens[index + 1];
         if (!Lib.empty() && Lib.back() == ';') {
             Lib.pop_back();
         }
@@ -716,9 +750,8 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
     for (auto &pl : p->PatchLines) {
         // 1) Remover prefixo de lib em '#X obj' quando houver '/' no token do objeto,
         //    independente de pl.isExternal/pl.isAbstraction. Exceção: 'clone' (tratado abaixo).
-        if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
-            auto &objNameTok = pl.OriginalTokens[4];
-
+        if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4) {
+            auto &objNameTok = pl.Tokens[4];
             if (pl.Name == "clone") {
                 // 2) Tratamento especial para clone: remover prefixos dos tokens que
                 // representam
@@ -726,8 +759,8 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
                 print("Editing clone object from '" + objNameTok + "'");
                 static const std::unordered_set<std::string> reserved{"#X",  "obj", "clone", "-do",
                                                                       "-di", "-x",  "-s",    "f"};
-                for (std::size_t i = 0; i < pl.OriginalTokens.size(); ++i) {
-                    auto &tok = pl.OriginalTokens[i];
+                for (std::size_t i = 0; i < pl.Tokens.size(); ++i) {
+                    auto &tok = pl.Tokens[i];
                     if (reserved.count(tok) == 0 && !is_number(tok)) {
                         std::string before = tok;
                         tok = strip_lib_preserve_semicolon(tok);
@@ -752,14 +785,14 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
         }
 
         // 4) Substituição de objetos de GUI no canvas raiz do patch principal
-        if (pl.Type == PatchLine::OBJ && pl.OriginalTokens.size() > 4) {
+        if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4) {
             static const std::unordered_set<std::string> guiObjs{
                 "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
             std::string baseName = strip_lib(pl.Name);
             if (guiObjs.count(baseName) && mainPatch && p->CanvasLevel == 1) {
-                const auto &oldTok = pl.OriginalTokens[4];
+                const auto &oldTok = pl.Tokens[4];
                 bool hadSemi = !oldTok.empty() && oldTok.back() == ';';
-                pl.OriginalTokens[4] = "l." + baseName + (hadSemi ? ";" : "");
+                pl.Tokens[4] = "l." + baseName + (hadSemi ? ";" : "");
                 p->PdLua = true;
                 p->LuaGuiObjects = true;
                 print("Replacing Gui Object '" + baseName + "' with 'l." + baseName + "'",
@@ -767,7 +800,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             }
         }
 
-        for (const auto &token : pl.OriginalTokens) {
+        for (const auto &token : pl.Tokens) {
             editPatch += token + " ";
         }
         editPatch += "\n";
