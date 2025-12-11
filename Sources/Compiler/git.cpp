@@ -1,26 +1,5 @@
 #include "pd4web_compiler.hpp"
 
-// ──────────────────────────────────────────
-static int progress_callback(const git_transfer_progress *stats, void *payload) {
-    PD4WEB_LOGGER();
-    if (stats->total_objects == 0) {
-        return 0;
-    }
-
-    int percent = (stats->received_objects * 100) / stats->total_objects;
-    int *last_percent = static_cast<int *>(payload);
-
-    if (percent != *last_percent) {
-        *last_percent = percent;
-#ifdef PDOBJECT
-        post("Downloading: %d...", percent);
-#else
-        std::cout << "Download: " << percent << "%" << std::endl;
-#endif
-    }
-    return 0;
-}
-
 // ─────────────────────────────────────
 bool Pd4Web::gitRepoExists(const std::string &path) {
     PD4WEB_LOGGER();
@@ -98,7 +77,7 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
 
     int last_percent = -1;
-    fetch_opts.callbacks.transfer_progress = progress_callback;
+    // fetch_opts.callbacks.transfer_progress = progress_callback;
     fetch_opts.callbacks.payload = &last_percent;
 
     clone_opts.fetch_opts = fetch_opts;
