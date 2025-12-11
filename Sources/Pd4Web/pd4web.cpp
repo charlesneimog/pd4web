@@ -1482,6 +1482,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         float dpr = emscripten_get_device_pixel_ratio();
         int cssW = canvasWidth * GetPatchZoom();
         int cssH = canvasHeight * GetPatchZoom();
+        //
 
         int backingW = static_cast<int>(cssW * dpr);
         int backingH = static_cast<int>(cssH * dpr);
@@ -1512,12 +1513,11 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_mousemove_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
 
         // touchscreen
-        emscripten_set_touchstart_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
-        emscripten_set_touchend_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
-        emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
-        emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchstart_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
+        emscripten_set_touchend_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
+        emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
+        emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
 
-        // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
 
         // TODO: When canvas is on focus

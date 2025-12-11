@@ -1,4 +1,4 @@
-set(PD4WEB_CMAKE_VERSION "4.0.3")
+set(PD4WEB_CMAKE_VERSION "4.2.1")
 set(CMAKE_OUTPUT_DIR "${CMAKE_BINARY_DIR}/cmake")
 set(CMAKE_ARCHIVE_DIR "${CMAKE_BINARY_DIR}")
 
@@ -36,9 +36,7 @@ set(CMAKE_ARCHIVE "${CMAKE_ARCHIVE_DIR}/${CMAKE_ASSET}")
 # --------------------------
 if(NOT EXISTS "${CMAKE_ARCHIVE}")
   message(STATUS "Downloading CMake from ${CMAKE_URL}")
-  file(
-    DOWNLOAD "${CMAKE_URL}" "${CMAKE_ARCHIVE}"
-    STATUS status)
+  file(DOWNLOAD "${CMAKE_URL}" "${CMAKE_ARCHIVE}" STATUS status)
   list(GET status 0 status_code)
   if(NOT status_code EQUAL 0)
     list(GET status 1 status_msg)

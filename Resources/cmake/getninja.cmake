@@ -4,7 +4,7 @@ project(GetNinjaBinary)
 # --------------------------
 # Configuration
 # --------------------------
-set(NINJA_VERSION "1.13.1")
+set(NINJA_VERSION "1.13.2")
 set(NINJA_OUTPUT_DIR "${CMAKE_BINARY_DIR}/ninja")
 set(NINJA_ARCHIVE_DIR "${CMAKE_BINARY_DIR}")
 

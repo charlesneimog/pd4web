@@ -1,10 +1,17 @@
 cmake_minimum_required(VERSION 3.28)
 project(pd4web LANGUAGES C CXX)
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  message(FATAL_ERROR "Use the compiler to compile and develop the Pd4Web core")
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BUILD_SHARED_LIBS OFF)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+option(PD4WEB_BUILD_PD_EXTERNAL "Build the Pure Data external" ON)
+option(PD4WEB_BUILD_PYBIND11 "Build the Python module via pybind11" OFF)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_program(CLANG_C NAMES clang)
@@ -15,53 +22,20 @@ elseif(MSVC)
       "MultiThreaded"
       CACHE STRING "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
-    find_program(GIT_EXECUTABLE git)
-    if(NOT GIT_EXECUTABLE)
-        message(FATAL_ERROR "Git executable not found")
-    else()
-        message(STATUS "Git executable: ${GIT_EXECUTABLE}")
-    endif()
+  set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+  find_program(GIT_EXECUTABLE git)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+
 else()
   message(FATAL_ERROR "Unknown system")
 endif()
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-cmake_policy(SET CMP0077 NEW)
-
-option(PD4WEB_BUILD_PD_EXTERNAL "Build the Pure Data external" ON)
-option(PD4WEB_BUILD_PYBIND11 "Build the Python module via pybind11" OFF)
-
-# ╭──────────────────────────────────────╮
-# │      Download Binary Resources       │
-# ╰──────────────────────────────────────╯
 include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/cmake/getcmake.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/cmake/getninja.cmake)
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  message(STATUS "Compilando com Emscripten")
-  add_subdirectory(Sources/Pd4Web)
+add_subdirectory(Sources/Compiler ${CMAKE_BINARY_DIR}/compiler)
+if(PD4WEB_BUILD_PD_EXTERNAL)
+  add_subdirectory(Sources/Pd ${CMAKE_BINARY_DIR}/pd)
 else()
-  add_subdirectory(Sources/Compiler ${CMAKE_BINARY_DIR}/compiler)
-  if(PD4WEB_BUILD_PD_EXTERNAL)
-    add_subdirectory(Sources/Pd ${CMAKE_BINARY_DIR}/pd)
-
-    find_program(EMCC_EXECUTABLE NAMES emcc)
-    find_program(EMCPP_EXECUTABLE NAMES em++)
-    if(EMCC_EXECUTABLE AND EMCPP_EXECUTABLE)
-      message(WARNING "Pd4Web compiling with emcc and em++")
-      include(ExternalProject)
-      ExternalProject_Add(
-        Pd4Web
-        SOURCE_DIR ${CMAKE_SOURCE_DIR}/Sources/Pd4Web
-        CMAKE_ARGS -DCMAKE_C_COMPILER=${EMCC_EXECUTABLE}
-                   -DCMAKE_CXX_COMPILER=${EMCPP_EXECUTABLE}
-                   -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/Sources/Pd4Web
-        BINARY_DIR ${CMAKE_BINARY_DIR}/Sources/Pd4Web)
-    endif()
-  else()
-    message(STATUS "Skipping Pd external build; PD4WEB_BUILD_PD_EXTERNAL=OFF")
-  endif()
-
+  message(STATUS "Skipping Pd external build; PD4WEB_BUILD_PD_EXTERNAL=OFF")
 endif()
