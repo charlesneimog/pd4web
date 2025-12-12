@@ -20,6 +20,7 @@
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 #include <emscripten/webaudio.h>
+#include <emscripten/html5.h>
 
 // Pure Data (libpd) Headers
 #include <z_libpd.h>

@@ -1110,6 +1110,13 @@ EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userD
 }
 
 // ─────────────────────────────────────
+EM_BOOL OrientationListener(int eventType, const EmscriptenOrientationChangeEvent *e,
+                            void *userData) {
+    emscripten_run_script("location.reload();");
+    return EM_TRUE;
+}
+
+// ─────────────────────────────────────
 /**
  * Touch event listener callback for Emscripten environment.
  *
@@ -1479,14 +1486,36 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->canvasSel = PatchCanvaSel;
 
         // set patch canvas size
+        float zoom = GetPatchZoom();
         float dpr = emscripten_get_device_pixel_ratio();
-        int cssW = canvasWidth * GetPatchZoom();
-        int cssH = canvasHeight * GetPatchZoom();
-        //
 
-        int backingW = static_cast<int>(cssW * dpr);
-        int backingH = static_cast<int>(cssH * dpr);
+        // Current viewport
+        int winW = EM_ASM_INT({ return window.innerWidth; });
+        int winH = EM_ASM_INT({ return window.innerHeight; });
+
+        // If it doesn't fit, compute max zoom that fits
+        float zoomW = (float)winW / (float)canvasWidth;
+        float zoomH = (float)winH / (float)canvasHeight;
+        float maxZoom = fminf(zoomW, zoomH);
+
+        // If current zoom is too large, clamp it
+        if (zoom > maxZoom) {
+            zoom = maxZoom;
+            m_PatchZoom = zoom;
+        }
+
+        // Now recompute css/backing after clamping
+        float cssW = canvasWidth * zoom;
+        float cssH = canvasHeight * zoom;
+        int backingW = (int)(cssW * dpr);
+        int backingH = (int)(cssH * dpr);
+
+        // Apply
         emscripten_set_canvas_element_size(sel, backingW, backingH);
+
+        // Optionally set CSS size (for crisp scaling)
+        emscripten_set_element_css_size(sel, cssW, cssH);
+
         EM_ASM(
             {
                 const canvas = document.querySelector(UTF8ToString($0));
@@ -1518,7 +1547,13 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
         emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
 
+        // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
+
+        // #define emscripten_set_orientationchange_callback(userData, useCapture, callback)
+        // emscripten_set_orientationchange_callback_on_thread(              (userData),
+        // (useCapture), (callback), EM_CALLBACK_THREAD_CONTEXT_CALLING_THREAD)
+        emscripten_set_orientationchange_callback(m_UserData.get(), EM_FALSE, OrientationListener);
 
         // TODO: When canvas is on focus
         // emscripten_set_focus_callback(sel, m_UserData.get(), EM_FALSE, FocusListener);
