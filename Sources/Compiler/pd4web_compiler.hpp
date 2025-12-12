@@ -142,6 +142,7 @@ struct Patch {
     bool PdLua;
     bool LuaGuiObjects;
     bool RenderGui;
+    bool IsSubpatch;
     unsigned Input;
     unsigned Output;
     unsigned Sr = 48000;

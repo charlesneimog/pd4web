@@ -466,7 +466,7 @@ std::string Pd4Web::getObjName(std::string &objToken) {
 
 // ─────────────────────────────────────
 bool Pd4Web::processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl) {
-    if (p->CanvasLevel == 1) {
+    if (p->CanvasLevel == 1 && !p->IsSubpatch) {
         std::string xpix = pl.Tokens[2];
         std::string ypix = pl.Tokens[3];
         std::vector<std::string> updatedTokens = {"#X", "obj", xpix, ypix};
@@ -837,6 +837,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     p->BuildFolder = f->BuildFolder;
     p->Pd4WebFiles = f->Pd4WebFiles;
     p->Pd4WebRoot = f->Pd4WebRoot;
+    p->IsSubpatch = true;
 
     f->Childs.push_back(p);
     bool ok = openPatch(p);
