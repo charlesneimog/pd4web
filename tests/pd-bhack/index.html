@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Pd4Web</title>
+        <meta charset="UTF-8" />
+        <!-- WebApp manifest -->
+        <link rel="manifest" href="manifest.json" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="apple-touch-icon" href="icon-192.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <!-- Always BEFORE pd4web.js (it update COI) -->
+        <script src="./pd4web.threads.js"></script>
+        <!-- Main modules -->
+        <script src="./pd4web.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <style>
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: rgb(255, 255, 255);
+                    --fg: rgb(0, 0, 0, 0.9);
+                }
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg: rgb(48, 48, 48);
+                    --fg: rgb(255, 255, 255, 0.9);
+
+                    .pd4web-sound-switch {
+                        filter: invert(1);
+                    }
+                }
+            }
+
+            body {
+                font-size: 10px;
+                touch-action: pan-x pan-y;
+                background-color: var(--bg);
+            }
+
+            .pd4web-patch-canvas {
+                tabindex: 0;
+                margin: 10px auto;
+                display: flex;
+                border-radius: 5px;
+                box-shadow:
+                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            .pd4web-patch-canvas:focus {
+                box-shadow:
+                    rgba(100, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(100, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            .pd4web-sound-switch {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 25px;
+                height: 25px;
+                margin: 0 auto;
+                transform: none;
+            }
+
+            /* Animation */
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .pulse-icon {
+                animation: pulse 1s infinite;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- All the styles are in the pd4web.style.css -->
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+        <canvas tabindex="0" class="pd4web-patch-canvas" id="Pd4WebCanvas"></canvas>
+        <script>
+            var Pd4Web = null;
+            Pd4WebModule().then((Pd4WebModulePromise) => {
+                Pd4Web = new Pd4WebModulePromise.Pd4Web();
+
+                Pd4Web.openPatch("index.pd", {
+                    canvasId: "Pd4WebCanvas",
+                    soundToggleId: "Pd4WebAudioSwitch",
+                    // patchZoom: 2,
+                    // projectName: "MyProject",
+                    // channelCountIn: 1,
+                    // channelCountOut: 2,
+                    // sampleRate: 48000,
+                    // renderGui: true,
+                    // requestMidi: true,
+                    // fps: 0,
+                });
+
+                Pd4Web.onBangReceived("r-test", (r) => {
+                    console.log("Received bang from ", r);
+                });
+                Pd4Web.onFloatReceived("r-test", (r, f) => {
+                    console.log("Received float: ", f);
+                });
+                Pd4Web.onSymbolReceived("r-test", (r, s) => {
+                    console.log("Received symbol: ", s);
+                });
+                Pd4Web.onListReceived("r-test", (r, l) => {
+                    console.log("Received list: ", l);
+                });
+            });
+        </script>
+        <script>
+            // Create an App (installable using PWA ( https://en.wikipedia.org/wiki/Progressive_web_app ))
+            // if ("serviceWorker" in navigator) {
+            //     navigator.serviceWorker
+            //         .register("pd4web.sw.js")
+            //         .then(() => console.log("Service Worker registered"))
+            //         .catch((err) => console.error("Service Worker registration failed:", err));
+            // }
+        </script>
+    </body>
+</html>
