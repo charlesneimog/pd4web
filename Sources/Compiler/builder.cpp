@@ -81,8 +81,8 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
                  p->BuildFolder / "Pd4Web" / "Externals" / "pdlua" / "pdlua_gfx.h",
                  fs::copy_options::overwrite_existing);
 
-        fs::copy(p->Pd4WebFiles / "DejaVuSans.ttf",
-                 p->BuildFolder / "Pd4Web" / "Externals" / "pdlua" / "DejaVuSans.ttf",
+        fs::copy(p->Pd4WebFiles / "InterRegular.ttf",
+                 p->BuildFolder / "Pd4Web" / "Externals" / "pdlua" / "InterRegular.ttf",
                  fs::copy_options::skip_existing);
     }
 

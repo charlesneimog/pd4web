@@ -120,7 +120,7 @@ target_link_options(
 target_link_options(
   pd4web
   PRIVATE
-  "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/DejaVuSans.ttf@/DejaVuSans.ttf"
+  "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/InterRegular.ttf@/InterRegular.ttf"
   "--preload-file=${pd_lua_SOURCE_DIR}/pd.lua@/pd.lua"
   "--preload-file=${pd_lua_SOURCE_DIR}/pdlua/tutorial/examples/pdx.lua@/pdx.lua"
   "--preload-file=${CMAKE_CURRENT_SOURCE_DIR}/main.pd@/index.pd"
