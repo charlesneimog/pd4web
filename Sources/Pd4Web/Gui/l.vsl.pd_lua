@@ -6,7 +6,7 @@ function vsl:initialize(_, args)
 	self.outlets = 1
 	self.need_update_args = false
 	if args ~= nil and #args > 0 then
-        -- 248 29 0 0.99 0 0 empty empty empty -2 -8 0 10 #ffffff #000000 #373737 0 1
+		-- 248 29 0 0.99 0 0 empty empty empty -2 -8 0 10 #ffffff #000000 #373737 0 1
 		self.width = args[1]
 		self.height = args[2]
 		self.bottom = args[3]
@@ -67,7 +67,21 @@ function vsl:_receiver(sel, atoms)
 end
 
 -- ─────────────────────────────────────
+function vsl:in_1_bang(f)
+	self:outlet(1, "float", { self.value })
+end
+
+-- ─────────────────────────────────────
 function vsl:in_1_float(f)
+	local p = self:value_to_pos(f)
+	self.pos = self:clamp_pos(p)
+	self:outlet(1, "float", { f })
+	self:repaint(2)
+end
+
+-- ─────────────────────────────────────
+function vsl:in_1_list(args)
+	local f = args[1]
 	local p = self:value_to_pos(f)
 	self.pos = self:clamp_pos(p)
 	self:outlet(1, "float", { f })
@@ -102,6 +116,7 @@ end
 
 -- ──────────────────────────────────────────
 function vsl:value_to_pos(val)
+	self.value = val
 	local _, h = self:get_size()
 	local range = self.top - self.bottom
 	local rel = (val - self.bottom) / range
@@ -193,7 +208,7 @@ end
 function vsl:paint_layer_2(g)
 	local width, _ = self:get_size()
 	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
-	g:fill_rect(1, self.pos, width - 2, 3)
+	g:fill_rect(0, self.pos, width, 3)
 end
 
 -- ──────────────────────────────────────────

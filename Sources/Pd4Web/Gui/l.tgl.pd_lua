@@ -217,6 +217,17 @@ function tgl:in_1_float(args)
 	self:repaint()
 	self:outlet(1, "float", { args })
 end
+
+-- ──────────────────────────────────────────
+function tgl:in_1_list(args)
+	if args == 0 then
+		self.on = false
+	else
+		self.on = true
+	end
+	self:repaint()
+	self:outlet(1, "float", { args[1]})
+end
 -- ──────────────────────────────────────────
 function tgl:in_1_bang(_)
 	self:mouse_down(0, 0)

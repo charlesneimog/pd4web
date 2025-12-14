@@ -67,23 +67,47 @@ function nbx:initialize(_, args)
 	end
 
 	self.number = tostring(self.default_value)
-
 	self:set_size(self.digs_len * self.fontsize, self.height)
 	return true
 end
 
 -- ──────────────────────────────────────────
 function nbx:keydown(sel, atoms)
-	local key_num = atoms[1]
-
-	local key_char
-	if key_num == 13 or key_num == 10 then
-		key_char = "Enter"
-	else
-		key_char = string.char(key_num)
+	if not self.select then
+		return
 	end
 
-	self:key_down(_, _, key_char)
+	local key_num = atoms[1]
+	local key
+	if key_num == 13 or key_num == 10 then
+		key = "Enter"
+	else
+		key = string.char(key_num)
+	end
+
+	if self.needclear then
+		self.number = ""
+		self.needclear = false
+	end
+
+	if key == "Enter" then
+		self.select = false
+		local val = tonumber(self.number) or 0
+		if self.send ~= "empty" then
+			pd.send(self.send, "float", { val })
+		end
+		self:outlet(1, "float", { val })
+	elseif key == "Backspace" or key == "Delete" then
+		self.number = self.number:sub(1, -2)
+	elseif key == "." then
+		self.number = self.number .. key
+	elseif tonumber(key) then
+		self.number = self.number .. tostring(key)
+	else
+		return
+	end
+
+	self:repaint()
 end
 
 -- ──────────────────────────────────────────
@@ -101,37 +125,7 @@ function nbx:mouse_down(x, y)
 end
 
 -- ──────────────────────────────────────────
-function nbx:key_down(_, _, key)
-	if not self.select then
-		return
-	end
-
-	if self.needclear then
-		self.number = ""
-		self.needclear = false
-	end
-
-	if key == "Enter" then
-		self.select = false
-		local val = tonumber(self.number) or 0
-		if self.send ~= "empty" then
-			pd.post("sending")
-			pd.send(self.send, "float", { val })
-		end
-		pd.post("outlet")
-		self:outlet(1, "float", { val })
-	elseif key == "Backspace" or key == "Delete" then
-		self.number = self.number:sub(1, -2)
-	elseif key == "." then
-		self.number = self.number .. key
-	elseif tonumber(key) then
-		self.number = self.number .. tostring(key)
-	else
-		return
-	end
-
-	self:repaint()
-end
+function nbx:key_down(_, _, key) end
 
 -- ──────────────────────────────────────────
 function nbx:in_1_bang(val)
@@ -150,6 +144,9 @@ function nbx:in_1_float(val)
 	self:outlet(1, "float", { val })
 	self:repaint()
 end
+
+-- ──────────────────────────────────────────
+function nbx:in_1_symbol(_) end
 
 -- ──────────────────────────────────────────
 function nbx:in_1_list(args)
@@ -205,20 +202,15 @@ function nbx:paint(g)
 	local number_str = tostring(self.number)
 
 	if number_str:find("%.") then
-		-- remove zeros à direita e ponto final, se houver
 		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
-		-- corta até self.digs_len
 		number_str = string.sub(number_str, 1, self.digs_len)
 	else
-		-- se inteiro, mantém todos os dígitos
 		if #number_str > self.digs_len then
 			number_str = "+"
 		end
 	end
 
-	g:draw_text(number_str, 10, height / 4, self.digs_len * self.fontsize, self.fontsize)
-	g:set_color(0, 0, 0)
-	g:stroke_rect(0, 0, width, height, 1)
+	g:draw_text(number_str, 10, height / 12, self.digs_len * self.fontsize, self.fontsize)
 end
 
 -- ──────────────────────────────────────────

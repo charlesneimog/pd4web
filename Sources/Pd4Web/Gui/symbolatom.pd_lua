@@ -1,7 +1,7 @@
 local symbolatom = pd.Class:new():register("symbolatom")
 
 -- ─────────────────────────────────────
-function symbolatom:initialize(name, args)
+function symbolatom:initialize(_, args)
 	self.inlets = 1
 	self.outlets = 1
 	self.args = args
@@ -38,7 +38,7 @@ function symbolatom:initialize(name, args)
 end
 
 -- ─────────────────────────────────────
-function symbolatom:keyreceiver(sel, atoms)
+function symbolatom:keyreceiver(_, atoms)
 	if not self.select then
 		return
 	end
@@ -84,7 +84,7 @@ function symbolatom:keyreceiver(sel, atoms)
 end
 
 -- ─────────────────────────────────────
-function symbolatom:mouse_down(x, y)
+function symbolatom:mouse_down(_, _)
 	self.select = true
 	self.needtoreset = true
 	self:repaint()
@@ -100,7 +100,7 @@ end
 
 -- ─────────────────────────────────────
 function symbolatom:in_1_float(args)
-	self.symbol = tostring(args)
+	self.symbol = "float"
 	self:outlet(1, "symbol", { args })
 	if self.send ~= "-" then
 		pd.send(self.send, "symbol", args[1])
@@ -154,5 +154,6 @@ end
 -- ─────────────────────────────────────
 function symbolatom:in_1_reload()
 	self:dofilex(self._scriptname)
+	self.keysreceiver:destruct()
 	self:initialize("floatatom", self.args)
 end

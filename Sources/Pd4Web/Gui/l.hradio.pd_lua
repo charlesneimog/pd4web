@@ -76,6 +76,72 @@ function hradio:mouse_down(x, y)
 	local pos = math.floor(x / self.size)
 	self.selected = pos
 	self:outlet(1, "float", { pos })
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+	self:repaint(2)
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_send(args)
+	self.send = args[1]
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_receive(args)
+	self.receive = args[1]
+	if self.receive ~= "empty" then
+		self.recv = pd.Receive:new():register(self, self.receive, "receive_callback")
+	end
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_color(args)
+	if args[1][1] == "#" or args[2][1] == "#" or args[3][1] == "#" then
+		self:error("There is at least one invalid color")
+		return
+	end
+
+	self.bg_color = args[1]
+	self.fg_color = args[2]
+	self.laber_color = args[3]
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_size(args)
+	self.size = args[1]
+	self:set_size(self.size, self.size * self.number)
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_bang()
+	self:outlet("1", "float", { self.selected })
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_float(args)
+	local pos = args
+	self.selected = pos
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+	self:outlet(1, "float", { self.selected })
+	self:repaint(2)
+end
+
+-- ──────────────────────────────────────────
+function hradio:in_1_list(args)
+	local pos = args[1]
+	self.selected = pos
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+	self:outlet(1, "float", { self.selected })
 	self:repaint(2)
 end
 

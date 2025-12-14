@@ -43,7 +43,7 @@ function vu:initialize(_, args)
 		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
 	end
 
-	self.rms = -100
+	self.rms = -101
 	self:set_size(self.width, self.height)
 	return true
 end
@@ -84,11 +84,20 @@ function vu:tick()
 end
 
 -- ──────────────────────────────────────────
+function vu:in_1_bang(_)
+	self:outlet(1, "float", { self.rms })
+end
+
+-- ──────────────────────────────────────────
 function vu:in_1_float(args)
 	self.rms = args
 	self:outlet(1, "float", { args })
-	-- self:repaint(2)
-	-- self:repaint(3)
+end
+
+-- ──────────────────────────────────────────
+function vu:in_1_list(args)
+	self.rms = args[1]
+	self:outlet(1, "float", { args[1] })
 end
 
 -- ──────────────────────────────────────────
@@ -110,7 +119,6 @@ function vu:rms_to_linear(rms_db)
 	if rms_db > max_db then
 		rms_db = max_db
 	end
-	-- normaliza para [0,1]
 	return (rms_db - min_db) / (max_db - min_db)
 end
 

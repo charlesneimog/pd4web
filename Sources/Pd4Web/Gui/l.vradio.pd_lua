@@ -76,7 +76,7 @@ function vradio:mouse_down(x, y)
 	self.selected = pos
 	self:outlet(1, "float", { pos })
 	if self.send ~= "empty" then
-		pd.send(self.send, "float", { self.pos })
+		pd.send(self.send, "float", { self.selected })
 	end
 	self:repaint(2)
 end
@@ -92,17 +92,6 @@ function vradio:in_1_receive(args)
 	if self.receive ~= "empty" then
 		self.recv = pd.Receive:new():register(self, self.receive, "receive_callback")
 	end
-end
-
--- ──────────────────────────────────────────
-function vradio:in_1_float(args)
-	local pos = args[1]
-	self.selected = pos
-	self:outlet(1, "float", { pos })
-	if self.send ~= "empty" then
-		pd.send(self.send, "float", { self.default_value })
-	end
-	self:repaint(2)
 end
 
 -- ──────────────────────────────────────────
@@ -126,10 +115,33 @@ function vradio:in_1_size(args)
 end
 
 -- ──────────────────────────────────────────
-function vradio:in_1_number(args)
-	self.number = args[1]
-	self:set_size(self.size, self.size * self.number)
-	self:repaint()
+function vradio:in_1_bang()
+	self:outlet("1", "float", { self.selected })
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_float(args)
+	local pos = args
+	self.selected = pos
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+	self:outlet(1, "float", { self.selected })
+	self:repaint(2)
+end
+
+-- ──────────────────────────────────────────
+function vradio:in_1_list(args)
+	local pos = args[1]
+	self.selected = pos
+	if self.send ~= "empty" then
+		pd.send(self.send, "float", { self.selected })
+	end
+	self:outlet(1, "float", { self.selected })
+	self:repaint(2)
 end
 
 -- ──────────────────────────────────────────

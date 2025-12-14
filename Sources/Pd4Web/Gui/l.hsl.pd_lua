@@ -4,8 +4,7 @@ local hsl = pd.Class:new():register("l.hsl")
 function hsl:initialize(_, args)
 	self.inlets = 1
 	self.outlets = 1
-	self.pos = 20
-
+	self.need_update_args = false
 	if args ~= nil and #args > 0 then
 		-- 248 29 0 0.99 0 0 empty empty empty -2 -8 0 10 #ffffff #000000 #373737 0 1
 		self.width = args[1]
@@ -45,6 +44,11 @@ function hsl:initialize(_, args)
 		self.label_color = "#000000"
 		self.default_value = 0
 		self.steady_on_click = 1
+		self.need_update_args = true
+	end
+
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
 	end
 
 	self:set_size(self.width, self.height)
@@ -54,17 +58,40 @@ function hsl:initialize(_, args)
 	return true
 end
 
--- ──────────────────────────────────────────
-function hsl:value_to_pos(val)
-	local w, _ = self:get_size()
-	local range = self.top - self.bottom
-	local rel = (val - self.bottom) / range
-	return math.floor(rel * (w - 6)) -- esquerda = min, direita = max
+-- ─────────────────────────────────────
+function hsl:_receiver(sel, atoms)
+	if sel == "float" then
+		self.rms = atoms[1]
+		self:outlet(1, "float", atoms)
+	end
 end
 
 -- ─────────────────────────────────────
-function hsl:finalize()
+function hsl:in_1_bang(f)
+	self:outlet(1, "float", { self.value })
+end
+
+-- ─────────────────────────────────────
+function hsl:in_1_float(f)
+	local p = self:value_to_pos(f)
+	self.pos = self:clamp_pos(p)
+	self:outlet(1, "float", { f })
+	self:repaint(2)
+end
+
+-- ─────────────────────────────────────
+function hsl:in_1_list(args)
+	local f = args[1]
+	local p = self:value_to_pos(f)
+	self.pos = self:clamp_pos(p)
+	self:outlet(1, "float", { f })
+	self:repaint(2)
+end
+
+-- ─────────────────────────────────────
+function hsl:update_args()
 	local args = {}
+
 	table.insert(args, self.width)
 	table.insert(args, self.height)
 	table.insert(args, self.bottom)
@@ -83,49 +110,61 @@ function hsl:finalize()
 	table.insert(args, self.label_color)
 	table.insert(args, self.default_value)
 	table.insert(args, self.steady_on_click)
+
 	self:set_args(args)
+end
+
+-- ──────────────────────────────────────────
+function hsl:value_to_pos(val)
+	self.value = val
+	local w, _ = self:get_size()
+	local range = self.top - self.bottom
+	local rel = (val - self.bottom) / range
+	return math.floor(rel * (w - 6)) -- inverted, top = max
 end
 
 -- ──────────────────────────────────────────
 function hsl:pos_to_value(pos)
 	local w, _ = self:get_size()
 	local range = self.top - self.bottom
-	local rel = pos / (w - 6)
+	local rel = 1 - (pos / (w - 6))
 	return self.bottom + rel * range
 end
 
 -- ──────────────────────────────────────────
-function hsl:clamp_pos(x)
+function hsl:clamp_pos(y)
 	local w, _ = self:get_size()
-	return math.max(3, math.min(x, w - 6))
+	return math.max(3, math.min(y, w - 6))
 end
 
 -- ──────────────────────────────────────────
 function hsl:mouse_down(x, _)
 	self.pos = self:clamp_pos(x)
+	local val = self:pos_to_value(self.pos)
+	self:outlet(1, "float", { val })
 	self:repaint(2)
-	self:outlet(1, "float", { self:pos_to_value(self.pos) })
 end
 
--- ──────────────────────────────────────
+-- ──────────────────────────────────────────
 function hsl:mouse_up(x, _)
 	self.pos = self:clamp_pos(x)
+	local val = self:pos_to_value(self.pos)
+	self:outlet(1, "float", { val })
 	self:repaint(2)
-	self:outlet(1, "float", { self:pos_to_value(self.pos) })
 end
 
--- ──────────────────────────────────────
+-- ──────────────────────────────────────────
 function hsl:mouse_drag(x, _)
 	self.pos = self:clamp_pos(x)
+	local val = self:pos_to_value(self.pos)
+	self:outlet(1, "float", { val })
 	self:repaint(2)
-	self:outlet(1, "float", { self:pos_to_value(self.pos) })
 end
 
--- ──────────────────────────────────────
+-- ──────────────────────────────────────────
 function hsl:hex_to_rgb(hex)
-	local first = string.sub(hex, 1, 1)
-	if first ~= "#" then
-		self:error("Hex color must start with #")
+	if hex:sub(1, 1) ~= "#" then
+		self:error("vsl: hex color must start with #: " .. hex)
 		return { 0, 0, 0 }
 	end
 
@@ -138,10 +177,27 @@ function hsl:hex_to_rgb(hex)
 end
 
 -- ──────────────────────────────────────────
+function hsl:in_1_color(args)
+	if args[1][1] == "#" or args[2][1] == "#" or args[3][1] == "#" then
+		self:error("There is at least one invalid color")
+		return
+	end
+
+	self.bg_color = args[1]
+	self.fg_color = args[2]
+	self.laber_color = args[3]
+	self:repaint()
+end
+
+-- ──────────────────────────────────────────
 function hsl:paint(g)
+	if self.need_update_args then
+		self.need_update_args = false
+		self:update_args()
+	end
+
 	local width, height = self:get_size()
 	g:set_color(table.unpack(self:hex_to_rgb(self.bg_color)))
-
 	g:fill_all()
 
 	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
@@ -152,7 +208,7 @@ end
 function hsl:paint_layer_2(g)
 	local _, height = self:get_size()
 	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
-	g:fill_rect(self.pos, 1, 3, height - 2)
+	g:fill_rect(self.pos, 0, 3, height)
 end
 
 -- ──────────────────────────────────────────
@@ -160,4 +216,3 @@ function hsl:in_1_reload()
 	self:dofilex(self._scriptname)
 	self:initialize()
 end
-

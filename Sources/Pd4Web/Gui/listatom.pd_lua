@@ -151,7 +151,12 @@ function listatom:paint(g)
 
 	local str = ""
 	for k, v in pairs(self.atoms) do
-		str = str .. v .. " "
+		local atom_str = tostring(v)
+		local int_part, frac_part = atom_str:match("^(%-?%d+)%.?(%d*)$")
+		if frac_part ~= nil and frac_part == "0" then
+			atom_str = int_part
+		end
+		str = str .. atom_str .. " "
 	end
 
 	if #self.atoms == 0 and #self.atom ~= 0 then
@@ -168,5 +173,6 @@ end
 -- ─────────────────────────────────────
 function listatom:in_1_reload()
 	self:dofilex(self._scriptname)
+	self.keysreceiver:destruct()
 	self:initialize("floatatom", self.args)
 end

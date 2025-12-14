@@ -26,9 +26,9 @@ function floatatom:initialize(name, args)
 		self.receive = args[6]
 		self.sende = args[7]
 		self.fontsize = args[8]
-        if self.fontsize == 0 then
-            self.fontsize = 12
-        end
+		if self.fontsize == 0 then
+			self.fontsize = 12
+		end
 	end
 
 	self.keysreceiver = pd.Receive:new():register(self, "#key", "keyreceiver")
@@ -98,6 +98,7 @@ end
 function floatatom:mouse_down(x, y)
 	self.select = true
 	self.needtoreset = true
+	-- bind #key
 	self:repaint()
 end
 
@@ -155,13 +156,20 @@ function floatatom:paint(g)
 	end
 
 	local number_str = tostring(self.number)
-	if number_str:find("%.") then
-		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
-		number_str = string.sub(number_str, 1, self.width)
+	number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+	local int_part, frac_part = number_str:match("^(%-?%d+)%.(%d+)$")
+	local is_float = frac_part ~= nil
+	local int_len = int_part and #int_part or #number_str
+
+	if int_len > self.width then
+		number_str = string.sub(int_part or number_str, 1, self.width - 1) .. ">"
 	else
-		-- se inteiro, mantém todos os dígitos
 		if #number_str > self.width then
-			number_str = "+"
+			if is_float then
+				number_str = string.sub(number_str, 1, self.width)
+			else
+				number_str = string.sub(number_str, 1, self.width - 1) .. ">"
+			end
 		end
 	end
 
@@ -171,5 +179,6 @@ end
 -- ─────────────────────────────────────
 function floatatom:in_1_reload()
 	self:dofilex(self._scriptname)
+	self.keysreceiver:destruct()
 	self:initialize("floatatom", self.args)
 end
