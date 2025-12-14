@@ -69,8 +69,7 @@ function floatatom:keyreceiver(sel, atoms)
 		key = string.char(key_num)
 	end
 
-	-- THIS WAS THE BUG — fixed name: needtoreset
-	if self.number == "0" or self.needtoreset then
+	if self.needtoreset then
 		self.number = ""
 		self.needtoreset = false
 	end
