@@ -6,8 +6,90 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
-EM_JS(bool, JS_OpenKeyboard, (const char *key), {
-      // TODO:
+EM_JS(void, pd4web_create_number_input, (const char *canvasId), {
+    if (document.getElementById("_pd4web_number_input"))
+        return; // already created
+
+    const canvas = document.getElementById(UTF8ToString(canvasId));
+    if (!canvas) return;
+
+    const el = document.createElement("input");
+    el.id = "_pd4web_number_input";
+    el.type = "number";
+    el.inputMode = "numeric";
+
+    const rect = canvas.getBoundingClientRect();
+
+    // same position and size as canvas
+    el.style.position = "absolute";
+    el.style.left   = `${rect.left + window.scrollX}px`;
+    el.style.top    = `${rect.top  + window.scrollY}px`;
+    el.style.width  = `${rect.width}px`;
+    el.style.height = `${rect.height}px`;
+
+    // invisible but focusable
+    el.style.opacity = "0";
+    el.style.border = "none";
+    el.style.background = "transparent";
+
+    // behind canvas
+    el.style.zIndex = "0";
+    canvas.style.position = "relative";
+    canvas.style.zIndex = "1";
+    document.body.appendChild(el);
+
+    function dispatchFakeKey(key, code, keyCode) {
+        canvas.focus();
+
+        const ev = new KeyboardEvent("keydown", {
+            key,
+            code,
+            keyCode,
+            which: keyCode,
+            bubbles: true,
+        });
+
+        canvas.dispatchEvent(ev);
+
+        canvas.blur();
+        el.focus();
+    }
+
+    // digits (value change)
+    el.addEventListener("input", () => {
+        const value = el.value;
+        if (!value) return;
+
+        const digit = value[value.length - 1];
+        el.value = "";
+
+        dispatchFakeKey(
+            digit,
+            "Numpad" + digit,
+            digit.charCodeAt(0)
+        );
+    });
+
+    // Enter (no value change → keydown only)
+    el.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        dispatchFakeKey("Enter", "Enter", 13);
+    });
+});
+
+// ─────────────────────────────────────
+EM_JS(void, pd4web_focus_number_input, (), {
+    const el = document.getElementById("_pd4web_number_input");
+    if (!el) return;
+    el.focus();
+});
+
+// ─────────────────────────────────────
+EM_JS(void, pd4web_blur_number_input, (), {
+    const el = document.getElementById("_pd4web_number_input");
+    if (!el) return;
+    el.blur();
 });
 
 // ─────────────────────────────────────
@@ -66,7 +148,7 @@ EM_JS(void, JS_SuspendAudioWorklet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
 // Note: This callback is no longer used - messages are processed directly
 // in the Process() function on the Audio Worklet thread
 void SenderCallback(t_pd *obj, void *data) {
-    // Deprecated - kept for compatibility
+    // Deprecated
     return;
 }
 
@@ -397,6 +479,18 @@ void ReceivedBang(const char *r) {
  * @param f  The float value received.
  */
 void ReceivedFloat(const char *r, float f) {
+    // here open the input keyboard
+    if (strcmp(r, "_pd4web_show_number_keyboard") == 0) {
+        if (f == 1) {
+            printf("open number keyboard\n");
+            pd4web_focus_number_input(); // opens keyboard on mobile
+        } else {
+            printf("close number keyboard\n");
+            pd4web_blur_number_input(); // closes keyboard
+        }
+        return;
+    }
+
     t_pdinstance *instance = libpd_this_instance();
     auto it = FloatReceiverListeners.find(instance);
     if (it != FloatReceiverListeners.end()) {
@@ -505,6 +599,26 @@ void ReceivedControlChannel(int channel, int controller, int value) {
 // ─────────────────────────────────────
 void ReceivedProgramChange(int channel, int program) {
     // typedef void (*t_libpd_programchangehook)(int channel, int program)
+}
+
+// ─────────────────────────────────────
+void ReceivedPitchBend(int channel, int value) {
+    // typedef void (*t_libpd_pitchbendhook)(int channel, int value)
+}
+
+// ─────────────────────────────────────
+void ReceivedAfterTouch(int channel, int value) {
+    // typedef void (*t_libpd_aftertouchhook)(int channel, int value)
+}
+
+// ─────────────────────────────────────
+void ReceivedPolyAfterTouch(int channel, int pitch, int value) {
+    // typedef void (*t_libpd_polyaftertouchhook)(int channel, int pitch, int value)
+}
+
+// ─────────────────────────────────────
+void ReceivedMIDIByte(int port, int byte) {
+    // typedef void (*t_libpd_midibytehook)(int port, int byte)
 }
 
 // ╭─────────────────────────────────────╮
@@ -1090,22 +1204,7 @@ void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data) {
  */
 EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-
-    // Create event data on main thread
-    KeyEventData keyData;
-    keyData.key = e->key;
-    keyData.keyCode = e->keyCode;
-    keyData.shift = e->shiftKey;
-    keyData.ctrl = e->ctrlKey;
-    keyData.alt = e->altKey;
-    keyData.event_type =
-        (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? KeyEventData::KEY_DOWN : KeyEventData::KEY_UP;
-
-    // Queue event for processing on Audio Worklet thread
-    auto sender = Pd4WebSender::CreateKeyEvent(keyData);
-    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
-    ud->pd4web->getToSendData().push_back(sender);
-
+    ud->pd4web->SendFloat("#key", e->keyCode);
     return EM_TRUE;
 }
 
@@ -1430,13 +1529,15 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     libpd_set_queued_messagehook(ReceivedMessage);
 
     // TODO: Midi messages
-    // libpd_set_queued_noteonhook
-    // libpd_set_queued_controlchangehook
-    // libpd_set_queued_programchangehook
-    // libpd_set_queued_pitchbendhook
-    // libpd_set_queued_aftertouchhook
-    // libpd_set_queued_polyaftertouchhook
-    // libpd_set_queued_midibytehook
+    /*
+    libpd_set_queued_noteonhook(ReceivedNoteOn);
+    libpd_set_queued_controlchangehook(ReceivedControlChange);
+    libpd_set_queued_programchangehook(ReceivedProgramChange);
+    libpd_set_queued_pitchbendhook(ReceivedPitchBend);
+    libpd_set_queued_aftertouchhook(ReceivedAfterTouch);
+    libpd_set_queued_polyaftertouchhook(ReceivedPolyAfterTouch);
+    libpd_set_queued_midibytehook(ReceivedMIDIByte);
+    */
 
     // Set Audio on/off listener
     if (soundToggleId != "") {
@@ -1470,6 +1571,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     Pd4WebInitExternals();
 
     // open patch
+    void *nKeyboard = libpd_bind("_pd4web_show_number_keyboard");
+
     if (!libpd_openfile(PatchPath.c_str(), "./")) {
         JS_Alert("Failed to open patch | Please Report!");
         return;
@@ -1477,6 +1580,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     // resize canvas
     if (RenderGui() && PatchCanvaId != "") {
+        pd4web_create_number_input(PatchCanvaId.c_str());
+
         t_canvas *canvas = pd_getcanvaslist();
         int canvasWidth = canvas->gl_pixwidth;
         int canvasHeight = canvas->gl_pixheight;
@@ -1672,7 +1777,7 @@ static void HexToRgbNormalized(const char *hex, float *r, float *g, float *b) {
  * If the context is already ready, it sets it as the current context.
  * Otherwise, it configures WebGL2 attributes for high-performance rendering,
  * creates the context, and initializes NanoVG for vector graphics rendering.
- * It also loads a font ("DejaVuSans.ttf") named "roboto" into NanoVG.
+ * It also loads a font ("InterRegular.ttf") named "inter" into NanoVG.
  * The background color is set to a default value, and the color and stencil buffers are cleared.
  *
  * If any step fails, appropriate cleanup is performed and alerts are shown.
@@ -1718,7 +1823,7 @@ void GetGLContext(Pd4WebUserData *ud) {
         return;
     }
 
-    ud->font_handler = nvgCreateFont(ud->vg, "DejaVuSans", "DejaVuSans.ttf");
+    ud->font_handler = nvgCreateFont(ud->vg, "inter", "InterRegular.ttf");
     if (ud->font_handler == -1) {
         JS_Alert("Failed to create NanoVG font");
         return;

@@ -194,6 +194,7 @@ struct Pd4WebUserData {
     int font_handler = 0;
     EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx;
     bool contextReady = false;
+    bool openNumberKeyboard = false;
 
     NVGcontext *vg;
     NVGLUframebuffer *fb = nullptr;

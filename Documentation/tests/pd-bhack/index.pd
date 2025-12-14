@@ -36,6 +36,10 @@
 #X text 45 302 Play some random; 
 #X obj 250 155 b; 
 #X obj 24 303 l.bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000; 
+#X obj 154 304 floatatom 5 0 0 0 - - - 0; 
+#X msg 154 325 bpm \$1; 
+#X msg 117 275 90; 
+#X obj 117 253 loadbang; 
 #X connect 1 0 16 0; 
 #X connect 2 0 3 0; 
 #X connect 3 0 14 0; 
@@ -55,4 +59,8 @@
 #X connect 17 0 2 0; 
 #X connect 19 0 8 0; 
 #X connect 20 0 9 0; 
+#X connect 21 0 22 0; 
+#X connect 22 0 2 0; 
+#X connect 23 0 21 0; 
+#X connect 24 0 23 0; 
 #X coords 0 -1 1 1 450 150 1 20 300; 

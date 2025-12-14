@@ -118,7 +118,7 @@
 #X connect 3 0 0 0;
 #X connect 6 0 1 0;
 #X restore 12 162 pd vu;
-#N canvas 0 0 925 1132 floatatom 0;
+#N canvas 0 0 925 1132 floatatom 1;
 #X floatatom 15 184 5 0 0 0 - - - 0;
 #X obj 52 184 floatatom;
 #X msg 169 56 reload;
@@ -127,6 +127,8 @@
 #X msg 205 167 892289;
 #X obj 205 189 print;
 #X msg 194 124 892289;
+#X obj 125 279 nbx 5 16 -1e+37 1e+37 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 256;
+#X obj 125 257 r _pd4web_show_number_keyboard;
 #X connect 2 0 1 0;
 #X connect 3 0 0 0;
 #X connect 3 0 1 0;
@@ -135,6 +137,7 @@
 #X connect 5 0 6 0;
 #X connect 7 0 0 0;
 #X connect 7 0 1 0;
+#X connect 9 0 8 0;
 #X restore 9 249 pd floatatom;
 #N canvas 0 0 925 1132 symbolatom 0;
 #X symbolatom 26 228 10 0 0 0 - - - 0;
@@ -164,7 +167,7 @@
 #X connect 10 0 2 0;
 #X connect 10 0 0 0;
 #X restore 89 249 pd symbolatom;
-#N canvas 0 0 925 1132 lisatom 1;
+#N canvas 0 0 925 1132 lisatom 0;
 #X msg 93 61 bang \, float 2 \, symbol asj4 \, list 1 2 4 \, novalid;
 #X msg 30 60 symbol 32;
 #X listbox 37 186 20 0 0 0 - - - 0;

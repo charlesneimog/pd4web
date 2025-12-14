@@ -95,9 +95,11 @@ end
 
 -- ─────────────────────────────────────
 function floatatom:mouse_down(x, y)
-	self.select = true
+	self.select = not self.select
+    if not self.select then
+        self:in_1_bang()
+    end
 	self.needtoreset = true
-	-- bind #key
 	self:repaint()
 end
 
@@ -150,8 +152,10 @@ function floatatom:paint(g)
 
 	if self.select then
 		g:set_color(255, 0, 0)
+		pd.send("_pd4web_show_number_keyboard", "float", { 1 })
 	else
 		g:set_color(1)
+		pd.send("_pd4web_show_number_keyboard", "float", { 0 })
 	end
 
 	local number_str = tostring(self.number)
