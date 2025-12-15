@@ -13,3 +13,9 @@ External objects need to be explicitly detected by `pd4web`. This process is **n
 If you do not specify this information, external objects will fail to load, and you will likely see errors such as:  
 `knob: object can't be found`.
 
+!!! danger "`Pd4Web` does not recognize the libraries that you load on startup on PureData!"
+
+!!! danger "`Plugdata` has external libraries"
+    `Plugdata` uses externals libraries like, `pdlua`, `cyclone`, `pdlua`, `Gem` and others.
+
+

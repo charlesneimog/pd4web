@@ -1559,7 +1559,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
         emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
-                                    "Pd4Web.init() from a click event!");
+                                    "Pd4Web.toggleAudio() from a click event!");
     }
 
     libpd_add_to_search_path("./Libs/");

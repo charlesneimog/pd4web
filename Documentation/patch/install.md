@@ -10,7 +10,7 @@ hide:
 </style>
  
 <p align="center">
-  To compile you first patch, first you need to install <code>pd4web</code> and <code>python</code>. You can use a PureData patch or a Python package.
+  To compile you to install <code>pd4web</code>. You can use a PureData patch or a Python package.
 </p>
 
 
@@ -18,7 +18,7 @@ hide:
 ---
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
 
-Simple Gui Interface to use `pd4web`.
+On PureData, `pd4web`provides a simple GUI.
 
 
 <div class="grid cards" markdown>
@@ -28,16 +28,12 @@ Simple Gui Interface to use `pd4web`.
     ---
 
     To use the `pd4web` object in PureData, follow these steps:
-
-    * <p> Install <a href="https://puredata.info/downloads/pure-data" target="_blank">PureData</a> and 
-      <a href="https://www.python.org/downloads/release/python-3130/" target="_blank">Python</a> 
-      (bottom of the page).
-    </p>
     
     * Open PureData.
-    * Navigate to **Help** :material-arrow-right: **Find Externals**.
+    * Navigate to **Tools** :material-arrow-right: **Find Externals**.
     * Search for `pd4web`.
     * Click the **Install** button.
+    * Wait for download and create a new `pd4web` object.
 
 
 -   :fontawesome-solid-tv:{ .lg .middle } __Gui Interface__
@@ -52,8 +48,7 @@ Simple Gui Interface to use `pd4web`.
 ---
 ## <h2 align="center">:octicons-terminal-16: Python Package (Command Line)</h2>
 
-!!! tip "Prefer the Command Line? Here's How"  
-    If you're comfortable with the command line, you can use the `pd4web` package to compile your patches efficiently.
+If you're comfortable with the command line, you can use the `pd4web` package to compile your patches.
 
 <div class="grid cards" markdown>
 
@@ -72,24 +67,22 @@ Simple Gui Interface to use `pd4web`.
     You will get a executable script called `pd4web`.
 
     ```bash
-    usage: pd4web.py <PureData Patch>
+    usage: pd4web <PureData Patch Path>
 
     ```
 </div>
 
 --- 
 
-Run the command `pd4web <PureData Patch>` to compile your patch. The options are:
+The options of the CLI are:
 
-- `--template <TEMPLATE_NUMBER>` : Specify the template number.
-- `--memory <MEMORY_SIZE>` : Specify the memory size in megabytes (MB).
-- `--clean` : Clean the output directory before compiling. 
-- `--verbose` or `-v` : Show verbose output.
-- `--nogui` : Do not show the GUI.
-- `--patch-zoom <ZOOM>` : Specify the patch zoom level.
-- `--debug` : Compile the website with debugging information.
-- `--run-browser` : Run browser (this will not compile the patch).
-
-
-
-    
+* `--help`: Print this help message.
+* `--pd4web-folder <PATH>`: Path to the Pd4Web folder (libraries, sources, etc.).
+* `-m, --initial-memory <MB>`: Initial memory size in megabytes. **Default:** `32`
+* `-z, --patch-zoom <ZOOM>`: Patch zoom level. **Default:** `1`
+* `-o, --output-folder <PATH>`: Output folder.
+* `-t, --template-id <ID>`: Template ID. See available templates <ID> at: [templates](../templates) section.
+* `--nogui`: Disable the Patch GUI interface rendering on the Website.
+* `--debug`: Enable debug compilation, (faster compilation, slower execution, more runtime error information).
+* `--devdebug`: Enable development debug compilation (to debug the compiler).
+* `--failfast`: Stop compilation on the first error.

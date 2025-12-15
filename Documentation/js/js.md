@@ -67,7 +67,7 @@ Pd4Web.openPatch("index.pd", {
 
 ## Initializing Audio Manually
 
-### `Pd4Web.toggleAudio`
+### `Pd4Web.init`
 
 When you open the patch but does not define a `soundToggleId`, you must initialize audio manually. This must be done by click user event. For example: 
 
@@ -75,15 +75,28 @@ When you open the patch but does not define a `soundToggleId`, you must initiali
 document.addEventListener(
     "click",
     async () => {
-        Pd4Web.toggleAudio();
+        Pd4Web.init();
     },
     { once: true }, // Ensures this only runs once
 );
 ```
 
-!!! warning "Run `toggleAudio` outside of click event"
+!!! warning "Run `init` outside of click event"
     The browser does not allow audio to play outside of a click event.
 
+
+### `Pd4Web.toggleAudio`
+
+`toggleAudio` is similar to `init`, but it can also pause the audio processing. If not using `Pd4Web.init()`, the first `Pd4Web.toggleAudio` must be trigger inside a click event.
+
+``` js
+document.addEventListener(
+    "click",
+    async () => {
+        Pd4Web.toggleAudio();
+    },
+);
+```
 
 
 ## Send data
