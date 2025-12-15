@@ -14,10 +14,10 @@
             "type": "image/png"
         }
     ],
-    "name": "drawsvg",
+    "name": "finaltest",
     "orientation": "any",
     "screenshots": "",
-    "short_name": "drawsvg",
+    "short_name": "finaltest",
     "start_url": "index.html",
     "theme_color": "#000000"
 }
