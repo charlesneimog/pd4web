@@ -46,35 +46,11 @@
 
             #wasm-loader {
                 position: fixed; /* fica fixo na tela */
+                margin: 10px 2px;
                 top: 10px; /* 50% da altura */
                 left: 50%; /* 50% da largura */
                 transform: translate(-50%, -50%); /* centraliza exatamente */
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                width: 200px;
-                padding: 8px;
-                border-radius: 5px;
-                background-color: rgba(0, 0, 0, 0.05);
-                box-shadow:
-                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
-                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
-            }
-
-            /* Status texto menor e centralizado */
-            #status {
-                font-size: 10px;
-                text-align: center;
-                margin-bottom: 4px;
                 color: var(--fg);
-            }
-
-            /* Progress bar menor */
-            #progress {
-                width: 150px;
-                height: 8px;
-                border-radius: 4px;
             }
 
             .pd4web-patch-canvas {
@@ -130,32 +106,48 @@
         </style>
     </head>
     <body>
-        <div id="wasm-loader" style="text-align: center; margin: 10px">
+        <div id="wasm-loader">
             <span id="status">Loading...</span>
-            <progress id="progress" value="0" max="100" style="width: 300px"></progress>
+            <div
+                class="custom-progress-container"
+                style="width: 100%; height: 5px; background-color: #e0e0e0; border-radius: 10px; overflow: hidden"
+            >
+                <div
+                    id="custom-progress-bar"
+                    style="
+                        width: 0%;
+                        height: 5px;
+                        background-color: #00fc04;
+                        border-radius: 10px;
+                        transition: width 0.3s ease;
+                    "
+                ></div>
+            </div>
         </div>
 
-        <!-- All the styles are in the pd4web.style.css -->
-        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
-        <canvas tabindex="0" class="pd4web-patch-canvas" id="Pd4WebCanvas"></canvas>
         <script>
             const statusElement = document.getElementById("status");
-            const progressElement = document.getElementById("progress");
+            const progressBar = document.getElementById("custom-progress-bar");
+            const wasmLoader = document.getElementById("wasm-loader");
+
             function fetchWithProgress(url) {
                 return new Promise((resolve, reject) => {
                     const xhr = new XMLHttpRequest();
                     xhr.open("GET", url, true);
                     xhr.responseType = "arraybuffer";
+
                     xhr.onprogress = (event) => {
                         if (event.lengthComputable) {
                             const percent = Math.floor((event.loaded / event.total) * 100);
-                            progressElement.value = percent;
+                            progressBar.style.width = `${percent}%`;
                             statusElement.textContent = `Downloading WASM... ${percent}%`;
                         }
                     };
 
                     xhr.onload = () => {
                         if (xhr.status === 200) {
+                            progressBar.style.width = `100%`;
+                            statusElement.textContent = `Download complete!`;
                             resolve(xhr.response);
                         } else {
                             reject(new Error(`Failed to load ${url}, status ${xhr.status}`));
@@ -168,6 +160,9 @@
             }
         </script>
 
+        <!-- All the styles are in the pd4web.style.css -->
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+        <canvas tabindex="0" class="pd4web-patch-canvas" id="Pd4WebCanvas"></canvas>
         <script>
             fetchWithProgress("./pd4web.wasm")
                 .then((wasmBuffer) => {
@@ -178,24 +173,13 @@
                             soundToggleId: "Pd4WebAudioSwitch",
                         });
                         const wasmLoader = document.getElementById("wasm-loader");
-                        statusElement.style.display = "none";
-                        progressElement.style.display = "none";
-                        wasmLoader.style.display = "none";
+                        wasmLoader.remove();
                     });
                 })
                 .catch((err) => {
                     statusElement.textContent = "Failed to load WASM.";
                     console.error(err);
                 });
-        </script>
-        <script>
-            // Create an App (installable using PWA ( https://en.wikipedia.org/wiki/Progressive_web_app ))
-            // if ("serviceWorker" in navigator) {
-            //     navigator.serviceWorker
-            //         .register("pd4web.sw.js")
-            //         .then(() => console.log("Service Worker registered"))
-            //         .catch((err) => console.error("Service Worker registration failed:", err));
-            // }
         </script>
     </body>
 </html>
