@@ -27,10 +27,10 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: sccache-windows-cv6-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            sccache-windows-v4-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
-            sccache-windows-v4-
+            sccache-windows-cv6-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
+            sccache-windows-cv6-
       - name: Setup ccache (macOS/Linux)
         if: runner.os != 'Windows'
         uses: hendrikmuhs/ccache-action@v1.2
@@ -41,12 +41,11 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: build
-          # v5 + include matrix.os and runner.arch to avoid cross-arch cache reuse (e.g., macOS Intel vs ARM)
-          key: build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
           restore-keys: |
-            build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-v5-${{ matrix.os }}-${{ runner.arch }}-
+            build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
+            build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-cv6-${{ matrix.os }}-${{ runner.arch }}-
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
@@ -151,7 +150,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: build
-          key: build-v5-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
+          key: build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
       - name: Upload PureData Object
         uses: actions/upload-artifact@v4
         with:
