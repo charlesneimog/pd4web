@@ -1012,6 +1012,10 @@ bool Pd4Web::compilePatch() {
 
     if (!m_Error) {
         print("Finished", Pd4WebLogLevel::PD4WEB_LOG1);
+        if (m_Server) {
+            fs::path current = fs::current_path();
+            serverPatch(true, false, current);
+        }
     }
 
     return true;

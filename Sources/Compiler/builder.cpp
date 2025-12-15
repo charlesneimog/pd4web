@@ -27,9 +27,9 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
 
     // TODO: Update version
-    replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"2\"");
-    replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"4\"");
-    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.dev\"");
+    replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"3\"");
+    replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"0\"");
+    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.alpha\"");
 
     replaceAll(configFile, "@PD4WEB_PROJECT_NAME@", "\"" + p->ProjectName + "\"");
 
@@ -40,6 +40,26 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     replaceAll(configFile, "@PD4WEB_GUI@", p->RenderGui ? "1" : "0");
     replaceAll(configFile, "@PD4WEB_PATCH_ZOOM@", std::to_string(p->Zoom));
     replaceAll(configFile, "@PD4WEB_MIDI@", std::to_string(p->Midi));
+
+    // number input
+    std::string pd4web_number_input = "static const char *PD4WEB_NUMBER_INPUT[] = {";
+    for (auto in : m_NumberInput) {
+        pd4web_number_input += "\"" + in + "\",";
+    }
+    pd4web_number_input += "};\n";
+    pd4web_number_input +=
+        "static int PD4WEB_NUMBER_INPUT_SIZE = " + std::to_string(m_NumberInput.size()) + ";\n\n";
+    replaceAll(configFile, "@PD4WEB_NUMBER_INPUT@", pd4web_number_input);
+
+    // keyboard
+    std::string pd4web_qwerty_input = "static const char* PD4WEB_QWERTY_INPUT[] = {";
+    for (auto in : m_QwertyInput) {
+        pd4web_qwerty_input += "\"" + in + "\",";
+    }
+    pd4web_qwerty_input += "};\n";
+    pd4web_qwerty_input +=
+        "static int PD4WEB_QWERTY_INPUT_SIZE = " + std::to_string(m_QwertyInput.size()) + ";\n\n";
+    replaceAll(configFile, "@PD4WEB_QWERTY_INPUT@", pd4web_qwerty_input);
 
     writeFile((p->BuildFolder / "Pd4Web" / "config.h").string(), configFile);
 }

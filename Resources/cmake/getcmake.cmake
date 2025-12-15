@@ -44,14 +44,8 @@ if(NOT EXISTS "${CMAKE_ARCHIVE}")
   endif()
 endif()
 
-# --------------------------
-# Create output folder
-# --------------------------
 file(MAKE_DIRECTORY "${CMAKE_OUTPUT_DIR}")
 
-# --------------------------
-# Extract archive
-# --------------------------
 if(CMAKE_ASSET MATCHES "\\.zip$")
   message(STATUS "Extracting ZIP to ${CMAKE_OUTPUT_DIR}")
   execute_process(COMMAND ${CMAKE_COMMAND} -E tar xzf "${CMAKE_ARCHIVE}"
@@ -65,31 +59,39 @@ else()
 endif()
 
 # --------------------------
-# Detect extracted folder
+# Extract archive
 # --------------------------
-file(GLOB top_level "${CMAKE_OUTPUT_DIR}/*")
-list(FILTER top_level INCLUDE REGEX ".*/cmake-|.*/CMake\\.app")
-list(LENGTH top_level folder_count)
-if(folder_count EQUAL 1 AND IS_DIRECTORY "${top_level}")
-  set(EXTRACTED_DIR "${top_level}")
-else()
-  set(EXTRACTED_DIR "${CMAKE_OUTPUT_DIR}")
+file(MAKE_DIRECTORY "${CMAKE_OUTPUT_DIR}")
+
+# Extract once
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E tar xzf "${CMAKE_ARCHIVE}"
+  WORKING_DIRECTORY "${CMAKE_OUTPUT_DIR}"
+  RESULT_VARIABLE extract_result
+)
+
+if(NOT extract_result EQUAL 0)
+  message(FATAL_ERROR "Failed to extract ${CMAKE_ASSET}")
 endif()
 
-# --------------------------
-# Set path to cmake executable
-# --------------------------
+# Detect extracted directory
+file(GLOB _cmake_dirs "${CMAKE_OUTPUT_DIR}/cmake-*")
+list(LENGTH _cmake_dirs _dir_count)
+
+if(NOT _dir_count EQUAL 1)
+  message(FATAL_ERROR "Expected exactly one extracted cmake directory")
+endif()
+
+list(GET _cmake_dirs 0 EXTRACTED_DIR)
+
+# Set cmake binary path
 if(WIN32)
-  set(CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake.exe")
-elseif(APPLE)
-  if(EXISTS "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
-    set(CMAKE_BINARY "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
-  else()
-    set(CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake")
-  endif()
-else() # Linux/Unix
-  set(CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake")
+  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake.exe")
+elseif(APPLE AND EXISTS "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
+  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
+else()
+  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake")
 endif()
 
-set(PD4WEB_CMAKE_FOLDER ${EXTRACTED_DIR})
-set(PD4WEB_CMAKE_BINARY ${CMAKE_BINARY})
+set(PD4WEB_CMAKE_FOLDER "${EXTRACTED_DIR}")
+

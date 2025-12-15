@@ -182,9 +182,9 @@ void Pd4Web::validateArgs() {
         print("Invalid memory value, must be between 4 and 2048mb", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
-
     return;
 }
+
 // ─────────────────────────────────────
 void Pd4Web::parseArgs(int argc, char *argv[]) {
     cxxopts::Options options("pd4web", "pd4web compiles PureData patches with external objects for "
@@ -198,27 +198,36 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         // help
         ("help", "Print this usage.")
 
+        // patch
+        ("patch_file", 
+            "Patch file to be compiled.", 
+            cxxopts::value<std::string>(m_PatchFile))
+
         // Configuration of Compiler
-        ("pd4web-folder", "Pd4Web Folder (with Libraries, Sources, etc).",
+        ("pd4web-folder", 
+            "Pd4Web Folder (with Libraries, Sources, etc).",
             cxxopts::value<fs::path>(m_Pd4WebFiles))
 
         // Configuration of Pd4Web
-        ("m,initial-memory", "Initial memory size (in MB).", 
+        ("m,initial-memory", 
+            "Initial memory size (in MB).", 
             cxxopts::value<int>(m_Memory)->default_value("32"))
 
-        ("z,patch-zoom", "Patch zoom.", 
+        ("z,patch-zoom",
+            "Set the patch zoom level (default: 1.0).",
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
-        ("o,output-folder", "Output folder.", 
+        ("o,output-folder", 
+            "Output folder.", 
             cxxopts::value<std::string>(m_BuildFolder))
 
-        ("patch_file", "Patch file to be compiled.", 
-            cxxopts::value<std::string>(m_PatchFile))
-
-        // TODO:
-        ("t,template-id", "Set template id check https://charlesneimog.github.io/pd4web/patch/templates/.",
+        ("t,template-id", 
+            "Set template id check https://charlesneimog.github.io/pd4web/patch/templates/.",
             cxxopts::value<unsigned>(m_TemplateId))
 
+        ("s,server",
+            "After compilation, start a server for the given <Patch>. If no <Patch> is provided, serve the current folder.",
+            cxxopts::value<bool>(m_Server))
 
         // TEST:
         ("nogui", "Disable GUI interface.", 
@@ -227,7 +236,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         ("debug", "Activate debug compilation (faster compilation, slower and more error info execution).", 
             cxxopts::value<bool>(m_Debug))
 
-        ("devdebug", "Activate development debug compilation (print function call).", 
+        ("devdebug", "Activate development debug compilation.", 
             cxxopts::value<bool>(m_DevDebug)->default_value("false"))
 
         ("failfast", "Fail on first error message.",
@@ -240,11 +249,17 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     m_RenderGui = !disableGui;
     m_FailFast = failFast;
 
-    validateArgs();
-
     if (result.count("help")) {
         options.set_width(120);
         std::cout << options.help() << std::endl;
         exit(0);
     }
+
+    if (m_Server && m_PatchFile.empty()) {
+        fs::path current = fs::current_path();
+        serverPatch(true, false, current);
+        exit(0);
+    }
+
+    validateArgs();
 }

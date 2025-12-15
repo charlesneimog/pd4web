@@ -215,7 +215,7 @@ class Pd4Web {
         m_PrintCallback = cb;
     }
 
-    void serverPatch(bool server = false);
+    void serverPatch(bool toggle, bool detached, fs::path folderToServer);
 
   private:
     bool m_Init;
@@ -228,6 +228,7 @@ class Pd4Web {
     std::string m_PatchFile;     // TODO: is fs::path
     std::string m_LibrariesPath; // TODO: is fs::path
     unsigned int m_TemplateId = 0;
+    bool m_Server;
     bool m_BypassUnsuported;
     bool m_Verbose;
     std::string m_PdVersion;
@@ -272,8 +273,6 @@ class Pd4Web {
     std::string m_Clang;
     std::string m_NodeJs;
     std::string m_PythonWindows;
-
-    // httplib::SSLClient m_GithubCli;
 
     // Git
     bool gitRepoExists(const std::string &path);
@@ -349,6 +348,9 @@ class Pd4Web {
     std::vector<std::string> m_DeclaredPaths;
 
     // Builder
+    std::vector<std::string> m_NumberInput = {"floatatom", "l.nbx"};
+    std::vector<std::string> m_QwertyInput = {"symbolatom", "listatom"};
+
     std::string m_MainCmake;
     void configureProjectToCompile(std::shared_ptr<Patch> &p);
     void createConfigFile(std::shared_ptr<Patch> &p);

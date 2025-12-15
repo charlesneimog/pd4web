@@ -117,7 +117,7 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
 
     else if (strcmp(s->s_name, "server") == 0) {
         bool server = atom_getint(av) != 0;
-        x->pd4web->serverPatch(server);
+        x->pd4web->serverPatch(server, true, "");
         logpost(x, 2, "[pd4web] Server %s", server ? "enabled" : "disabled");
         if (server) {
             pdgui_vmess("::pd_menucommands::menu_openfile", "s", "http://localhost:8082");
@@ -211,7 +211,7 @@ static void *pd4web_new() {
 
 // ─────────────────────────────────────
 static void pd4web_free(Pd4WebObj *x) {
-    x->pd4web->serverPatch(false);
+    x->pd4web->serverPatch(false, true, "");
     delete x->pd4web;
 }
 

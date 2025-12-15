@@ -6,41 +6,31 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
-EM_JS(void, pd4web_create_number_input, (const char *canvasId), {
-    if (document.getElementById("_pd4web_number_input"))
-        return; // already created
-
-    const canvas = document.getElementById(UTF8ToString(canvasId));
-    if (!canvas) return;
-
+EM_JS(void, JS_CreateNumberInput, (), {
+    if (document.getElementById("_pd4web_number_input")) return;
     const el = document.createElement("input");
     el.id = "_pd4web_number_input";
-    el.type = "number";
-    el.inputMode = "numeric";
+    el.type = "text";
+    el.inputMode = "decimal";
+    el.autocomplete = "off";
+    el.autocapitalize = "off";
+    el.spellcheck = false;
+    el.setAttribute("enterkeyhint", "done");
+    el.tabIndex = -1;
 
-    const rect = canvas.getBoundingClientRect();
+    // Keep it effectively invisible while still focusable for mobile keyboards
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.width = "50px";        // small but focusable
+    el.style.height = "40px";       // enough to trigger key events
+    el.style.opacity = "0.01";      // effectively invisible
+    el.style.pointerEvents = "auto"; // must be focusable
 
-    // same position and size as canvas
-    el.style.position = "absolute";
-    el.style.left   = `${rect.left + window.scrollX}px`;
-    el.style.top    = `${rect.top  + window.scrollY}px`;
-    el.style.width  = `${rect.width}px`;
-    el.style.height = `${rect.height}px`;
-
-    // invisible but focusable
-    el.style.opacity = "0";
-    el.style.border = "none";
-    el.style.background = "transparent";
-
-    // behind canvas
     el.style.zIndex = "0";
-    canvas.style.position = "relative";
-    canvas.style.zIndex = "1";
     document.body.appendChild(el);
 
     function dispatchFakeKey(key, code, keyCode) {
-        canvas.focus();
-
         const ev = new KeyboardEvent("keydown", {
             key,
             code,
@@ -48,10 +38,7 @@ EM_JS(void, pd4web_create_number_input, (const char *canvasId), {
             which: keyCode,
             bubbles: true,
         });
-
-        canvas.dispatchEvent(ev);
-
-        canvas.blur();
+        el.dispatchEvent(ev);
         el.focus();
     }
 
@@ -59,37 +46,86 @@ EM_JS(void, pd4web_create_number_input, (const char *canvasId), {
     el.addEventListener("input", () => {
         const value = el.value;
         if (!value) return;
-
         const digit = value[value.length - 1];
         el.value = "";
-
         dispatchFakeKey(
             digit,
             "Numpad" + digit,
             digit.charCodeAt(0)
         );
     });
-
-    // Enter (no value change → keydown only)
-    el.addEventListener("keydown", (e) => {
-        if (e.key !== "Enter") return;
-        e.preventDefault();
-        dispatchFakeKey("Enter", "Enter", 13);
+    el.addEventListener("blur", (e) => {
+        dispatchFakeKey("Enter", "Enter", 13); 
     });
 });
 
 // ─────────────────────────────────────
-EM_JS(void, pd4web_focus_number_input, (), {
-    const el = document.getElementById("_pd4web_number_input");
-    if (!el) return;
-    el.focus();
+EM_JS(void, JS_CreateTextInput, (), {
+    if (document.getElementById("_pd4web_text_input")) return;
+    const el = document.createElement("input");
+    el.id = "_pd4web_text_input";
+    el.type = "text";
+    el.inputMode = "text";
+    el.autocomplete = "off";
+    el.autocapitalize = "off";
+    el.spellcheck = false;
+    el.setAttribute("enterkeyhint", "done");
+    el.tabIndex = -1;
+
+    // Keep it effectively invisible while still focusable for mobile keyboards
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.width = "50px";        // small but focusable
+    el.style.height = "40px";       // enough to trigger key events
+    el.style.opacity = "0.01";      // effectively invisible
+    el.style.pointerEvents = "auto"; // must be focusable
+
+    el.style.zIndex = "0";
+    document.body.appendChild(el);
+
+    function dispatchFakeKey(key, code, keyCode) {
+        const ev = new KeyboardEvent("keydown", {
+            key,
+            code,
+            keyCode,
+            which: keyCode,
+            bubbles: true,
+        });
+        el.dispatchEvent(ev);
+        el.focus();
+    }
+
+    // digits (value change)
+    el.addEventListener("input", () => {
+        const value = el.value;
+        if (!value) return;
+        const digit = value[value.length - 1];
+        el.value = "";
+        dispatchFakeKey(
+            digit,
+            "Numpad" + digit,
+            digit.charCodeAt(0)
+        );
+    });
+    el.addEventListener("blur", (e) => {
+        dispatchFakeKey("Enter", "Enter", 13); 
+    });
 });
 
 // ─────────────────────────────────────
-EM_JS(void, pd4web_blur_number_input, (), {
+EM_JS(void, JS_Pd4WebFocusNumberInput, (), {
     const el = document.getElementById("_pd4web_number_input");
     if (!el) return;
-    el.blur();
+
+    el.focus({ preventScroll: true });
+});
+
+// ─────────────────────────────────────
+EM_JS(void, JS_Pd4WebFocusTextInput, (), {
+    const el = document.getElementById("_pd4web_text_input");
+    if (!el) return;
+    el.focus({ preventScroll: true });
 });
 
 // ─────────────────────────────────────
@@ -479,18 +515,6 @@ void ReceivedBang(const char *r) {
  * @param f  The float value received.
  */
 void ReceivedFloat(const char *r, float f) {
-    // here open the input keyboard
-    if (strcmp(r, "_pd4web_show_number_keyboard") == 0) {
-        if (f == 1) {
-            printf("open number keyboard\n");
-            pd4web_focus_number_input(); // opens keyboard on mobile
-        } else {
-            printf("close number keyboard\n");
-            pd4web_blur_number_input(); // closes keyboard
-        }
-        return;
-    }
-
     t_pdinstance *instance = libpd_this_instance();
     auto it = FloatReceiverListeners.find(instance);
     if (it != FloatReceiverListeners.end()) {
@@ -1270,7 +1294,29 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
     ud->pd4web->getToSendData().push_back(sender);
 
-    return EM_FALSE;
+    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+        int x1, y1, x2, y2;
+        if (canvas_hitbox(canvas, obj, touchData.x, touchData.y, &x1, &y1, &x2, &y2, 0)) {
+            t_symbol *objname = (obj->g_pd->c_name);
+            if (eventType == EMSCRIPTEN_EVENT_TOUCHSTART) {
+                for (int i = 0; i < PD4WEB_NUMBER_INPUT_SIZE; i++) {
+                    std::string luaobj = PD4WEB_NUMBER_INPUT[i];
+                    if (strcmp(objname->s_name, (luaobj + ":gfx").c_str()) == 0) {
+                        JS_Pd4WebFocusNumberInput();
+                    }
+                }
+
+                for (int i = 0; i < PD4WEB_QWERTY_INPUT_SIZE; i++) {
+                    std::string luaobj = PD4WEB_QWERTY_INPUT[i];
+                    if (strcmp(objname->s_name, (luaobj + ":gfx").c_str()) == 0) {
+                        JS_Pd4WebFocusTextInput();
+                    }
+                }
+            }
+        }
+    }
+
+    return EM_TRUE;
 }
 
 // ─────────────────────────────────────
@@ -1324,7 +1370,26 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
     ud->pd4web->getToSendData().push_back(sender);
 
-    return EM_FALSE;
+    bool doit = (mouseData.event_type == MouseEventData::MOUSE_DOWN ||
+                 (mouseData.event_type == MouseEventData::MOUSE_MOVE && ud->mousedown));
+
+    // open keyboard on smartphones
+    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+        int x1, y1, x2, y2;
+        if (canvas_hitbox(canvas, obj, mouseData.x, mouseData.y, &x1, &y1, &x2, &y2, 0)) {
+            t_symbol *objname = (obj->g_pd->c_name);
+            if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
+                if (strcmp(objname->s_name, "floatatom:gfx") == 0) {
+                    JS_Pd4WebFocusNumberInput();
+                }
+                if (strcmp(objname->s_name, "symbolatom:gfx") == 0) {
+                    JS_Pd4WebFocusTextInput();
+                }
+            }
+        }
+    }
+
+    return EM_TRUE;
 }
 
 // ─────────────────────────────────────
@@ -1383,7 +1448,7 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
             }
         }
     }
-    return EM_FALSE;
+    return EM_TRUE;
 }
 
 // ─────────────────────────────────────
@@ -1559,7 +1624,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
         emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
-                                    "Pd4Web.toggleAudio() from a click event!");
+                                    "Pd4Web.init() from a click event!");
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -1580,7 +1645,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     // resize canvas
     if (RenderGui() && PatchCanvaId != "") {
-        pd4web_create_number_input(PatchCanvaId.c_str());
+        JS_CreateNumberInput();
+        JS_CreateTextInput();
 
         t_canvas *canvas = pd_getcanvaslist();
         int canvasWidth = canvas->gl_pixwidth;
@@ -1642,18 +1708,22 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         }
 
         m_UserData->mousedown = false;
-        emscripten_set_mousedown_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
-        emscripten_set_mouseup_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
-        emscripten_set_mousemove_callback(sel, m_UserData.get(), EM_FALSE, MouseListener);
+        emscripten_set_mousedown_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
+        emscripten_set_mouseup_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
+        emscripten_set_mousemove_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
 
         // touchscreen
-        emscripten_set_touchstart_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
-        emscripten_set_touchend_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
-        emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
-        emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_FALSE, TouchListener);
+        emscripten_set_touchstart_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchend_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchmove_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
+        emscripten_set_touchcancel_callback(sel, m_UserData.get(), EM_TRUE, TouchListener);
 
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
+        emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
+                                        KeyListener);
+        emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
+                                        KeyListener);
 
         // #define emscripten_set_orientationchange_callback(userData, useCapture, callback)
         // emscripten_set_orientationchange_callback_on_thread(              (userData),
@@ -2349,12 +2419,12 @@ void Loop(void *userData) {
             object_dirty = true;
             needs_redraw = true;
 
-            int fbw = static_cast<int>(ceilf(layer.objw * zoom * pxRatio));
-            int fbh = static_cast<int>(ceilf(layer.objh * zoom * pxRatio));
+            int fbw = static_cast<int>(layer.objw * zoom * pxRatio);
+            int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
 
             if (!layer.fb) {
                 layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
-                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_MULTISAMPLE);
+                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
             }
 
             nvgluBindFramebuffer(layer.fb);
@@ -2403,7 +2473,7 @@ void Loop(void *userData) {
 
     if (!ud->mainFBO) {
         ud->mainFBO = nvgluCreateFramebuffer(ud->vg, ud->canvas_width, ud->canvas_height,
-                             NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_MULTISAMPLE);
+                                             NVG_IMAGE_PREMULTIPLIED);
     }
 
     nvgluBindFramebuffer(ud->mainFBO);

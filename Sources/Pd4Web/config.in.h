@@ -25,6 +25,10 @@ extern "C" {
 // Midi
 #define PD4WEB_MIDI @PD4WEB_MIDI@
 
+// Mobile Keyboard Input
+@PD4WEB_NUMBER_INPUT@
+@PD4WEB_QWERTY_INPUT@
+
 // clang-format on
 
 // ╭─────────────────────────────────────╮
@@ -66,23 +70,23 @@ extern "C" {
     "LTY0LTI4LjctNjQtNjRsMC02NGMwLTM1LjMgMjguNy02NCA2NC02NGw2Ny44IDBMMjY2LjcgNDAuMWM5LjQtOC40IDIy" \
     "LjktMTAuNCAzNC40LTUuM3oiLz48L3N2Zz4="
 
-// ╭─────────────────────────────────────╮
-// │          Lua Gui Interface          │
-// ╰─────────────────────────────────────╯
-enum LuaGuiCommands {
-    FILL_ELLIPSE = 0,
-    STROKE_ELLIPSE,
-    FILL_RECT,
-    STROKE_RECT,
-    FILL_ROUNDED_RECT,
-    STROKE_ROUNDED_RECT,
-    DRAW_LINE,
-    DRAW_TEXT,
-    DRAW_SVG,
-    STROKE_PATH,
-    FILL_PATH,
-    FILL_ALL,
-};
+    // ╭─────────────────────────────────────╮
+    // │          Lua Gui Interface          │
+    // ╰─────────────────────────────────────╯
+    enum LuaGuiCommands {
+        FILL_ELLIPSE = 0,
+        STROKE_ELLIPSE,
+        FILL_RECT,
+        STROKE_RECT,
+        FILL_ROUNDED_RECT,
+        STROKE_ROUNDED_RECT,
+        DRAW_LINE,
+        DRAW_TEXT,
+        DRAW_SVG,
+        STROKE_PATH,
+        FILL_PATH,
+        FILL_ALL,
+    };
 
 typedef struct {
     enum LuaGuiCommands command;

@@ -370,7 +370,7 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
 }
 
 // ──────────────────────────────────────────
-void Pd4Web::serverPatch(bool toggle) {
+void Pd4Web::serverPatch(bool toggle, bool detached, fs::path folderToServer) {
     static std::unique_ptr<httplib::Server> server;
 
     if (toggle) {
@@ -378,8 +378,12 @@ void Pd4Web::serverPatch(bool toggle) {
             server = std::make_unique<httplib::Server>();
         }
 
-        std::thread t([this]() {
-            server->set_mount_point("/", m_BuildFolder);
+        std::thread t([this, folderToServer]() {
+            if (folderToServer.empty()) {
+                server->set_mount_point("/", m_BuildFolder);
+            } else {
+                server->set_mount_point("/", folderToServer.string());
+            }
             server->Get("/", [](const httplib::Request &, httplib::Response &res) {
                 res.set_redirect("/index.html");
             });
@@ -393,7 +397,11 @@ void Pd4Web::serverPatch(bool toggle) {
                 return;
             }
         });
-        t.detach();
+        if (detached) {
+            t.detach();
+        } else {
+            t.join();
+        }
     } else {
         httplib::Client client("http://localhost:8082");
         auto res = client.Get("/stop");
