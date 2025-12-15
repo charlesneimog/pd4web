@@ -2349,12 +2349,12 @@ void Loop(void *userData) {
             object_dirty = true;
             needs_redraw = true;
 
-            int fbw = static_cast<int>(layer.objw * zoom * pxRatio);
-            int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
+            int fbw = static_cast<int>(ceilf(layer.objw * zoom * pxRatio));
+            int fbh = static_cast<int>(ceilf(layer.objh * zoom * pxRatio));
 
             if (!layer.fb) {
                 layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
-                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
+                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_MULTISAMPLE);
             }
 
             nvgluBindFramebuffer(layer.fb);
@@ -2403,7 +2403,7 @@ void Loop(void *userData) {
 
     if (!ud->mainFBO) {
         ud->mainFBO = nvgluCreateFramebuffer(ud->vg, ud->canvas_width, ud->canvas_height,
-                                             NVG_IMAGE_PREMULTIPLIED);
+                             NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_MULTISAMPLE);
     }
 
     nvgluBindFramebuffer(ud->mainFBO);
