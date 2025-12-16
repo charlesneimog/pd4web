@@ -9,14 +9,14 @@ include(FetchContent)
 # ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
-set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
+set(PDCMAKE_FILE ${CMAKE_CURRENT_BINARY_DIR}/pd.cmake)
 include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
 # │                Nanovg                │
 # ╰──────────────────────────────────────╯
-FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_BINARY_DIR}/nanovg")
-FetchContent_MakeAvailable(nanovg)
+FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/nanovg")
+add_subdirectory("${CMAKE_CURRENT_BINARY_DIR}/nanovg" "${CMAKE_CURRENT_BINARY_DIR}/nanovg-build")
 
 # ╭──────────────────────────────────────╮
 # │              Pd sources              │

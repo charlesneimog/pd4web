@@ -263,6 +263,7 @@ class Pd4Web {
     bool getCmakeBinary();
     bool getNode();
 
+    // TODO: USE fs::path instead
     std::string m_Cmake;
     std::string m_EmsdkInstaller;
     std::string m_Emcmake;

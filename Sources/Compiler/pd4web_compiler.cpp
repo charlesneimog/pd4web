@@ -227,7 +227,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
         ("s,server",
             "After compilation, start a server for the given <Patch>. If no <Patch> is provided, serve the current folder.",
-            cxxopts::value<bool>(m_Server))
+            cxxopts::value<bool>(m_Server)->default_value("false"))
 
         // TEST:
         ("nogui", "Disable GUI interface.", 

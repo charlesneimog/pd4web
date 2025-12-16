@@ -472,12 +472,17 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 1: Configure with emcmake
-    std::vector<std::string> configureArgs = {
-        m_Cmake, p->BuildFolder.string(), "-B", buildDir.string(), "-G", "Ninja",
-        "-DPDCMAKE_DIR=Pd4Web/Externals/", "-DCMAKE_BUILD_TYPE=" + buildType,
-        // "-DEMCONFIGURE=" + m_Emconfigure,
-        // "-DEMMAKE=" + m_Emmake,
-        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja, "-Wno-dev"};
+    std::vector<std::string> configureArgs = {m_Cmake,
+                                              p->BuildFolder.string(),
+                                              "-B",
+                                              buildDir.string(),
+                                              "-G",
+                                              "Ninja",
+                                              "-DPDCMAKE_DIR=Pd4Web/Externals/",
+                                              "-DCMAKE_BUILD_TYPE=" + buildType,
+                                              "-DCMAKE_COMMAND=" + m_Cmake,
+                                              "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
+                                              "-Wno-dev"};
 
     int result = execProcess(m_Emcmake, configureArgs);
     if (result != 0) {

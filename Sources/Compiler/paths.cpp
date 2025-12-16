@@ -164,11 +164,11 @@ bool Pd4Web::getNinja() {
     }
 
 #if defined(__linux__)
-    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja";
+    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja-linux";
 #elif defined(_WIN32)
     std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja.exe";
 #elif defined(__APPLE__)
-    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja";
+    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja-mac";
 #else
     std::cerr << "Unsupported platform for Ninja binary." << std::endl;
     return false;
@@ -179,6 +179,12 @@ bool Pd4Web::getNinja() {
     }
 
 #if defined(__linux__) || defined(__APPLE__)
+    fs::path link = m_Pd4WebRoot + "/bin/ninja";
+    if (!fs::exists(link)) {
+        fs::create_symlink(ninjaBin, link);
+    }
+    ninjaBin = link;
+
     std::error_code permEc;
     fs::permissions(ninjaBin,
                     fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec,
@@ -187,13 +193,6 @@ bool Pd4Web::getNinja() {
         print("Failed to update permissions for Ninja binary: " + permEc.message(),
               Pd4WebLogLevel::PD4WEB_WARNING);
     }
-#if defined(__APPLE__)
-    if (removexattr(ninjaBin.c_str(), "com.apple.quarantine", 0) != 0 && errno != ENOATTR &&
-        errno != ENODATA) {
-        std::cerr << "Failed to remove macOS quarantine attribute from the Ninja binary." << '\n';
-        return false;
-    }
-#endif
 #endif
 
     m_Ninja = ninjaBin;
@@ -205,8 +204,10 @@ bool Pd4Web::getCmakeBinary() {
     PD4WEB_LOGGER();
 
     std::string cmakeBinary;
-#if defined(__linux__) || defined(__APPLE__)
-    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake";
+#if defined(__linux__)
+    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake-linux";
+#elif defined(__APPLE__)
+    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake-mac";
 #elif defined(_WIN32)
     cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake.exe";
 #else
@@ -215,10 +216,17 @@ bool Pd4Web::getCmakeBinary() {
 #endif
 
     if (!fs::exists(cmakeBinary)) {
+        print("cmake does not exist, this is a bug, please report", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
 #if defined(__linux__) || defined(__APPLE__)
+    fs::path link = m_Pd4WebRoot + "/bin/cmake/bin/cmake";
+    if (!fs::exists(link)) {
+        fs::create_symlink(cmakeBinary, link);
+    }
+    cmakeBinary = link;
+
     std::error_code permEc;
     fs::permissions(cmakeBinary,
                     fs::perms::owner_exec | fs::perms::group_exec | fs::perms::others_exec,
@@ -227,13 +235,6 @@ bool Pd4Web::getCmakeBinary() {
         print("Failed to update permissions for CMake binary: " + permEc.message(),
               Pd4WebLogLevel::PD4WEB_WARNING);
     }
-#if defined(__APPLE__)
-    if (removexattr(cmakeBinary.c_str(), "com.apple.quarantine", 0) != 0 && errno != ENOATTR &&
-        errno != ENODATA) {
-        std::cerr << "Failed to remove macOS quarantine attribute from the CMake binary." << '\n';
-        return false;
-    }
-#endif
 #endif
 
     m_Cmake = cmakeBinary;
