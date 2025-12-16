@@ -480,7 +480,6 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                               "Ninja",
                                               "-DPDCMAKE_DIR=Pd4Web/Externals/",
                                               "-DCMAKE_BUILD_TYPE=" + buildType,
-                                              "-DCMAKE_COMMAND=" + m_Cmake,
                                               "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
                                               "-Wno-dev"};
 

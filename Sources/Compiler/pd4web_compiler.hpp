@@ -228,7 +228,7 @@ class Pd4Web {
     std::string m_PatchFile;     // TODO: is fs::path
     std::string m_LibrariesPath; // TODO: is fs::path
     unsigned int m_TemplateId = 0;
-    bool m_Server;
+    bool m_Server = false;
     bool m_BypassUnsuported;
     bool m_Verbose;
     std::string m_PdVersion;
