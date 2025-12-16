@@ -113,7 +113,7 @@ struct PatchLine {
 struct Patch {
     fs::path PatchFile;
     fs::path PatchFolder;
-    fs::path BuildFolder;
+    fs::path OutputFolder;
     fs::path Pd4WebFiles;
     fs::path Pd4WebRoot;
 

@@ -9,33 +9,30 @@ include(FetchContent)
 # ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
-set(PDCMAKE_FILE ${CMAKE_CURRENT_BINARY_DIR}/pd.cmake)
+set(PDCMAKE_FILE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd.cmake"
+    CACHE INTERNAL "pd cmake file path")
 include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
 # │                Nanovg                │
 # ╰──────────────────────────────────────╯
-FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/nanovg")
-add_subdirectory("${CMAKE_CURRENT_BINARY_DIR}/nanovg" "${CMAKE_CURRENT_BINARY_DIR}/nanovg-build")
+FetchContent_Declare(nanovg SOURCE_DIR
+                            "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg"
+                 "${CMAKE_CURRENT_BINARY_DIR}/nanovg-build")
 
 # ╭──────────────────────────────────────╮
 # │              Pd sources              │
 # ╰──────────────────────────────────────╯
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")
-set(PDCMAKE_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/"
-    CACHE STRING "" FORCE)
-set(PD4WEB_EXTERNAL_DIR
-    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/"
-    CACHE STRING "" FORCE)
-set(PD4WEB_EXTRAS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Extras")
+set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/")
 
 @PD_SOURCE_DIR@
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 
 add_compile_definitions(PDTHREADS PDINSTANCE)
-@PD_CMAKE_CONTENT@
 
 @PD_CMAKE_EXTRADEFINITIONS@
 
@@ -67,7 +64,8 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
   include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua")
 endif()
 
-target_include_directories(pd4web PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src"Jk)
+target_include_directories(
+  pd4web PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src"Jk)
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY
                                         "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 

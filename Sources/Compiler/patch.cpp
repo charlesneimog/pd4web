@@ -288,7 +288,7 @@ void Pd4Web::isExtraObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
         CompiledObjects.end()) {
 
         fs::path ExtraPath = p->Pd4WebRoot / "pure-data" / "extra" / pl.Name;
-        fs::path DestinationPath = p->BuildFolder / "Pd4Web" / "pure-data" / "extra" / pl.Name;
+        fs::path DestinationPath = p->OutputFolder / "Pd4Web" / "pure-data" / "extra" / pl.Name;
         fs::create_directories(DestinationPath.parent_path()); // garante dirs acima
         fs::copy(ExtraPath, DestinationPath,
                  fs::copy_options::recursive | fs::copy_options::skip_existing);
@@ -810,12 +810,12 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
         print("\n");
         print("Saving " + p->PatchFile.filename().string() + " as index.pd",
               Pd4WebLogLevel::PD4WEB_LOG1);
-        writeFile((p->BuildFolder / "WebPatch" / "index.pd").string(), editPatch);
+        writeFile((p->OutputFolder / "WebPatch" / "index.pd").string(), editPatch);
     } else {
         print("Creating modified version of " + p->PatchFile.filename().string(),
               Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
-        fs::create_directories(p->BuildFolder / ".tmp");
-        writeFile((p->BuildFolder / ".tmp" / p->PatchFile.filename()).string(), editPatch);
+        fs::create_directories(p->OutputFolder / ".tmp");
+        writeFile((p->OutputFolder / ".tmp" / p->PatchFile.filename()).string(), editPatch);
     }
 }
 
@@ -834,7 +834,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     p->DeclaredPaths = f->DeclaredPaths;
     p->DeclaredLibs = f->DeclaredLibs;
     p->printLevel = p->printLevel + 1;
-    p->BuildFolder = f->BuildFolder;
+    p->OutputFolder = f->OutputFolder;
     p->Pd4WebFiles = f->Pd4WebFiles;
     p->Pd4WebRoot = f->Pd4WebRoot;
     p->IsSubpatch = true;
@@ -905,7 +905,7 @@ void Pd4Web::updateTemplate(std::shared_ptr<Patch> &p) {
         if (fs::exists(templatePath) && fs::is_directory(templatePath)) {
             for (const auto &entry : fs::directory_iterator(templatePath)) {
                 if (entry.is_regular_file()) {
-                    fs::path target = p->BuildFolder / "WebPatch" / entry.path().filename();
+                    fs::path target = p->OutputFolder / "WebPatch" / entry.path().filename();
                     fs::copy(entry.path(), target, fs::copy_options::skip_existing);
                 }
             }
@@ -915,7 +915,7 @@ void Pd4Web::updateTemplate(std::shared_ptr<Patch> &p) {
             return;
         }
     } else {
-        fs::copy(p->Pd4WebFiles / "index.html", p->BuildFolder / "WebPatch" / "index.html",
+        fs::copy(p->Pd4WebFiles / "index.html", p->OutputFolder / "WebPatch" / "index.html",
                  fs::copy_options::skip_existing);
     }
 }
@@ -954,9 +954,9 @@ bool Pd4Web::compilePatch() {
     print("Project name is: '" + p->ProjectName + "'", Pd4WebLogLevel::PD4WEB_LOG1);
 
     if (m_BuildFolder != "") {
-        p->BuildFolder = fs::path(m_BuildFolder);
+        p->OutputFolder = fs::path(m_BuildFolder);
     } else {
-        p->BuildFolder = p->PatchFolder;
+        p->OutputFolder = p->PatchFolder;
     }
 
     bool ok = openPatch(p);
@@ -990,10 +990,10 @@ bool Pd4Web::compilePatch() {
         i++;
     }
 
-    fs::create_directory(p->BuildFolder / "WebPatch");
-    fs::create_directory(p->BuildFolder / "Pd4Web");
-    fs::create_directory(p->BuildFolder / "Pd4Web" / "Externals");
-    fs::create_directory(p->BuildFolder / "Pd4Web" / "Gui");
+    fs::create_directory(p->OutputFolder / "WebPatch");
+    fs::create_directory(p->OutputFolder / "Pd4Web");
+    fs::create_directory(p->OutputFolder / "Pd4Web" / "Externals");
+    fs::create_directory(p->OutputFolder / "Pd4Web" / "Gui");
 
     getSupportedLibraries(p);
     updatePatchFile(p, true);
