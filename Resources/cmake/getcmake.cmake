@@ -67,8 +67,7 @@ file(MAKE_DIRECTORY "${CMAKE_OUTPUT_DIR}")
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E tar xzf "${CMAKE_ARCHIVE}"
   WORKING_DIRECTORY "${CMAKE_OUTPUT_DIR}"
-  RESULT_VARIABLE extract_result
-)
+  RESULT_VARIABLE extract_result)
 
 if(NOT extract_result EQUAL 0)
   message(FATAL_ERROR "Failed to extract ${CMAKE_ASSET}")
@@ -87,11 +86,28 @@ list(GET _cmake_dirs 0 EXTRACTED_DIR)
 # Set cmake binary path
 if(WIN32)
   set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake.exe")
+
+  file(REMOVE "${EXTRACTED_DIR}/bin/cmake-gui.exe")
+  file(REMOVE "${EXTRACTED_DIR}/bin/cmcldeps.exe")
+  file(REMOVE "${EXTRACTED_DIR}/bin/cpack.exe")
+  file(REMOVE "${EXTRACTED_DIR}/bin/ctest.exe")
 elseif(APPLE AND EXISTS "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
-  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
-else()
-  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake")
+  file(RENAME "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake"
+       "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake-mac")
+  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake-mac")
+
+  file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/ccmake")
+  file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake-gui")
+  file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/cpack")
+  file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/ctest")
+elseif(LINUX AND EXISTS "${EXTRACTED_DIR}/bin/cmake")
+  file(RENAME "${EXTRACTED_DIR}/bin/cmake" "${EXTRACTED_DIR}/bin/cmake-linux")
+  set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake-linux")
+
+  file(REMOVE "${EXTRACTED_DIR}/bin/ccmake")
+  file(REMOVE "${EXTRACTED_DIR}/bin/cmake-gui")
+  file(REMOVE "${EXTRACTED_DIR}/bin/cpack")
+  file(REMOVE "${EXTRACTED_DIR}/bin/ctest")
 endif()
 
 set(PD4WEB_CMAKE_FOLDER "${EXTRACTED_DIR}")
-
