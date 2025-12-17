@@ -1,7 +1,7 @@
 local floatatom = pd.Class:new():register("floatatom")
 
 -- ─────────────────────────────────────
-function floatatom:initialize(name, args)
+function floatatom:initialize(_, args)
 	self.inlets = 1
 	self.outlets = 1
 	self.args = args
@@ -39,7 +39,7 @@ function floatatom:initialize(name, args)
 end
 
 -- ─────────────────────────────────────
-function floatatom:keyreceiver(sel, atoms)
+function floatatom:keyreceiver(_, atoms)
     	if not self.select then
 		return
 	end
@@ -60,7 +60,7 @@ function floatatom:keyreceiver(sel, atoms)
 	if key == "Enter" then
 		self.select = false
 		local val = tonumber(self.number) or 0
-		if self.send ~= "empty" then
+		if self.send ~= "-" then
 			pd.send(self.send, "float", { val })
 		end
 		self:outlet(1, "float", { val })
@@ -78,7 +78,7 @@ function floatatom:keyreceiver(sel, atoms)
 end
 
 -- ─────────────────────────────────────
-function floatatom:mouse_down(x, y)
+function floatatom:mouse_down(_, _)
 	self.select = not self.select
     if not self.select then
         self:in_1_bang()

@@ -166,6 +166,7 @@ struct Pd4WebUserData {
 
     // Canvas selection
     std::string canvasSel;
+    std::string canvasId;
 
     // Audio processing synchronization
     std::mutex mtx;

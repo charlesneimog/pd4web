@@ -1691,8 +1691,6 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         // Apply
         emscripten_set_canvas_element_size(sel, backingW, backingH);
-
-        // Optionally set CSS size (for crisp scaling)
         emscripten_set_element_css_size(sel, cssW, cssH);
 
         EM_ASM(
@@ -1701,6 +1699,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
                 if (canvas) {
                     canvas.style.width = $1 + 'px';
                     canvas.style.height = $2 + 'px';
+                    canvas.addEventListener('mousedown', () => canvas.focus());
+                    // if (!canvas.hasAttribute('tabindex')) {
+                    //     canvas.setAttribute('tabindex', '0');
+                    // }
                 }
             },
             sel, cssW, cssH);
@@ -1728,14 +1730,11 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
-        // emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
-        //                                 KeyListener);
-        // emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
-        //                                 KeyListener);
+        emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
+                                        KeyListener);
+        emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
+                                        KeyListener);
 
-        // #define emscripten_set_orientationchange_callback(userData, useCapture, callback)
-        // emscripten_set_orientationchange_callback_on_thread(              (userData),
-        // (useCapture), (callback), EM_CALLBACK_THREAD_CONTEXT_CALLING_THREAD)
         emscripten_set_orientationchange_callback(m_UserData.get(), EM_FALSE, OrientationListener);
 
         // TODO: When canvas is on focus
@@ -1744,6 +1743,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
         m_UserData->canvasSel = PatchCanvaSel;
+        m_UserData->canvasId = soundToggleId;
         emscripten_async_call(setAsyncMainLoop, m_UserData.get(), 0);
     } else {
         m_UserData->libpd = m_PdInstance;
