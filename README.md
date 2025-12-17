@@ -2,16 +2,15 @@
   <h1 align="center">pd4web</h1>
   <p align="center">
     <a href="https://charlesneimog.github.io/pd4web">
-      <img src="https://github.com/charlesneimog/pd4web/raw/main/Documentation/assets/icon.svg" width="10%" alt="Logo">
+      <img src="https://github.com/charlesneimog/pd4web/blob/main/Sources/Pd4Web/icon-192.png" width="7%" alt="Logo">
     </a>
   </p>
   <h4 align="center">pd4web: Running PureData Patches with Externals on Web</h4>
 </p>
 
 <p align="center">
-  <a href="https://github.com/charlesneimog/pd4web/releases/latest"><img src="https://img.shields.io/github/release/charlesneimog/pd4web?include_prereleases" alt="Release"></a>
+  <a href="https://doi.org/10.5281/zenodo.17429028"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.17429028.svg" alt="DOI"></a>
   <a href="https://pypistats.org/packages/pd4web"><img src="https://img.shields.io/pypi/pyversions/pd4web" alt="Version"></a>
-  <a href="https://zenodo.org/badge/latestdoi/685549750"><img src="https://zenodo.org/badge/685549750.svg" alt="DOI"></a>
 </p>
 
 <p align="center">
@@ -20,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/Release.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/Release.yml/badge.svg" alt="Tests"></a>
+  <a href="https://github.com/charlesneimog/pd4web/actions/workflows/Release.yml"><img src="https://github.com/charlesneimog/pd4web/actions/workflows/Compiler.yml/badge.svg" alt="Tests"></a>
 </p>
 
 `pd4web` lets you run PureData patches directly in web browsers. It stands out from alternatives like [hvcc](https://github.com/Wasted-Audio/hvcc) and [WebPd](https://github.com/sebpiq/WebPd) by compiling the source code of [libpd](https://github.com/libpd/libpd), thanks to the work of [claudeha](https://github.com/claudeha). With `pd4web`, you can compile any PureData Vanilla patch, along with a list of more than 800 externals and abstractions.
