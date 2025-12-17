@@ -959,6 +959,17 @@ bool Pd4Web::compilePatch() {
         p->OutputFolder = p->PatchFolder;
     }
 
+    if (m_CleanBuild) {
+        fs::path WebPatchPath = p->OutputFolder / "WebPatch";
+        fs::path Pd4WebPath = p->OutputFolder / "Pd4Web";
+        if (fs::exists(WebPatchPath)) {
+            fs::remove_all(WebPatchPath);
+        }
+        if (fs::exists(Pd4WebPath)) {
+            fs::remove_all(Pd4WebPath);
+        }
+    }
+
     // TODO: check if there is some external compilation file
 
     bool ok = openPatch(p);
