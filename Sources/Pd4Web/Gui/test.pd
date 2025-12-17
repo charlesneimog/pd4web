@@ -118,7 +118,7 @@
 #X connect 3 0 0 0;
 #X connect 6 0 1 0;
 #X restore 12 162 pd vu;
-#N canvas 0 0 925 1132 floatatom 1;
+#N canvas 0 0 925 1132 floatatom 0;
 #X floatatom 15 184 5 0 0 0 - - - 0;
 #X obj 52 184 floatatom;
 #X msg 169 56 reload;

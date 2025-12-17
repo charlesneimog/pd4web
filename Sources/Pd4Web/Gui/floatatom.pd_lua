@@ -15,6 +15,7 @@ function floatatom:initialize(name, args)
 
 	self.select = false
 	self.needtoreset = false
+	self.needclear = false
 	self.number = "0"
 
 	if #args > 0 then
@@ -39,57 +40,40 @@ end
 
 -- ─────────────────────────────────────
 function floatatom:keyreceiver(sel, atoms)
-	if not self.select then
+    	if not self.select then
 		return
 	end
 
 	local key_num = atoms[1]
-
-	-- ignore key-up events
-	if key_num == 0 then
-		return
-	end
-
 	local key
-
-	-- detect enter and special keys
 	if key_num == 13 or key_num == 10 then
 		key = "Enter"
-	elseif key_num == 8 then
-		key = "Backspace"
-	elseif key_num == 46 then
-		key = "Delete"
-	elseif key_num == 46 or key_num == 44 then
-		key = "." -- dot
 	else
-		-- convert only if printable ascii
-		if key_num < 32 or key_num > 126 then
-			return
-		end
 		key = string.char(key_num)
 	end
 
-	if self.needtoreset then
+	if self.needclear then
 		self.number = ""
-		self.needtoreset = false
+		self.needclear = false
 	end
 
 	if key == "Enter" then
 		self.select = false
 		local val = tonumber(self.number) or 0
-		if self.send ~= "-" then
+		if self.send ~= "empty" then
 			pd.send(self.send, "float", { val })
 		end
 		self:outlet(1, "float", { val })
 	elseif key == "Backspace" or key == "Delete" then
 		self.number = self.number:sub(1, -2)
 	elseif key == "." then
-		if not self.number:find("%.") then
-			self.number = self.number .. "."
-		end
-	elseif tonumber(key) then
 		self.number = self.number .. key
+	elseif tonumber(key) then
+		self.number = self.number .. tostring(key)
+	else
+		return
 	end
+
 	self:repaint()
 end
 
@@ -99,6 +83,7 @@ function floatatom:mouse_down(x, y)
     if not self.select then
         self:in_1_bang()
     end
+	self.needclear = true
 	self.needtoreset = true
 	self:repaint()
 end
@@ -152,14 +137,18 @@ function floatatom:paint(g)
 
 	if self.select then
 		g:set_color(255, 0, 0)
-		pd.send("_pd4web_show_number_keyboard", "float", { 1 })
 	else
 		g:set_color(1)
-		pd.send("_pd4web_show_number_keyboard", "float", { 0 })
 	end
 
 	local number_str = tostring(self.number)
-	number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+	if number_str:find("%.") then
+		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+	end
+
+	if number_str == "" then
+		number_str = "0"
+	end
 	local int_part, frac_part = number_str:match("^(%-?%d+)%.(%d+)$")
 	local is_float = frac_part ~= nil
 	local int_len = int_part and #int_part or #number_str
