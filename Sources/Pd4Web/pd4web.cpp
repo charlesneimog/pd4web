@@ -6,9 +6,18 @@
 // Functions written in JavaScript Language, this are used for the WebAudio API.
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
-EM_JS(void, JS_CreateNumberInput, (), {
+EM_JS(void, JS_CreateNumberInput, (const char *canvasId), {
     if (document.getElementById("_pd4web_number_input")) return;
+
+    const canvasIdStr = UTF8ToString(canvasId);
+    const canvas = document.getElementById(canvasIdStr);
+    if (!canvas) {
+        console.error("Canvas is undefined");
+        return;
+    }
+
     const el = document.createElement("input");
+
     el.id = "_pd4web_number_input";
     el.type = "text";
     el.inputMode = "decimal";
@@ -22,10 +31,10 @@ EM_JS(void, JS_CreateNumberInput, (), {
     el.style.position = "fixed";
     el.style.top = "0";
     el.style.left = "0";
-    el.style.width = "50px";        // small but focusable
-    el.style.height = "40px";       // enough to trigger key events
-    el.style.opacity = "0.01";      // effectively invisible
-    el.style.pointerEvents = "auto"; // must be focusable
+    el.style.width = "1px";        
+    el.style.height = "1px";      
+    el.style.opacity = "0.0001";      
+    el.style.pointerEvents = "auto"; 
 
     el.style.zIndex = "0";
     document.body.appendChild(el);
@@ -38,8 +47,7 @@ EM_JS(void, JS_CreateNumberInput, (), {
             which: keyCode,
             bubbles: true,
         });
-        el.dispatchEvent(ev);
-        el.focus();
+        canvas.dispatchEvent(ev);
     }
 
     // digits (value change)
@@ -54,13 +62,14 @@ EM_JS(void, JS_CreateNumberInput, (), {
             digit.charCodeAt(0)
         );
     });
+
     el.addEventListener("blur", (e) => {
         dispatchFakeKey("Enter", "Enter", 13); 
     });
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_CreateTextInput, (), {
+EM_JS(void, JS_CreateTextInput, (const char *canvasId), {
     if (document.getElementById("_pd4web_text_input")) return;
     const el = document.createElement("input");
     el.id = "_pd4web_text_input";
@@ -72,13 +81,20 @@ EM_JS(void, JS_CreateTextInput, (), {
     el.setAttribute("enterkeyhint", "done");
     el.tabIndex = -1;
 
+    const canvasIdStr = UTF8ToString(canvasId);
+    const canvas = document.getElementById(canvasIdStr);
+    if (!canvas) {
+        console.error("Canvas is undefined");
+        return;
+    }
+
     // Keep it effectively invisible while still focusable for mobile keyboards
     el.style.position = "fixed";
     el.style.top = "0";
     el.style.left = "0";
-    el.style.width = "50px";        // small but focusable
-    el.style.height = "40px";       // enough to trigger key events
-    el.style.opacity = "0.01";      // effectively invisible
+    el.style.width = "1px";        // small but focusable
+    el.style.height = "1px";       // enough to trigger key events
+    el.style.opacity = "0.0001";      // effectively invisible
     el.style.pointerEvents = "auto"; // must be focusable
 
     el.style.zIndex = "0";
@@ -92,7 +108,7 @@ EM_JS(void, JS_CreateTextInput, (), {
             which: keyCode,
             bubbles: true,
         });
-        el.dispatchEvent(ev);
+        canvas.dispatchEvent(ev);
         el.focus();
     }
 
@@ -108,6 +124,7 @@ EM_JS(void, JS_CreateTextInput, (), {
             digit.charCodeAt(0)
         );
     });
+
     el.addEventListener("blur", (e) => {
         dispatchFakeKey("Enter", "Enter", 13); 
     });
@@ -117,7 +134,6 @@ EM_JS(void, JS_CreateTextInput, (), {
 EM_JS(void, JS_Pd4WebFocusNumberInput, (), {
     const el = document.getElementById("_pd4web_number_input");
     if (!el) return;
-
     el.focus({ preventScroll: true });
 });
 
@@ -210,8 +226,8 @@ void Pd4Web::SendBang(std::string s) {
  * This function is called from the main thread and queues a float message
  * to be processed on the Audio Worklet thread before the next audio block.
  *
- * @param s The receiver symbol in Pure Data.
- * @param f The float value to send.
+ * @param std::string The receiver symbol in Pure Data.
+ * @param float The float value to send.
  */
 void Pd4Web::SendFloat(std::string s, float f) {
     auto sender = Pd4WebSender::CreateFloat(s, f);
@@ -227,8 +243,8 @@ void Pd4Web::SendFloat(std::string s, float f) {
  * to be processed on the Audio Worklet thread before the next audio block.
  * String data is copied into the sender structure for thread safety.
  *
- * @param s The receiver symbol in Pure Data.
- * @param thing The symbol string to send.
+ * @param std::string The receiver symbol in Pure Data.
+ * @param std::string The symbol string to send.
  */
 void Pd4Web::SendSymbol(std::string s, std::string thing) {
     auto sender = Pd4WebSender::CreateSymbol(s, thing);
@@ -247,11 +263,10 @@ void Pd4Web::SendSymbol(std::string s, std::string thing) {
  * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
  * so all conversion must happen here on the main thread.
  *
- * @param s The receiver symbol in Pure Data.
- * @param a JavaScript array containing numbers and/or strings.
+ * @param std::string The receiver symbol in Pure Data.
+ * @param emscripten::val JavaScript array containing numbers and/or strings.
  */
 void Pd4Web::SendList(std::string s, emscripten::val a) {
-    // Convert emscripten::val array to std::vector<Pd4WebAtom> on main thread
     if (!a.isArray()) {
         emscripten_log(EM_LOG_ERROR, "SendList: argument is not an array");
         return;
@@ -279,19 +294,19 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
 
 // ─────────────────────────────────────
 /**
- * Send a typed message to Pure Data (thread-safe).
+ * Send a typed message to Pure Data.
  *
- * This function is called from the main thread. It converts the JavaScript
- * array (emscripten::val) into a thread-safe vector of atoms on the main
- * thread, then queues the message with a selector for processing on the
- * Audio Worklet thread.
+ * This function is called from the main thread. It converts a JavaScript
+ * array (emscripten::val) into a vector of Pd4WebAtom objects,
+ * then queues the message (receiver + selector + atoms) for processing
+ * on the Audio Worklet thread.
  *
- * IMPORTANT: emscripten::val objects cannot be accessed from worker threads,
- * so all conversion must happen here on the main thread.
+ * IMPORTANT: emscripten::val objects must not be accessed from worker
+ * threads, so all conversions are performed on the main thread.
  *
- * @param r The receiver symbol in Pure Data.
- * @param s The message selector (e.g., "set", "connect", etc.).
- * @param a JavaScript array containing numbers and/or strings.
+ * @param r std::string Receiver symbol in Pure Data
+ * @param s std::string Message selector (e.g. "set", "connect")
+ * @param a emscripten::val JavaScript array containing numbers and/or strings
  */
 void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     // Convert emscripten::val array to std::vector<Pd4WebAtom> on main thread
@@ -321,6 +336,19 @@ void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
 }
 
 // ─────────────────────────────────────
+/**
+ * Send a file to pd4web (thread-safe).
+ *
+ * This function is called from the main thread. It converts a JavaScript
+ * ArrayBuffer into a file stored in the pd4web virtual filesystem (FS).
+ *
+ * The pd4web filesystem is completely isolated from the host filesystem.
+ * Any file that must be accessed by Pure Data inside pd4web must be
+ * explicitly transferred using this function.
+ *
+ * @param emscripten::val JavaScript ArrayBuffer containing the file data
+ * @param std::string Destination filename inside the pd4web filesystem
+ */
 void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
@@ -346,8 +374,8 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
  * This function binds a JavaScript callback (`func`) to a specific receiver symbol (`r`).
  * When a bang is sent to `r` in Pure Data, the JavaScript function is called.
  *
- * @param r     The receiver symbol in Pure Data to listen for bangs.
- * @param func  The JavaScript callback function to invoke on bang.
+ * @param std::string     The receiver symbol in Pure Data to listen for bangs.
+ * @param emscripten::val The JavaScript callback function to invoke on bang.
  */
 void Pd4Web::OnBangReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_PdInstance);
@@ -376,8 +404,8 @@ void Pd4Web::OnBangReceived(std::string r, emscripten::val func) {
  * Binds a JavaScript callback (`func`) to a receiver symbol (`r`), which will be
  * triggered when a float message is sent to `r` from Pure Data.
  *
- * @param r     The receiver symbol in Pure Data to listen for floats.
- * @param func  The JavaScript callback function to invoke with the float value.
+ * @param std::string     The receiver symbol in Pure Data to listen for floats.
+ * @param emscripten::val The JavaScript callback function to invoke with the float value.
  */
 void Pd4Web::OnFloatReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_PdInstance);
@@ -406,8 +434,8 @@ void Pd4Web::OnFloatReceived(std::string r, emscripten::val func) {
  * Binds a JavaScript callback (`func`) to a receiver symbol (`r`), which will be
  * triggered when a symbol message is sent to `r` from Pure Data.
  *
- * @param r     The receiver symbol in Pure Data to listen for symbols.
- * @param func  The JavaScript callback function to invoke with the symbol string.
+ * @param std::string     The receiver symbol in Pure Data to listen for symbols.
+ * @param emscripten::val The JavaScript callback function to invoke with the symbol string.
  */
 void Pd4Web::OnSymbolReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_PdInstance);
@@ -436,8 +464,8 @@ void Pd4Web::OnSymbolReceived(std::string r, emscripten::val func) {
  * Binds a JavaScript callback (`func`) to a receiver symbol (`r`), which will be
  * triggered when a list message is sent to `r` from Pure Data.
  *
- * @param r     The receiver symbol in Pure Data to listen for lists.
- * @param func  The JavaScript callback function to invoke with the list elements.
+ * @param std::string     The receiver symbol in Pure Data to listen for lists.
+ * @param emscripten::val JavaScript callback function to invoke when list is received.
  */
 void Pd4Web::OnListReceived(std::string r, emscripten::val func) {
     libpd_set_instance(m_PdInstance);
@@ -463,7 +491,7 @@ void Pd4Web::OnListReceived(std::string r, emscripten::val func) {
 /**
  * Called when a print is received from Pure Data.
  *
- * @param msg The print message.
+ * @param const char * The print message.
  */
 void ReceivedPrintMsg(const char *msg) {
     if (msg[0] == '\n') {
@@ -482,7 +510,7 @@ void ReceivedPrintMsg(const char *msg) {
  *
  * If no callback is found or the callback is not a function, an error message is logged.
  *
- * @param r  The receiver symbol of the bang message.
+ * @param const char* The receiver symbol of the bang message.
  */
 void ReceivedBang(const char *r) {
     t_pdinstance *instance = libpd_this_instance();
@@ -528,7 +556,7 @@ void ReceivedFloat(const char *r, float f) {
             }
         }
     }
-    fprintf(stderr, "Callback not found or not a function\n");
+    emscripten_log(EM_LOG_ERROR, "Callback not found or not a function");
 }
 
 // ─────────────────────────────────────
@@ -558,7 +586,7 @@ void ReceivedSymbol(const char *r, const char *s) {
             }
         }
     }
-    fprintf(stderr, "Callback not found or not a function\n");
+    emscripten_log(EM_LOG_ERROR, "Callback not found or not a function");
 }
 
 // ─────────────────────────────────────
@@ -592,7 +620,7 @@ void ReceivedList(const char *r, int argc, t_atom *argv) {
                     } else if (libpd_is_symbol(&argv[i])) {
                         jsArray.call<void>("push", emscripten::val(argv[i].a_w.w_symbol->s_name));
                     } else {
-                        fprintf(stderr, "only float and symbol supported\n");
+                        emscripten_log(EM_LOG_ERROR, "Only float and string are supported");
                     }
                 }
                 func(emscripten::val(r), jsArray);
@@ -600,7 +628,7 @@ void ReceivedList(const char *r, int argc, t_atom *argv) {
             }
         }
     }
-    fprintf(stderr, "Callback not found or not a function\n");
+    emscripten_log(EM_LOG_ERROR, "Callback not found or not a function");
 }
 
 // ─────────────────────────────────────
@@ -764,14 +792,12 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
                 emscripten_log(EM_LOG_ERROR, "Unknown sender type: %d", sender->type);
                 break;
             }
-
             delete sender;
         }
-
-        // Clear the queue
         data.clear();
     }
 
+    // Process audio
     int ChCount = Out[0].numberOfChannels;
     float LibPdOuts[128 * ChCount];
     libpd_process_float(2, In[0].data, LibPdOuts);
@@ -782,6 +808,7 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
             OutI++;
         }
     }
+
     return EM_TRUE;
 }
 
@@ -1370,25 +1397,6 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
     ud->pd4web->getToSendData().push_back(sender);
 
-    bool doit = (mouseData.event_type == MouseEventData::MOUSE_DOWN ||
-                 (mouseData.event_type == MouseEventData::MOUSE_MOVE && ud->mousedown));
-
-    // open keyboard on smartphones
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, mouseData.x, mouseData.y, &x1, &y1, &x2, &y2, 0)) {
-            t_symbol *objname = (obj->g_pd->c_name);
-            if (eventType == EMSCRIPTEN_EVENT_MOUSEUP) {
-                if (strcmp(objname->s_name, "floatatom:gfx") == 0) {
-                    JS_Pd4WebFocusNumberInput();
-                }
-                if (strcmp(objname->s_name, "symbolatom:gfx") == 0) {
-                    JS_Pd4WebFocusTextInput();
-                }
-            }
-        }
-    }
-
     return EM_TRUE;
 }
 
@@ -1645,8 +1653,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
     // resize canvas
     if (RenderGui() && PatchCanvaId != "") {
-        JS_CreateNumberInput();
-        JS_CreateTextInput();
+        JS_CreateNumberInput(PatchCanvaId.c_str());
+        JS_CreateTextInput(PatchCanvaId.c_str());
 
         t_canvas *canvas = pd_getcanvaslist();
         int canvasWidth = canvas->gl_pixwidth;
@@ -1720,10 +1728,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
-        emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
-                                        KeyListener);
-        emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
-                                        KeyListener);
+        // emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
+        //                                 KeyListener);
+        // emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
+        //                                 KeyListener);
 
         // #define emscripten_set_orientationchange_callback(userData, useCapture, callback)
         // emscripten_set_orientationchange_callback_on_thread(              (userData),
