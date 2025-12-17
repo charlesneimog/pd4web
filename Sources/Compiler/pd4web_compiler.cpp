@@ -285,9 +285,5 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     m_NumberInput.insert(m_NumberInput.end(), NumberInput.begin(), NumberInput.end());
     m_QwertyInput.insert(m_QwertyInput.end(), QwertyInput.begin(), QwertyInput.end());
 
-    for (auto n : m_NumberInput) {
-        std::cout << "Object " + n << std::endl;
-    }
-
     validateArgs();
 }

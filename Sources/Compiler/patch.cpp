@@ -929,7 +929,6 @@ bool Pd4Web::compilePatch() {
     }
 
     m_Error = false;
-
     validateArgs();
 
     auto p = std::make_shared<Patch>();
@@ -971,7 +970,6 @@ bool Pd4Web::compilePatch() {
     }
 
     // TODO: check if there is some external compilation file
-
     bool ok = openPatch(p);
     if (!ok) {
         return false;
