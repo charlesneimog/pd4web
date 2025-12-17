@@ -58,6 +58,18 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
         x->memory = mem;
     }
 
+    else if (strcmp(s->s_name, "evnk") == 0) {
+        for (int i = 0; i<ac;i++){
+            x->pd4web->addVirtualNumberKeyboardObject(atom_getsymbol(av + i)->s_name);
+        }
+    }
+
+    else if (strcmp(s->s_name, "evtk") == 0) {
+        for (int i = 0; i<ac;i++){
+            x->pd4web->addVirtualTextKeyboardObject(atom_getsymbol(av + i)->s_name);
+        }
+    }
+
     else if (strcmp(s->s_name, "patchzoom") == 0) {
         float zoom = atom_getfloat(av);
         x->pd4web->setPatchZoom(zoom);
@@ -249,6 +261,8 @@ extern "C" void setup_pd4web0x2ecompiler(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("gui"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("server"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("es6module"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("evnk"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("evtk"), A_GIMME, 0);
 
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }

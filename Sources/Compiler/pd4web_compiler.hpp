@@ -220,6 +220,19 @@ class Pd4Web {
         m_PrintCallback = cb;
     }
 
+            // ("evnk",
+            // "Register [E]xtra PdLua object that opens a [V]irtual [N]umber [K]eyboard on touch devices on click. "
+            // "Accepts a comma-separated list.",
+            // cxxopts::value<std::vector<std::string>>(NumberInput))
+
+    void addVirtualNumberKeyboardObject(std::string objname){
+        m_NumberInput.push_back(objname);
+    }
+
+    void addVirtualTextKeyboardObject(std::string objname){
+        m_QwertyInput.push_back(objname);
+    }
+
     void serverPatch(bool toggle, bool detached, fs::path folderToServer);
 
   private:

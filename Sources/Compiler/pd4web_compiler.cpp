@@ -193,6 +193,9 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     bool disableGui = false;
     bool failFast = false;
 
+    std::vector<std::string> NumberInput = {};
+    std::vector<std::string> QwertyInput = {};
+
     // clang-format off
     options.add_options()
         // help
@@ -214,20 +217,34 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<int>(m_Memory)->default_value("32"))
 
         ("z,patch-zoom",
-            "Set the patch zoom level (default: 1.0).",
+            "Set the patch zoom level.",
             cxxopts::value<float>(m_PatchZoom)->default_value("1"))
 
         ("o,output-folder", 
-            "Output folder.", 
+            "Output folder. (default: Same as the patch being compiled)", 
             cxxopts::value<std::string>(m_BuildFolder))
+
+        ("c,clear-before-compile", 
+            "Clear the folder WebPatch and Pd4Web before compile",
+            cxxopts::value<bool>(m_CleanBuild)->default_value("false"))
 
         ("t,template-id", 
             "Set template id check https://charlesneimog.github.io/pd4web/patch/templates/.",
-            cxxopts::value<unsigned>(m_TemplateId))
+            cxxopts::value<unsigned>(m_TemplateId)->default_value("0"))
 
         ("s,server",
             "After compilation, start a server for the given <Patch>. If no <Patch> is provided, serve the current folder.",
             cxxopts::value<bool>(m_Server)->default_value("false"))
+
+        ("evnk",
+            "Register [E]xtra PdLua object that opens a [V]irtual [N]umber [K]eyboard on touch devices on click. "
+            "Accepts a comma-separated list.",
+            cxxopts::value<std::vector<std::string>>(NumberInput))
+
+        ("evtk",
+            "Register [E]xtra PdLua object that open a [V]irtual [T]ext [K]eyboard on touch devices on click. "
+            "Accepts a comma-separated list.",
+            cxxopts::value<std::vector<std::string>>(QwertyInput))
 
         // TEST:
         ("export-es6-module",
@@ -235,16 +252,16 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<bool>(m_ExportES6Module)->default_value("false"))
 
         ("nogui", "Disable GUI interface.", 
-            cxxopts::value<bool>(disableGui))
+            cxxopts::value<bool>(disableGui)->default_value("false"))
 
         ("debug", "Activate debug compilation (faster compilation, slower and more error info execution).", 
-            cxxopts::value<bool>(m_Debug))
+            cxxopts::value<bool>(m_Debug)->default_value("false"))
 
         ("devdebug", "Activate development debug compilation.", 
             cxxopts::value<bool>(m_DevDebug)->default_value("false"))
 
         ("failfast", "Fail on first error message.",
-            cxxopts::value<bool>(failFast));
+            cxxopts::value<bool>(failFast)->default_value("true"));
 
     // clang-format on
     options.parse_positional({"patch_file"});
@@ -263,6 +280,13 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         fs::path current = fs::current_path();
         serverPatch(true, false, current);
         exit(0);
+    }
+
+    m_NumberInput.insert(m_NumberInput.end(), NumberInput.begin(), NumberInput.end());
+    m_QwertyInput.insert(m_QwertyInput.end(), QwertyInput.begin(), QwertyInput.end());
+
+    for (auto n : m_NumberInput) {
+        std::cout << "Object " + n << std::endl;
     }
 
     validateArgs();
