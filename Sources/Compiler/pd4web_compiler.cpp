@@ -121,7 +121,7 @@ bool Pd4Web::init() {
     }
 
     // clone pd.cmake
-    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v0.2.6");
+    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v0.2.9");
     if (!ok) {
         print("Failed to clone pd.cmake", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
@@ -230,6 +230,10 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<bool>(m_Server)->default_value("false"))
 
         // TEST:
+        ("export-es6-module",
+            "Export Pd4WebModule as an ES6 module, enabling native import/export, better TypeScript support.",
+            cxxopts::value<bool>(m_ExportES6Module)->default_value("false"))
+
         ("nogui", "Disable GUI interface.", 
             cxxopts::value<bool>(disableGui))
 

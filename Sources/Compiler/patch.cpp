@@ -959,6 +959,8 @@ bool Pd4Web::compilePatch() {
         p->OutputFolder = p->PatchFolder;
     }
 
+    // TODO: check if there is some external compilation file
+
     bool ok = openPatch(p);
     if (!ok) {
         return false;
@@ -1006,9 +1008,12 @@ bool Pd4Web::compilePatch() {
 
     print("\n");
     print("Start building Patch", Pd4WebLogLevel::PD4WEB_LOG1);
+    createVersionFile(p);
     buildPatch(p);
     createAppManifest(p);
     updateTemplate(p);
+
+    // create versioning file
 
     if (!m_Error) {
         print("Finished", Pd4WebLogLevel::PD4WEB_LOG1);

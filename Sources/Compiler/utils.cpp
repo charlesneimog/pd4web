@@ -123,7 +123,7 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
                 sv.remove_suffix(1);
             }
             if (!sv.empty()) {
-                print(std::string(sv), Pd4WebLogLevel::PD4WEB_LOG2);
+                print(std::string(sv), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
             }
         }
     };
@@ -235,11 +235,11 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
                 std::string s(sv);
                 const size_t MAX = 1024; // safe size for Pd
                 while (s.size() > MAX) {
-                    this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_LOG2);
+                    this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
                     s.erase(0, MAX);
                 }
                 if (!s.empty()) {
-                    this->print(s, Pd4WebLogLevel::PD4WEB_LOG2);
+                    this->print(s, Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
                 }
             }
         }
@@ -367,6 +367,38 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
         break;
     }
     }
+}
+
+// ──────────────────────────────────────────
+void Pd4Web::createVersionFile(std::shared_ptr<Patch> &p) {
+    std::vector<std::string> internalRepos = {"emdsk", "pure-data", "pdlua", "pd.cmake", "nanovg"};
+    YamlNode root = YamlNode::mapping(); // <-- FIX
+
+    for (const auto &repo : internalRepos) {
+        std::string path = m_Pd4WebRoot + repo;
+        std::string commit = getCurrentCommit(path);
+        if (!commit.empty()) {
+            root[repo] = commit;
+        }
+    }
+
+    for (const auto &lib : p->DeclaredLibs) {
+        std::string path = m_Pd4WebRoot + lib;
+        std::string commit = getCurrentCommit(path);
+        if (!commit.empty()) {
+            root[lib] = commit;
+        }
+    }
+
+    // Choose output path
+    std::string outFile = p->OutputFolder / "Pd4Web" / "versions.yml";
+    std::ofstream fout(outFile);
+    if (!fout.is_open()) {
+        print("Failed to write versions.yml", Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
+    }
+    fout << root;
+    fout.close();
 }
 
 // ──────────────────────────────────────────

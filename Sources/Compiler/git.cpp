@@ -229,6 +229,32 @@ bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
 }
 
 // ─────────────────────────────────────
+std::string Pd4Web::getCurrentCommit(const std::string &repoPath) {
+    git_repository *repo = nullptr;
+    git_reference *head = nullptr;
+    git_object *obj = nullptr;
+
+    if (git_repository_open(&repo, repoPath.c_str()) != 0) {
+        return {};
+    }
+
+    // Resolve HEAD (works for detached HEAD and branches)
+    if (git_revparse_single(&obj, repo, "HEAD") != 0) {
+        git_repository_free(repo);
+        return {};
+    }
+
+    const git_oid *oid = git_object_id(obj);
+    char sha[GIT_OID_HEXSZ + 1];
+    git_oid_tostr(sha, sizeof(sha), oid);
+
+    git_object_free(obj);
+    git_repository_free(repo);
+
+    return std::string(sha);
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::gitCheckout(std::string git, std::string gitFolder, std::string tag) {
     PD4WEB_LOGGER();
 

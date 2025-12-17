@@ -419,6 +419,7 @@ void Pd4Web::copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir) {
     // pd.cmake
     fs::path pdcmake = p->Pd4WebRoot / "pd.cmake" / "pd.cmake";
     fs::copy(pdcmake, p->OutputFolder / "Pd4Web", fs::copy_options::skip_existing);
+    print("pd.cmake to " + p->OutputFolder.string() + "Pd4Web");
 
     // nanovg
     fs::path nanovg = p->Pd4WebRoot / "nanovg";
@@ -459,17 +460,18 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 1: Configure with emcmake
-    std::vector<std::string> configureArgs = {m_Cmake,
-                                              p->OutputFolder.string(),
-                                              "-B",
-                                              buildDir.string(),
-                                              "-G",
-                                              "Ninja",
-                                              "-DCMAKE_BUILD_TYPE=" + buildType,
-                                              "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
-                                              "-Wno-dev"};
+    std::vector<std::string> cfgArgs = {m_Cmake,
+                                        p->OutputFolder.string(),
+                                        "-B",
+                                        buildDir.string(),
+                                        "-G",
+                                        "Ninja",
+                                        "-DCMAKE_BUILD_TYPE=" + buildType,
+                                        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
+                                        "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
+                                        "-Wno-dev"};
 
-    int result = execProcess(m_Emcmake, configureArgs);
+    int result = execProcess(m_Emcmake, cfgArgs);
     if (result != 0) {
         print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
         return;

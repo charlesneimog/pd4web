@@ -19,6 +19,7 @@ class Pd4WebObj {
     unsigned memory;
     float zoom;
     unsigned patch_template;
+    t_outlet *out;
     Pd4Web *pd4web;
 };
 
@@ -44,9 +45,11 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
             logpost(x, 2, "[pd4web] set patch to %s", patchName);
             x->object_root = patchName;
         }
-    }
+    } else if (strcmp(s->s_name, "es6module") == 0) {
+        bool es6 = atom_getint(av) != 0;
+        x->pd4web->setExportES6Module(es6);
 
-    else if (strcmp(s->s_name, "memory") == 0) {
+    } else if (strcmp(s->s_name, "memory") == 0) {
         int mem = atom_getint(av);
         x->pd4web->setInitialMemory(mem);
         if (mem != (int)x->memory) {
@@ -141,13 +144,23 @@ static void pd4web_compile(Pd4WebObj *x) {
 // ─────────────────────────────────────
 static void pd4web_logcallback(t_pd *obj, void *data) {
     Pd4WebDetachedPost *d = (Pd4WebDetachedPost *)data;
-
-    std::cout << d->msg << std::endl;
+    static int line_count = 0;
+    Pd4WebObj *x = (Pd4WebObj *)obj;
+    static std::string current_line;
     if (d->loglevel == Pd4WebLogLevel::PD4WEB_ERROR) {
         logpost(obj, 1, "[pd4web] %s", d->msg.c_str());
     } else if (d->loglevel != Pd4WebLogLevel::PD4WEB_VERBOSE) {
         if (d->msg != "\n") {
-            logpost(obj, 2, "[pd4web] %s", d->msg.c_str());
+            if (d->msg == "[-" || d->msg == "[") {
+                startpost("%s", d->msg.c_str());
+            } else if (d->msg == "-") {
+                poststring(d->msg.c_str());
+            } else if (d->msg == "-]" || d->msg == "]") {
+                poststring(d->msg.c_str());
+                post("");
+            } else {
+                logpost(obj, 2, "[pd4web] %s", d->msg.c_str());
+            }
         } else {
             post("");
         }
@@ -171,6 +184,7 @@ static void *pd4web_new() {
     // std::cout << pd4webHome.string() << std::endl;
 
     // process
+    x->out = outlet_new(&x->obj, &s_anything);
     x->pd4web = new Pd4Web(pd4webHome.string());
     x->pd4web->setPd4WebFilesFolder(pd4web_obj_root);
     x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel loglevel, int level) {
@@ -234,6 +248,7 @@ extern "C" void setup_pd4web0x2ecompiler(void) {
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("clean"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("gui"), A_GIMME, 0);
     class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("server"), A_GIMME, 0);
+    class_addmethod(pd4web_class, (t_method)pd4web_set, gensym("es6module"), A_GIMME, 0);
 
     class_addbang(pd4web_class, (t_method)pd4web_compile);
 }

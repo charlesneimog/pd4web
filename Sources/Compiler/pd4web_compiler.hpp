@@ -73,7 +73,8 @@ enum class Pd4WebLogLevel {
     PD4WEB_ERROR,
     PD4WEB_LOG1,
     PD4WEB_LOG2,
-    PD4WEB_VERBOSE
+    PD4WEB_VERBOSE,
+    PD4WEB_COMMAND_STDOUT,
 };
 
 // ──────────────────────────────────────────
@@ -211,6 +212,10 @@ class Pd4Web {
         m_RenderGui = false;
     };
 
+    void setExportES6Module(bool es6) {
+        m_ExportES6Module = es6;
+    }
+
     void setPrintCallback(std::function<void(const std::string &, Pd4WebLogLevel, int)> cb) {
         m_PrintCallback = cb;
     }
@@ -233,6 +238,7 @@ class Pd4Web {
     bool m_Verbose;
     std::string m_PdVersion;
     std::string m_EmsdkVersion;
+    bool m_ExportES6Module = false;
     bool m_Debug = false;
     bool m_DevDebug = false;
     bool m_FailFast = false;
@@ -280,6 +286,7 @@ class Pd4Web {
     bool gitClone(std::string git, std::string path, std::string tag);
     bool gitPull(std::string git, std::string path);
     bool gitCheckout(std::string git, std::string path, std::string tag);
+    std::string getCurrentCommit(const std::string &repoPath);
     bool isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath);
 
     // Cmd
@@ -376,4 +383,5 @@ class Pd4Web {
     std::string readFile(const std::string &path);
     void writeFile(const std::string &path, const std::string &content);
     void replaceAll(std::string &str, const std::string &from, const std::string &to);
+    void createVersionFile(std::shared_ptr<Patch> &p);
 };
