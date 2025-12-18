@@ -1,17 +1,25 @@
 #include "pd4web_compiler.hpp"
 
-Pd4Web::Pd4Web(std::string pathHome) {
+Pd4Web::Pd4Web(const std::string &pathHome) {
     m_Init = false;
     m_Error = false;
     m_Pd4WebRoot = pathHome;
     m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+
+    if (!fs::exists(m_Pd4WebRoot)) {
+        print("Pd4Web Root does not exists: " + m_Pd4WebRoot.string(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
+    }
+    if (!fs::exists(m_Pd4WebFiles)) {
+        print("Pd4Web Files does not exists: " + m_Pd4WebFiles.string(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return;
+    }
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::init() {
-    if (m_Pd4WebRoot.back() != '/') {
-        m_Pd4WebRoot += "/";
-    }
     print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
 
     // libgit2
@@ -139,7 +147,7 @@ bool Pd4Web::init() {
     print("Initializing paths", Pd4WebLogLevel::PD4WEB_LOG2);
     ok = initPaths();
     if (!ok) {
-        std::cout << "Failed to init paths" << std::endl;
+        print("Failed to initialize paths", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
@@ -165,11 +173,7 @@ bool Pd4Web::init() {
 // ─────────────────────────────────────
 void Pd4Web::validateArgs() {
     if (!fs::exists(m_PatchFile)) {
-        if (m_PatchFile == "") {
-            print("Please provide a patch file", Pd4WebLogLevel::PD4WEB_ERROR);
-        } else {
-            print("Patch file " + m_PatchFile + " not found", Pd4WebLogLevel::PD4WEB_ERROR);
-        }
+        print("Patch file " + m_PatchFile.string() + " not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
@@ -204,7 +208,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         // patch
         ("patch_file", 
             "Patch file to be compiled.", 
-            cxxopts::value<std::string>(m_PatchFile))
+            cxxopts::value<fs::path>(m_PatchFile))
 
         // Configuration of Compiler
         ("pd4web-folder", 
@@ -222,7 +226,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
         ("o,output-folder", 
             "Output folder. (default: Same as the patch being compiled)", 
-            cxxopts::value<std::string>(m_BuildFolder))
+            cxxopts::value<fs::path>(m_BuildFolder))
 
         ("c,clear-before-compile", 
             "Clear the folder WebPatch and Pd4Web before compile",
@@ -272,7 +276,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
     if (result.count("help")) {
         options.set_width(120);
-        std::cout << options.help() << std::endl;
+        std::cout << options.help() << "\n";
         exit(0);
     }
 

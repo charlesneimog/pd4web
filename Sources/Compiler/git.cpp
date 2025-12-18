@@ -1,16 +1,17 @@
 #include "pd4web_compiler.hpp"
 
 // ─────────────────────────────────────
-bool Pd4Web::gitRepoExists(const std::string &path) {
+bool Pd4Web::gitRepoExists(const fs::path &path) {
     PD4WEB_LOGGER();
-    struct stat info;
-    if (stat(path.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
+    struct stat info = {};
+    const std::string pathStr = path.string();
+    if (stat(pathStr.c_str(), &info) != 0 || !(info.st_mode & S_IFDIR)) {
         return false;
     }
 
     git_libgit2_init();
     git_repository *repo = nullptr;
-    int result = git_repository_open_ext(&repo, path.c_str(), 0, nullptr);
+    int result = git_repository_open_ext(&repo, pathStr.c_str(), 0, nullptr);
     if (repo) {
         git_repository_free(repo);
     }
@@ -43,7 +44,8 @@ int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) 
 bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath) {
     PD4WEB_LOGGER();
     git_repository *repo = nullptr;
-    if (git_repository_open(&repo, (const char *)repoRoot.c_str()) != 0) {
+    const std::string repoRootStr = repoRoot.string();
+    if (git_repository_open(&repo, repoRootStr.c_str()) != 0) {
         return false;
     }
     SubmoduleFileCheckContext ctx{repoRoot, filePath, false};
@@ -53,7 +55,7 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
+bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolder, const std::string &tag) {
     PD4WEB_LOGGER();
 
 #if defined(__linux__)
@@ -62,10 +64,12 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
         print("Failed to configure libgit2", Pd4WebLogLevel::PD4WEB_WARNING);
         return false;
     }
-    bool rc = git_libgit2_opts(GIT_OPT_SET_SSL_CERT_LOCATIONS, cert.c_str(), nullptr);
+    int err = git_libgit2_opts(GIT_OPT_SET_SSL_CERT_LOCATIONS, cert.c_str(), nullptr);
+    if (err < 0) {
+        print("Failed to configure libgit2", Pd4WebLogLevel::PD4WEB_ERROR);
+    }
 #endif
-
-    std::string path = m_Pd4WebRoot + gitFolder;
+    fs::path path = m_Pd4WebRoot / gitFolder;
     if (gitRepoExists(path)) {
         gitCheckout(url, gitFolder, tag);
         return true;
@@ -83,7 +87,8 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
     clone_opts.fetch_opts = fetch_opts;
     clone_opts.checkout_branch = nullptr; // No automatic checkout
 
-    int error = git_clone(&repo, url.c_str(), path.c_str(), &clone_opts);
+    const std::string pathStr = path.string();
+    int error = git_clone(&repo, url.c_str(), pathStr.c_str(), &clone_opts);
     if (error != 0) {
         const git_error *e = git_error_last();
         print("git_clone error " + std::to_string(error) + " " + e->message,
@@ -139,12 +144,13 @@ bool Pd4Web::gitClone(std::string url, std::string gitFolder, std::string tag) {
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
+bool Pd4Web::gitPull(std::string git, fs::path gitFolder) {
     PD4WEB_LOGGER();
-    std::string path = m_Pd4WebRoot + gitFolder;
+    fs::path path = m_Pd4WebRoot / gitFolder;
 
     git_repository *repo = nullptr;
-    if (git_repository_open(&repo, path.c_str()) != 0) {
+    const std::string pathStr = path.string();
+    if (git_repository_open(&repo, pathStr.c_str()) != 0) {
         return false;
     }
 
@@ -229,12 +235,13 @@ bool Pd4Web::gitPull(std::string git, std::string gitFolder) {
 }
 
 // ─────────────────────────────────────
-std::string Pd4Web::getCurrentCommit(const std::string &repoPath) {
+std::string Pd4Web::getCurrentCommit(const fs::path &repoPath) {
     git_repository *repo = nullptr;
     git_reference *head = nullptr;
     git_object *obj = nullptr;
 
-    if (git_repository_open(&repo, repoPath.c_str()) != 0) {
+    const std::string repoPathStr = repoPath.string();
+    if (git_repository_open(&repo, repoPathStr.c_str()) != 0) {
         return {};
     }
 
@@ -255,13 +262,14 @@ std::string Pd4Web::getCurrentCommit(const std::string &repoPath) {
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::gitCheckout(std::string git, std::string gitFolder, std::string tag) {
+bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string tag) {
     PD4WEB_LOGGER();
 
-    std::string path = m_Pd4WebRoot + gitFolder;
+    fs::path path = m_Pd4WebRoot / gitFolder;
     git_repository *repo = nullptr;
 
-    if (git_repository_open(&repo, path.c_str()) != 0) {
+    const std::string pathStr = path.string();
+    if (git_repository_open(&repo, pathStr.c_str()) != 0) {
         return false;
     }
 

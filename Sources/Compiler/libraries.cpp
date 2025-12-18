@@ -161,7 +161,6 @@ std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch
         }
     }
 
-    // std::string completPath = m_Pd4WebRoot + Lib;
     fs::path completPath = p->Pd4WebRoot / Lib;
     print(completPath.string(), Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
     if (!fs::exists(completPath)) {
@@ -486,14 +485,13 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
     std::vector<std::string> setupNames;
 
     // Use filesystem::path to join paths reliably
-    fs::path completPath = fs::path(m_Pd4WebRoot) / Lib;
+    fs::path completPath = p->Pd4WebRoot / Lib;
     if (!fs::exists(completPath) || !fs::is_directory(completPath)) {
         print("Library '" + Lib + "' not found", Pd4WebLogLevel::PD4WEB_ERROR);
         return objectNames;
     }
 
-    // Use the same Pd4Web root consistently (m_Pd4WebRoot). Avoid mixing sources of the root.
-    const fs::path jsonPath = fs::path(m_Pd4WebRoot) / "objects.json";
+    const fs::path jsonPath = p->Pd4WebRoot / "objects.json";
     const std::string jsonFile = jsonPath.string();
 
     json full_json;

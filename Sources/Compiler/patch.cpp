@@ -953,7 +953,7 @@ bool Pd4Web::compilePatch() {
     print("Project name is: '" + p->ProjectName + "'", Pd4WebLogLevel::PD4WEB_LOG1);
 
     if (m_BuildFolder != "") {
-        p->OutputFolder = fs::path(m_BuildFolder);
+        p->OutputFolder = m_BuildFolder;
     } else {
         p->OutputFolder = p->PatchFolder;
     }

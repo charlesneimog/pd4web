@@ -375,23 +375,23 @@ void Pd4Web::createVersionFile(std::shared_ptr<Patch> &p) {
     YamlNode root = YamlNode::mapping(); // <-- FIX
 
     for (const auto &repo : internalRepos) {
-        std::string path = m_Pd4WebRoot + repo;
-        std::string commit = getCurrentCommit(path);
+        fs::path repoPath = m_Pd4WebRoot / repo;
+        std::string commit = getCurrentCommit(repoPath);
         if (!commit.empty()) {
             root[repo] = commit;
         }
     }
 
     for (const auto &lib : p->DeclaredLibs) {
-        std::string path = m_Pd4WebRoot + lib;
-        std::string commit = getCurrentCommit(path);
+        fs::path repoPath = m_Pd4WebRoot / lib;
+        std::string commit = getCurrentCommit(repoPath);
         if (!commit.empty()) {
             root[lib] = commit;
         }
     }
 
     // Choose output path
-    std::string outFile = p->OutputFolder / "Pd4Web" / "versions.yml";
+    fs::path outFile = p->OutputFolder / "Pd4Web" / "versions.yml";
     std::ofstream fout(outFile);
     if (!fout.is_open()) {
         print("Failed to write versions.yml", Pd4WebLogLevel::PD4WEB_ERROR);
@@ -412,7 +412,7 @@ void Pd4Web::serverPatch(bool toggle, bool detached, fs::path folderToServer) {
 
         std::thread t([this, folderToServer]() {
             if (folderToServer.empty()) {
-                server->set_mount_point("/", m_BuildFolder);
+                server->set_mount_point("/", m_BuildFolder.string());
             } else {
                 server->set_mount_point("/", folderToServer.string());
             }

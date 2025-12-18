@@ -172,15 +172,15 @@ using Libraries = std::vector<Library>;
 // ──────────────────────────────────────────
 class Pd4Web {
   public:
-    Pd4Web(std::string pathHome);
+    Pd4Web(const std::string &pathHome);
     void parseArgs(int argc, char *argv[]);
     bool init();
     bool compilePatch();
 
-    void setPatchFile(std::string file) {
+    void setPatchFile(fs::path file) {
         m_PatchFile = file;
     };
-    void setPd4WebFilesFolder(std::string path) {
+    void setPd4WebFilesFolder(fs::path path) {
         m_Pd4WebFiles = path;
     };
     void setInitialMemory(int memory) {
@@ -220,16 +220,16 @@ class Pd4Web {
         m_PrintCallback = cb;
     }
 
-            // ("evnk",
-            // "Register [E]xtra PdLua object that opens a [V]irtual [N]umber [K]eyboard on touch devices on click. "
-            // "Accepts a comma-separated list.",
-            // cxxopts::value<std::vector<std::string>>(NumberInput))
+    // ("evnk",
+    // "Register [E]xtra PdLua object that opens a [V]irtual [N]umber [K]eyboard on touch devices on
+    // click. " "Accepts a comma-separated list.",
+    // cxxopts::value<std::vector<std::string>>(NumberInput))
 
-    void addVirtualNumberKeyboardObject(std::string objname){
+    void addVirtualNumberKeyboardObject(std::string objname) {
         m_NumberInput.push_back(objname);
     }
 
-    void addVirtualTextKeyboardObject(std::string objname){
+    void addVirtualTextKeyboardObject(std::string objname) {
         m_QwertyInput.push_back(objname);
     }
 
@@ -239,11 +239,11 @@ class Pd4Web {
     bool m_Init;
     bool m_Error;
 
-    std::string m_Pd4WebRoot;  // TODO: is fs::path
-    std::string m_BuildFolder; // TODO: is fs::path
+    fs::path m_Pd4WebRoot;
+    fs::path m_BuildFolder;
     fs::path m_Pd4WebFiles;
 
-    std::string m_PatchFile;     // TODO: is fs::path
+    fs::path m_PatchFile;        // TODO: is fs::path
     std::string m_LibrariesPath; // TODO: is fs::path
     unsigned int m_TemplateId = 0;
     bool m_Server = false;
@@ -295,11 +295,12 @@ class Pd4Web {
     std::string m_PythonWindows;
 
     // Git
-    bool gitRepoExists(const std::string &path);
-    bool gitClone(std::string git, std::string path, std::string tag);
-    bool gitPull(std::string git, std::string path);
-    bool gitCheckout(std::string git, std::string path, std::string tag);
-    std::string getCurrentCommit(const std::string &repoPath);
+    bool gitRepoExists(const fs::path &path);
+    bool gitClone(const std::string &url, const fs::path &gitFolder, const std::string &tag);
+
+    bool gitPull(std::string git, fs::path path);
+    bool gitCheckout(std::string git, fs::path path, std::string tag);
+    std::string getCurrentCommit(const fs::path &repoPath);
     bool isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath);
 
     // Cmd

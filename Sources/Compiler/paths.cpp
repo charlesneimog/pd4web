@@ -18,12 +18,12 @@ bool Pd4Web::initPaths() {
         return false;
     }
 
-    m_Emcmake = m_Pd4WebRoot + "emsdk/upstream/emscripten/emcmake";
-    m_Emcc = m_Pd4WebRoot + "emsdk/upstream/emscripten/emcc";
-    m_Emconfigure = m_Pd4WebRoot + "emsdk/upstream/emscripten/emconfigure";
-    m_Emmake = m_Pd4WebRoot + "emsdk/upstream/emscripten/emmake";
-    m_Ninja = m_Pd4WebRoot + "emsdk/ninja/git-release_64bit/bin/ninja";
-    m_Clang = m_Pd4WebRoot + "emsdk/upstream/bin/clang";
+    m_Emcmake = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emcmake").string();
+    m_Emcc = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emcc").string();
+    m_Emconfigure = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emconfigure").string();
+    m_Emmake = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emmake").string();
+    m_Ninja = (m_Pd4WebRoot / "emsdk/ninja/git-release_64bit/bin/ninja").string();
+    m_Clang = (m_Pd4WebRoot / "emsdk/upstream/bin/clang").string();
 
 #if defined(_WIN32)
     m_Emcmake = m_Emcmake + ".bat";
@@ -84,13 +84,13 @@ bool Pd4Web::checkAllPaths() {
     }
 
     // Check if all paths are set
-    fs::path envemscripten = m_Pd4WebRoot + "emsdk/upstream/emscripten/.emscripten";
+    fs::path envemscripten = m_Pd4WebRoot / "emsdk/upstream/emscripten/.emscripten";
     if (!fs::exists(envemscripten)) {
         fs::remove(envemscripten);
         std::ofstream out(envemscripten);
-        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/bin") << "'\n";
+        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/bin") << "'\n";
         out << "NODE_JS = r'" << m_NodeJs << "'\n";
-        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot + "emsdk/upstream/") << "'\n";
+        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/") << "'\n";
 #if defined(_WIN32)
         out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";
 #endif
@@ -136,7 +136,7 @@ bool Pd4Web::cmdInstallEmsdk() {
 // ─────────────────────────────────────
 bool Pd4Web::getNode() {
     PD4WEB_LOGGER();
-    fs::path nodePath = m_Pd4WebRoot + "/emsdk/node";
+    fs::path nodePath = m_Pd4WebRoot / "emsdk/node";
     // list all folders inside nodePath, and find the first one that contains bin/node or
     // bin/node.exe
     for (const auto &entry : fs::directory_iterator(nodePath)) {
@@ -164,11 +164,11 @@ bool Pd4Web::getNinja() {
     }
 
 #if defined(__linux__)
-    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja-linux";
+    fs::path ninjaBin = m_Pd4WebRoot / "bin/ninja-linux";
 #elif defined(_WIN32)
-    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja.exe";
+    fs::path ninjaBin = m_Pd4WebRoot / "bin/ninja.exe";
 #elif defined(__APPLE__)
-    std::string ninjaBin = m_Pd4WebRoot + "/bin/ninja-mac";
+    fs::path ninjaBin = m_Pd4WebRoot / "bin/ninja-mac";
 #else
     std::cerr << "Unsupported platform for Ninja binary." << std::endl;
     return false;
@@ -179,7 +179,7 @@ bool Pd4Web::getNinja() {
     }
 
 #if defined(__linux__) || defined(__APPLE__)
-    fs::path link = m_Pd4WebRoot + "/bin/ninja";
+    fs::path link = m_Pd4WebRoot / "bin/ninja";
     if (!fs::exists(link)) {
         fs::create_symlink(ninjaBin, link);
     }
@@ -195,7 +195,7 @@ bool Pd4Web::getNinja() {
     }
 #endif
 
-    m_Ninja = ninjaBin;
+    m_Ninja = ninjaBin.string();
     return true;
 }
 
@@ -203,25 +203,26 @@ bool Pd4Web::getNinja() {
 bool Pd4Web::getCmakeBinary() {
     PD4WEB_LOGGER();
 
-    std::string cmakeBinary;
+    fs::path cmakeBinary;
 #if defined(__linux__)
-    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake-linux";
+    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake-linux";
 #elif defined(__APPLE__)
-    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake-mac";
+    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake-mac";
 #elif defined(_WIN32)
-    cmakeBinary = m_Pd4WebRoot + "/bin/cmake/bin/cmake.exe";
+    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake.exe";
 #else
     print("Unsupported platform for CMake binary.", Pd4WebLogLevel::PD4WEB_ERROR);
     return false;
 #endif
 
     if (!fs::exists(cmakeBinary)) {
-        print("cmake does not exist, this is a bug, please report", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Binary " + cmakeBinary.string() + "does not exist, this is a bug, please report",
+              Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
 #if defined(__linux__) || defined(__APPLE__)
-    fs::path link = m_Pd4WebRoot + "/bin/cmake/bin/cmake";
+    fs::path link = m_Pd4WebRoot / "bin/cmake/bin/cmake";
     if (!fs::exists(link)) {
         fs::create_symlink(cmakeBinary, link);
     }
@@ -237,14 +238,14 @@ bool Pd4Web::getCmakeBinary() {
     }
 #endif
 
-    m_Cmake = cmakeBinary;
+    m_Cmake = cmakeBinary.string();
     return true;
 }
 
 // ─────────────────────────────────────
 std::string Pd4Web::getEmsdkPath() {
     PD4WEB_LOGGER();
-    std::string path = m_Pd4WebRoot + "emsdk/emsdk";
+    std::string path = (m_Pd4WebRoot / "emsdk/emsdk").string();
 #if defined(_WIN32)
     path += ".bat";
 #endif
