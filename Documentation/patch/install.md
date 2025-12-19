@@ -73,16 +73,22 @@ If you're comfortable with the command line, you can use the `pd4web` package to
 </div>
 
 --- 
-
 The options of the CLI are:
 
-* `--help`: Print this help message.
-* `--pd4web-folder <PATH>`: Path to the Pd4Web folder (libraries, sources, etc.).
-* `-m, --initial-memory <MB>`: Initial memory size in megabytes. **Default:** `32`
-* `-z, --patch-zoom <ZOOM>`: Patch zoom level. **Default:** `1`
-* `-o, --output-folder <PATH>`: Output folder.
-* `-t, --template-id <ID>`: Template ID. See available templates <ID> at: [templates](../templates) section.
-* `--nogui`: Disable the Patch GUI interface rendering on the Website.
-* `--debug`: Enable debug compilation, (faster compilation, slower execution, more runtime error information).
-* `--devdebug`: Enable development debug compilation (to debug the compiler).
-* `--failfast`: Stop compilation on the first error.
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--help` | Print usage information | - |
+| `--pd4web-folder <PATH>` | Pd4Web folder (with libraries, sources, etc.) | - |
+| `-m, --initial-memory <MB>` | Initial memory size in megabytes | `32` |
+| `-z, --patch-zoom <ZOOM>` | Set patch zoom level | `1` |
+| `-o, --output-folder <PATH>` | Output folder | Same as the patch being compiled |
+| `-c, --clear-before-compile` | Clear `WebPatch` and `Pd4Web` folders before compilation | `false` |
+| `-t, --template-id <ID>` | Set template ID. See [templates](https://charlesneimog.github.io/pd4web/patch/templates/) | `0` |
+| `-s, --server` | Start server for the given patch or current folder | - |
+| `--evnk <LIST>` | Register extra PdLua objects for a virtual number keyboard on touch devices | `"nbx,floatatom"` |
+| `--evtk <LIST>` | Register extra PdLua objects for a virtual text keyboard on touch devices | `"listatom,symbolatom"` |
+| `--export-es6-module` | Export Pd4WebModule as an ES6 module for native import/export and TypeScript support | `false` |
+| `--nogui` | Disable GUI interface | `false` |
+| `--debug` | Activate debug compilation (faster compilation, slower execution, more error info) | `false` |
+| `--devdebug` | Activate development debug compilation | `false` |
+| `--failfast` | Fail on first error message | `true` |

@@ -12,19 +12,14 @@ hide:
 
 # Home
 
-<p align="center"> Welcome to the <code>pd4web</code> documentation! </p>
-
 <p align="center" markdown>
-  ![Image title](./assets/icon-light.svg#only-light){ width="80px" }
-  ![Image title](./assets/icon-dark.svg#only-dark){ width="80px" }
+  ![Image title](./assets/favicon.svg){ width="60px" }
 </p>
-
-## <h2 align="center"> **What is pd4web?** </h2>
 
 ---
-<p align="center" markdown>
-`pd4web` enables PureData functionality directly in web browsers. Not just the vanilla Pd, but Pd with all the externals!
-</p>
+<h3 align="center" markdown>
+`pd4web` allows to use Pd inside browsers with **external** and **GUI** objects.
+</h3>
 
 ### <h3 align="center"> **Key Features** </h3>
 
@@ -35,21 +30,20 @@ hide:
 
 
 -------------------------
-### <h3 align="center"> **Examples** </h3>
+### <h3 align="center"> **Gallery with Projects using pd4web** </h3>
 -------------------------
 
 <div class="container">
   <div class="card">
     <h3 class="card-title">Scofo Follower</h3>
     <img
-      src="./tests/OScofo/patch.png"
-      onclick="window.open('./tests/OScofo', '_blank')"
+      src="./assets/canticos.png"
+      onclick="window.open('https://charlesneimog.github.io/Canticos-de-Silicio-I/WebPatch/index.html', '_blank')"
       class="card-img"
-      style="width: 40%"
+      style="width: 50%"
     />
     <p style="width: 80%; text-align: center">
-      Show the use of the object <code>o.scofo~</code> with pd4web. Personal
-      project for live-electronics.
+    Cânticos de Silício I – first piece using OScofo AI to sync performer and computer, testing trill detection.
     </p>
   </div>
   
@@ -126,10 +120,26 @@ hide:
     <p style="width: 80%; text-align: center">Hand recognition with PureData. Stealing code from the Code-Train channel</p>
   </div> 
 
- <div>
+  <div class="card">
+    <h3 class="card-title">BiA</h3>
+    <img
+      src="./assets/bia.png"
+      onclick="window.open('https://nucleomusicanova.github.io/BiA/', '_blank')"
+      class="card-img"
+    />
+    <p style="width: 80%; text-align: center"><code>BiA</code>: Interactive Music Acoustics Library – free digital patches for exploring sound, timbre, and synthesis</p>
   </div> 
 
-  <div></div> 
+
+  <div class="card">
+    <h3 class="card-title">Gaiasense</h3>
+    <img
+      src="./assets/gaiasense.png"
+      onclick="window.open('https://gaiasenses-web.vercel.app/', '_blank')"
+      class="card-img"
+    />
+    <p style="width: 80%; text-align: center">GaiaSenses: Real-Time Climate Art – an app that transforms user-selected geolocation and meteorological data into audiovisual compositions, linking science, creativity, and emotional engagement with the planet.</p>
+  </div> 
 </div>
 ---
 
