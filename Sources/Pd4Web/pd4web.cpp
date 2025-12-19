@@ -489,6 +489,36 @@ void Pd4Web::OnListReceived(std::string r, emscripten::val func) {
 
 // ─────────────────────────────────────
 /**
+ * Registers a callback to be invoked when a message is received from Pure Data.
+ *
+ * Binds a JavaScript callback (`func`) to a receiver symbol (`r`), which will be
+ * triggered when a message is sent to `r` from Pure Data.
+ *
+ * @param std::string     The receiver symbol in Pure Data to listen for lists.
+ * @param emscripten::val JavaScript callback function to invoke when list is received.
+ */
+void Pd4Web::OnMessageReceived(std::string r, emscripten::val func) {
+    libpd_set_instance(m_PdInstance);
+
+    void *s = libpd_bind(r.c_str());
+    m_BindSymbols.push_back(s);
+
+    if (func.typeOf().as<std::string>() != "function") {
+        fprintf(stderr, "Error: passed value is not a function\n");
+        return;
+    }
+
+    int declaredArgCount = func["length"].as<int>();
+    if (declaredArgCount != 3) {
+        fprintf(stderr, "Callback for onMessageReceived must have 3 arguments, but has %d\n",
+                declaredArgCount);
+        return;
+    }
+    MessageReceiverListeners[m_PdInstance][r] = func;
+}
+
+// ─────────────────────────────────────
+/**
  * Called when a print is received from Pure Data.
  *
  * @param const char * The print message.
@@ -633,9 +663,30 @@ void ReceivedList(const char *r, int argc, t_atom *argv) {
 
 // ─────────────────────────────────────
 void ReceivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
-    // t_pdinstance *instance = libpd_this_instance();
-    // emscripten::val func = ReceiverListeners[instance][std::string(r)];
-    JS_Alert("ReceivedMessage not implemented");
+    t_pdinstance *instance = libpd_this_instance();
+    auto it = MessageReceiverListeners.find(instance);
+    if (it != MessageReceiverListeners.end()) {
+        auto funcMap = it->second;
+        auto funcIt = funcMap.find(std::string(r));
+        if (funcIt != funcMap.end()) {
+            emscripten::val func = funcIt->second;
+            if (func.typeOf().as<std::string>() == "function") {
+                emscripten::val jsArray = emscripten::val::array();
+                for (int i = 0; i < argc; ++i) {
+                    if (libpd_is_float(&argv[i])) {
+                        jsArray.call<void>("push", emscripten::val(argv[i].a_w.w_float));
+                    } else if (libpd_is_symbol(&argv[i])) {
+                        jsArray.call<void>("push", emscripten::val(argv[i].a_w.w_symbol->s_name));
+                    } else {
+                        emscripten_log(EM_LOG_ERROR, "Only float and string are supported");
+                    }
+                }
+                func(emscripten::val(r), emscripten::val(s), jsArray);
+                return;
+            }
+        }
+    }
+    emscripten_log(EM_LOG_ERROR, "Callback not found or not a function");
 }
 
 // ─────────────────────────────────────

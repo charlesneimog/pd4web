@@ -324,6 +324,7 @@ static Pd4WebReceiverListeners BangReceiverListeners;
 static Pd4WebReceiverListeners FloatReceiverListeners;
 static Pd4WebReceiverListeners SymbolReceiverListeners;
 static Pd4WebReceiverListeners ListReceiverListeners;
+static Pd4WebReceiverListeners MessageReceiverListeners;
 
 // ╭─────────────────────────────────────╮
 // │             Main Class              │
@@ -354,6 +355,7 @@ class Pd4Web {
     void OnFloatReceived(std::string receiver, emscripten::val callback);
     void OnSymbolReceived(std::string receiver, emscripten::val callback);
     void OnListReceived(std::string receiver, emscripten::val callback);
+    void OnMessageReceived(std::string r, emscripten::val callback);
 
     // Mouse position
     void GetLastMousePosition(int *x, int *y);
@@ -474,5 +476,6 @@ EMSCRIPTEN_BINDINGS(Pd4WebModule) {
         .function("onBangReceived", &Pd4Web::OnBangReceived)
         .function("onFloatReceived", &Pd4Web::OnFloatReceived)
         .function("onSymbolReceived", &Pd4Web::OnSymbolReceived)
-        .function("onListReceived", &Pd4Web::OnListReceived);
+        .function("onListReceived", &Pd4Web::OnListReceived)
+        .function("onMessageReceived", &Pd4Web::OnMessageReceived);
 }
