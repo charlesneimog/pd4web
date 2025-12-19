@@ -11,7 +11,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(PD4WEB_BUILD_PD_EXTERNAL "Build the Pure Data external" ON)
-option(PD4WEB_BUILD_PYBIND11 "Build the Python module via pybind11" OFF)
+option(PD4WEB_BUILD_PYBIND11 "Build the Python module via pybind11" ON)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   find_program(CLANG_C NAMES clang)

@@ -21,6 +21,29 @@ namespace bp = boost::process::v2;
 namespace asio = boost::asio;
 
 // ─────────────────────────────────────
+fs::path Pd4Web::getHomeDir() {
+#ifdef _WIN32
+    const char *homeDrive = std::getenv("HOMEDRIVE");
+    const char *homePath = std::getenv("HOMEPATH");
+    const char *userProfile = std::getenv("USERPROFILE");
+
+    if (userProfile) {
+        return userProfile;
+    }
+    if (homeDrive && homePath) {
+        return std::string(homeDrive) + std::string(homePath);
+    }
+    return "C:\\";
+#else
+    const char *home = std::getenv("HOME");
+    if (home) {
+        return home;
+    }
+    return "/"; // fallback
+#endif
+}
+
+// ─────────────────────────────────────
 std::string Pd4Web::getCertFile() {
 #if defined(_WIN32)
     wchar_t path[MAX_PATH];
@@ -98,63 +121,75 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     }
     print(command + " " + oss.str());
 
+    bool read_pipeline = m_PrintCallback != nullptr;
+
 #if defined(__linux__) || defined(__APPLE__)
-    std::string certPath = getCertFile();
+    std ::string certPath = getCertFile();
     asio::io_context ctx;
-    boost::asio::readable_pipe out{ctx}, err{ctx};
-    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
 
-    auto read_loop = [&](boost::asio::readable_pipe &pipe) {
-        std::array<char, 4096> buf;
-        for (;;) {
-            boost::system::error_code ec;
-            std::size_t n = pipe.read_some(asio::buffer(buf), ec);
-            if (ec == boost::asio::error::eof) {
-                break;
+    if (read_pipeline) {
+        boost::asio::readable_pipe out{ctx}, err{ctx};
+        bp::process proc(ctx, command, args,
+                         bp::process_stdio{.in = {}, .out = out, .err = err});
+
+        auto read_loop = [&](boost::asio::readable_pipe &pipe) {
+            std::array<char, 4096> buf;
+            for (;;) {
+                boost::system::error_code ec;
+                std::size_t n = pipe.read_some(asio::buffer(buf), ec);
+                if (ec == boost::asio::error::eof) {
+                    break;
+                }
+                if (ec) {
+                    throw boost::system::system_error(ec);
+                }
+                if (n == 0) {
+                    continue;
+                }
+                std::string_view sv(buf.data(), n);
+                if (!sv.empty() && sv.back() == '\n') {
+                    sv.remove_suffix(1);
+                }
+                if (!sv.empty()) {
+                    print(std::string(sv), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
+                }
             }
-            if (ec) {
-                throw boost::system::system_error(ec);
+        };
+
+        std::exception_ptr ex_out, ex_err;
+        std::thread t_out([&] {
+            try {
+                read_loop(out);
+            } catch (...) {
+                ex_out = std::current_exception();
             }
-            if (n == 0) {
-                continue;
+        });
+        std::thread t_err([&] {
+            try {
+                read_loop(err);
+            } catch (...) {
+                ex_err = std::current_exception();
             }
-            std::string_view sv(buf.data(), n);
-            if (!sv.empty() && sv.back() == '\n') {
-                sv.remove_suffix(1);
-            }
-            if (!sv.empty()) {
-                print(std::string(sv), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-            }
+        });
+
+        t_out.join();
+        t_err.join();
+        proc.wait();
+
+        if (ex_out) {
+            std::rethrow_exception(ex_out);
         }
-    };
-
-    std::exception_ptr ex_out, ex_err;
-    std::thread t_out([&] {
-        try {
-            read_loop(out);
-        } catch (...) {
-            ex_out = std::current_exception();
+        if (ex_err) {
+            std::rethrow_exception(ex_err);
         }
-    });
-    std::thread t_err([&] {
-        try {
-            read_loop(err);
-        } catch (...) {
-            ex_err = std::current_exception();
-        }
-    });
+        return proc.exit_code();
 
-    t_out.join();
-    t_err.join();
-    proc.wait();
-
-    if (ex_out) {
-        std::rethrow_exception(ex_out);
+    } else {
+        // Inherit parent's stdout/stderr so output appears directly in the invoking terminal
+        bp::process proc(ctx, command, args);
+        proc.wait();
+        return proc.exit_code();
     }
-    if (ex_err) {
-        std::rethrow_exception(ex_err);
-    }
-    return proc.exit_code();
 
 #else // Windows branch
     const std::string certPath = getCertFile();
@@ -191,76 +226,98 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     }
     std::string cmdLineStr = cmdLine.str();
 
-    // Create pipes
-    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
-    HANDLE outRead, outWrite;
-    HANDLE errRead, errWrite;
-    if (!CreatePipe(&outRead, &outWrite, &sa, 0) || !CreatePipe(&errRead, &errWrite, &sa, 0)) {
-        throw std::runtime_error("Failed to create pipes");
-    }
-    SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
-    SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
-
-    // Setup startup info
-    STARTUPINFOA si{};
-    si.cb = sizeof(si);
-    si.hStdOutput = outWrite;
-    si.hStdError = errWrite;
-    si.dwFlags |= STARTF_USESTDHANDLES;
-
-    PROCESS_INFORMATION pi{};
-    if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
-                        nullptr, nullptr, &si, &pi)) {
-        CloseHandle(outRead);
-        CloseHandle(outWrite);
-        CloseHandle(errRead);
-        CloseHandle(errWrite);
-        throw std::runtime_error("CreateProcess failed");
-    }
-
-    CloseHandle(outWrite);
-    CloseHandle(errWrite);
-
-    // Lambda to read from a pipe and forward to print callback
-    auto read_pipe = [this](HANDLE pipe) {
-        char buffer[4096];
-        DWORD n;
-        while (ReadFile(pipe, buffer, sizeof(buffer) - 1, &n, nullptr) && n > 0) {
-            buffer[n] = '\0';
-            std::string_view sv(buffer, n);
-            while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) {
-                sv.remove_suffix(1);
-            }
-            if (!sv.empty()) {
-                std::string s(sv);
-                const size_t MAX = 1024; // safe size for Pd
-                while (s.size() > MAX) {
-                    this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-                    s.erase(0, MAX);
-                }
-                if (!s.empty()) {
-                    this->print(s, Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-                }
-            }
+    if (read_pipeline) {
+        // Create pipes
+        SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
+        HANDLE outRead, outWrite;
+        HANDLE errRead, errWrite;
+        if (!CreatePipe(&outRead, &outWrite, &sa, 0) ||
+            !CreatePipe(&errRead, &errWrite, &sa, 0)) {
+            throw std::runtime_error("Failed to create pipes");
         }
-        CloseHandle(pipe);
-    };
+        SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
+        SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
 
-    // Start threads to read stdout and stderr concurrently
-    std::thread t_out(read_pipe, outRead);
-    std::thread t_err(read_pipe, errRead);
+        // Setup startup info
+        STARTUPINFOA si{};
+        si.cb = sizeof(si);
+        si.hStdOutput = outWrite;
+        si.hStdError = errWrite;
+        si.dwFlags |= STARTF_USESTDHANDLES;
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    t_out.join();
-    t_err.join();
+        PROCESS_INFORMATION pi{};
+        if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+                            nullptr, nullptr, &si, &pi)) {
+            CloseHandle(outRead);
+            CloseHandle(outWrite);
+            CloseHandle(errRead);
+            CloseHandle(errWrite);
+            throw std::runtime_error("CreateProcess failed");
+        }
 
-    DWORD exitCode = 0;
-    GetExitCodeProcess(pi.hProcess, &exitCode);
+        CloseHandle(outWrite);
+        CloseHandle(errWrite);
 
-    CloseHandle(pi.hProcess);
-    CloseHandle(pi.hThread);
+        // Lambda to read from a pipe and forward to print callback
+        auto read_pipe = [this](HANDLE pipe) {
+            char buffer[4096];
+            DWORD n;
+            while (ReadFile(pipe, buffer, sizeof(buffer) - 1, &n, nullptr) && n > 0) {
+                buffer[n] = '\0';
+                std::string_view sv(buffer, n);
+                while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) {
+                    sv.remove_suffix(1);
+                }
+                if (!sv.empty()) {
+                    std::string s(sv);
+                    const size_t MAX = 1024; // safe size for Pd
+                    while (s.size() > MAX) {
+                        this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
+                        s.erase(0, MAX);
+                    }
+                    if (!s.empty()) {
+                        this->print(s, Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
+                    }
+                }
+            }
+            CloseHandle(pipe);
+        };
 
-    return static_cast<int>(exitCode);
+        // Start threads to read stdout and stderr concurrently
+        std::thread t_out(read_pipe, outRead);
+        std::thread t_err(read_pipe, errRead);
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        t_out.join();
+        t_err.join();
+
+        DWORD exitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &exitCode);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+
+        return static_cast<int>(exitCode);
+
+    } else {
+        STARTUPINFOA si{};
+        si.cb = sizeof(si);
+
+        PROCESS_INFORMATION pi{};
+        if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, 0, nullptr,
+                            nullptr, &si, &pi)) {
+            throw std::runtime_error("CreateProcess failed");
+        }
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        DWORD exitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &exitCode);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+
+        return static_cast<int>(exitCode);
+    }
 #endif
 }
 

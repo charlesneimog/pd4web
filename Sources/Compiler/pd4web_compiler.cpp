@@ -1,26 +1,32 @@
 #include "pd4web_compiler.hpp"
 
-Pd4Web::Pd4Web(const std::string &pathHome) {
+Pd4Web::Pd4Web(const fs::path &pathHome) {
     m_Init = false;
     m_Error = false;
-    m_Pd4WebRoot = pathHome;
-    m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
-
-    if (!fs::exists(m_Pd4WebRoot)) {
-        print("Pd4Web Root does not exists: " + m_Pd4WebRoot.string(),
-              Pd4WebLogLevel::PD4WEB_ERROR);
-        return;
+    if (fs::exists(pathHome)) {
+        m_Pd4WebRoot = pathHome;
+        m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+        if (!fs::exists(m_Pd4WebFiles)) {
+            print("Pd4Web Files does not exists: " + m_Pd4WebFiles.string(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            exit(-1);
+        }
     }
-    if (!fs::exists(m_Pd4WebFiles)) {
-        print("Pd4Web Files does not exists: " + m_Pd4WebFiles.string(),
-              Pd4WebLogLevel::PD4WEB_ERROR);
-        return;
-    }
+    // if pathHome does not exist, it must be provided by Python or for command flag
 }
 
 // ─────────────────────────────────────
 bool Pd4Web::init() {
     print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
+
+    if (fs::exists(m_Pd4WebRoot)) {
+        m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+        if (!fs::exists(m_Pd4WebFiles)) {
+            print("Should have a Pd4Web folder inside " + m_Pd4WebRoot.string(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+    }
 
     // libgit2
     git_libgit2_init();
@@ -211,6 +217,10 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             cxxopts::value<fs::path>(m_PatchFile))
 
         // Configuration of Compiler
+        ("pd4web-root", 
+            "Pd4Web root folder, must have a Pd4Web folder inside it will all source code and resources of pd4web",
+            cxxopts::value<fs::path>(m_Pd4WebRoot))
+
         ("pd4web-folder", 
             "Pd4Web Folder (with Libraries, Sources, etc).",
             cxxopts::value<fs::path>(m_Pd4WebFiles))

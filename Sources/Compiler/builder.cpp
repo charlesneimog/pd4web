@@ -455,7 +455,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 #endif
 
     if (!fs::exists(m_Ninja)) {
-        print("Ninja binary not found at: " + m_Ninja, Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Ninja binary not found at: " + m_Ninja.string(), Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
@@ -467,7 +467,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                         "-G",
                                         "Ninja",
                                         "-DCMAKE_BUILD_TYPE=" + buildType,
-                                        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja,
+                                        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
                                         "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
                                         "-Wno-dev"};
 

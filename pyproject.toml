@@ -4,7 +4,7 @@ version = "3.0.0"
 description = "pd4web is a tool that compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
 authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"
-license = { text = "GPL3" }
+license-files = ["LICENSE"]
 requires-python = ">=3.10"
 
 [project.scripts]
@@ -15,13 +15,10 @@ package-dir = {"" = "build/dist"}
 packages = ["pd4web"]
 include-package-data = true
 
+# CONFIGURAÇÃO CORRIGIDA - inclui TUDO dentro do diretório pd4web
 [tool.setuptools.package-data]
-"pd4web" = [
-    "*.so",
-    "Pd4Web/**/*",   # inclui tudo dentro da pasta Pd4Web
-]
+"pd4web" = ["**/*"]  # Isso inclui ABSOLUTAMENTE todos os arquivos
 
 [build-system]
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
-

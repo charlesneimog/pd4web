@@ -59,13 +59,13 @@ static void pd4web_set(Pd4WebObj *x, t_symbol *s, int ac, t_atom *av) {
     }
 
     else if (strcmp(s->s_name, "evnk") == 0) {
-        for (int i = 0; i<ac;i++){
+        for (int i = 0; i < ac; i++) {
             x->pd4web->addVirtualNumberKeyboardObject(atom_getsymbol(av + i)->s_name);
         }
     }
 
     else if (strcmp(s->s_name, "evtk") == 0) {
-        for (int i = 0; i<ac;i++){
+        for (int i = 0; i < ac; i++) {
             x->pd4web->addVirtualTextKeyboardObject(atom_getsymbol(av + i)->s_name);
         }
     }
@@ -192,12 +192,10 @@ static void *pd4web_new() {
     std::string pd4web_obj_root = std::string(pd4web_class->c_externdir->s_name) + "/Pd4Web/";
     fs::path pd4web_path = std::string(pd4web_class->c_externdir->s_name);
     fs::path pd4webHome = pd4web_path;
-    // fs::create_directories(pd4webHome);
-    // std::cout << pd4webHome.string() << std::endl;
 
     // process
     x->out = outlet_new(&x->obj, &s_anything);
-    x->pd4web = new Pd4Web(pd4webHome.string());
+    x->pd4web = new Pd4Web();
     x->pd4web->setPd4WebFilesFolder(pd4web_obj_root);
     x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel loglevel, int level) {
         Pd4WebDetachedPost *d = new Pd4WebDetachedPost();

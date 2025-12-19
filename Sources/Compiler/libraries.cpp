@@ -487,8 +487,19 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
     // Use filesystem::path to join paths reliably
     fs::path completPath = p->Pd4WebRoot / Lib;
     if (!fs::exists(completPath) || !fs::is_directory(completPath)) {
-        print("Library '" + Lib + "' not found", Pd4WebLogLevel::PD4WEB_ERROR);
-        return objectNames;
+        if (libIsSupported(Lib)) {
+            if (!downloadSupportedLib(Lib)) {
+                print("Error to download Library'" + Lib + ".'", Pd4WebLogLevel::PD4WEB_ERROR);
+                return objectNames;
+            };
+            if (!fs::exists(completPath) || !fs::is_directory(completPath)) {
+                print("Library '" + Lib + "' not found", Pd4WebLogLevel::PD4WEB_ERROR);
+                return objectNames;
+            }
+        } else {
+            print("Library '" + Lib + "' not supported", Pd4WebLogLevel::PD4WEB_ERROR);
+            return objectNames;
+        }
     }
 
     const fs::path jsonPath = p->Pd4WebRoot / "objects.json";

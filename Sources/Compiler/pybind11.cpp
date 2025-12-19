@@ -7,30 +7,12 @@
 namespace py = pybind11;
 
 void run(const std::vector<std::string> &args) {
-#if defined(__APPLE__) || defined(__linux__)
-    std::string home = std::getenv("HOME");
-    if (home.empty()) {
-        printf("Failed to get home directory\n");
-        exit(-1);
-    }
-    std::filesystem::path pd4webHome = std::filesystem::path(home) / ".local" / "share" / "pd4web";
-    std::filesystem::create_directories(pd4webHome);
-#else
-    std::string appdata = std::getenv("APPDATA");
-    std::filesystem::path pd4webHome = std::filesystem::path(appdata) / "pd4web";
-    std::filesystem::create_directories(pd4webHome);
-#endif
-
-    Pd4Web pd4web(pd4webHome.string());
-
-    // Convert vector<string> to argc/argv style
+    Pd4Web pd4web("");
     int argc = static_cast<int>(args.size());
     std::vector<char *> argv(argc);
     for (int i = 0; i < argc; ++i) {
         argv[i] = const_cast<char *>(args[i].c_str());
     }
-    printf("\n");
-
     pd4web.parseArgs(argc, argv.data());
     pd4web.init();
     pd4web.compilePatch();

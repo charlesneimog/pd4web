@@ -172,7 +172,7 @@ using Libraries = std::vector<Library>;
 // ──────────────────────────────────────────
 class Pd4Web {
   public:
-    Pd4Web(const std::string &pathHome);
+    Pd4Web(const fs::path &pathHome = "");
     void parseArgs(int argc, char *argv[]);
     bool init();
     bool compilePatch();
@@ -235,16 +235,16 @@ class Pd4Web {
 
     void serverPatch(bool toggle, bool detached, fs::path folderToServer);
 
+    // Variables
   private:
     bool m_Init;
     bool m_Error;
 
     fs::path m_Pd4WebRoot;
-    fs::path m_BuildFolder;
     fs::path m_Pd4WebFiles;
+    fs::path m_BuildFolder;
+    fs::path m_PatchFile;
 
-    fs::path m_PatchFile;        // TODO: is fs::path
-    std::string m_LibrariesPath; // TODO: is fs::path
     unsigned int m_TemplateId = 0;
     bool m_Server = false;
     bool m_BypassUnsuported;
@@ -267,11 +267,38 @@ class Pd4Web {
     float m_PatchZoom;
     bool m_PdLua;
     bool m_UsingMidi;
+    bool m_inArray = false;
     std::vector<std::string> m_PdObjects;
 
-    std::function<void(const std::string &, Pd4WebLogLevel, int)> m_PrintCallback;
-    bool m_inArray = false;
+    // Paths
+    fs::path m_Cmake;
+    fs::path m_EmsdkInstaller;
+    fs::path m_Emcmake;
+    fs::path m_Emcc;
+    fs::path m_Emconfigure;
+    fs::path m_Emmake;
+    fs::path m_Ninja;
+    fs::path m_Clang;
+    fs::path m_NodeJs;
+    fs::path m_PythonWindows;
 
+    // Libraries
+    YamlNode m_SourcesNode;
+    YamlNode m_LibrariesNode;
+    std::vector<std::string> m_DeclaredLibraries;
+    std::vector<std::string> m_DeclaredPaths;
+    TSParser *m_cppParser;
+    TSParser *m_cParser;
+    Libraries m_Libraries;
+
+    // Gui Objects
+    std::vector<std::string> m_NumberInput = {"floatatom", "l.nbx"};
+    std::vector<std::string> m_QwertyInput = {"symbolatom", "listatom"};
+
+    // print callback
+    std::function<void(const std::string &, Pd4WebLogLevel, int)> m_PrintCallback;
+
+  private:
     void validateArgs();
 
     // Paths
@@ -282,36 +309,19 @@ class Pd4Web {
     bool getCmakeBinary();
     bool getNode();
 
-    // TODO: USE fs::path instead
-    std::string m_Cmake;
-    std::string m_EmsdkInstaller;
-    std::string m_Emcmake;
-    std::string m_Emcc;
-    std::string m_Emconfigure;
-    std::string m_Emmake;
-    std::string m_Ninja;
-    std::string m_Clang;
-    std::string m_NodeJs;
-    std::string m_PythonWindows;
-
     // Git
     bool gitRepoExists(const fs::path &path);
     bool gitClone(const std::string &url, const fs::path &gitFolder, const std::string &tag);
-
     bool gitPull(std::string git, fs::path path);
     bool gitCheckout(std::string git, fs::path path, std::string tag);
     std::string getCurrentCommit(const fs::path &repoPath);
     bool isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &filePath);
-
-    // Cmd
-    bool cmdInstallEmsdk();
 
     // Patch
     bool openPatch(std::shared_ptr<Patch> &Patch);
     bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p);
-
     fs::path getAbsPath(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     std::string getObjName(std::string &ObjToken);
     std::string getObjLib(std::string &ObjToken);
@@ -323,35 +333,26 @@ class Pd4Web {
     void isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExternalLibObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isAbstraction(std::shared_ptr<Patch> &Patch, PatchLine &pl);
-
     void isMidiObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isCloneObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isFloatObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isDollarObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
     void isExtraObj(std::shared_ptr<Patch> &Patch, PatchLine &pl);
-
-    void updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch = false);
+    bool isUniqueObjFromLibrary(std::shared_ptr<Patch> &p, std::string &Obj);
 
     // process
+    void updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch = false);
     bool processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl);
 
-    // bool configureExternalsObjects(std::shared_ptr<Patch> &Patch);
-    bool isUniqueObjFromLibrary(std::shared_ptr<Patch> &p, std::string &Obj);
-
     // Libraries
-    TSParser *m_cppParser;
-    TSParser *m_cParser;
-    Libraries m_Libraries;
     bool libIsSupported(std::string libName);
     bool downloadSupportedLib(std::string libName);
-
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);
     bool libsDownload(YamlNode node);
     std::vector<std::string> listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     bool findSetupFunction(std::string objName, std::string Lib);
-
     void processCallExpression(std::string &content, TSNode node,
                                std::vector<std::string> &objectNames,
                                std::vector<std::string> &setupNames,
@@ -360,20 +361,9 @@ class Pd4Web {
                                          std::vector<std::string> &objectNames,
                                          std::vector<std::string> &setupNames,
                                          std::vector<std::string> &setupSignatures);
-
     std::vector<fs::path> findLuaObjects(std::shared_ptr<Patch> &Patch, fs::path Folder,
                                          PatchLine &pl);
 
-    YamlNode m_SourcesNode;
-    YamlNode m_LibrariesNode;
-    std::vector<std::string> m_DeclaredLibraries;
-    std::vector<std::string> m_DeclaredPaths;
-
-    // Builder
-    std::vector<std::string> m_NumberInput = {"floatatom", "l.nbx"};
-    std::vector<std::string> m_QwertyInput = {"symbolatom", "listatom"};
-
-    std::string m_MainCmake;
     void configureProjectToCompile(std::shared_ptr<Patch> &p);
     void createConfigFile(std::shared_ptr<Patch> &p);
     void copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string Lib);
@@ -386,6 +376,8 @@ class Pd4Web {
     void updateTemplate(std::shared_ptr<Patch> &p);
 
     // Utils
+    bool cmdInstallEmsdk();
+    fs::path getHomeDir();
     std::string getCertFile();
     int execProcess(const std::string &command, std::vector<std::string> &args);
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
@@ -393,7 +385,6 @@ class Pd4Web {
     bool isNumber(const std::string &s);
     void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::PD4WEB_LOG2,
                int level = 1);
-
     std::string readFile(const std::string &path);
     void writeFile(const std::string &path, const std::string &content);
     void replaceAll(std::string &str, const std::string &from, const std::string &to);

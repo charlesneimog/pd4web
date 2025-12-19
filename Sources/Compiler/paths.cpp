@@ -18,19 +18,20 @@ bool Pd4Web::initPaths() {
         return false;
     }
 
-    m_Emcmake = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emcmake").string();
-    m_Emcc = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emcc").string();
-    m_Emconfigure = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emconfigure").string();
-    m_Emmake = (m_Pd4WebRoot / "emsdk/upstream/emscripten/emmake").string();
-    m_Ninja = (m_Pd4WebRoot / "emsdk/ninja/git-release_64bit/bin/ninja").string();
-    m_Clang = (m_Pd4WebRoot / "emsdk/upstream/bin/clang").string();
-
 #if defined(_WIN32)
-    m_Emcmake = m_Emcmake + ".bat";
-    m_Emcc = m_Emcc + ".bat";
-    m_Emconfigure = m_Emconfigure + ".bat";
-    m_Emmake = m_Emmake + ".bat";
-    m_Clang = m_Clang + ".exe";
+    m_Emcmake = m_Pd4WebRoot / "emsdk/upstream/emscripten/emcmake.bat";
+    m_Emcc = m_Pd4WebRoot / "emsdk/upstream/emscripten/emcc.bat";
+    m_Emconfigure = m_Pd4WebRoot / "emsdk/upstream/emscripten/emconfigure.bat";
+    m_Emmake = m_Pd4WebRoot / "emsdk/upstream/emscripten/emmake.bat";
+    m_Ninja = m_Pd4WebRoot / "emsdk/ninja/git-release_64bit/bin/ninja.exe";
+    m_Clang = m_Pd4WebRoot / "emsdk/upstream/bin/clang.exe";
+#else
+    m_Emcmake = m_Pd4WebRoot / "emsdk/upstream/emscripten/emcmake";
+    m_Emcc = m_Pd4WebRoot / "emsdk/upstream/emscripten/emcc";
+    m_Emconfigure = m_Pd4WebRoot / "emsdk/upstream/emscripten/emconfigure";
+    m_Emmake = m_Pd4WebRoot / "emsdk/upstream/emscripten/emmake";
+    m_Ninja = m_Pd4WebRoot / "emsdk/ninja/git-release_64bit/bin/ninja";
+    m_Clang = m_Pd4WebRoot / "emsdk/upstream/bin/clang";
 #endif
 
     return true;
@@ -88,11 +89,11 @@ bool Pd4Web::checkAllPaths() {
     if (!fs::exists(envemscripten)) {
         fs::remove(envemscripten);
         std::ofstream out(envemscripten);
-        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/bin") << "'\n";
-        out << "NODE_JS = r'" << m_NodeJs << "'\n";
-        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/") << "'\n";
+        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/bin").string() << "'\n";
+        out << "NODE_JS = r'" << m_NodeJs.string() << "'\n";
+        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/").string() << "'\n";
 #if defined(_WIN32)
-        out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";
+        out << "EMSDK_PY = r'" << m_PythonWindows.string() << "'\n";
 #endif
         out.close();
     }

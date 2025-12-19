@@ -4,10 +4,10 @@ docs_dir: Documentation
 copyright: Copyright &copy 2024 | Charles K. Neimog | University of São Paulo.
 theme:
   language: en
-  logo: assets/icon-light.svg
+  logo: assets/favicon.svg
   custom_dir: Documentation/overrides
-  logo_dark_mode: assets/icon-dark.svg
-  logo_light_mode: assets/icon-light.svg
+  logo_dark_mode: assets/favicon.svg
+  logo_light_mode: assets/favicon.svg
   favicon: assets/favicon.svg
   name: material
   features:
