@@ -260,7 +260,10 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             "Accepts a comma-separated list.",
             cxxopts::value<std::vector<std::string>>(QwertyInput))
 
-        // TEST:
+        ("port",
+            "Server Port to be used with --server",
+            cxxopts::value<unsigned>(m_ServerPort)->default_value("8082"))
+
         ("export-es6-module",
             "Export Pd4WebModule as an ES6 module, enabling native import/export, better TypeScript support.",
             cxxopts::value<bool>(m_ExportES6Module)->default_value("false"))

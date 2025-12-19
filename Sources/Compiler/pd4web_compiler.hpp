@@ -269,6 +269,7 @@ class Pd4Web {
     bool m_UsingMidi;
     bool m_inArray = false;
     std::vector<std::string> m_PdObjects;
+    unsigned m_ServerPort = 8082;
 
     // Paths
     fs::path m_Cmake;
@@ -383,6 +384,8 @@ class Pd4Web {
     std::string formatLibUrl(const std::string &format, const std::string &arg1,
                              const std::string &arg2);
     bool isNumber(const std::string &s);
+    bool isNumberOrNumberSemicolon(const std::string &s);
+
     void print(std::string msg, enum Pd4WebLogLevel color = Pd4WebLogLevel::PD4WEB_LOG2,
                int level = 1);
     std::string readFile(const std::string &path);
