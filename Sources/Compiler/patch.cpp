@@ -508,7 +508,10 @@ bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
         if (length > 5) {
             for (size_t i = 5; i < pl.Tokens.size(); ++i) {
                 std::string token = pl.Tokens[i];
-                if (isNumber(token)) {
+                if (isNumberOrNumberSemicolon(token)) {
+                    if (token.back() == ';') {
+                        token.pop_back();
+                    }
                     input = std::stoi(token);
                 }
             }
@@ -517,27 +520,28 @@ bool Pd4Web::processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl) {
         if (!input) {
             input = 1;
         }
-        p->Input = input;
-        print("Number of input is " + std::to_string(input), Pd4WebLogLevel::PD4WEB_LOG2,
-              p->printLevel + 1);
+        if (p->Input < input) {
+            p->Input = input;
+        }
     } else if (Obj == "dac~") {
         unsigned int output = 0;
-
         if (length > 5) {
             for (size_t i = 5; i < pl.Tokens.size(); ++i) {
                 std::string token = pl.Tokens[i];
-                if (isNumber(token)) {
+                if (isNumberOrNumberSemicolon(token)) {
+                    if (token.back() == ';') {
+                        token.pop_back();
+                    }
                     output = std::stoi(token);
                 }
             }
         }
-
         if (!output) {
             output = 1;
         }
-        p->Output = output;
-        print("Number of output is " + std::to_string(output), Pd4WebLogLevel::PD4WEB_LOG2,
-              p->printLevel + 1);
+        if (p->Output < output) {
+            p->Output = output;
+        }
         return true;
     }
     return false;
@@ -882,6 +886,14 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         }
     }
 
+    if (p->Input > f->Input) {
+        f->Input = p->Input;
+    }
+
+    if (p->Output > f->Output) {
+        f->Output = p->Output;
+    }
+
     updatePatchFile(p);
     return true;
 }
@@ -1001,6 +1013,9 @@ bool Pd4Web::compilePatch() {
         i++;
     }
 
+    print("Final number of Input Channels is " + std::to_string(p->Input));
+    print("Final number of Output Channels is " + std::to_string(p->Output));
+
     fs::create_directory(p->OutputFolder / "WebPatch");
     fs::create_directory(p->OutputFolder / "Pd4Web");
     fs::create_directory(p->OutputFolder / "Pd4Web" / "Externals");
@@ -1023,7 +1038,6 @@ bool Pd4Web::compilePatch() {
     updateTemplate(p);
 
     // create versioning file
-
     if (!m_Error) {
         print("Finished", Pd4WebLogLevel::PD4WEB_LOG1);
         if (m_Server) {
