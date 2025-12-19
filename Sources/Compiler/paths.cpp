@@ -89,11 +89,11 @@ bool Pd4Web::checkAllPaths() {
     if (!fs::exists(envemscripten)) {
         fs::remove(envemscripten);
         std::ofstream out(envemscripten);
-        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/bin").string() << "'\n";
-        out << "NODE_JS = r'" << m_NodeJs.string() << "'\n";
-        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/").string() << "'\n";
+        out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/bin") << "'\n";
+        out << "NODE_JS = r'" << m_NodeJs << "'\n";
+        out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk/upstream/") << "'\n";
 #if defined(_WIN32)
-        out << "EMSDK_PY = r'" << m_PythonWindows.string() << "'\n";
+        out << "EMSDK_PY = r'" << m_PythonWindows << "'\n";
 #endif
         out.close();
     }
@@ -196,7 +196,7 @@ bool Pd4Web::getNinja() {
     }
 #endif
 
-    m_Ninja = ninjaBin.string();
+    m_Ninja = ninjaBin;
     return true;
 }
 
@@ -239,7 +239,7 @@ bool Pd4Web::getCmakeBinary() {
     }
 #endif
 
-    m_Cmake = cmakeBinary.string();
+    m_Cmake = cmakeBinary;
     return true;
 }
 
