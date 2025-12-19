@@ -7,6 +7,10 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <atomic>
+#include <thread>
+#include <csignal>
+#include <chrono>
 #include <sstream>
 #include <system_error>
 #include <vector>
@@ -19,29 +23,6 @@
 
 namespace bp = boost::process::v2;
 namespace asio = boost::asio;
-
-// ─────────────────────────────────────
-fs::path Pd4Web::getHomeDir() {
-#ifdef _WIN32
-    const char *homeDrive = std::getenv("HOMEDRIVE");
-    const char *homePath = std::getenv("HOMEPATH");
-    const char *userProfile = std::getenv("USERPROFILE");
-
-    if (userProfile) {
-        return userProfile;
-    }
-    if (homeDrive && homePath) {
-        return std::string(homeDrive) + std::string(homePath);
-    }
-    return "C:\\";
-#else
-    const char *home = std::getenv("HOME");
-    if (home) {
-        return home;
-    }
-    return "/"; // fallback
-#endif
-}
 
 // ─────────────────────────────────────
 std::string Pd4Web::getCertFile() {
@@ -121,75 +102,63 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     }
     print(command + " " + oss.str());
 
-    bool read_pipeline = m_PrintCallback != nullptr;
-
 #if defined(__linux__) || defined(__APPLE__)
-    std ::string certPath = getCertFile();
+    std::string certPath = getCertFile();
     asio::io_context ctx;
+    boost::asio::readable_pipe out{ctx}, err{ctx};
+    bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
 
-    if (read_pipeline) {
-        boost::asio::readable_pipe out{ctx}, err{ctx};
-        bp::process proc(ctx, command, args,
-                         bp::process_stdio{.in = {}, .out = out, .err = err});
-
-        auto read_loop = [&](boost::asio::readable_pipe &pipe) {
-            std::array<char, 4096> buf;
-            for (;;) {
-                boost::system::error_code ec;
-                std::size_t n = pipe.read_some(asio::buffer(buf), ec);
-                if (ec == boost::asio::error::eof) {
-                    break;
-                }
-                if (ec) {
-                    throw boost::system::system_error(ec);
-                }
-                if (n == 0) {
-                    continue;
-                }
-                std::string_view sv(buf.data(), n);
-                if (!sv.empty() && sv.back() == '\n') {
-                    sv.remove_suffix(1);
-                }
-                if (!sv.empty()) {
-                    print(std::string(sv), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-                }
+    auto read_loop = [&](boost::asio::readable_pipe &pipe) {
+        std::array<char, 4096> buf;
+        for (;;) {
+            boost::system::error_code ec;
+            std::size_t n = pipe.read_some(asio::buffer(buf), ec);
+            if (ec == boost::asio::error::eof) {
+                break;
             }
-        };
-
-        std::exception_ptr ex_out, ex_err;
-        std::thread t_out([&] {
-            try {
-                read_loop(out);
-            } catch (...) {
-                ex_out = std::current_exception();
+            if (ec) {
+                throw boost::system::system_error(ec);
             }
-        });
-        std::thread t_err([&] {
-            try {
-                read_loop(err);
-            } catch (...) {
-                ex_err = std::current_exception();
+            if (n == 0) {
+                continue;
             }
-        });
-
-        t_out.join();
-        t_err.join();
-        proc.wait();
-
-        if (ex_out) {
-            std::rethrow_exception(ex_out);
+            std::string_view sv(buf.data(), n);
+            if (!sv.empty() && sv.back() == '\n') {
+                sv.remove_suffix(1);
+            }
+            if (!sv.empty()) {
+                print(std::string(sv), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
+            }
         }
-        if (ex_err) {
-            std::rethrow_exception(ex_err);
-        }
-        return proc.exit_code();
+    };
 
-    } else {
-        // Inherit parent's stdout/stderr so output appears directly in the invoking terminal
-        bp::process proc(ctx, command, args);
-        proc.wait();
-        return proc.exit_code();
+    std::exception_ptr ex_out, ex_err;
+    std::thread t_out([&] {
+        try {
+            read_loop(out);
+        } catch (...) {
+            ex_out = std::current_exception();
+        }
+    });
+    std::thread t_err([&] {
+        try {
+            read_loop(err);
+        } catch (...) {
+            ex_err = std::current_exception();
+        }
+    });
+
+    t_out.join();
+    t_err.join();
+    proc.wait();
+
+    if (ex_out) {
+        std::rethrow_exception(ex_out);
     }
+    if (ex_err) {
+        std::rethrow_exception(ex_err);
+    }
+    return proc.exit_code();
 
 #else // Windows branch
     const std::string certPath = getCertFile();
@@ -226,98 +195,76 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     }
     std::string cmdLineStr = cmdLine.str();
 
-    if (read_pipeline) {
-        // Create pipes
-        SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
-        HANDLE outRead, outWrite;
-        HANDLE errRead, errWrite;
-        if (!CreatePipe(&outRead, &outWrite, &sa, 0) ||
-            !CreatePipe(&errRead, &errWrite, &sa, 0)) {
-            throw std::runtime_error("Failed to create pipes");
-        }
-        SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
-        SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
+    // Create pipes
+    SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
+    HANDLE outRead, outWrite;
+    HANDLE errRead, errWrite;
+    if (!CreatePipe(&outRead, &outWrite, &sa, 0) || !CreatePipe(&errRead, &errWrite, &sa, 0)) {
+        throw std::runtime_error("Failed to create pipes");
+    }
+    SetHandleInformation(outRead, HANDLE_FLAG_INHERIT, 0);
+    SetHandleInformation(errRead, HANDLE_FLAG_INHERIT, 0);
 
-        // Setup startup info
-        STARTUPINFOA si{};
-        si.cb = sizeof(si);
-        si.hStdOutput = outWrite;
-        si.hStdError = errWrite;
-        si.dwFlags |= STARTF_USESTDHANDLES;
+    // Setup startup info
+    STARTUPINFOA si{};
+    si.cb = sizeof(si);
+    si.hStdOutput = outWrite;
+    si.hStdError = errWrite;
+    si.dwFlags |= STARTF_USESTDHANDLES;
 
-        PROCESS_INFORMATION pi{};
-        if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
-                            nullptr, nullptr, &si, &pi)) {
-            CloseHandle(outRead);
-            CloseHandle(outWrite);
-            CloseHandle(errRead);
-            CloseHandle(errWrite);
-            throw std::runtime_error("CreateProcess failed");
-        }
-
+    PROCESS_INFORMATION pi{};
+    if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+                        nullptr, nullptr, &si, &pi)) {
+        CloseHandle(outRead);
         CloseHandle(outWrite);
+        CloseHandle(errRead);
         CloseHandle(errWrite);
+        throw std::runtime_error("CreateProcess failed");
+    }
 
-        // Lambda to read from a pipe and forward to print callback
-        auto read_pipe = [this](HANDLE pipe) {
-            char buffer[4096];
-            DWORD n;
-            while (ReadFile(pipe, buffer, sizeof(buffer) - 1, &n, nullptr) && n > 0) {
-                buffer[n] = '\0';
-                std::string_view sv(buffer, n);
-                while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) {
-                    sv.remove_suffix(1);
+    CloseHandle(outWrite);
+    CloseHandle(errWrite);
+
+    // Lambda to read from a pipe and forward to print callback
+    auto read_pipe = [this](HANDLE pipe) {
+        char buffer[4096];
+        DWORD n;
+        while (ReadFile(pipe, buffer, sizeof(buffer) - 1, &n, nullptr) && n > 0) {
+            buffer[n] = '\0';
+            std::string_view sv(buffer, n);
+            while (!sv.empty() && (sv.back() == '\n' || sv.back() == '\r')) {
+                sv.remove_suffix(1);
+            }
+            if (!sv.empty()) {
+                std::string s(sv);
+                const size_t MAX = 1024; // safe size for Pd
+                while (s.size() > MAX) {
+                    this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
+                    s.erase(0, MAX);
                 }
-                if (!sv.empty()) {
-                    std::string s(sv);
-                    const size_t MAX = 1024; // safe size for Pd
-                    while (s.size() > MAX) {
-                        this->print(s.substr(0, MAX), Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-                        s.erase(0, MAX);
-                    }
-                    if (!s.empty()) {
-                        this->print(s, Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
-                    }
+                if (!s.empty()) {
+                    this->print(s, Pd4WebLogLevel::PD4WEB_COMMAND_STDOUT);
                 }
             }
-            CloseHandle(pipe);
-        };
-
-        // Start threads to read stdout and stderr concurrently
-        std::thread t_out(read_pipe, outRead);
-        std::thread t_err(read_pipe, errRead);
-
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        t_out.join();
-        t_err.join();
-
-        DWORD exitCode = 0;
-        GetExitCodeProcess(pi.hProcess, &exitCode);
-
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-
-        return static_cast<int>(exitCode);
-
-    } else {
-        STARTUPINFOA si{};
-        si.cb = sizeof(si);
-
-        PROCESS_INFORMATION pi{};
-        if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, 0, nullptr,
-                            nullptr, &si, &pi)) {
-            throw std::runtime_error("CreateProcess failed");
         }
+        CloseHandle(pipe);
+    };
 
-        WaitForSingleObject(pi.hProcess, INFINITE);
-        DWORD exitCode = 0;
-        GetExitCodeProcess(pi.hProcess, &exitCode);
+    // Start threads to read stdout and stderr concurrently
+    std::thread t_out(read_pipe, outRead);
+    std::thread t_err(read_pipe, errRead);
 
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    t_out.join();
+    t_err.join();
 
-        return static_cast<int>(exitCode);
-    }
+    DWORD exitCode = 0;
+    GetExitCodeProcess(pi.hProcess, &exitCode);
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    return static_cast<int>(exitCode);
 #endif
 }
 
@@ -363,6 +310,28 @@ std::string Pd4Web::formatLibUrl(const std::string &format, const std::string &a
         }
     }
     return result;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::isNumberOrNumberSemicolon(const std::string &s) {
+    if (s.empty()) {
+        return false;
+    }
+
+    size_t end = s.size();
+    if (s.back() == ';') {
+        end--;
+        if (end == 0) {
+            return false;
+        }
+    }
+
+    for (size_t i = 0; i < end; ++i) {
+        if (!std::isdigit(static_cast<unsigned char>(s[i]))) {
+            return false;
+        }
+    }
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -460,40 +429,138 @@ void Pd4Web::createVersionFile(std::shared_ptr<Patch> &p) {
 
 // ──────────────────────────────────────────
 void Pd4Web::serverPatch(bool toggle, bool detached, fs::path folderToServer) {
-    static std::unique_ptr<httplib::Server> server;
+    struct ServerContext {
+        std::unique_ptr<httplib::Server> server;
+        std::thread worker;
+        std::atomic<bool> stopRequested{false};
+    };
+
+    struct SignalManager {
+        explicit SignalManager(std::atomic<bool> &flag) : m_Flag(flag) {
+#if defined(_WIN32)
+            currentFlag() = &m_Flag;
+            SetConsoleCtrlHandler(&SignalManager::handler, TRUE);
+#else
+            currentFlag() = &m_Flag;
+            struct sigaction sa{};
+            sa.sa_handler = &SignalManager::posixHandler;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            sigaction(SIGINT, &sa, &m_OldInt);
+            sigaction(SIGTERM, &sa, &m_OldTerm);
+#endif
+        }
+
+        ~SignalManager() {
+#if defined(_WIN32)
+            SetConsoleCtrlHandler(&SignalManager::handler, FALSE);
+#else
+            sigaction(SIGINT, &m_OldInt, nullptr);
+            sigaction(SIGTERM, &m_OldTerm, nullptr);
+#endif
+            currentFlag() = nullptr;
+        }
+
+      private:
+        std::atomic<bool> &m_Flag;
+
+#if defined(_WIN32)
+        static BOOL WINAPI handler(DWORD ctrlType) {
+            if (ctrlType == CTRL_C_EVENT || ctrlType == CTRL_BREAK_EVENT) {
+                if (auto *flag = currentFlag()) {
+                    flag->store(true, std::memory_order_relaxed);
+                }
+                return TRUE;
+            }
+            return FALSE;
+        }
+#else
+        struct sigaction m_OldInt{};
+        struct sigaction m_OldTerm{};
+
+        static void posixHandler(int) {
+            if (auto *flag = currentFlag()) {
+                flag->store(true, std::memory_order_relaxed);
+            }
+        }
+#endif
+
+        static std::atomic<bool> *&currentFlag() {
+            static std::atomic<bool> *flag = nullptr;
+            return flag;
+        }
+    };
+
+    static ServerContext ctx;
 
     if (toggle) {
-        if (!server) {
-            server = std::make_unique<httplib::Server>();
+        if (ctx.server) {
+            print("Server already running", Pd4WebLogLevel::PD4WEB_WARNING);
+            return;
         }
 
-        std::thread t([this, folderToServer]() {
-            if (folderToServer.empty()) {
-                server->set_mount_point("/", m_BuildFolder.string());
-            } else {
-                server->set_mount_point("/", folderToServer.string());
-            }
-            server->Get("/", [](const httplib::Request &, httplib::Response &res) {
-                res.set_redirect("/index.html");
+        ctx.server = std::make_unique<httplib::Server>();
+        ctx.stopRequested.store(false, std::memory_order_relaxed);
+
+        ctx.worker =
+            std::thread([this, folderToServer,
+                         guard = std::make_shared<SignalManager>(ctx.stopRequested)]() mutable {
+                (void)guard; // keep handler alive for the thread lifetime
+                auto &stopFlag = ctx.stopRequested;
+                auto *server = ctx.server.get();
+
+                if (folderToServer.empty()) {
+                    server->set_mount_point("/", m_BuildFolder.string());
+                } else {
+                    server->set_mount_point("/", folderToServer.string());
+                }
+
+                server->Get("/", [](const httplib::Request &, httplib::Response &res) {
+                    res.set_redirect("/index.html");
+                });
+
+                server->Get("/stop", [&stopFlag](const httplib::Request &, httplib::Response &res) {
+                    res.set_content("Stopping", "text/plain");
+                    stopFlag.store(true, std::memory_order_relaxed);
+                });
+
+                std::thread stopper([server, &stopFlag]() {
+                    while (!stopFlag.load(std::memory_order_relaxed)) {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+                    }
+                    server->stop();
+                });
+
+                const std::string url = "http://localhost:" + std::to_string(m_ServerPort);
+                print("Starting server at " + url, Pd4WebLogLevel::PD4WEB_LOG1);
+                if (!server->listen("0.0.0.0", m_ServerPort)) {
+                    print("Failed to start server at " + url, Pd4WebLogLevel::PD4WEB_ERROR);
+                    m_Error = true;
+                    stopFlag.store(true, std::memory_order_relaxed);
+                }
+
+                if (stopper.joinable()) {
+                    stopper.join();
+                }
+
+                stopFlag.store(true, std::memory_order_relaxed);
+                ctx.server.reset();
             });
-            server->Get("/stop",
-                        [&](const httplib::Request &, httplib::Response &res) { server->stop(); });
-            std::string site = "http://localhost:8082";
-            print("Starting server at " + site, Pd4WebLogLevel::PD4WEB_LOG1);
-            if (!server->listen("0.0.0.0", 8082)) {
-                print("Failed to start server at " + site, Pd4WebLogLevel::PD4WEB_ERROR);
-                m_Error = true;
-                return;
-            }
-        });
+
         if (detached) {
-            t.detach();
-        } else {
-            t.join();
+            ctx.worker.detach();
+        } else if (ctx.worker.joinable()) {
+            ctx.worker.join();
         }
     } else {
-        httplib::Client client("http://localhost:8082");
-        auto res = client.Get("/stop");
-        server.reset();
+        ctx.stopRequested.store(true, std::memory_order_relaxed);
+        if (ctx.server) {
+            ctx.server->stop();
+        }
+        if (ctx.worker.joinable()) {
+            ctx.worker.join();
+        }
+        ctx.server.reset();
+        ctx.stopRequested.store(false, std::memory_order_relaxed);
     }
 }
