@@ -47,7 +47,7 @@ std::string Pd4Web::getCertFile() {
             print("Certificate not found, installing certifi package for SSL certificates...",
                   Pd4WebLogLevel::PD4WEB_LOG2);
             std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
-            int pipResult = execProcess(m_PythonWindows, pipInstallCmd);
+            int pipResult = execProcess(m_PythonWindows.string(), pipInstallCmd);
             if (pipResult != 0) {
                 print("Failed to install certifi package via pip. SSL connections may fail.",
                       Pd4WebLogLevel::PD4WEB_WARNING);

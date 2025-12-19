@@ -108,7 +108,7 @@ bool Pd4Web::cmdInstallEmsdk() {
 #if defined(_WIN32)
     print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
     std::vector<std::string> cmd = {"install", EMSDK_VERSION};
-    int result = execProcess(m_EmsdkInstaller, cmd);
+    int result = execProcess(m_EmsdkInstaller.string(), cmd);
     if (result != 0) {
         print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
@@ -116,7 +116,7 @@ bool Pd4Web::cmdInstallEmsdk() {
 
     print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
     cmd = {"install", "node-22.16.0-64bit"};
-    result = execProcess(m_EmsdkInstaller, cmd);
+    result = execProcess(m_EmsdkInstaller.string(), cmd);
     if (result != 0) {
         print("Failed to install Node.js", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

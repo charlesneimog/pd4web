@@ -460,7 +460,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 1: Configure with emcmake
-    std::vector<std::string> cfgArgs = {m_Cmake,
+    std::vector<std::string> cfgArgs = {m_Cmake.string(),
                                         p->OutputFolder.string(),
                                         "-B",
                                         buildDir.string(),
@@ -471,7 +471,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                         "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
                                         "-Wno-dev"};
 
-    int result = execProcess(m_Emcmake, cfgArgs);
+    int result = execProcess(m_Emcmake.string(), cfgArgs);
     if (result != 0) {
         print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
@@ -482,7 +482,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     std::vector<std::string> buildArgs = {"--build", buildDir.string(),
                                           "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
-    result = execProcess(m_Cmake, buildArgs);
+    result = execProcess(m_Cmake.string(), buildArgs);
     if (result != 0) {
         print("Build failed", Pd4WebLogLevel::PD4WEB_ERROR);
         return;
