@@ -242,7 +242,7 @@ static void pd4web_free(Pd4WebObj *x) {
 // ─────────────────────────────────────
 extern "C" void setup_pd4web0x2ecompiler(void) {
 
-    post("[pd4web] by Charles K. Neimog, v%d.%d.%d", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
+    post("[pd4web] by Charles K. Neimog, v%d.%d.%s", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
          PD4WEB_VERSION_PATCH);
     pd4web_class = class_new(gensym("pd4web.compiler"), (t_newmethod)pd4web_new,
                              (t_method)pd4web_free, sizeof(Pd4WebObj), CLASS_DEFAULT, A_NULL);

@@ -33,7 +33,7 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 0
-#define PD4WEB_VERSION_PATCH 0
+#define PD4WEB_VERSION_PATCH "0a1"
 
 #define PUREDATA_VERSION "0.56-2"
 #define EMSDK_VERSION "4.0.21"
@@ -392,4 +392,5 @@ class Pd4Web {
     void writeFile(const std::string &path, const std::string &content);
     void replaceAll(std::string &str, const std::string &from, const std::string &to);
     void createVersionFile(std::shared_ptr<Patch> &p);
+    void printVersion();
 };

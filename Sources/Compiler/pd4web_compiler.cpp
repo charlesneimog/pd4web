@@ -210,6 +210,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     options.add_options()
         // help
         ("help", "Print this usage.")
+        ("version", "Print current version and exit.")
 
         // patch
         ("patch_file", 
@@ -290,6 +291,11 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     if (result.count("help")) {
         options.set_width(120);
         std::cout << options.help() << "\n";
+        exit(0);
+    }
+
+    if (result.count("version")) {
+        printVersion();
         exit(0);
     }
 

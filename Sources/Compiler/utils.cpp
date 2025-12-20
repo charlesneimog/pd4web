@@ -24,6 +24,48 @@
 namespace bp = boost::process::v2;
 namespace asio = boost::asio;
 
+void Pd4Web::printVersion() {
+    std::cout << "pd4web " << PD4WEB_VERSION_MAJOR << "." << PD4WEB_VERSION_MINOR << "."
+              << PD4WEB_VERSION_PATCH << " | built " << __DATE__ << " " << __TIME__ << " | "
+#if defined(__clang__)
+              << "Clang " << __clang_version__
+#elif defined(__GNUC__)
+              << "GCC " << __VERSION__
+#elif defined(_MSC_VER)
+              << "MSVC " << _MSC_VER
+#else
+              << "Unknown compiler"
+#endif
+              << " | "
+#if defined(_WIN32)
+              << "Windows"
+#elif defined(__APPLE__)
+              << "macOS"
+#elif defined(__linux__)
+              << "Linux"
+#else
+              << "Unknown OS"
+#endif
+              << " | "
+#if defined(__x86_64__) || defined(_M_X64)
+              << "x86_64"
+#elif defined(__aarch64__)
+              << "ARM64"
+#elif defined(__i386__) || defined(_M_IX86)
+              << "x86"
+#else
+              << "Unknown arch"
+#endif
+#ifdef NDEBUG
+              << " | Release"
+#else
+              << " | Debug"
+#endif
+              << std::endl;
+
+    std::exit(0);
+}
+
 // ─────────────────────────────────────
 std::string Pd4Web::getCertFile() {
 #if defined(_WIN32)

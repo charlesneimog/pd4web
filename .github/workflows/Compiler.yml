@@ -2,6 +2,12 @@
 name: PureData Pd4Web Compiler
 on:
   workflow_dispatch:
+    inputs:
+      publish_pypi:
+        description: "Publish built wheels to PyPI"
+        required: false
+        default: false
+        type: boolean
   push:
     branches: [main]
 env:
@@ -145,6 +151,14 @@ jobs:
         run: | 
           pip install build
           python -m build --wheel
+      - name: Publish to PyPI
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_pypi == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+          packages-dir: dist
       - name: Save build cache
         if: always()
         uses: actions/cache/save@v4
