@@ -5,14 +5,13 @@ Pd4Web::Pd4Web(const fs::path &pathHome) {
     m_Error = false;
     if (fs::exists(pathHome)) {
         m_Pd4WebRoot = pathHome;
-        m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
-        if (!fs::exists(m_Pd4WebFiles)) {
-            print("Pd4Web Files does not exists: " + m_Pd4WebFiles.string(),
-                  Pd4WebLogLevel::PD4WEB_ERROR);
+        fs::path Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+        if (!fs::exists(Pd4WebFiles)) {
+            print("Pd4Web files do not exist: " + Pd4WebFiles.string() +
+                  ". They must exist to proceed with compilation.");
             exit(-1);
         }
     }
-    // if pathHome does not exist, it must be provided by Python or for command flag
 }
 
 // ─────────────────────────────────────
@@ -20,10 +19,10 @@ bool Pd4Web::init() {
     print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
 
     if (fs::exists(m_Pd4WebRoot)) {
-        m_Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
-        if (!fs::exists(m_Pd4WebFiles)) {
-            print("Should have a Pd4Web folder inside " + m_Pd4WebRoot.string(),
-                  Pd4WebLogLevel::PD4WEB_ERROR);
+        fs::path Pd4WebFiles = fs::path(m_Pd4WebRoot) / "Pd4Web";
+        if (!fs::exists(Pd4WebFiles)) {
+            print("Pd4Web files do not exist: " + Pd4WebFiles.string() +
+                  ". They must exist to proceed with compilation.");
             return false;
         }
     }
@@ -221,10 +220,6 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         ("pd4web-root", 
             "Pd4Web root folder, must have a Pd4Web folder inside it will all source code and resources of pd4web",
             cxxopts::value<fs::path>(m_Pd4WebRoot))
-
-        ("pd4web-folder", 
-            "Pd4Web Folder (with Libraries, Sources, etc).",
-            cxxopts::value<fs::path>(m_Pd4WebFiles))
 
         // Configuration of Pd4Web
         ("m,initial-memory", 

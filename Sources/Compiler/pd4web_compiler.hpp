@@ -33,7 +33,7 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 0
-#define PD4WEB_VERSION_PATCH "0a1"
+#define PD4WEB_VERSION_PATCH "0a3"
 
 #define PUREDATA_VERSION "0.56-2"
 #define EMSDK_VERSION "4.0.21"
@@ -180,8 +180,8 @@ class Pd4Web {
     void setPatchFile(fs::path file) {
         m_PatchFile = file;
     };
-    void setPd4WebFilesFolder(fs::path path) {
-        m_Pd4WebFiles = path;
+    void setPd4WebRootFolder(fs::path root) {
+        m_Pd4WebRoot = root;
     };
     void setInitialMemory(int memory) {
         m_Memory = memory;
@@ -241,7 +241,6 @@ class Pd4Web {
     bool m_Error;
 
     fs::path m_Pd4WebRoot;
-    fs::path m_Pd4WebFiles;
     fs::path m_BuildFolder;
     fs::path m_PatchFile;
 

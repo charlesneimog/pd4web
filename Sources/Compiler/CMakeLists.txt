@@ -170,25 +170,33 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-    find_package(Python REQUIRED COMPONENTS Interpreter Development)
-    execute_process(
-        COMMAND "${Python_EXECUTABLE}" -m pybind11 --cmakedir
-        OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
-        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+    # Build the Python extension against the stable ABI (Py_LIMITED_API).
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
 
-    if(PYBIND11_CMAKE_DIR)
-        list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
-        find_package(pybind11 CONFIG REQUIRED)
-    else()
-        set(PYBIND11_FINDPYTHON
-            ON
-            CACHE BOOL "" FORCE)
-        find_package(pybind11 REQUIRED)
+    add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pypd4web.cpp)
+    target_link_libraries(pypd4web PRIVATE Python::Module pd4web_compiler)
+    target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x03080000)
+
+    # Ensure the produced filename matches Python's extension suffix and has no "lib" prefix.
+    if(UNIX)
+        set(PY_ABI_SUFFIX ".abi3.so")
+    elseif(WIN32)
+        set(PY_ABI_SUFFIX ".abi3.pyd")
     endif()
 
-    add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pybind11.cpp)
-    target_link_libraries(pypd4web PRIVATE pybind11::module pd4web_compiler)
-    set_target_properties(pypd4web PROPERTIES PREFIX "" OUTPUT_NAME "pypd4web")
+    set_target_properties(pypd4web PROPERTIES
+        PREFIX ""
+        OUTPUT_NAME "pypd4web"
+        SUFFIX "${PY_ABI_SUFFIX}"
+    )
+    if(WIN32)
+        execute_process(
+            COMMAND ${Python_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
+            OUTPUT_VARIABLE PYTHON_BASE_PREFIX
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+        target_link_directories(pypd4web PRIVATE "${PYTHON_BASE_PREFIX}/libs")
+    endif()
 
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dist")
     file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/dist/pd4web")
@@ -225,7 +233,6 @@ if(PD4WEB_BUILD_PYBIND11)
         target_compile_options(pypd4web PRIVATE /Gy)
         target_link_options(pypd4web PRIVATE /OPT:REF /OPT:ICF)
     endif()
-
 endif()
 
 add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)

@@ -196,7 +196,7 @@ static void *pd4web_new() {
     // process
     x->out = outlet_new(&x->obj, &s_anything);
     x->pd4web = new Pd4Web();
-    x->pd4web->setPd4WebFilesFolder(pd4web_obj_root);
+    x->pd4web->setPd4WebRootFolder(pd4web_obj_root);
     x->pd4web->setPrintCallback([x](const std::string &msg, Pd4WebLogLevel loglevel, int level) {
         Pd4WebDetachedPost *d = new Pd4WebDetachedPost();
         d->msg = msg;

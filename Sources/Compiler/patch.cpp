@@ -944,7 +944,7 @@ bool Pd4Web::compilePatch() {
     validateArgs();
 
     auto p = std::make_shared<Patch>();
-    p->PatchFile = fs::path(m_PatchFile);
+    p->PatchFile = fs::absolute(m_PatchFile);
     p->PatchFolder = p->PatchFile.parent_path();
     p->Zoom = m_PatchZoom;
     p->PdVersion = m_PdVersion;
@@ -952,13 +952,7 @@ bool Pd4Web::compilePatch() {
     p->MemorySize = m_Memory;
     p->RenderGui = m_RenderGui;
     p->TemplateId = m_TemplateId;
-
-    if (m_Pd4WebFiles == "") {
-        print("m_Pd4WebFiles not set", Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
-    }
-
-    p->Pd4WebFiles = m_Pd4WebFiles;
+    p->Pd4WebFiles = m_Pd4WebRoot / "Pd4Web";
     p->PdLua = true;
     p->ProjectName = p->PatchFile.parent_path().filename().string();
     p->Pd4WebRoot = m_Pd4WebRoot;

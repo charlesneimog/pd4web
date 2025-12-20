@@ -146,6 +146,13 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
 
 #if defined(__linux__) || defined(__APPLE__)
     std::string certPath = getCertFile();
+    if (!m_PrintCallback) {
+        asio::io_context ctx;
+        bp::process proc(ctx, command, args); // inherit parent's stdio so output streams directly
+        proc.wait();
+        return proc.exit_code();
+    }
+
     asio::io_context ctx;
     boost::asio::readable_pipe out{ctx}, err{ctx};
     bp::process proc(ctx, command, args, bp::process_stdio{.in = {}, .out = out, .err = err});
@@ -237,6 +244,30 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     }
     std::string cmdLineStr = cmdLine.str();
 
+    if (!m_PrintCallback) {
+        // Let child inherit console so output shows directly
+        std::vector<char> cmdBuffer(cmdLineStr.begin(), cmdLineStr.end());
+        cmdBuffer.push_back('\0');
+
+        STARTUPINFOA si{};
+        si.cb = sizeof(si);
+        PROCESS_INFORMATION pi{};
+
+        if (!CreateProcessA(nullptr, cmdBuffer.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr,
+                            &si, &pi)) {
+            throw std::runtime_error("CreateProcess failed");
+        }
+
+        WaitForSingleObject(pi.hProcess, INFINITE);
+        DWORD exitCode = 0;
+        GetExitCodeProcess(pi.hProcess, &exitCode);
+
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+
+        return static_cast<int>(exitCode);
+    }
+
     // Create pipes
     SECURITY_ATTRIBUTES sa{sizeof(sa), nullptr, TRUE};
     HANDLE outRead, outWrite;
@@ -255,7 +286,9 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     si.dwFlags |= STARTF_USESTDHANDLES;
 
     PROCESS_INFORMATION pi{};
-    if (!CreateProcessA(nullptr, cmdLineStr.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
+    std::vector<char> cmdBuffer(cmdLineStr.begin(), cmdLineStr.end());
+    cmdBuffer.push_back('\0');
+    if (!CreateProcessA(nullptr, cmdBuffer.data(), nullptr, nullptr, TRUE, CREATE_NO_WINDOW,
                         nullptr, nullptr, &si, &pi)) {
         CloseHandle(outRead);
         CloseHandle(outWrite);

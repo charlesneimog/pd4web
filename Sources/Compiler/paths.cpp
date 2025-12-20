@@ -223,7 +223,7 @@ bool Pd4Web::getCmakeBinary() {
     }
 
 #if defined(__linux__) || defined(__APPLE__)
-    fs::path link = m_Pd4WebRoot / "bin/cmake/bin/cmake";
+    fs::path link = m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake";
     if (!fs::exists(link)) {
         fs::create_symlink(cmakeBinary, link);
     }
