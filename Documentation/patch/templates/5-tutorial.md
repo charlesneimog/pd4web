@@ -13,7 +13,7 @@ Patch side by side with some text to explain the patch. The result will be somet
 
 To make the description again we use a markdown file. The markdown is called `tutorial.md` and is located in the `WebPatch` folder. The content of the file should be edited after compilation of the patch.
 
-As in the previous template, inside `tutorial.md` you can write some description about the patch. The file uses markdown to render, you can check the complet syntax in https://www.markdownguide.org/basic-syntax/. Below the example of main command:
+As in the previous template, inside `tutorial.md` you can write some description about the patch. The file uses markdown to render, you can check the complete syntax in https://www.markdownguide.org/basic-syntax/. Below the example of main command:
 
 ``` md
 # Title 1

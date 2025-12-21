@@ -93,7 +93,7 @@ nav:
           - patch/upload/github.md
           - patch/upload/cloudflare.md
           - patch/upload/others.md
-  - JavasScript API: js/js.md
+  - JavaScript API: js/js.md
   - Externals Libraries: libraries.md
   - Adding Externals Support: devs.md
  # - Examples: tests/

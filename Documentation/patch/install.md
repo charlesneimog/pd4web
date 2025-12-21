@@ -8,14 +8,16 @@ hide:
     display: none;
   }
 </style>
- 
+
 <p align="center">
-  To compile you to install <code>pd4web</code>. You can use a PureData patch or a Python package.
+  To compile you must install <code>pd4web</code> as a
+  <a href="#pd4web-pdpatch">PureData patch</a>
+  or a <a href="#pd4web-pdpython">Python package</a>.
 </p>
 
 
- 
 ---
+<a name="pd4web-pdpatch"></a>
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
 
 On PureData, `pd4web`provides a simple GUI.
@@ -28,7 +30,7 @@ On PureData, `pd4web`provides a simple GUI.
     ---
 
     To use the `pd4web` object in PureData, follow these steps:
-    
+
     * Open PureData.
     * Navigate to **Tools** :material-arrow-right: **Find Externals**.
     * Search for `pd4web`.
@@ -46,6 +48,7 @@ On PureData, `pd4web`provides a simple GUI.
 
 
 ---
+<a name="pd4web-pdpython"></a>
 ## <h2 align="center">:octicons-terminal-16: Python Package (Command Line)</h2>
 
 If you're comfortable with the command line, you can use the `pd4web` package to compile your patches.
@@ -72,7 +75,7 @@ If you're comfortable with the command line, you can use the `pd4web` package to
     ```
 </div>
 
---- 
+---
 The options of the CLI are:
 
 | Flag | Description | Default |
