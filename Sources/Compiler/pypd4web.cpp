@@ -1,5 +1,3 @@
-#define Py_LIMITED_API 0x03080000
-
 #include <Python.h>
 
 #include "pd4web_compiler.hpp"
@@ -14,6 +12,7 @@ struct Pd4WebCompilerObject {
     Pd4Web *cpp;
 };
 
+// ─────────────────────────────────────
 static int as_std_string(PyObject *obj, std::string &out) {
     if (!PyUnicode_Check(obj)) {
         PyErr_SetString(PyExc_TypeError, "expected str");
@@ -37,6 +36,7 @@ static int as_std_string(PyObject *obj, std::string &out) {
     return 0;
 }
 
+// ─────────────────────────────────────
 static int collect_strings(PyObject *iterable, std::vector<std::string> &out) {
     PyObject *iter = PyObject_GetIter(iterable);
     if (!iter) {
@@ -64,6 +64,7 @@ static int collect_strings(PyObject *iterable, std::vector<std::string> &out) {
     return 0;
 }
 
+// ─────────────────────────────────────
 static int ensure_cpp(Pd4WebCompilerObject *self) {
     if (!self->cpp) {
         PyErr_SetString(PyExc_RuntimeError, "Pd4WebCompiler is not initialized");
@@ -72,6 +73,7 @@ static int ensure_cpp(Pd4WebCompilerObject *self) {
     return 0;
 }
 
+// ─────────────────────────────────────
 static int Pd4WebCompiler_init(PyObject *self_obj, PyObject *args, PyObject *kwargs) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     self->cpp = nullptr;
@@ -104,6 +106,7 @@ static int Pd4WebCompiler_init(PyObject *self_obj, PyObject *args, PyObject *kwa
     return 0;
 }
 
+// ─────────────────────────────────────
 static void Pd4WebCompiler_dealloc(PyObject *self_obj) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     delete self->cpp;
@@ -116,6 +119,7 @@ static void Pd4WebCompiler_dealloc(PyObject *self_obj) {
     }
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_parse_args(PyObject *self_obj, PyObject *args,
                                            PyObject *kwargs) {
     (void)kwargs;
@@ -143,6 +147,7 @@ static PyObject *Pd4WebCompiler_parse_args(PyObject *self_obj, PyObject *args,
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_init_engine(PyObject *self_obj, PyObject *Py_UNUSED(args)) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     if (ensure_cpp(self) != 0) {
@@ -153,6 +158,7 @@ static PyObject *Pd4WebCompiler_init_engine(PyObject *self_obj, PyObject *Py_UNU
     return PyBool_FromLong(ok ? 1 : 0);
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_compile_patch(PyObject *self_obj, PyObject *Py_UNUSED(args)) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     if (ensure_cpp(self) != 0) {
@@ -163,6 +169,7 @@ static PyObject *Pd4WebCompiler_compile_patch(PyObject *self_obj, PyObject *Py_U
     return PyBool_FromLong(ok ? 1 : 0);
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_patch_file(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -183,6 +190,7 @@ static PyObject *Pd4WebCompiler_set_patch_file(PyObject *self_obj, PyObject *arg
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_initial_memory(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     long mem = 0;
@@ -198,6 +206,7 @@ static PyObject *Pd4WebCompiler_set_initial_memory(PyObject *self_obj, PyObject 
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_patch_zoom(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     long zoom = 0;
@@ -213,6 +222,7 @@ static PyObject *Pd4WebCompiler_set_patch_zoom(PyObject *self_obj, PyObject *arg
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_output_folder(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -233,6 +243,7 @@ static PyObject *Pd4WebCompiler_set_output_folder(PyObject *self_obj, PyObject *
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_root_folder(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -253,6 +264,7 @@ static PyObject *Pd4WebCompiler_set_root_folder(PyObject *self_obj, PyObject *ar
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_template_id(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     long value = 0;
@@ -268,6 +280,7 @@ static PyObject *Pd4WebCompiler_set_template_id(PyObject *self_obj, PyObject *ar
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_debug_mode(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -288,6 +301,7 @@ static PyObject *Pd4WebCompiler_set_debug_mode(PyObject *self_obj, PyObject *arg
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_dev_debug_mode(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -308,6 +322,7 @@ static PyObject *Pd4WebCompiler_set_dev_debug_mode(PyObject *self_obj, PyObject 
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_set_fail_fast(PyObject *self_obj, PyObject *args) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     PyObject *value = nullptr;
@@ -328,6 +343,7 @@ static PyObject *Pd4WebCompiler_set_fail_fast(PyObject *self_obj, PyObject *args
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyObject *Pd4WebCompiler_disable_gui_render(PyObject *self_obj, PyObject *Py_UNUSED(args)) {
     auto *self = reinterpret_cast<Pd4WebCompilerObject *>(self_obj);
     if (ensure_cpp(self) != 0) {
@@ -338,6 +354,7 @@ static PyObject *Pd4WebCompiler_disable_gui_render(PyObject *self_obj, PyObject 
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyMethodDef Pd4WebCompiler_methods[] = {
     {"parseArgs", reinterpret_cast<PyCFunction>(Pd4WebCompiler_parse_args), METH_VARARGS,
      "Parse command-line arguments."},
@@ -367,6 +384,7 @@ static PyMethodDef Pd4WebCompiler_methods[] = {
      METH_NOARGS, "Disable GUI rendering."},
     {nullptr, nullptr, 0, nullptr}};
 
+// ─────────────────────────────────────
 static PyType_Slot Pd4WebCompiler_slots[] = {
     {Py_tp_new, reinterpret_cast<void *>(PyType_GenericNew)},
     {Py_tp_init, reinterpret_cast<void *>(Pd4WebCompiler_init)},
@@ -374,6 +392,7 @@ static PyType_Slot Pd4WebCompiler_slots[] = {
     {Py_tp_methods, reinterpret_cast<void *>(Pd4WebCompiler_methods)},
     {0, nullptr}};
 
+// ─────────────────────────────────────
 static PyType_Spec Pd4WebCompiler_spec = {
     "pypd4web.Pd4WebCompiler",
     sizeof(Pd4WebCompilerObject),
@@ -382,6 +401,7 @@ static PyType_Spec Pd4WebCompiler_spec = {
     Pd4WebCompiler_slots,
 };
 
+// ─────────────────────────────────────
 static PyObject *pypd4web_run(PyObject *Py_UNUSED(module), PyObject *args, PyObject *kwargs) {
     (void)kwargs;
     PyObject *seq = nullptr;
@@ -407,11 +427,13 @@ static PyObject *pypd4web_run(PyObject *Py_UNUSED(module), PyObject *args, PyObj
     Py_RETURN_NONE;
 }
 
+// ─────────────────────────────────────
 static PyMethodDef module_methods[] = {
     {"run", reinterpret_cast<PyCFunction>(pypd4web_run), METH_VARARGS,
      "Run pd4web with command-line arguments."},
     {nullptr, nullptr, 0, nullptr}};
 
+// ─────────────────────────────────────
 static PyModuleDef pypd4web_module = {
     PyModuleDef_HEAD_INIT,
     "pypd4web",
@@ -426,6 +448,7 @@ static PyModuleDef pypd4web_module = {
 
 } // namespace
 
+// ─────────────────────────────────────
 PyMODINIT_FUNC PyInit_pypd4web(void) {
     PyObject *module = PyModule_Create(&pypd4web_module);
     if (!module) {

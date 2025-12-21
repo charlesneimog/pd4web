@@ -170,31 +170,14 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PD4WEB_BUILD_PYBIND11)
-    # Build the Python extension against the stable ABI (Py_LIMITED_API).
-    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
-
-    add_library(pypd4web MODULE ${CMAKE_CURRENT_SOURCE_DIR}/pypd4web.cpp)
-    target_link_libraries(pypd4web PRIVATE Python::Module pd4web_compiler)
-    target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x03080000)
-
-    # Ensure the produced filename matches Python's extension suffix and has no "lib" prefix.
-    if(UNIX)
-        set(PY_ABI_SUFFIX ".abi3.so")
-    elseif(WIN32)
-        set(PY_ABI_SUFFIX ".abi3.pyd")
-    endif()
-
-    set_target_properties(pypd4web PROPERTIES
-        PREFIX ""
-        OUTPUT_NAME "pypd4web"
-        SUFFIX "${PY_ABI_SUFFIX}"
-    )
+    find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+    python3_add_library(pypd4web MODULE pypd4web.cpp USE_SABI 3.10 WITH_SOABI)
+    target_link_libraries(pypd4web PRIVATE pd4web_compiler)
     if(WIN32)
         execute_process(
             COMMAND ${Python_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
             OUTPUT_VARIABLE PYTHON_BASE_PREFIX
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
         target_link_directories(pypd4web PRIVATE "${PYTHON_BASE_PREFIX}/libs")
     endif()
 
@@ -234,6 +217,3 @@ if(PD4WEB_BUILD_PYBIND11)
         target_link_options(pypd4web PRIVATE /OPT:REF /OPT:ICF)
     endif()
 endif()
-
-add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-target_link_libraries(pd4web PRIVATE pd4web_compiler)
