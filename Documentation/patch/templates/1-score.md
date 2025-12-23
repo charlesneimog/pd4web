@@ -14,7 +14,7 @@ In this template you have access to a patch that receives image files (from scor
 </p>
 
 <p align="center" markdown>
-    :octicons-download-16: [Download Patch Template](../patches/template-1.pd)
+    :octicons-download-16: [Download Patch Template](https://charlesneimog.github.io/pd4web/patch/templates/patches/template-1.pd)
 </p>
 
 !!! info "Compile using the template mode `1`"

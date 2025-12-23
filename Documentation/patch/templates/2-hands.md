@@ -17,7 +17,7 @@ The result will be something like this:
 </p>
 
 <p align="center" markdown>
-    :octicons-download-16: [Download Patch example](../patches/template-2.pd)
+    :octicons-download-16: [Download Patch example](https://charlesneimog.github.io/pd4web/patch/templates/patches/template-2.pd)
 </p>
     
 ## <h2 align="center">What should your patch include?</h2>
@@ -26,10 +26,6 @@ You patch must have some receivers using the `L-` and `R-` preffixes to receive 
 
 <p align="center">
   <img src="../assets/hand-pose.png" width="80%" style="border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-</p>
-
-<p align="center" markdown>
-    :octicons-download-16: [Download Patch example](../patches/template-2.pd)
 </p>
 
 For example, to receive the data from where is the `INDEX_FINGER_TIP` for the `LEFT` hand you must use the object `[r L-8]` in your patch.

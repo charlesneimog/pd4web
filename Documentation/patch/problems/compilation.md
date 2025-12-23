@@ -16,8 +16,8 @@ If you have problems compiling your patches the easiest way to solve them is to 
 <div class="grid cards" markdown>
 -   :construction: __Object not found__:
     -   __Solution:__
-        -   Check if the library of that object is supported [Supported libraries](../../../libraries).
-        -   Check how `pd4web` detects objects in [Externals Objects](../../externals). If the library is not supported remove the object; if the library is supported, and you did what is in [Externals Objects](../../externals), report the issue.
+        -   Check if the library of that object is supported [Supported libraries](../../libraries.md).
+        -   Check how `pd4web` detects objects in [Externals Objects](../externals.md). If the library is not supported remove the object; if the library is supported, and you did what is in [Externals Objects](../externals.md), report the issue.
 -   :construction: __Object not supported__:
     -   __Solution:__ You must remove the object not supported.
 </div>

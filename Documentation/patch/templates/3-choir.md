@@ -17,7 +17,7 @@ The result will be something like this:
 </p>
 
 <p align="center" markdown>
-    :octicons-download-16: [Download Patch example](../patches/template-3.pd)
+    :octicons-download-16: [Download Patch example](https://charlesneimog.github.io/pd4web/patch/templates/patches/template-3.pd)
 </p>
 
 ## <h2 align="center">What should your patch include?</h2>

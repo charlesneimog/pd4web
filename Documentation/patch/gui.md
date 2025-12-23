@@ -11,17 +11,11 @@ Here we list all the objects that are supported by the GUI module and how to use
     <p align="center">
         <img src="../gui-light.png" alt="gui" width="90%" style="border-radius: 10px" box-shadow: "0 0 10px rgba(0, 0, 0, 0.3)">
     </p>
-    <p align="center" markdown>
-        :octicons-browser-16: [Check the website](../../tests/gui)
-    </p>
 
 
 -   :material-gesture-double-tap:{ .lg .middle } __All Gui Objects__
     <p align="center">
         <img src="../gui-dark.png" alt="gui" width="90%" style="border-radius: 10px" box-shadow: "0 0 10px rgba(0, 0, 0, 0.3)">
-    </p>
-    <p align="center" markdown>
-        :octicons-browser-16: [Check the website](../../tests/gui2)
     </p>
 </div>
 

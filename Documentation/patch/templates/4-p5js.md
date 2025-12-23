@@ -15,7 +15,7 @@ This template is for the combination of `p5js` and `pd4web`. It is a simple temp
 </p>
 
 <p align="center" markdown>
-    :octicons-download-16: [Download Patch Template](../patches/template-4.zip)
+    :octicons-download-16: [Download Patch Template](https://charlesneimog.github.io/pd4web/patch/templates/patches/template-4.zip)
 </p>
 
 There is no much to say about this template, it just use a personalized `index.html` and `sketch.js`, where you can code you `p5js` code. 

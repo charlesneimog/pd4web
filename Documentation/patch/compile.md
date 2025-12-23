@@ -56,6 +56,6 @@ Follow the numbers to compile your patch:
 * Compile your patch using the `red` button.
 * Run the server using the `blue` button.
 
-You can also check the Template section to understand how to use [templates](../Templates/).
+You can also check the Template section to understand how to use [templates](templates/index.md).
 
 !!! tip "Before start a new project, always click on `Update pd4web package`."
