@@ -78,19 +78,37 @@ cpmaddpackage("gh:jarro2783/cxxopts#v3.3.1")
 cpmaddpackage("gh:nlohmann/json#v3.12.0")
 cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2")
 
-# # libgit
-cpmaddpackage(URI "gh:jimmy-park/openssl-cmake#3.6.0" OPTIONS "OPENSSL_USE_STATIC_LIBS ON" "BUILD_SHARED_LIBS OFF")
-cpmaddpackage(URI "gh:libgit2/libgit2#v1.9.2" OPTIONS "openssl_use_static_libs on" "build_shared_libs off")
+# libgit
+set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+set(OPENSSL_MSVC_STATIC_RT TRUE)
+set(BUILD_SHARED_LIBS OFF)
 
-cpmaddpackage(URI "gh:nabijaczleweli/whereami-cpp#v1.1.1" DOWNLOAD_ONLY)
 
-if(whereami-cpp_ADDED)
-    message(STATUS "${whereami-cpp_SOURCE_DIR}/include")
-    include_directories("${whereami-cpp_SOURCE_DIR}/include")
+cpmaddpackage(
+    NAME
+    libgit2
+    GITHUB_REPOSITORY
+    libgit2/libgit2
+    VERSION
+    1.9.2
+    OPTIONS
+    "OPENSSL_USE_STATIC_LIBS ON"
+    "BUILD_SHARED_LIBS OFF"
+    "BUILD_CLI OFF"
+    "BUILD_TESTS OFF"
+    "BUILD_EXAMPLES OFF"
+)
 
-else()
-    message(FATAL_ERROR "Not found")
-endif()
+
+cpmaddpackage(
+    URI
+    "gh:jimmy-park/openssl-cmake#3.6.0"
+    OPTIONS
+    "OPENSSL_USE_STATIC_LIBS ON"
+    "BUILD_SHARED_LIBS OFF"
+    "BUILD_EXAMPLES OFF"
+    "BUILD_TESTING OFF")
 
 # https://github.com/nabijaczleweli/whereami-cpp.git
 
@@ -136,26 +154,21 @@ add_library(
 
 target_include_directories(pd4web_compiler PUBLIC ${CMAKE_BINARY_DIR} "${tree-sitter_SOURCE_DIR}/lib/include")
 target_compile_definitions(pd4web_compiler PRIVATE BOOST_ALL_NO_LIB)
-
 target_link_libraries(
     pd4web_compiler
-    PUBLIC tree-sitter
+    PUBLIC OpenSSL::SSL
+           OpenSSL::Crypto
+           httplib
+           tree-sitter
            tree-sitter-cpp
            tree-sitter-c
            cxxopts
-           nlohmann_json
            fkYAML
-           httplib
+           nlohmann_json
            libgit2
            libgit2package
-           OpenSSL::SSL
-           OpenSSL::Crypto
            Boost::process)
-
-if(WIN32)
-    target_link_libraries(pd4web_compiler PUBLIC Crypt32)
-endif()
-
+set_property(TARGET pd4web_compiler PROPERTY LINK_SEARCH_START_STATIC TRUE)
 target_compile_definitions(pd4web_compiler PUBLIC LIBARCHIVE_STATIC)
 
 if(MSVC)
@@ -169,10 +182,12 @@ endif()
 # ╭──────────────────────────────────────╮
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
-if(PD4WEB_BUILD_PYBIND11)
-    find_package(Python3 3.10 REQUIRED COMPONENTS Interpreter Development.SABIModule)
-    python3_add_library(pypd4web MODULE pypd4web.cpp USE_SABI 3.10 WITH_SOABI)
+if(PY_PD4WEB_BUILD)
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+    python3_add_library(pypd4web MODULE pypd4web.cpp USE_SABI 3.11)
+    target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x030B0000)
     target_link_libraries(pypd4web PRIVATE pd4web_compiler)
+
     if(WIN32)
         execute_process(
             COMMAND ${Python_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
@@ -205,6 +220,17 @@ if(PD4WEB_BUILD_PYBIND11)
         COMMENT "Copying pypd4web module and __init__.py to dist/"
         DEPENDS pypd4web
         VERBATIM)
+
+    install(
+        TARGETS pypd4web
+        LIBRARY DESTINATION pd4web
+        RUNTIME DESTINATION pd4web
+        ARCHIVE DESTINATION pd4web)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py DESTINATION pd4web)
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ DESTINATION pd4web/Pd4Web)
+    install(DIRECTORY ${CMAKE_BIN_FOLDER}/ DESTINATION pd4web/bin/cmake/bin)
+    install(DIRECTORY ${CMAKE_SHARE_FOLDER}/ DESTINATION pd4web/bin/cmake/share)
+    install(FILES ${PD4WEB_NINJA_BINARY} DESTINATION pd4web/bin)
 
     if(UNIX AND NOT APPLE)
         target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)

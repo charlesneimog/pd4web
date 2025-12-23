@@ -33,7 +33,7 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 0
-#define PD4WEB_VERSION_PATCH "0a3"
+#define PD4WEB_VERSION_PATCH "0"
 
 #define PUREDATA_VERSION "0.56-2"
 #define EMSDK_VERSION "4.0.21"
@@ -256,6 +256,7 @@ class Pd4Web {
     bool m_FailFast = false;
     bool m_CleanBuild = false;
     int m_Memory = 128;
+    bool m_UsingPlugdata = false;
 
     unsigned m_ChnsOutCount;
     unsigned m_ChnsInCount;

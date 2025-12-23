@@ -1,23 +1,24 @@
 [project]
 name = "pd4web"
-version = "3.0.0a3"
-description = "pd4web is a tool that compiles PureData patches with external objects for Wasm, allowing to run entire patches in web browsers."
+version = "3.0.0a5"
+description = "pd4web is a tool that compiles PureData patches with external objects for Wasm."
 authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"
-license-files = ["LICENSE"]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 
+[build-system]
+requires = ["scikit-build-core"]
+build-backend = "scikit_build_core.build"
+
+[tool.scikit-build]
+# Reuse the same build directory as CI to avoid a second configure/build.
+build-dir = "build"
+wheel.packages = ["pd4web"]
+wheel.py-api = "cp311"
+cmake.args = [
+  "-DPD_PD4WEB_BUILD=ON",
+  "-DPY_PD4WEB_BUILD=ON",
+]
 [project.scripts]
 pd4web = "pd4web:main"
 
-[tool.setuptools]
-package-dir = {"" = "build/dist"}
-packages = ["pd4web"]
-include-package-data = true
-
-[tool.setuptools.package-data]
-"pd4web" = ["**/*"]
-
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"

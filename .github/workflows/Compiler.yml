@@ -1,5 +1,4 @@
----
-name: PureData Pd4Web Compiler
+name: pd4web-compiler
 on:
   workflow_dispatch:
     inputs:
@@ -8,80 +7,70 @@ on:
         required: false
         default: false
         type: boolean
-  # push:
-  #   branches: [main]
+
 env:
   BUILD_TYPE: Release
+
 jobs:
   pd4web-compiler:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        # os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
-        os: [ubuntu-latest]
+        os: [ubuntu-latest, macos-15-intel, macos-latest, windows-latest]
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
           fetch-depth: 0
+
+      # Cache build deps everywhere; ccache dir only on non-Windows
+      - name: Cache CMake and dependencies
+        id: build-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/_deps
+            build/CMakeCache.txt
+            build/CMakeFiles
+            ${{ runner.os != 'Windows' && '~/.ccache' || '' }}
+            ${{ runner.os == 'Windows' && '~/AppData/Local/ccache' || '' }}
+          key: build-cv11-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+          restore-keys: |
+            build-cv11-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-cv11-${{ matrix.os }}-${{ runner.arch }}-
+
+      - name: Clean build artifacts (keep dependencies)
+        shell: bash
+        run: |
+          if [ -d "build" ]; then
+            find build -type f \( -name "*.o" -o -name "*.obj" -o -name "*.a" -o -name "*.lib" -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) -delete 2>/dev/null || true
+          fi
+          mkdir -p build
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.14'
-      - name: Restore sccache (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/cache/restore@v4
-        with:
-          path: C:\Users\runneradmin\AppData\Local\sccache
-          key: sccache-windows-cv6-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
-          restore-keys: |
-            sccache-windows-cv6-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake') }}-
-            sccache-windows-cv6-
-      - name: Setup ccache (macOS/Linux)
-        if: runner.os != 'Windows'
-        uses: hendrikmuhs/ccache-action@v1.2
-      - name: Setup sccache (Windows)
-        if: runner.os == 'Windows'
-        uses: mozilla-actions/sccache-action@v0.0.3
-      - name: Restore build cache
-        uses: actions/cache/restore@v4
-        with:
-          path: build
-          key: build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
-          restore-keys: |
-            build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-
-            build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-cv6-${{ matrix.os }}-${{ runner.arch }}-
+
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
         uses: ilammy/setup-nasm@v1
+
       - name: Install Perl and Ninja (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           choco install strawberryperl -y
           choco install ninja -y
-          perl -v
-          nasm -v
-          ninja --version
-          where nasm
-          where perl
-          where ninja
+
       - name: Install PureData for Windows
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
+
       - name: Install PureData for macOS
         if: runner.os == 'macOS'
         run: |
@@ -91,98 +80,70 @@ jobs:
           brew install git
           brew uninstall --ignore-dependencies openssl@3
 
-          # brew install python@3.13
-          # brew install python-tk@3.13
-          # brew link --overwrite --force python@3.13
-          brew install pybind11
-          python3.13 -m pip install pybind11
       - name: Install PureData for Linux
         if: runner.os == 'Linux'
         run: |
-          export DEBIAN_FRONTEND=noninteractive
           sudo apt-get update
           sudo apt-get install -y software-properties-common ccache
           sudo add-apt-repository ppa:pure-data/pure-data -y || true
           sudo apt-get update
           sudo apt-get install -y puredata
-          sudo apt-get install -y pybind11-dev
+
+      - name: Configure ccache (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: |
+          ccache --set-config=max_size=500M
+          ccache --set-config=compression=true
+          ccache -z
+
       - name: Install Python Packages
-        run: | 
-          pip install build
-          pip install pybind11
-      - name: Configure (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
         run: |
-          cmake -S . -B build `
-            -DPDLIBDIR=${{ github.workspace }} `
-            -DCMAKE_C_COMPILER_LAUNCHER=sccache `
-            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache `
-            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
-            -DCMAKE_INSTALL_PREFIX="${env:GITHUB_WORKSPACE}" `
-            -DPD4WEB_BUILD_PYBIND11=ON
-      - name: Configure Linux
-        if: runner.os == 'Linux'
-        run: |
-          cmake -S . -B build \
-            -DPDLIBDIR=./ \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DPD4WEB_BUILD_PYBIND11=ON \
-            -DGIT_EXECUTABLE=/usr/bin/git
-      - name: Configure macOS
-        if: runner.os == 'macOS'
-        run: |
-          cmake -S . -B build \
-            -DPDLIBDIR=./ \
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-            -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DPD4WEB_BUILD_PYBIND11=ON \
-            -DPYBIND11_FINDPYTHON=ON \
-            -DPython_EXECUTABLE=$(brew --prefix)/bin/python3.13 \
-            -DGIT_EXECUTABLE=/usr/bin/git
-      - name: Build on Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: cmake --build build --config $env:BUILD_TYPE --parallel $env:NUMBER_OF_PROCESSORS
-      - name: Build on Linux
-        if: runner.os == 'Linux'
-        run: |
-          cmake --build build -- -j$(nproc)
-      - name: Build on macOS
-        if: runner.os == 'macOS'
-        run: cmake --build build -- -j$(sysctl -n hw.ncpu)
-      - name: Install
-        run: |
-          cmake --install build --config ${{ env.BUILD_TYPE }}
+          pip install build --break-system-packages
+
       - name: Build wheels
-        run: | 
-          python3.11 -m pip install build
-          python3.11 -m build --wheel
+        run: |
+          python -m pip install build --break-system-packages
+          python -m build --wheel
 
-          python3.12 -m pip install build
-          python3.12 -m build --wheel
+      - name: Show ccache stats (macOS/Linux)
+        if: runner.os != 'Windows'
+        run: ccache -s
 
-          python3.13 -m pip install build
-          python3.13 -m build --wheel
+      - name: Repair Linux wheels
+        if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}
+        run: |
+          python -m pip install auditwheel
+          auditwheel repair dist/*.whl -w dist/
+          rm dist/*-linux_*.whl
 
-          python3.14 -m pip install build
-          python3.14 -m build --wheel
-      - name: Save build cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: build
-          key: build-cv6-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake') }}-${{ github.sha }}
       - name: Upload PureData Object
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}
-          path: pd4web
+          path: build/pd4web
+
       - name: Upload Python Module
         uses: actions/upload-artifact@v4
         with:
-          name: python-pd4web-${{ matrix.os }}
+          name: pypd4web-${{ matrix.os }}
           path: dist/*.whl
+
+  publish-pypi:
+    if: ${{ github.event.inputs.publish_pypi == 'true' }}
+    needs: pd4web-compiler
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download wheels
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pypd4web-*
+          merge-multiple: true
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          skip-existing: true
+          packages-dir: dist

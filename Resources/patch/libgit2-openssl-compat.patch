@@ -1,0 +1,40 @@
+*** Begin Patch
+*** Update File: CMakeLists.txt
+@@
+ project(libgit2 VERSION "1.9.2" LANGUAGES C)
++
++# Normalize the OpenSSL API compatibility flag for all subdirectories.
++if(NOT DEFINED OPENSSL_API_COMPAT)
++    set(OPENSSL_API_COMPAT 0x10101000L)
++endif()
++add_compile_definitions(OPENSSL_API_COMPAT=${OPENSSL_API_COMPAT})
+*** End Patch
+*** Begin Patch
+*** Update File: src/util/CMakeLists.txt
+@@
+-elseif(USE_SHA1 STREQUAL "OpenSSL" OR USE_SHA1 STREQUAL "OpenSSL-Dynamic" OR USE_SHA1 STREQUAL "OpenSSL-FIPS")
+-    add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
+-    file(GLOB UTIL_SRC_SHA1 hash/openssl.*)
++elseif(USE_SHA1 STREQUAL "OpenSSL" OR USE_SHA1 STREQUAL "OpenSSL-Dynamic" OR USE_SHA1 STREQUAL "OpenSSL-FIPS")
++    file(GLOB UTIL_SRC_SHA1 hash/openssl.*)
+@@
+-elseif(USE_SHA256 STREQUAL "OpenSSL" OR USE_SHA256 STREQUAL "OpenSSL-Dynamic" OR USE_SHA256 STREQUAL "OpenSSL-FIPS")
+-    add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
+-    file(GLOB UTIL_SRC_SHA256 hash/openssl.*)
++elseif(USE_SHA256 STREQUAL "OpenSSL" OR USE_SHA256 STREQUAL "OpenSSL-Dynamic" OR USE_SHA256 STREQUAL "OpenSSL-FIPS")
++    file(GLOB UTIL_SRC_SHA256 hash/openssl.*)
+*** End Patch
+*** Begin Patch
+*** Update File: deps/ntlmclient/CMakeLists.txt
+@@
+ elseif(USE_HTTPS STREQUAL "OpenSSL")
+     add_definitions(-DCRYPT_OPENSSL)
+-    add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
+     include_directories(${OPENSSL_INCLUDE_DIR})
+     set(SRC_NTLMCLIENT_CRYPTO "crypt_openssl.c" "crypt_openssl.h")
+ elseif(USE_HTTPS STREQUAL "OpenSSL-Dynamic")
+     add_definitions(-DCRYPT_OPENSSL)
+     add_definitions(-DCRYPT_OPENSSL_DYNAMIC)
+-    add_definitions(-DOPENSSL_API_COMPAT=0x10100000L)
+     set(SRC_NTLMCLIENT_CRYPTO "crypt_openssl.c" "crypt_openssl.h")
+*** End Patch

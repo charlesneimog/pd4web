@@ -958,6 +958,11 @@ bool Pd4Web::compilePatch() {
     p->Pd4WebRoot = m_Pd4WebRoot;
     print("Project name is: '" + p->ProjectName + "'", Pd4WebLogLevel::PD4WEB_LOG1);
 
+    if (m_UsingPlugdata) {
+        p->DeclaredLibs.push_back("else");
+        p->DeclaredLibs.push_back("cyclone");
+    }
+
     if (m_BuildFolder != "") {
         p->OutputFolder = m_BuildFolder;
     } else {

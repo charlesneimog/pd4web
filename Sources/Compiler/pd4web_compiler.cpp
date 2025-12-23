@@ -267,6 +267,9 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
         ("nogui", "Disable GUI interface.", 
             cxxopts::value<bool>(disableGui)->default_value("false"))
 
+        ("plugdata", "If the patch was developed using PlugData, always use this flag.", 
+            cxxopts::value<bool>(m_UsingPlugdata)->default_value("false"))
+
         ("debug", "Activate debug compilation (faster compilation, slower and more error info execution).", 
             cxxopts::value<bool>(m_Debug)->default_value("false"))
 

@@ -18,7 +18,7 @@
 #X coords 0 1 100 -1 297 21 1;
 #X restore 8 135 graph;
 #X obj 142 186 nbx 2 17 0 2 0 0 s-template1 r-template1 Template\ Number -24 -12 0 12 #fcfcfc #000000 #000000 0 256;
-#N canvas 0 0 925 1132 pd4web-core 1;
+#N canvas 0 0 925 1132 pd4web-core 0;
 #X obj 5 6 r r-memory;
 #X obj 5 31 nbx 5 18 -1e+37 1e+37 0 0 empty empty empty 0 -10 0 12 #fcfcfc #000000 #000000 0 256;
 #X obj 311 7 r s-pd4web-patch;
@@ -219,7 +219,7 @@
 #X connect 64 0 63 0;
 #X restore 323 5 pd pd4web-core;
 #X obj 35 32 cnv 5 5 5 empty empty Charles\ K.\ Neimog\ |\ charlesneimog.github.io/pd4web 0 0 0 8 #dfdfdf #000000 0;
-#N canvas 0 0 1112 1132 extra 1;
+#N canvas 0 0 1112 1132 extra 0;
 #X obj 33 398 cnv 5 240 10 empty empty Disable\ GUI\ rendering 2 5 0 8 #ffffff #000000 0;
 #X obj 31 253 cnv 5 30 10 empty empty Clear\ before\ compile\ (will\ delete\ folders\ build\ and\ Pd4Web\ before\ new\ build). 2 5 0 8 #ffffff #000000 0;
 #X obj 4 244 tgl 25 0 s-remove-build r-remove-build empty 0 -10 0 12 #faff00 #000000 #000000 0 1;
