@@ -18,7 +18,7 @@ hide:
 
 ---
 <h3 align="center" markdown>
-`pd4web` allows to use Pd inside browsers with **external** and **GUI** objects.
+    Pd for the web, beyond vanilla
 </h3>
 
 ### <h3 align="center"> **Key Features** </h3>
@@ -151,6 +151,6 @@ hide:
          src="https://www.gravatar.com/avatar/35bfca6c25d1dd5a35dac8b4a1240c65" 
          alt="Profile Picture">
     <p style="margin: 0;">
-        I am Charles K. Neimog, a composer and researcher in the field of computer music. <code>pd4web</code> is a project to make possible the use of PureData in web browsers, improving the accessibility of electronic music. 
+        I am Charles K. Neimog, a composer and researcher in the field of computer music. <code>pd4web</code> is a project to make possible the use of Pure Data in web browsers, improving the accessibility of electronic music. 
     </p>
 </div>

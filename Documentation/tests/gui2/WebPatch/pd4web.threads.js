@@ -1,6 +1,6 @@
 /*! coi-serviceworker v0.1.7 - Guido Zuidhof and contributors, licensed under MIT */
 let coepCredentialless = false;
-if (typeof window === 'undefined') {
+if (typeof window === "undefined") {
     self.addEventListener("install", () => self.skipWaiting());
     self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
@@ -13,7 +13,7 @@ if (typeof window === 'undefined') {
                 .then(() => {
                     return self.clients.matchAll();
                 })
-                .then(clients => {
+                .then((clients) => {
                     clients.forEach((client) => client.navigate(client.url));
                 });
         } else if (ev.data.type === "coepCredentialless") {
@@ -27,11 +27,12 @@ if (typeof window === 'undefined') {
             return;
         }
 
-        const request = (coepCredentialless && r.mode === "no-cors")
-            ? new Request(r, {
-                credentials: "omit",
-            })
-            : r;
+        const request =
+            coepCredentialless && r.mode === "no-cors"
+                ? new Request(r, {
+                      credentials: "omit",
+                  })
+                : r;
         event.respondWith(
             fetch(request)
                 .then((response) => {
@@ -40,8 +41,9 @@ if (typeof window === 'undefined') {
                     }
 
                     const newHeaders = new Headers(response.headers);
-                    newHeaders.set("Cross-Origin-Embedder-Policy",
-                        coepCredentialless ? "credentialless" : "require-corp"
+                    newHeaders.set(
+                        "Cross-Origin-Embedder-Policy",
+                        coepCredentialless ? "credentialless" : "require-corp",
                     );
                     if (!coepCredentialless) {
                         newHeaders.set("Cross-Origin-Resource-Policy", "cross-origin");
@@ -54,15 +56,14 @@ if (typeof window === 'undefined') {
                         headers: newHeaders,
                     });
                 })
-                .catch((e) => console.error(e))
+                .catch((e) => console.error(e)),
         );
     });
-
 } else {
     (() => {
         const reloadedBySelf = window.sessionStorage.getItem("coiReloadedBySelf");
         window.sessionStorage.removeItem("coiReloadedBySelf");
-        const coepDegrading = (reloadedBySelf == "coepdegrade");
+        const coepDegrading = reloadedBySelf == "coepdegrade";
 
         // You can customize the behavior of this script through a global `coi` variable.
         const coi = {
@@ -72,7 +73,7 @@ if (typeof window === 'undefined') {
             coepDegrade: () => true,
             doReload: () => window.location.reload(),
             quiet: false,
-            ...window.coi
+            ...window.coi,
         };
 
         const n = navigator;
@@ -86,14 +87,10 @@ if (typeof window === 'undefined') {
 
         if (controlling) {
             // Reload only on the first failure.
-            const reloadToDegrade = coi.coepDegrade() && !(
-                coepDegrading || window.crossOriginIsolated
-            );
+            const reloadToDegrade = coi.coepDegrade() && !(coepDegrading || window.crossOriginIsolated);
             n.serviceWorker.controller.postMessage({
                 type: "coepCredentialless",
-                value: (reloadToDegrade || coepHasFailed && coi.coepDegrade())
-                    ? false
-                    : coi.coepCredentialless(),
+                value: reloadToDegrade || (coepHasFailed && coi.coepDegrade()) ? false : coi.coepCredentialless(),
             });
             if (reloadToDegrade) {
                 !coi.quiet && console.log("Reloading page to degrade COEP.");
@@ -140,7 +137,7 @@ if (typeof window === 'undefined') {
             },
             (err) => {
                 !coi.quiet && console.error("COOP/COEP Service Worker failed to register:", err);
-            }
+            },
         );
     })();
 }

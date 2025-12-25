@@ -1,0 +1,17 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/nanovg-build/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Audio/circuit~/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Audio/plaits~/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Audio/sfont~/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Audio/sfz~/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Control/lua/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/link/cmake_install.cmake",
+		"/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/ffmpeg/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

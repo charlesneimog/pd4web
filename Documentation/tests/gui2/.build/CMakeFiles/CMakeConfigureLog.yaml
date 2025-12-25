@@ -1,0 +1,2310 @@
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:12 (find_program)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_UNAME"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "uname"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/bin/uname"
+      - "/home/neimog/.config/miniconda3.dir/condabin/uname"
+      - "/usr/local/bin/uname"
+      - "/home/neimog/.local/share/zinit/polaris/bin/uname"
+      - "/usr/local/sbin/uname"
+    found: "/usr/bin/uname"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineSystem.cmake:207 (message)"
+      - "CMakeLists.txt:2 (project)"
+    message: |
+      The target system is: Emscripten - 1 - x86
+      The host system is: Linux - 6.18.2-arch2-1 - x86_64
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_STRIP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-strip"
+      - "strip"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-strip"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-strip"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-strip"
+      - "/usr/local/bin/llvm-strip"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-strip"
+      - "/usr/local/sbin/llvm-strip"
+      - "/usr/bin/llvm-strip"
+      - "/opt/cuda/bin/llvm-strip"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-strip"
+      - "/usr/lib/jvm/default/bin/llvm-strip"
+      - "/usr/bin/site_perl/llvm-strip"
+      - "/usr/bin/vendor_perl/llvm-strip"
+      - "/usr/bin/core_perl/llvm-strip"
+      - "/home/neimog/.local/bin/llvm-strip"
+      - "/bin/llvm-strip"
+      - "/sbin/llvm-strip"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/strip"
+      - "/home/neimog/.config/miniconda3.dir/bin/strip"
+      - "/home/neimog/.config/miniconda3.dir/condabin/strip"
+      - "/usr/local/bin/strip"
+      - "/home/neimog/.local/share/zinit/polaris/bin/strip"
+      - "/usr/local/sbin/strip"
+    found: "/usr/bin/strip"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_LINKER"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "ld.lld"
+      - "ld"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/ld.lld"
+      - "/home/neimog/.config/miniconda3.dir/bin/ld.lld"
+      - "/home/neimog/.config/miniconda3.dir/condabin/ld.lld"
+      - "/usr/local/bin/ld.lld"
+      - "/home/neimog/.local/share/zinit/polaris/bin/ld.lld"
+      - "/usr/local/sbin/ld.lld"
+    found: "/usr/bin/ld.lld"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJDUMP"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-objdump"
+      - "objdump"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-objdump"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-objdump"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-objdump"
+      - "/usr/local/bin/llvm-objdump"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-objdump"
+      - "/usr/local/sbin/llvm-objdump"
+      - "/usr/bin/llvm-objdump"
+      - "/opt/cuda/bin/llvm-objdump"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-objdump"
+      - "/usr/lib/jvm/default/bin/llvm-objdump"
+      - "/usr/bin/site_perl/llvm-objdump"
+      - "/usr/bin/vendor_perl/llvm-objdump"
+      - "/usr/bin/core_perl/llvm-objdump"
+      - "/home/neimog/.local/bin/llvm-objdump"
+      - "/bin/llvm-objdump"
+      - "/sbin/llvm-objdump"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/objdump"
+      - "/home/neimog/.config/miniconda3.dir/bin/objdump"
+      - "/home/neimog/.config/miniconda3.dir/condabin/objdump"
+      - "/usr/local/bin/objdump"
+      - "/home/neimog/.local/share/zinit/polaris/bin/objdump"
+      - "/usr/local/sbin/objdump"
+    found: "/usr/bin/objdump"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_OBJCOPY"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-objcopy"
+      - "objcopy"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-objcopy"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-objcopy"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-objcopy"
+      - "/usr/local/bin/llvm-objcopy"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-objcopy"
+      - "/usr/local/sbin/llvm-objcopy"
+      - "/usr/bin/llvm-objcopy"
+      - "/opt/cuda/bin/llvm-objcopy"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-objcopy"
+      - "/usr/lib/jvm/default/bin/llvm-objcopy"
+      - "/usr/bin/site_perl/llvm-objcopy"
+      - "/usr/bin/vendor_perl/llvm-objcopy"
+      - "/usr/bin/core_perl/llvm-objcopy"
+      - "/home/neimog/.local/bin/llvm-objcopy"
+      - "/bin/llvm-objcopy"
+      - "/sbin/llvm-objcopy"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/objcopy"
+      - "/home/neimog/.config/miniconda3.dir/bin/objcopy"
+      - "/home/neimog/.config/miniconda3.dir/condabin/objcopy"
+      - "/usr/local/bin/objcopy"
+      - "/home/neimog/.local/share/zinit/polaris/bin/objcopy"
+      - "/usr/local/sbin/objcopy"
+    found: "/usr/bin/objcopy"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_READELF"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-readelf"
+      - "readelf"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-readelf"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-readelf"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-readelf"
+      - "/usr/local/bin/llvm-readelf"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-readelf"
+      - "/usr/local/sbin/llvm-readelf"
+      - "/usr/bin/llvm-readelf"
+      - "/opt/cuda/bin/llvm-readelf"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-readelf"
+      - "/usr/lib/jvm/default/bin/llvm-readelf"
+      - "/usr/bin/site_perl/llvm-readelf"
+      - "/usr/bin/vendor_perl/llvm-readelf"
+      - "/usr/bin/core_perl/llvm-readelf"
+      - "/home/neimog/.local/bin/llvm-readelf"
+      - "/bin/llvm-readelf"
+      - "/sbin/llvm-readelf"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/readelf"
+      - "/home/neimog/.config/miniconda3.dir/bin/readelf"
+      - "/home/neimog/.config/miniconda3.dir/condabin/readelf"
+      - "/usr/local/bin/readelf"
+      - "/home/neimog/.local/share/zinit/polaris/bin/readelf"
+      - "/usr/local/sbin/readelf"
+    found: "/usr/bin/readelf"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_DLLTOOL"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-dlltool"
+      - "dlltool"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-dlltool"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-dlltool"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-dlltool"
+      - "/usr/local/bin/llvm-dlltool"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-dlltool"
+      - "/usr/local/sbin/llvm-dlltool"
+      - "/usr/bin/llvm-dlltool"
+      - "/opt/cuda/bin/llvm-dlltool"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-dlltool"
+      - "/usr/lib/jvm/default/bin/llvm-dlltool"
+      - "/usr/bin/site_perl/llvm-dlltool"
+      - "/usr/bin/vendor_perl/llvm-dlltool"
+      - "/usr/bin/core_perl/llvm-dlltool"
+      - "/home/neimog/.local/bin/llvm-dlltool"
+      - "/bin/llvm-dlltool"
+      - "/sbin/llvm-dlltool"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/dlltool"
+      - "/home/neimog/.config/miniconda3.dir/bin/dlltool"
+      - "/home/neimog/.config/miniconda3.dir/condabin/dlltool"
+      - "/usr/local/bin/dlltool"
+      - "/home/neimog/.local/share/zinit/polaris/bin/dlltool"
+      - "/usr/local/sbin/dlltool"
+      - "/usr/bin/dlltool"
+      - "/opt/cuda/bin/dlltool"
+      - "/home/neimog/.local/share/flatpak/exports/bin/dlltool"
+      - "/usr/lib/jvm/default/bin/dlltool"
+      - "/usr/bin/site_perl/dlltool"
+      - "/usr/bin/vendor_perl/dlltool"
+      - "/usr/bin/core_perl/dlltool"
+      - "/home/neimog/.local/bin/dlltool"
+      - "/bin/dlltool"
+      - "/sbin/dlltool"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_ADDR2LINE"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "llvm-addr2line"
+      - "addr2line"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/llvm-addr2line"
+      - "/home/neimog/.config/miniconda3.dir/bin/llvm-addr2line"
+      - "/home/neimog/.config/miniconda3.dir/condabin/llvm-addr2line"
+      - "/usr/local/bin/llvm-addr2line"
+      - "/home/neimog/.local/share/zinit/polaris/bin/llvm-addr2line"
+      - "/usr/local/sbin/llvm-addr2line"
+      - "/usr/bin/llvm-addr2line"
+      - "/opt/cuda/bin/llvm-addr2line"
+      - "/home/neimog/.local/share/flatpak/exports/bin/llvm-addr2line"
+      - "/usr/lib/jvm/default/bin/llvm-addr2line"
+      - "/usr/bin/site_perl/llvm-addr2line"
+      - "/usr/bin/vendor_perl/llvm-addr2line"
+      - "/usr/bin/core_perl/llvm-addr2line"
+      - "/home/neimog/.local/bin/llvm-addr2line"
+      - "/bin/llvm-addr2line"
+      - "/sbin/llvm-addr2line"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/addr2line"
+      - "/home/neimog/.config/miniconda3.dir/bin/addr2line"
+      - "/home/neimog/.config/miniconda3.dir/condabin/addr2line"
+      - "/usr/local/bin/addr2line"
+      - "/home/neimog/.local/share/zinit/polaris/bin/addr2line"
+      - "/usr/local/sbin/addr2line"
+    found: "/usr/bin/addr2line"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeFindBinUtils.cmake:243 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:200 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_TAPI"
+    description: "Path to a program."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "tapi"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/tapi"
+      - "/home/neimog/.config/miniconda3.dir/bin/tapi"
+      - "/home/neimog/.config/miniconda3.dir/condabin/tapi"
+      - "/usr/local/bin/tapi"
+      - "/home/neimog/.local/share/zinit/polaris/bin/tapi"
+      - "/usr/local/sbin/tapi"
+      - "/usr/bin/tapi"
+      - "/opt/cuda/bin/tapi"
+      - "/home/neimog/.local/share/flatpak/exports/bin/tapi"
+      - "/usr/lib/jvm/default/bin/tapi"
+      - "/usr/bin/site_perl/tapi"
+      - "/usr/bin/vendor_perl/tapi"
+      - "/usr/bin/core_perl/tapi"
+      - "/home/neimog/.local/bin/tapi"
+      - "/bin/tapi"
+      - "/sbin/tapi"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Compiler/Clang-FindBinUtils.cmake:50 (find_program)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeDetermineCCompiler.cmake:201 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "program"
+    variable: "CMAKE_C_COMPILER_CLANG_SCAN_DEPS"
+    description: "`clang-scan-deps` dependency scanner"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: false
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: false
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "clang-scan-deps-22.0"
+      - "clang-scan-deps-22"
+      - "clang-scan-deps22"
+      - "clang-scan-deps"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/clang-scan-deps-22.0"
+      - "/home/neimog/.config/miniconda3.dir/bin/clang-scan-deps-22.0"
+      - "/home/neimog/.config/miniconda3.dir/condabin/clang-scan-deps-22.0"
+      - "/usr/local/bin/clang-scan-deps-22.0"
+      - "/home/neimog/.local/share/zinit/polaris/bin/clang-scan-deps-22.0"
+      - "/usr/local/sbin/clang-scan-deps-22.0"
+      - "/usr/bin/clang-scan-deps-22.0"
+      - "/opt/cuda/bin/clang-scan-deps-22.0"
+      - "/home/neimog/.local/share/flatpak/exports/bin/clang-scan-deps-22.0"
+      - "/usr/lib/jvm/default/bin/clang-scan-deps-22.0"
+      - "/usr/bin/site_perl/clang-scan-deps-22.0"
+      - "/usr/bin/vendor_perl/clang-scan-deps-22.0"
+      - "/usr/bin/core_perl/clang-scan-deps-22.0"
+      - "/home/neimog/.local/bin/clang-scan-deps-22.0"
+      - "/bin/clang-scan-deps-22.0"
+      - "/sbin/clang-scan-deps-22.0"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/clang-scan-deps-22"
+      - "/home/neimog/.config/miniconda3.dir/bin/clang-scan-deps-22"
+      - "/home/neimog/.config/miniconda3.dir/condabin/clang-scan-deps-22"
+      - "/usr/local/bin/clang-scan-deps-22"
+      - "/home/neimog/.local/share/zinit/polaris/bin/clang-scan-deps-22"
+      - "/usr/local/sbin/clang-scan-deps-22"
+      - "/usr/bin/clang-scan-deps-22"
+      - "/opt/cuda/bin/clang-scan-deps-22"
+      - "/home/neimog/.local/share/flatpak/exports/bin/clang-scan-deps-22"
+      - "/usr/lib/jvm/default/bin/clang-scan-deps-22"
+      - "/usr/bin/site_perl/clang-scan-deps-22"
+      - "/usr/bin/vendor_perl/clang-scan-deps-22"
+      - "/usr/bin/core_perl/clang-scan-deps-22"
+      - "/home/neimog/.local/bin/clang-scan-deps-22"
+      - "/bin/clang-scan-deps-22"
+      - "/sbin/clang-scan-deps-22"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/clang-scan-deps22"
+      - "/home/neimog/.config/miniconda3.dir/bin/clang-scan-deps22"
+      - "/home/neimog/.config/miniconda3.dir/condabin/clang-scan-deps22"
+      - "/usr/local/bin/clang-scan-deps22"
+      - "/home/neimog/.local/share/zinit/polaris/bin/clang-scan-deps22"
+      - "/usr/local/sbin/clang-scan-deps22"
+      - "/usr/bin/clang-scan-deps22"
+      - "/opt/cuda/bin/clang-scan-deps22"
+      - "/home/neimog/.local/share/flatpak/exports/bin/clang-scan-deps22"
+      - "/usr/lib/jvm/default/bin/clang-scan-deps22"
+      - "/usr/bin/site_perl/clang-scan-deps22"
+      - "/usr/bin/vendor_perl/clang-scan-deps22"
+      - "/usr/bin/core_perl/clang-scan-deps22"
+      - "/home/neimog/.local/bin/clang-scan-deps22"
+      - "/bin/clang-scan-deps22"
+      - "/sbin/clang-scan-deps22"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/clang-scan-deps"
+      - "/home/neimog/.config/miniconda3.dir/bin/clang-scan-deps"
+      - "/home/neimog/.config/miniconda3.dir/condabin/clang-scan-deps"
+      - "/usr/local/bin/clang-scan-deps"
+      - "/home/neimog/.local/share/zinit/polaris/bin/clang-scan-deps"
+      - "/usr/local/sbin/clang-scan-deps"
+    found: "/usr/bin/clang-scan-deps"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/usr/local"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "Pd4Web/pd.cmake:119 (find_path)"
+      - "CMakeLists.txt:15 (include)"
+    mode: "path"
+    variable: "PD_HEADER_PATH"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "m_pd.h"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.config/miniconda3.dir/condabin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/zinit/polaris/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/local/sbin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/opt/cuda/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/share/flatpak/exports/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/lib/jvm/default/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/site_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/vendor_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/bin/core_perl/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/home/neimog/.local/bin/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/wasm32-emscripten/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/m_pd.h"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/usr/include/pd/m_pd.h"
+    found: false
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/FindGit.cmake:111 (find_program)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusPackageVersion.cmake:8 (find_package)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:5 (get_package_version)"
+    mode: "program"
+    variable: "GIT_EXECUTABLE"
+    description: "Git command line client"
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "git"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/bin/"
+      - "/home/neimog/.config/miniconda3.dir/condabin/"
+      - "/usr/local/bin/"
+      - "/home/neimog/.local/share/zinit/polaris/bin/"
+      - "/usr/local/sbin/"
+      - "/usr/bin/"
+      - "/opt/cuda/bin/"
+      - "/home/neimog/.local/share/flatpak/exports/bin/"
+      - "/usr/lib/jvm/default/bin/"
+      - "/usr/bin/site_perl/"
+      - "/usr/bin/vendor_perl/"
+      - "/usr/bin/core_perl/"
+      - "/home/neimog/.local/bin/"
+      - "/bin/"
+      - "/sbin/"
+    searched_directories:
+      - "/home/neimog/.config/miniconda3.dir/bin/git"
+      - "/home/neimog/.config/miniconda3.dir/condabin/git"
+      - "/usr/local/bin/git"
+      - "/home/neimog/.local/share/zinit/polaris/bin/git"
+      - "/usr/local/sbin/git"
+    found: "/usr/bin/git"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+        - "/"
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/CFeatureCheck.cmake:30 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:27 (c_feature_check)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "COMPILE_VLA_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_9f89d
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_9f89d.dir/vla.c.o -MF CMakeFiles/cmTC_9f89d.dir/vla.c.o.d -o CMakeFiles/cmTC_9f89d.dir/vla.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake/vla.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_9f89d.dir/vla.c.o -o cmTC_9f89d.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:30 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ibha5H"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ibha5H"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_ALLOCA_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ibha5H'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_7b2d6
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_7b2d6.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_7b2d6.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_7b2d6.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ibha5H/CheckIncludeFile.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_7b2d6.dir/CheckIncludeFile.c.o -o cmTC_7b2d6.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:193 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:98 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:35 (check_symbol_exists)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1pQpwD"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1pQpwD"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "USE_ALLOCA_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1pQpwD'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_24fe0
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_24fe0.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_24fe0.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_24fe0.dir/CheckSymbolExists.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1pQpwD/CheckSymbolExists.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_24fe0.dir/CheckSymbolExists.c.o -o cmTC_24fe0.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckLibraryExists.cmake:154 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:43 (check_library_exists)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_LIBM"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_62a61
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128 -DCHECK_FUNCTION_EXISTS=floor -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_62a61.dir/CheckFunctionExists.c.o -MF CMakeFiles/cmTC_62a61.dir/CheckFunctionExists.c.o.d -o CMakeFiles/cmTC_62a61.dir/CheckFunctionExists.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO/CheckFunctionExists.c
+        /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO/CheckFunctionExists.c:7:3: warning: incompatible redeclaration of library function 'floor' [-Wincompatible-library-redeclaration]
+            7 |   CHECK_FUNCTION_EXISTS(void);
+              |   ^
+        <command line>:3:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            3 | #define CHECK_FUNCTION_EXISTS floor
+              |                               ^
+        /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-Ws00lO/CheckFunctionExists.c:7:3: note: 'floor' is a builtin with type 'double (double)'
+        <command line>:3:31: note: expanded from macro 'CHECK_FUNCTION_EXISTS'
+            3 | #define CHECK_FUNCTION_EXISTS floor
+              |                               ^
+        1 warning generated.
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128 -DCHECK_FUNCTION_EXISTS=floor  CMakeFiles/cmTC_62a61.dir/CheckFunctionExists.c.o -o cmTC_62a61.js  -lm && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:193 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:98 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:49 (check_symbol_exists)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iu97SG"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iu97SG"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_LRINTF"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iu97SG'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_8820c
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_8820c.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_8820c.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_8820c.dir/CheckSymbolExists.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iu97SG/CheckSymbolExists.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_8820c.dir/CheckSymbolExists.c.o -o cmTC_8820c.js  -lm && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:193 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckSymbolExists.cmake:98 (__CHECK_SYMBOL_EXISTS_IMPL)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:50 (check_symbol_exists)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-IzWZtZ"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-IzWZtZ"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_LRINT"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-IzWZtZ'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_a940a
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_a940a.dir/CheckSymbolExists.c.o -MF CMakeFiles/cmTC_a940a.dir/CheckSymbolExists.c.o.d -o CMakeFiles/cmTC_a940a.dir/CheckSymbolExists.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-IzWZtZ/CheckSymbolExists.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_a940a.dir/CheckSymbolExists.c.o -o cmTC_a940a.js  -lm && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/CFeatureCheck.cmake:30 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:157 (c_feature_check)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:64 (opus_supports_cpu_detection)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "COMPILE_CPU_INFO_BY_ASM_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/Pd4Web/Externals/else/Source/Shared/opus/CMakeFiles/CMakeTmp'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_f5295
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o -MF CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o.d -o CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake/cpu_info_by_asm.c
+        FAILED: [code=1] CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o 
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o -MF CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o.d -o CMakeFiles/cmTC_f5295.dir/cpu_info_by_asm.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake/cpu_info_by_asm.c
+        /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake/cpu_info_by_asm.c:23:9: error: invalid output constraint '=a' in asm
+           23 |         "=a" (CPUInfo0),
+              |         ^
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:159 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:64 (opus_supports_cpu_detection)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_CPUID_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_020fc
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi/CheckIncludeFile.c
+        FAILED: [code=1] CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o 
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_020fc.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi/CheckIncludeFile.c
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-m0hmhi/CheckIncludeFile.c:1:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:14:2: error: this header is for x86 only
+           14 | #error this header is for x86 only
+              |  ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:308:5: error: invalid output constraint '=a' in asm
+          308 |     __cpuid(__leaf, __eax, __ebx, __ecx, __edx);
+              |     ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:270:11: note: expanded from macro '__cpuid'
+          270 |         : "=a"(__eax), "=r"(__ebx), "=c"(__ecx), "=d"(__edx)                   \\
+              |           ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:323:5: error: invalid output constraint '=a' in asm
+          323 |     __cpuid(__leaf, *__eax, *__ebx, *__ecx, *__edx);
+              |     ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:270:11: note: expanded from macro '__cpuid'
+          270 |         : "=a"(__eax), "=r"(__ebx), "=c"(__ecx), "=d"(__edx)                   \\
+              |           ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:337:5: error: invalid output constraint '=a' in asm
+          337 |     __cpuid_count(__leaf, __subleaf, *__eax, *__ebx, *__ecx, *__edx);
+              |     ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:277:11: note: expanded from macro '__cpuid_count'
+          277 |         : "=a"(__eax), "=r"(__ebx), "=c"(__ecx), "=d"(__edx)                   \\
+              |           ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:349:3: error: invalid output constraint '=a' in asm
+          349 |   __cpuid_count(__leaf, __subleaf, __cpu_info[0], __cpu_info[1], __cpu_info[2],
+              |   ^
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/lib/clang/22/include/cpuid.h:277:11: note: expanded from macro '__cpuid_count'
+          277 |         : "=a"(__eax), "=r"(__ebx), "=c"(__ecx), "=d"(__edx)                   \\
+              |           ^
+        5 errors generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:58 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:68 (opus_detect_sse)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_XMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_14ddd
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR/CheckIncludeFile.c
+        FAILED: [code=1] CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o 
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_14ddd.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR/CheckIncludeFile.c
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ul2ERR/CheckIncludeFile.c:1:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/xmmintrin.h:17:2: error: "SSE instruction set not enabled"
+           17 | #error "SSE instruction set not enabled"
+              |  ^
+        1 error generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:78 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:68 (opus_detect_sse)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_EMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_57072
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG/CheckIncludeFile.c
+        FAILED: [code=1] CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o 
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_57072.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG/CheckIncludeFile.c
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG/CheckIncludeFile.c:1:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/emmintrin.h:11:2: error: "SSE2 instruction set not enabled"
+           11 | #error "SSE2 instruction set not enabled"
+              |  ^
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-6Hq3vG/CheckIncludeFile.c:1:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/emmintrin.h:14:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/xmmintrin.h:17:2: error: "SSE instruction set not enabled"
+           17 | #error "SSE instruction set not enabled"
+              |  ^
+        2 errors generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:97 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:68 (opus_detect_sse)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_SMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_8fca7
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c
+        FAILED: [code=1] CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o 
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_8fca7.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c:1:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/smmintrin.h:11:2: error: "SSE4.1 instruction set not enabled"
+           11 | #error "SSE4.1 instruction set not enabled"
+              |  ^
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c:1:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/smmintrin.h:14:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/tmmintrin.h:11:2: error: "SSSE3 instruction set not enabled"
+           11 | #error "SSSE3 instruction set not enabled"
+              |  ^
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c:1:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/smmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/tmmintrin.h:14:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/pmmintrin.h:11:2: error: "SSE3 instruction set not enabled"
+           11 | #error "SSE3 instruction set not enabled"
+              |  ^
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c:1:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/smmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/tmmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/pmmintrin.h:14:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/emmintrin.h:11:2: error: "SSE2 instruction set not enabled"
+           11 | #error "SSE2 instruction set not enabled"
+              |  ^
+        In file included from /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-yUSgx9/CheckIncludeFile.c:1:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/smmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/tmmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/pmmintrin.h:14:
+        In file included from /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/emmintrin.h:14:
+        /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot/include/compat/xmmintrin.h:17:2: error: "SSE instruction set not enabled"
+           17 | #error "SSE instruction set not enabled"
+              |  ^
+        5 errors generated.
+        ninja: build stopped: subcommand failed.
+        
+      exitCode: 1
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckIncludeFile.cmake:174 (try_compile)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:116 (check_include_file)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:68 (opus_detect_sse)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-9G2iSx"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-9G2iSx"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HAVE_IMMINTRIN_H"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-9G2iSx'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_489fe
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc   -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE -MD -MT CMakeFiles/cmTC_489fe.dir/CheckIncludeFile.c.o -MF CMakeFiles/cmTC_489fe.dir/CheckIncludeFile.c.o.d -o CMakeFiles/cmTC_489fe.dir/CheckIncludeFile.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-9G2iSx/CheckIncludeFile.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_489fe.dir/CheckIncludeFile.c.o -o cmTC_489fe.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:46 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:121 (check_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:68 (opus_detect_sse)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1YWtl9"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1YWtl9"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "AVX2_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1YWtl9'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_49228
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DAVX2_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -mavx2 -MD -MT CMakeFiles/cmTC_49228.dir/src.c.o -MF CMakeFiles/cmTC_49228.dir/src.c.o.d -o CMakeFiles/cmTC_49228.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-1YWtl9/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_49228.dir/src.c.o -o cmTC_49228.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:46 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:88 (check_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-DCyL0Z"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-DCyL0Z"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "FAST_MATH_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-DCyL0Z'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_789fd
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DFAST_MATH_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -ffast-math -MD -MT CMakeFiles/cmTC_789fd.dir/src.c.o -MF CMakeFiles/cmTC_789fd.dir/src.c.o.d -o CMakeFiles/cmTC_789fd.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-DCyL0Z/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_789fd.dir/src.c.o -o cmTC_789fd.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:46 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:89 (check_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ExS38l"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ExS38l"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "STACK_PROTECTOR_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ExS38l'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_0077a
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DSTACK_PROTECTOR_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -fstack-protector-strong -MD -MT CMakeFiles/cmTC_0077a.dir/src.c.o -MF CMakeFiles/cmTC_0077a.dir/src.c.o.d -o CMakeFiles/cmTC_0077a.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-ExS38l/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_0077a.dir/src.c.o -o cmTC_0077a.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusFunctions.cmake:46 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:90 (check_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-fGygos"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-fGygos"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "HIDDEN_VISIBILITY_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-fGygos'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_a3c30
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DHIDDEN_VISIBILITY_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -fvisibility=hidden -MD -MT CMakeFiles/cmTC_a3c30.dir/src.c.o -MF CMakeFiles/cmTC_a3c30.dir/src.c.o.d -o CMakeFiles/cmTC_a3c30.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-fGygos/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_a3c30.dir/src.c.o -o cmTC_a3c30.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iMhV2i"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iMhV2i"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wall_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iMhV2i'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_c9562
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWall_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wall -MD -MT CMakeFiles/cmTC_c9562.dir/src.c.o -MF CMakeFiles/cmTC_c9562.dir/src.c.o.d -o CMakeFiles/cmTC_c9562.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-iMhV2i/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_c9562.dir/src.c.o -o cmTC_c9562.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-XGl2vX"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-XGl2vX"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "W_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-XGl2vX'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_b3c06
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DW_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -W -MD -MT CMakeFiles/cmTC_b3c06.dir/src.c.o -MF CMakeFiles/cmTC_b3c06.dir/src.c.o.d -o CMakeFiles/cmTC_b3c06.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-XGl2vX/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_b3c06.dir/src.c.o -o cmTC_b3c06.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-h6dGOC"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-h6dGOC"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wstrictprototypes_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-h6dGOC'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_d0f0e
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWstrictprototypes_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wstrict-prototypes -MD -MT CMakeFiles/cmTC_d0f0e.dir/src.c.o -MF CMakeFiles/cmTC_d0f0e.dir/src.c.o.d -o CMakeFiles/cmTC_d0f0e.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-h6dGOC/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_d0f0e.dir/src.c.o -o cmTC_d0f0e.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-FNIiAI"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-FNIiAI"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wextra_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-FNIiAI'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_8e063
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWextra_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wextra -MD -MT CMakeFiles/cmTC_8e063.dir/src.c.o -MF CMakeFiles/cmTC_8e063.dir/src.c.o.d -o CMakeFiles/cmTC_8e063.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-FNIiAI/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_8e063.dir/src.c.o -o cmTC_8e063.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-09MmtX"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-09MmtX"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wcastalign_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-09MmtX'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_2fec4
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWcastalign_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wcast-align -MD -MT CMakeFiles/cmTC_2fec4.dir/src.c.o -MF CMakeFiles/cmTC_2fec4.dir/src.c.o.d -o CMakeFiles/cmTC_2fec4.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-09MmtX/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_2fec4.dir/src.c.o -o cmTC_2fec4.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-H16QMM"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-H16QMM"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wnestedexterns_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-H16QMM'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_f8d24
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWnestedexterns_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wnested-externs -MD -MT CMakeFiles/cmTC_f8d24.dir/src.c.o -MF CMakeFiles/cmTC_f8d24.dir/src.c.o.d -o CMakeFiles/cmTC_f8d24.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-H16QMM/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_f8d24.dir/src.c.o -o cmTC_f8d24.js   && :
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckSourceCompiles.cmake:104 (try_compile)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Internal/CheckCompilerFlag.cmake:18 (cmake_check_source_compiles)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CheckCCompilerFlag.cmake:105 (cmake_check_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/cmake/OpusConfig.cmake:113 (check_c_compiler_flag)"
+      - "Pd4Web/Externals/else/Source/Shared/opus/CMakeLists.txt:11 (include)"
+    directories:
+      source: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-3KNQ5Q"
+      binary: "/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-3KNQ5Q"
+    cmakeVariables:
+      CMAKE_CXX_COMPILER_CLANG_SCAN_DEPS: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emscan-deps"
+      CMAKE_C_FLAGS: " -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules;/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/Pd4Web/Externals/else/Source/Shared/opus/cmake"
+      CMAKE_OSX_ARCHITECTURES: "arm64;x86_64"
+      CMAKE_OSX_DEPLOYMENT_TARGET: "10.9"
+      CMAKE_POSITION_INDEPENDENT_CODE: "ON"
+      CMAKE_WARN_DEPRECATED: "FALSE"
+    buildResult:
+      variable: "Wshadow_SUPPORTED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-3KNQ5Q'
+        
+        Run Build Command(s): /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/ninja -v cmTC_4f74b
+        [1/2] /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -DWshadow_SUPPORTED  -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  -std=gnu99 -fPIE   -Wshadow -MD -MT CMakeFiles/cmTC_4f74b.dir/src.c.o -MF CMakeFiles/cmTC_4f74b.dir/src.c.o.d -o CMakeFiles/cmTC_4f74b.dir/src.c.o -c /home/neimog/Documents/Git/pd4web/Documentation/tests/gui2/.build/CMakeFiles/CMakeScratch/TryCompile-3KNQ5Q/src.c
+        [2/2] : && /home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/emcc -pthread -matomics -mbulk-memory -O3 -flto -pthread -matomics -mbulk-memory -msimd128  CMakeFiles/cmTC_4f74b.dir/src.c.o -o cmTC_4f74b.js   && :
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/nvim/mason/bin"
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
+
+---
+events:
+  -
+    kind: "find-v1"
+    backtrace:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/Platform/Emscripten.cmake:6 (find_file)"
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/bin/cmake/share/cmake-4.2/Modules/CMakeSystemSpecificInformation.cmake:32 (include)"
+      - "CMakeLists.txt:2 (project)"
+    mode: "file"
+    variable: "_EMSCRIPTEN_PLATFORM_MODULE"
+    description: "Path to a file."
+    settings:
+      SearchFramework: "NEVER"
+      SearchAppBundle: "NEVER"
+      CMAKE_FIND_USE_CMAKE_PATH: true
+      CMAKE_FIND_USE_CMAKE_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_SYSTEM_ENVIRONMENT_PATH: true
+      CMAKE_FIND_USE_CMAKE_SYSTEM_PATH: true
+      CMAKE_FIND_USE_INSTALL_PREFIX: true
+    names:
+      - "Platform/Emscripten.cmake"
+    candidate_directories:
+      - "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/"
+    found: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"
+    search_context:
+      ENV{PATH}:
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/nvim/mason/bin"
+        - "/home/neimog/.config/miniconda3.dir/bin"
+        - "/home/neimog/.config/miniconda3.dir/condabin"
+        - "/usr/local/bin"
+        - "/home/neimog/.local/share/zinit/polaris/bin"
+        - "/usr/local/sbin"
+        - "/usr/local/bin"
+        - "/usr/bin"
+        - "/opt/cuda/bin"
+        - "/home/neimog/.local/share/flatpak/exports/bin"
+        - "/usr/lib/jvm/default/bin"
+        - "/usr/bin/site_perl"
+        - "/usr/bin/vendor_perl"
+        - "/usr/bin/core_perl"
+        - "/home/neimog/.local/bin"
+        - "/home/neimog/.local/bin"
+      CMAKE_INSTALL_PREFIX: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+      CMAKE_SYSTEM_PREFIX_PATH:
+        - "/"
+      CMAKE_FIND_ROOT_PATH: "/home/neimog/.config/miniconda3.dir/lib/python3.13/site-packages/pd4web/emsdk/upstream/emscripten/cache/sysroot"
+...
