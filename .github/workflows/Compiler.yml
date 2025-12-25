@@ -10,6 +10,7 @@ on:
 
 env:
   BUILD_TYPE: Release
+  SCCACHE_DIR: ~/.cache/sccache
 
 jobs:
   pd4web-compiler:
@@ -26,7 +27,7 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      # Cache build deps everywhere; ccache dir only on non-Windows
+      # Cache build deps and compiler caches
       - name: Cache CMake and dependencies
         id: build-cache
         uses: actions/cache@v4
@@ -35,20 +36,12 @@ jobs:
             build/_deps
             build/CMakeCache.txt
             build/CMakeFiles
-            ${{ runner.os != 'Windows' && '~/.ccache' || '' }}
-            ${{ runner.os == 'Windows' && '~/AppData/Local/ccache' || '' }}
+            ~/.ccache
+            ~/.cache/sccache
           key: build-cv11-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
           restore-keys: |
             build-cv11-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
             build-cv11-${{ matrix.os }}-${{ runner.arch }}-
-
-      - name: Clean build artifacts (keep dependencies)
-        shell: bash
-        run: |
-          if [ -d "build" ]; then
-            find build -type f \( -name "*.o" -o -name "*.obj" -o -name "*.a" -o -name "*.lib" -o -name "*.so" -o -name "*.dylib" -o -name "*.dll" \) -delete 2>/dev/null || true
-          fi
-          mkdir -p build
 
       - uses: actions/setup-python@v5
         with:
@@ -64,6 +57,24 @@ jobs:
         run: |
           choco install strawberryperl -y
           choco install ninja -y
+
+      - name: Install sccache (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mozilla/sccache/releases/latest"
+          $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
+          if (-not $asset) { throw "sccache Windows asset not found" }
+          $zipPath = Join-Path $env:TEMP "sccache.zip"
+          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
+          $dest = Join-Path $env:LocalAppData "sccache-bin"
+          if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+          Expand-Archive -LiteralPath $zipPath -DestinationPath $dest
+          $exe = Get-ChildItem $dest -Recurse -Filter "sccache.exe" | Select-Object -First 1
+          if (-not $exe) { throw "sccache.exe not found after install" }
+          Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
+          Write-Host "sccache installed at $($exe.FullName)"
 
       - name: Install PureData for Windows
         if: runner.os == 'Windows'
@@ -89,18 +100,36 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y puredata
 
-      - name: Configure ccache (macOS/Linux)
+      - name: Configure ccache
         if: runner.os != 'Windows'
         run: |
           ccache --set-config=max_size=500M
           ccache --set-config=compression=true
           ccache -z
 
+      - name: Start sccache server (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          sccache --start-server
+
+      - name: Configure compiler launcher
+        shell: pwsh
+        run: |
+          if ($env:RUNNER_OS -eq 'Windows') {
+            "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+          } else {
+            "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+          }
+
       - name: Install Python Packages
         run: |
           pip install build --break-system-packages
 
       - name: Build wheels
+        env:
+          MACOSX_DEPLOYMENT_TARGET: "11.0"
+          CMAKE_OSX_DEPLOYMENT_TARGET: "11.0"
         run: |
           python -m pip install build --break-system-packages
           python -m build --wheel
@@ -108,6 +137,11 @@ jobs:
       - name: Show ccache stats (macOS/Linux)
         if: runner.os != 'Windows'
         run: ccache -s
+
+      - name: Show sccache stats (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: sccache --show-stats
 
       - name: Repair Linux wheels
         if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}
