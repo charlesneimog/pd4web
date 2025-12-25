@@ -584,10 +584,13 @@ void Pd4Web::serverPatch(bool toggle, bool detached, fs::path folderToServer) {
                 auto &stopFlag = ctx.stopRequested;
                 auto *server = ctx.server.get();
 
+                std::string servingFolder = "";
                 if (folderToServer.empty()) {
                     server->set_mount_point("/", m_BuildFolder.string());
+                    servingFolder = m_BuildFolder.string();
                 } else {
                     server->set_mount_point("/", folderToServer.string());
+                    servingFolder = folderToServer.string();
                 }
 
                 server->Get("/", [](const httplib::Request &, httplib::Response &res) {
@@ -607,7 +610,9 @@ void Pd4Web::serverPatch(bool toggle, bool detached, fs::path folderToServer) {
                 });
 
                 const std::string url = "http://localhost:" + std::to_string(m_ServerPort);
-                print("Starting server at " + url, Pd4WebLogLevel::PD4WEB_LOG1);
+                // print(m_BuildFo
+                print("Starting server for " + servingFolder + " at " + url,
+                      Pd4WebLogLevel::PD4WEB_LOG1);
                 if (!server->listen("0.0.0.0", m_ServerPort)) {
                     print("Failed to start server at " + url, Pd4WebLogLevel::PD4WEB_ERROR);
                     m_Error = true;

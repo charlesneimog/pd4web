@@ -969,6 +969,8 @@ bool Pd4Web::compilePatch() {
         p->OutputFolder = p->PatchFolder;
     }
 
+    print("Output folder is " + m_BuildFolder.string());
+
     if (m_CleanBuild) {
         fs::path WebPatchPath = p->OutputFolder / "WebPatch";
         fs::path Pd4WebPath = p->OutputFolder / "Pd4Web";
@@ -1040,8 +1042,7 @@ bool Pd4Web::compilePatch() {
     if (!m_Error) {
         print("Finished", Pd4WebLogLevel::PD4WEB_LOG1);
         if (m_Server) {
-            fs::path current = fs::current_path();
-            serverPatch(true, false, current);
+            serverPatch(true, false, p->OutputFolder);
         }
     }
 
