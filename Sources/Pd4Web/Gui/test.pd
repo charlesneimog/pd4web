@@ -63,7 +63,7 @@
 #X connect 5 0 0 0;
 #X connect 5 0 3 0;
 #X restore 9 188 pd vradio;
-#X obj -8 407 l.keyboard;
+#X obj 36 330 l.keyboard;
 #N canvas 0 0 925 1132 hsl 0;
 #X obj 127 273 print bng;
 #X obj 43 273 print lua;
@@ -183,3 +183,5 @@
 #X connect 6 0 4 0;
 #X connect 7 0 4 0;
 #X restore 174 249 pd lisatom;
+#X obj 36 405 print;
+#X connect 6 0 13 0;
