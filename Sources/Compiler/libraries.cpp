@@ -453,7 +453,7 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode root,
                                              std::vector<std::string> &objectNames,
                                              std::vector<std::string> &setupNames,
                                              std::vector<std::string> &setupSignatures) {
-    PD4WEB_LOGGER(); // run once per call
+    PD4WEB_LOGGER(); 
 
     std::stack<TSNode> stack;
     stack.push(root);

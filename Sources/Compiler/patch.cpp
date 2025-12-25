@@ -618,9 +618,6 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
     std::string Obj = getObjName(pl.Tokens[4]);
     std::string Lib = getObjLib(pl.Tokens[4]);
-    if (libIsSupported(Lib)) {
-        (void)downloadSupportedLib(Lib);
-    }
 
     pl.Name = Obj;
     pl.Lib = Lib;
@@ -1022,7 +1019,6 @@ bool Pd4Web::compilePatch() {
     fs::create_directory(p->OutputFolder / "Pd4Web" / "Externals");
     fs::create_directory(p->OutputFolder / "Pd4Web" / "Gui");
 
-    getSupportedLibraries(p);
     updatePatchFile(p, true);
     configureProjectToCompile(p);
 
