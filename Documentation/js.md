@@ -232,4 +232,14 @@ Pd4Web.onListReceived("r-test", (r, l) => {
 
 When the patch receives a `list` at `[r-test]`, the callback function is called.
 
+### `Pd4Web.onMessageReceived`
 
+Registers a callback function that is triggered when a `message` is received. On Pd, 
+
+```js
+Pd4Web.onMessageReceived("r-test", (r, selector, list) => {
+    console.log("Received message from:", r);
+});
+```
+
+When the patch receives a `message` at `[r-test]`, the callback function is called.
