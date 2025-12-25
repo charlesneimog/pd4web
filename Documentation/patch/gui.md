@@ -3,8 +3,6 @@ Here we list all the objects that are supported by the GUI module and how to use
  
 </p>
 
-!!! danger "Set Senders and Receivers for GUI Objects"
-    Again, to use **any** GUI object (except for `vu`), you **must** configure senders and receivers. This ensures all objects function properly and saves you from spending excessive time debugging your patch.
 <div class="grid cards" markdown>
 
 -   :material-gesture-double-tap:{ .lg .middle } __With `plaits~` from else__    
@@ -36,31 +34,23 @@ For now, just these objects are supported:
 - `vradio`: Vertical radio object;
 - `hradio`: Horizontal radio object;
 - `vu`: Vertical vu object;
-- `cnv`: Canvas object;
 - `text`: Comment object;
 - `floatatom`: Number box object;
 - `symbolatom`: Symbol box object;
 - `listatom`: List box object;
 
-From external libraries:
-
-- `else/knob`: Knob object;
-- `else/keyboard`: Keyboard object;
-
 ---
 
 ## <h3 align="center">Pdlua + pd4web</h3>
 
-
+!!! tip "All objects created using `pdlua` *are supported*!"
 
 `pd4web` supports any GUI object implemented with **pdlua**.
 To use one, place the corresponding `*.pd_lua` file in the `Libs/` directory of your patch.
 
-For example, the `show~` object by Ben Wes is implemented in pdlua. To use it with `pd4web`, download `show~.pd_lua` from the repository and copy it into the `Libs/` folder inside your patch directory. You can download it here [show~](Here is a clearer and tighter version:
+For example, the `show~` object by Ben Wes is implemented in pdlua. To use it with `pd4web`, download `show~.pd_lua` from the repository and copy it into the `Libs/` folder inside your patch directory. See the [show~](https://github.com/ben-wes/pdlua-show_tilde) object here.
 
-For example, the `show~` object by Ben Wes is implemented in pdlua. To use it with `pd4web`, download `show~.pd_lua` from the repository and copy it into the `Libs/` folder inside your patch directory. 
-
-See the [show~](https://github.com/ben-wes/pdlua-show_tilde) object here.
+Also objects from [`pd-saf`](https://github.com/EL-LOCUS-SOLUS/pd-saf), [`pd-bhack`](https://github.com/EL-LOCUS-SOLUS/pd-bhack), and many others.
 
 
 
