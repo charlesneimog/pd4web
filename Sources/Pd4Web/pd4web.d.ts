@@ -64,6 +64,13 @@ declare namespace pd4web {
     sendList: (name: string, list: Array<string | number>) => boolean;
 
     /**
+     * Send a `message` of symbols/numbers to Pure Data.
+     *
+     * @see {@link Pd4Web.sendList}
+     */
+    sendMessage: (name: string, selector: string, list: Array<string | number>) => boolean;
+
+    /**
      * Send a file’s binary data to Pure Data.
      *
      * _Pd4Web_ uses an internal file system within an
@@ -74,7 +81,7 @@ declare namespace pd4web {
      * Pure Data, you first need to send those files' binary data into the
      * _Pd4Web_ file-system.
      */
-    sendFile: (data: ArrayBuffer, fileName: string) => void;
+    sendFile: (data: ArrayBuffer, fileName: string) => boolean;
 
     /**
      * Register a callback function that is triggered when a `bang` is received.
