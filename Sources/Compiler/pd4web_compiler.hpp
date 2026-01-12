@@ -123,6 +123,7 @@ struct Patch {
     int MemorySize = 64;
     int Zoom = 1;
     std::vector<PatchLine> PatchLines;
+    // std::vector<PatchLine> ExternalPatchLines;
     std::string PdVersion = PUREDATA_VERSION;
 
     json ExternalObjectsJson;

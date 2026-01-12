@@ -16,6 +16,6 @@ If you do not specify this information, external objects will fail to load, and 
 !!! danger "`Pd4Web` does not recognize the libraries that you load on startup on PureData!"
 
 !!! danger "`Plugdata` has external libraries"
-    `Plugdata` uses externals libraries like, `pdlua`, `cyclone`, `pdlua`, `Gem` and others.
+    `Plugdata` uses externals libraries like, `else`, `cyclone`, `pdlua`, `Gem` and others.
 
 

@@ -23,11 +23,10 @@ hide:
 
 ### <h3 align="center"> **Key Features** </h3>
 
-- `Streamlined Development`: Create fully online audio applications with a visual approach.
-- `Easy Access`: Performers can access compositions without complex PureData setups or library dependencies.
-- `Live Electronic Music Preservation`: Explore the potential of WebAudioApps to maintain the integrity of live electronic works. `pd4web` will download and make a repository for all code you need to run your music.
-
-
+* **Extensive Externals Support**: `pd4web` supports over 800 external objects, giving you unmatched flexibility.
+* **Rich GUI Interface**: Use `pdlua` to create powerful interfaces.
+* **Simple Access**: Performers can run compositions directly in the browser without complex Pure Data setups or additional libraries.
+* **Preserve Live Electronic Music**: Leverage WebAudioApps to safeguard live electronic works. `pd4web` automatically downloads and organizes all the code required to run your music seamlessly.
 
 -------------------------
 ### <h3 align="center"> **Gallery with Projects using pd4web** </h3>

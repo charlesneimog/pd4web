@@ -8,10 +8,11 @@
 <h2 align="center"><code>flutex.c</code> problems</h2>
 
 !!! bug "How to report?"
-    <p style="font-size: 18px">Create a new issue on [Github](https://github.com/charlesneimog/pd4web/issues){target="_blank}" or use [Google Forms](https://forms.gle/qS7YX4QzrUKNXGkU7){target="_blank"}.</p>
+    Create a new issue on [GitHub](https://github.com/charlesneimog/pd4web/issues/new){target="_blank"} (requires a GitHub account).
 
-If this happens, probably is because you are using some object that I don't use in my patches. So, you need to report this problem to me and I will try to solve this. 
+If this happens, it’s probably because your patch uses an object that I don’t use in my patches. To resolve the issue, you need to report it to me.
 
-To report the problem you must share the patch that is causing the problem, without the patch is impossible to solve the problem. You can always reduce the patch to the minimum size that is causing the problem. 
+When reporting, you **must include the patch that is causing the problem**, because without it, I cannot solve the issue. You can always reduce the patch to the minimal size that reproduces the problem.
 
-Usually, these problems have an error related with `flutex.c` file.
+Usually, these issues are accompanied by an error related to the `flutex.c` file.
+
