@@ -233,3 +233,17 @@ body::-webkit-scrollbar-thumb {
       margin-bottom: 40px; /* Remove bottom margin */
   }
 }
+
+#libcontributors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-left: 20%;
+
+}
+#libcontributors img.libavatar {
+    width: 50px; /* adjust size */
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}

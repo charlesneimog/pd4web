@@ -213,10 +213,11 @@ void SenderCallback(t_pd *obj, void *data) {
  *
  * @param s The receiver symbol in Pure Data.
  */
-void Pd4Web::SendBang(std::string s) {
+bool Pd4Web::SendBang(std::string s) {
     auto sender = Pd4WebSender::CreateBang(s);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -229,10 +230,11 @@ void Pd4Web::SendBang(std::string s) {
  * @param std::string The receiver symbol in Pure Data.
  * @param float The float value to send.
  */
-void Pd4Web::SendFloat(std::string s, float f) {
+bool Pd4Web::SendFloat(std::string s, float f) {
     auto sender = Pd4WebSender::CreateFloat(s, f);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -245,11 +247,12 @@ void Pd4Web::SendFloat(std::string s, float f) {
  *
  * @param std::string The receiver symbol in Pure Data.
  * @param std::string The symbol string to send.
- */
-void Pd4Web::SendSymbol(std::string s, std::string thing) {
+ */ 
+bool Pd4Web::SendSymbol(std::string s, std::string thing) {
     auto sender = Pd4WebSender::CreateSymbol(s, thing);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -266,10 +269,10 @@ void Pd4Web::SendSymbol(std::string s, std::string thing) {
  * @param std::string The receiver symbol in Pure Data.
  * @param emscripten::val JavaScript array containing numbers and/or strings.
  */
-void Pd4Web::SendList(std::string s, emscripten::val a) {
+bool Pd4Web::SendList(std::string s, emscripten::val a) {
     if (!a.isArray()) {
         emscripten_log(EM_LOG_ERROR, "SendList: argument is not an array");
-        return;
+        return false;
     }
 
     size_t length = a["length"].as<size_t>();
@@ -290,6 +293,7 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
     auto sender = Pd4WebSender::CreateList(s, atoms);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -308,11 +312,11 @@ void Pd4Web::SendList(std::string s, emscripten::val a) {
  * @param s std::string Message selector (e.g. "set", "connect")
  * @param a emscripten::val JavaScript array containing numbers and/or strings
  */
-void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
+bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     // Convert emscripten::val array to std::vector<Pd4WebAtom> on main thread
     if (!a.isArray()) {
         emscripten_log(EM_LOG_ERROR, "SendMessage: argument is not an array");
-        return;
+        return false;
     }
 
     size_t length = a["length"].as<size_t>();
@@ -333,6 +337,7 @@ void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     auto sender = Pd4WebSender::CreateMessage(r, s, atoms);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
     m_ToSendData.push_back(sender);
+    return true;
 }
 
 // ─────────────────────────────────────
@@ -349,7 +354,7 @@ void Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
  * @param emscripten::val JavaScript ArrayBuffer containing the file data
  * @param std::string Destination filename inside the pd4web filesystem
  */
-void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
+bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
     std::vector<uint8_t> buffer(length);
@@ -359,10 +364,11 @@ void Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     std::ofstream out(filename, std::ios::binary);
     if (!out) {
         emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-        return;
+        return false;
     }
     out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
     out.close();
+    return true;
 }
 
 // ╭─────────────────────────────────────╮

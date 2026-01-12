@@ -344,11 +344,11 @@ class Pd4Web {
     void OpenPatchJS(const std::string &patchPath, emscripten::val options);
 
     // Send messages
-    void SendFloat(std::string receiver, float value);
-    void SendSymbol(std::string receiver, std::string symbol);
-    void SendBang(std::string receiver);
-    void SendList(std::string receiver, emscripten::val list);
-    void SendMessage(std::string receiver, std::string msg, emscripten::val list);
+    bool SendFloat(std::string receiver, float value);
+    bool SendSymbol(std::string receiver, std::string symbol);
+    bool SendBang(std::string receiver);
+    bool SendList(std::string receiver, emscripten::val list);
+    bool SendMessage(std::string receiver, std::string msg, emscripten::val list);
 
     // Bind callbacks
     void OnBangReceived(std::string receiver, emscripten::val callback);
@@ -388,7 +388,7 @@ class Pd4Web {
         return m_ToSendData;
     }
 
-    std::mutex m_ToSendMutex; // 🔒 proteção
+    std::mutex m_ToSendMutex;
 
   private:
     void OpenPatch(std::string patchPath, std::string patchCanvasId, std::string soundToggleId);
@@ -403,10 +403,8 @@ class Pd4Web {
 
     // User data
     std::shared_ptr<Pd4WebUserData> m_UserData;
-
     bool m_Pd4WebAudioWorkletInit = false;
     bool m_AudioSuspended = false;
-
     t_pdinstance *m_PdInstance = nullptr;
     EMSCRIPTEN_WEBAUDIO_T m_AudioContext;
 

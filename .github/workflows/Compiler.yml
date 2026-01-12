@@ -89,6 +89,7 @@ jobs:
           brew install --cask pd
           brew install ccache
           brew install git
+          brew install perl
           brew uninstall --ignore-dependencies openssl@3
 
       - name: Install PureData for Linux

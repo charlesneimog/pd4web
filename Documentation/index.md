@@ -143,6 +143,41 @@ hide:
 ---
 
 
+
+## <h2 align="center"> **Contributors** </h2>
+
+<div id="libcontributors"></div>
+
+<script>
+async function updateList() {
+    let repoOwner = 'charlesneimog';
+    let repoName = 'pd4web';
+    try {
+        let res = await fetch(`https://api.github.com/repos/${repoOwner}/${repoName}/contributors`);
+        let contributors = await res.json();
+        let container = document.getElementById('libcontributors');
+        contributors.forEach(user => {
+            if (user.login == "dependabot[bot]"){
+                return;
+            }
+            let link = document.createElement('a');
+            link.href = user.html_url;
+            link.target = '_blank';
+            let img = document.createElement('img');
+            img.src = user.avatar_url;
+            img.alt = user.login;
+            img.className = 'libavatar';
+
+            link.appendChild(img);
+            container.appendChild(link);
+        });
+    } catch(err) {
+        console.error(err);
+    }
+}
+updateList();
+</script>
+
 ## <h2 align="center"> **About me** </h2>
 
 <div class="responsive-flex">
@@ -153,3 +188,4 @@ hide:
         I am Charles K. Neimog, a composer and researcher in the field of computer music. <code>pd4web</code> is a project to make possible the use of Pure Data in web browsers, improving the accessibility of electronic music. 
     </p>
 </div>
+
