@@ -211,12 +211,12 @@ if(PY_PD4WEB_BUILD)
         pd4web_data ALL
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pypd4web> "${CMAKE_BINARY_DIR}/dist/pd4web"
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py "${CMAKE_BINARY_DIR}/dist/pd4web"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/Pd4Web"
         # cmake
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SHARE_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/bin/cmake/share"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BIN_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/bin/cmake/bin"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SHARE_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/share"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BIN_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/bin"
         # ninja
-        COMMAND ${CMAKE_COMMAND} -E copy "${PD4WEB_NINJA_BINARY}" "${CMAKE_BINARY_DIR}/dist/pd4web/bin"
+        COMMAND ${CMAKE_COMMAND} -E copy "${PD4WEB_NINJA_BINARY}" "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin"
         COMMENT "Copying pypd4web module and __init__.py to dist/"
         DEPENDS pypd4web
         VERBATIM)
@@ -227,10 +227,10 @@ if(PY_PD4WEB_BUILD)
         RUNTIME DESTINATION pd4web
         ARCHIVE DESTINATION pd4web)
     install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py DESTINATION pd4web)
-    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ DESTINATION pd4web/Pd4Web)
-    install(DIRECTORY ${CMAKE_BIN_FOLDER}/ DESTINATION pd4web/bin/cmake/bin)
-    install(DIRECTORY ${CMAKE_SHARE_FOLDER}/ DESTINATION pd4web/bin/cmake/share)
-    install(FILES ${PD4WEB_NINJA_BINARY} DESTINATION pd4web/bin)
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ DESTINATION pd4web/Pd4Web/Pd4Web)
+    install(DIRECTORY ${CMAKE_BIN_FOLDER}/ DESTINATION pd4web/Pd4Web/bin/cmake/bin)
+    install(DIRECTORY ${CMAKE_SHARE_FOLDER}/ DESTINATION pd4web/Pd4Web/bin/cmake/share)
+    install(FILES ${PD4WEB_NINJA_BINARY} DESTINATION pd4web/Pd4Web/bin)
 
     if(UNIX AND NOT APPLE)
         target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)

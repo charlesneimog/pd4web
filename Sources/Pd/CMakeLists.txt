@@ -29,7 +29,7 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
-                DESTINATION "Pd4Web")
+                DESTINATION "Pd4Web/Pd4Web")
 
 if(APPLE)
   pd_add_datafile(
@@ -37,14 +37,14 @@ if(APPLE)
     "bin/cmake/")
   pd_add_datafile(
     pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share"
-    DESTINATION "bin/cmake/")
+    DESTINATION "Pd4Web/bin/cmake/")
 else()
   pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION
-                  "bin/cmake/")
+                  "Pd4Web/bin/cmake/")
   pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION
-                  "bin/cmake/")
+                  "Pd4Web/bin/cmake/")
 endif()
-pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "bin")
+pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "Pd4Web/bin")
 
 if(UNIX AND NOT APPLE)
   target_compile_options(pd4web.compiler PRIVATE -ffunction-sections

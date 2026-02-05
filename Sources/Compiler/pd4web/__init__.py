@@ -4,7 +4,7 @@ from pd4web.pypd4web import run
 
 
 def main():
-    folder = os.path.abspath(os.path.dirname(__file__))
+    folder = os.path.join(os.path.abspath(os.path.dirname(__file__)), "Pd4Web")
     args = sys.argv
     args += ["--pd4web-root", folder]
     run(args)
