@@ -945,7 +945,6 @@ bool Pd4Web::compilePatch() {
     p->PatchFolder = p->PatchFile.parent_path();
     p->Zoom = m_PatchZoom;
     p->PdVersion = m_PdVersion;
-    p->ProcessedSubpatches.clear();
     p->MemorySize = m_Memory;
     p->RenderGui = m_RenderGui;
     p->TemplateId = m_TemplateId;
