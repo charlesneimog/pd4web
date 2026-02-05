@@ -21,12 +21,16 @@ hide:
     Pd for the web, beyond vanilla
 </h3>
 
+
 ### <h3 align="center"> **Key Features** </h3>
 
 * **Extensive Externals Support**: `pd4web` supports over 800 external objects, giving you unmatched flexibility.
 * **Rich GUI Interface**: Use `pdlua` to create powerful interfaces.
 * **Simple Access**: Performers can run compositions directly in the browser without complex Pure Data setups or additional libraries.
 * **Preserve Live Electronic Music**: Leverage WebAudioApps to safeguard live electronic works. `pd4web` automatically downloads and organizes all the code required to run your music seamlessly.
+
+!!! question "Questions or Help?"
+    Check `pd4web` on [Discord](https://discord.gg/YcrNuNyN){:target="_blank"} :simple-discord:
 
 -------------------------
 ### <h3 align="center"> **Gallery with Projects using pd4web** </h3>
@@ -141,8 +145,6 @@ hide:
   </div> 
 </div>
 ---
-
-
 
 ## <h2 align="center"> **Contributors** </h2>
 
