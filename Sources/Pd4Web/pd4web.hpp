@@ -362,7 +362,7 @@ class Pd4Web {
     void SetLastMousePosition(int x, int y);
 
     // File Transfering
-    void SendFile(emscripten::val jsArrayBuffer, std::string filename);
+    bool SendFile(emscripten::val jsArrayBuffer, std::string filename);
 
     // WebAudio
     EMSCRIPTEN_WEBAUDIO_T GetWebAudioContext();
