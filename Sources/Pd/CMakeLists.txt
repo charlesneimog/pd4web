@@ -3,24 +3,22 @@ project(pd4web)
 
 # ──────────────────────────────────────
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-set(PDCMAKE_VERSION "v0.2.4")
+set(PDCMAKE_VERSION "v0.2.13")
 if(NOT EXISTS "${PDCMAKE_FILE}")
-  file(
-    DOWNLOAD
-    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake
-    ${PDCMAKE_FILE})
+    file(DOWNLOAD
+         # "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake"
+         "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/heads/main/pd.cmake" ${PDCMAKE_FILE})
 endif()
-include(${PDCMAKE_FILE})
+
+include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
 # │                Objeto                │
 # ╰──────────────────────────────────────╯
 pd_add_external(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.compiler.cpp")
 target_link_libraries(pd4web.compiler PRIVATE pd4web_compiler)
-target_include_directories(pd4web.compiler
-                           PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
-set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
-                                                 ON)
+target_include_directories(pd4web.compiler PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../Compiler/")
+set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # Pd4Web Data
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.compiler.cpp")
@@ -28,33 +26,24 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
-                DESTINATION "Pd4Web/Pd4Web")
+pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/" DESTINATION "Pd4Web/Pd4Web")
 
 if(APPLE)
-  pd_add_datafile(
-    pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION
-    "bin/cmake/")
-  pd_add_datafile(
-    pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share"
-    DESTINATION "Pd4Web/bin/cmake/")
+    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "bin/cmake/")
+    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share" DESTINATION "Pd4Web/bin/cmake/")
 else()
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION
-                  "Pd4Web/bin/cmake/")
-  pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION
-                  "Pd4Web/bin/cmake/")
+    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION "Pd4Web/bin/cmake/")
+    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION "Pd4Web/bin/cmake/")
 endif()
 pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "Pd4Web/bin")
 
 if(UNIX AND NOT APPLE)
-  target_compile_options(pd4web.compiler PRIVATE -ffunction-sections
-                                                 -fdata-sections)
-  target_link_options(pd4web.compiler PRIVATE -Wl,--gc-sections)
+    target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(pd4web.compiler PRIVATE -Wl,--gc-sections)
 elseif(APPLE)
-  target_compile_options(pd4web.compiler PRIVATE -ffunction-sections
-                                                 -fdata-sections)
-  target_link_options(pd4web.compiler PRIVATE -Wl,-dead_strip)
+    target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(pd4web.compiler PRIVATE -Wl,-dead_strip)
 elseif(MSVC)
-  target_compile_options(pd4web.compiler PRIVATE /Gy)
-  target_link_options(pd4web.compiler PRIVATE /OPT:REF /OPT:ICF)
+    target_compile_options(pd4web.compiler PRIVATE /Gy)
+    target_link_options(pd4web.compiler PRIVATE /OPT:REF /OPT:ICF)
 endif()

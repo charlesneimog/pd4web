@@ -16,9 +16,9 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
 
     // TODO: Update version
-    replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", "\"3\"");
-    replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", "\"0\"");
-    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"0.alpha2\"");
+    replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", std::to_string(PD4WEB_VERSION_MAJOR));
+    replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", std::to_string(PD4WEB_VERSION_MINOR));
+    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", PD4WEB_VERSION_PATCH);
 
     replaceAll(configFile, "@PD4WEB_PROJECT_NAME@", "\"" + p->ProjectName + "\"");
 
