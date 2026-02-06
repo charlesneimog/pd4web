@@ -38,10 +38,10 @@ jobs:
             build/CMakeFiles
             ~/.ccache
             ~/.cache/sccache
-          key: build-cv13-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+          key: build-cv15-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
           restore-keys: |
-            build-cv13-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-cv13-${{ matrix.os }}-${{ runner.arch }}-
+            build-cv15-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-cv15-${{ matrix.os }}-${{ runner.arch }}-
 
       - uses: actions/setup-python@v5
         with:
@@ -81,6 +81,7 @@ jobs:
         shell: pwsh
         run: |
           winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
+          # Remove-Item -Path build/pd.cmake -Force
 
       - name: Install PureData for macOS
         if: runner.os == 'macOS'
