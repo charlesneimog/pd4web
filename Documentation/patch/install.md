@@ -9,42 +9,27 @@ hide:
   }
 </style>
 
-<p align="center">
-  To compile you must install <code>pd4web</code> as a
-  <a href="#pd4web-pdpatch">PureData patch</a>
-  or a <a href="#pd4web-pdpython">Python package</a>.
-</p>
 
+`pd4web` can be installed as a Pure Data object or as a Python Package. 
+
+If you are a Pure Data user, use the __Pd Patch (Graphical Interface)__. If you know how to do Python code (write code), them use the Python Package.
 
 ---
 <a name="pd4web-pdpatch"></a>
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
 
-On PureData, `pd4web`provides a simple GUI.
+On Pure Data, `pd4web`provides a simple GUI. To use the `pd4web` object in Pure Data, follow these steps:
 
+- 1) Open Pure Data.
+- 2) Go to **Tools** → **Find Externals**.
+- 3) Search for `pd4web`.
+- 4) Click **Install**.
+- 5) A patch will open automatically. Keep it open until you see the message `[pd4web] Pd4Web initialized successfully`.
+- 6) After you see the message, close Pd, open it again, them create a `pd4web` object. You will see a Graphical Interface similar to the image below.
 
-<div class="grid cards" markdown>
-
--   :material-gesture-double-tap:{ .lg .middle } __How to Install?__
-
-    ---
-
-    To use the `pd4web` object in PureData, follow these steps:
-
-    * Open PureData.
-    * Navigate to **Tools** :material-arrow-right: **Find Externals**.
-    * Search for `pd4web`.
-    * Click the **Install** button.
-    * Wait for download and create a new `pd4web` object.
-
-
--   :fontawesome-solid-tv:{ .lg .middle } __Gui Interface__
-
-    ---
-    <p align="center">
-      <img src="../../assets/pd-pd4web.png" alt="pd4web" width="60%" style="border-radius: 2px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);">
-    </p>
-</div>
+<p align="center">
+  <img src="../../assets/pd-pd4web.png" alt="pd4web" width="40%" style="border-radius: 2px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);">
+</p>
 
 
 ---
