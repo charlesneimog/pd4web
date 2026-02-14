@@ -1,0 +1,1266 @@
+local hello = pd.Class:new():register("hello-gui")
+
+-- rendering speed (slows down rendering by the given factor)
+-- In most cases it should be fine to just set this to 1 to run at full speed,
+-- if you have a modern high-speed CPU and GPU. But we use a larger value as
+-- default here to deal with low frame rates on some systems. You may have to
+-- increase the value even further when running on low-spec systems like the
+-- Raspberry Pi.
+local R = 3
+
+function hello:initialize(sel, atoms)
+    self.inlets = 1
+
+    self.circle_x = 485
+    self.circle_y = 15
+    self.circle_radius = 15
+    self.animation_speed = 2*R
+    self.delay_time = 16*R
+
+    self.draggable_rect_x = 550
+    self.draggable_rect_y = 130
+    self.draggable_rect_size = 50
+    self.dragging_rect = false
+    self.mouse_down_pos = {0, 0}
+    self.rect_down_pos = {0, 0}
+
+    self:set_size(720, 230)
+    return true
+end
+
+function math.clamp(val, lower, upper)
+    if lower > upper then lower, upper = upper, lower end -- swap if boundaries supplied the wrong way
+    return math.max(lower, math.min(upper, val))
+end
+
+function hello:postinitialize()
+    self.clock = pd.Clock:new():register(self, "tick")
+    self.clock:delay(self.delay_time)
+end
+
+function hello:finalize()
+    self.clock:destruct()
+end
+
+function hello:mouse_down(x, y)
+    if x > self.draggable_rect_x and y > self.draggable_rect_y and x < self.draggable_rect_x + self.draggable_rect_size and y < self.draggable_rect_y + self.draggable_rect_size then
+        dragging_rect = true
+        self.mouse_down_pos[0] = x
+        self.mouse_down_pos[1] = y
+        self.rect_down_pos[0] = self.draggable_rect_x
+        self.rect_down_pos[1] = self.draggable_rect_y
+    else
+        dragging_rect = false
+    end
+end
+
+function hello:mouse_drag(x, y)
+    if dragging_rect == true then
+        self.draggable_rect_x = self.rect_down_pos[0] + (x - self.mouse_down_pos[0])
+        self.draggable_rect_y = self.rect_down_pos[1] + (y - self.mouse_down_pos[1])
+        self.draggable_rect_x = math.clamp(self.draggable_rect_x, 0, 620 - self.draggable_rect_size)
+        self.draggable_rect_y = math.clamp(self.draggable_rect_y, 0, 230 - self.draggable_rect_size)
+        self:repaint(3)
+    end
+end
+
+function hello:paint(g)
+    g:set_color(50, 50, 50)
+    g:fill_all()
+
+    -- Filled examples
+    g:set_color(66, 207, 201, 0.3)
+    g:fill_ellipse(30, 50, 30, 30)
+    g:set_color(0, 159, 147, 1)
+    g:fill_rect(120, 50, 30, 30)
+    g:set_color(250, 84, 108, 1)
+    g:fill_rounded_rect(210, 50, 30, 30, 5)
+
+    g:set_color(252, 118, 81, 1)
+
+    -- Star using line_to paths
+    local starX1, starY1 = 310, 45
+    local starSize = 15
+
+    local star = Path(starX1, starY1)
+
+    -- Star using line_to paths
+    star:line_to(starX1 + 5, starY1 + 14)
+    star:line_to(starX1 + 20, starY1 + 14)
+    star:line_to(starX1 + 8, starY1 + 22)
+    star:line_to(starX1 + 14, starY1 + 36)
+    star:line_to(starX1, starY1 + 27)
+    star:line_to(starX1 - 14, starY1 + 36)
+    star:line_to(starX1 - 6, starY1 + 22)
+    star:line_to(starX1 - 18, starY1 + 14)
+    star:line_to(starX1 - 3, starY1 + 14)
+    star:close()
+
+    g:fill_path(star)
+
+    g:set_color(255, 219, 96, 1)
+    -- Bezier curve example
+    g:translate(140, 20)
+    g:scale(0.5, 1.0)
+    local curve = Path(450, 50)
+    curve:cubic_to(500, 30, 550, 70, 600, 50)
+    curve:close()
+    g:stroke_path(curve, 2)
+    g:reset_transform()
+
+    -- Stroked examples
+    g:set_color(66, 207, 201, 1)
+    g:stroke_ellipse(30, 150, 30, 30, 2)
+    g:set_color(0, 159, 147, 1)
+    g:stroke_rect(120, 150, 30, 30, 2)
+    g:set_color(250, 84, 108, 1)
+    g:stroke_rounded_rect(210, 150, 30, 30, 5, 2)
+
+    g:set_color(252, 118, 81, 1)
+
+    local starX2, starY2 = 310, 145
+    local starSize = 15
+
+    -- Star using line_to paths
+    local star2 = Path(starX2, starY2)
+    star2:line_to(starX2 + 5, starY2 + 14)
+    star2:line_to(starX2 + 20, starY2 + 14)
+    star2:line_to(starX2 + 8, starY2 + 22)
+    star2:line_to(starX2 + 14, starY2 + 36)
+    star2:line_to(starX2, starY2 + 27)
+    star2:line_to(starX2 - 14, starY2 + 36)
+    star2:line_to(starX2 - 6, starY2 + 22)
+    star2:line_to(starX2 - 18, starY2 + 14)
+    star2:line_to(starX2 - 3, starY2 + 14)
+    star2:close()
+    g:stroke_path(star2, 2)
+
+    g:set_color(255, 219, 96, 1)
+    -- Bezier curve example
+    g:translate(140, 20)
+    g:scale(0.5, 1.0)
+    local curve2 = Path(450, 150)
+    curve2:cubic_to(500, 130, 550, 170, 600, 150)
+    g:fill_path(curve2)
+    g:reset_transform()
+
+    -- Titles
+    g:set_color(252, 118, 81, 1)
+    g:draw_text("Ellipse", 25, 190, 120, 12)
+    g:draw_text("Rectangle", 100, 190, 120, 12)
+    g:draw_text("Rounded Rect", 188, 190, 120, 12)
+    g:draw_text("Paths", 295, 190, 120, 12)
+    g:draw_text("Bezier Paths", 360, 190, 120, 12)
+    g:draw_text("Animation", 460, 190, 120, 12)
+    g:draw_text("   Mouse\nInteraction", 540, 190, 120, 12)
+    g:draw_text("SVG rendering", 630, 190, 120, 12)
+end
+
+[[
+function hello:paint_layer_2(g)
+    g:set_color(250, 84, 108, 1)
+    g:fill_ellipse(self.circle_x, self.circle_y, self.circle_radius, self.circle_radius)
+end
+
+function hello:paint_layer_3(g)
+    -- Draggable rectangle
+    g:set_color(66, 207, 201, 1)
+    g:fill_rounded_rect(self.draggable_rect_x, self.draggable_rect_y, self.draggable_rect_size, self.draggable_rect_size, 5)
+    g:set_color(0, 0, 0, 1)
+    g:draw_text("Drag\n me!", self.draggable_rect_x + 8, self.draggable_rect_y + 10, self.draggable_rect_size, 12)
+end
+
+function hello:paint_layer_4(g)
+    -- Draggable rectangle
+    local svg_demo = [[
+        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12.394 5.925 10.523 4.41A1.842 1.842 0 0 0 9.363 4C7.956 4 7.068 5.514 7.756 6.742l.382.682 3.463-.722c.056-.012.17-.06.294-.21.14-.17.308-.362.499-.567ZM3 20a1 1 0 0 1 1-1h16a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Z" fill="#212121"/><path d="M21.547 6.83c-.945-1.084-2.617-2.5-4.855-2.327-.929.071-1.77.549-2.429 1.057a10.429 10.429 0 0 0-1.598 1.57c-.243.293-.546.486-.86.551l-4.663.972-.966-1.771A1.691 1.691 0 0 0 3 7.692v3.69a2.294 2.294 0 0 0 2.727 2.252l3.3-.635-.507 1.234a2.004 2.004 0 0 0 3.456 1.966l3.236-4.315 5.37-1.852a2.141 2.141 0 0 0 1.343-1.32 1.898 1.898 0 0 0-.378-1.883Z" fill="#212121"/></svg>
+    ]]
+    
+    [[
+    g:draw_svg(svg_demo, 650, 50)
+    g:draw_text("Drag\n me!", self.draggable_rect_x + 8, self.draggable_rect_y + 10, self.draggable_rect_size, 12)
+end
+
+function hello:tick()
+    self.circle_y = self.circle_y + self.animation_speed
+    if self.circle_y > 160 + self.circle_radius then
+        self.circle_y = -self.circle_radius
+    end
+    self:repaint(2)
+    self.clock:delay(self.delay_time)
+end
+
+
+function hello:in_1_bang()
+    self:repaint()
+end
+
+]]
+local hello = pd.Class:new():register("gui")
+
+-- rendering speed (slows down rendering by the given factor)
+-- In most cases it should be fine to just set this to 1 to run at full speed,
+-- if you have a modern high-speed CPU and GPU. But we use a larger value as
+-- default here to deal with low frame rates on some systems. You may have to
+-- increase the value even further when running on low-spec systems like the
+-- Raspberry Pi.
+local R = 3
+
+function hello:initialize(sel, atoms)
+    self.inlets = 1
+
+    self.circle_x = 485
+    self.circle_y = 15
+    self.circle_radius = 15
+    self.animation_speed = 2*R
+    self.delay_time = 16*R
+
+    self.draggable_rect_x = 550
+    self.draggable_rect_y = 130
+    self.draggable_rect_size = 50
+    self.dragging_rect = false
+    self.mouse_down_pos = {0, 0}
+    self.rect_down_pos = {0, 0}
+
+    self:set_size(720, 230)
+    return true
+end
+
+function math.clamp(val, lower, upper)
+    if lower > upper then lower, upper = upper, lower end -- swap if boundaries supplied the wrong way
+    return math.max(lower, math.min(upper, val))
+end
+
+function hello:postinitialize()
+    self.clock = pd.Clock:new():register(self, "tick")
+    self.clock:delay(self.delay_time)
+end
+
+function hello:finalize()
+    self.clock:destruct()
+end
+
+function hello:mouse_down(x, y)
+    if x > self.draggable_rect_x and y > self.draggable_rect_y and x < self.draggable_rect_x + self.draggable_rect_size and y < self.draggable_rect_y + self.draggable_rect_size then
+        dragging_rect = true
+        self.mouse_down_pos[0] = x
+        self.mouse_down_pos[1] = y
+        self.rect_down_pos[0] = self.draggable_rect_x
+        self.rect_down_pos[1] = self.draggable_rect_y
+    else
+        dragging_rect = false
+    end
+end
+
+function hello:mouse_drag(x, y)
+    if dragging_rect == true then
+        self.draggable_rect_x = self.rect_down_pos[0] + (x - self.mouse_down_pos[0])
+        self.draggable_rect_y = self.rect_down_pos[1] + (y - self.mouse_down_pos[1])
+        self.draggable_rect_x = math.clamp(self.draggable_rect_x, 0, 620 - self.draggable_rect_size)
+        self.draggable_rect_y = math.clamp(self.draggable_rect_y, 0, 230 - self.draggable_rect_size)
+        self:repaint(3)
+    end
+end
+
+function hello:paint(g)
+    g:set_color(50, 50, 50)
+    g:fill_all()
+
+    -- Filled examples
+    g:set_color(66, 207, 201, 0.3)
+    g:fill_ellipse(30, 50, 30, 30)
+    g:set_color(0, 159, 147, 1)
+    g:fill_rect(120, 50, 30, 30)
+    g:set_color(250, 84, 108, 1)
+    g:fill_rounded_rect(210, 50, 30, 30, 5)
+
+    g:set_color(252, 118, 81, 1)
+
+    -- Star using line_to paths
+    local starX1, starY1 = 310, 45
+    local starSize = 15
+
+    local star = Path(starX1, starY1)
+
+    -- Star using line_to paths
+    star:line_to(starX1 + 5, starY1 + 14)
+    star:line_to(starX1 + 20, starY1 + 14)
+    star:line_to(starX1 + 8, starY1 + 22)
+    star:line_to(starX1 + 14, starY1 + 36)
+    star:line_to(starX1, starY1 + 27)
+    star:line_to(starX1 - 14, starY1 + 36)
+    star:line_to(starX1 - 6, starY1 + 22)
+    star:line_to(starX1 - 18, starY1 + 14)
+    star:line_to(starX1 - 3, starY1 + 14)
+    star:close()
+
+    g:fill_path(star)
+
+    g:set_color(255, 219, 96, 1)
+    -- Bezier curve example
+    g:translate(140, 20)
+    g:scale(0.5, 1.0)
+    local curve = Path(450, 50)
+    curve:cubic_to(500, 30, 550, 70, 600, 50)
+    curve:close()
+    g:stroke_path(curve, 2)
+    g:reset_transform()
+
+    -- Stroked examples
+    g:set_color(66, 207, 201, 1)
+    g:stroke_ellipse(30, 150, 30, 30, 2)
+    g:set_color(0, 159, 147, 1)
+    g:stroke_rect(120, 150, 30, 30, 2)
+    g:set_color(250, 84, 108, 1)
+    g:stroke_rounded_rect(210, 150, 30, 30, 5, 2)
+
+    g:set_color(252, 118, 81, 1)
+
+    local starX2, starY2 = 310, 145
+    local starSize = 15
+
+    -- Star using line_to paths
+    local star2 = Path(starX2, starY2)
+    star2:line_to(starX2 + 5, starY2 + 14)
+    star2:line_to(starX2 + 20, starY2 + 14)
+    star2:line_to(starX2 + 8, starY2 + 22)
+    star2:line_to(starX2 + 14, starY2 + 36)
+    star2:line_to(starX2, starY2 + 27)
+    star2:line_to(starX2 - 14, starY2 + 36)
+    star2:line_to(starX2 - 6, starY2 + 22)
+    star2:line_to(starX2 - 18, starY2 + 14)
+    star2:line_to(starX2 - 3, starY2 + 14)
+    star2:close()
+    g:stroke_path(star2, 2)
+
+    g:set_color(255, 219, 96, 1)
+    -- Bezier curve example
+    g:translate(140, 20)
+    g:scale(0.5, 1.0)
+    local curve2 = Path(450, 150)
+    curve2:cubic_to(500, 130, 550, 170, 600, 150)
+    g:fill_path(curve2)
+    g:reset_transform()
+
+    -- Titles
+    g:set_color(252, 118, 81, 1)
+    g:draw_text("Ellipse", 25, 190, 120, 12)
+    g:draw_text("Rectangle", 100, 190, 120, 12)
+    g:draw_text("Rounded Rect", 188, 190, 120, 12)
+    g:draw_text("Paths", 295, 190, 120, 12)
+    g:draw_text("Bezier Paths", 360, 190, 120, 12)
+    g:draw_text("Animation", 460, 190, 120, 12)
+    g:draw_text("   Mouse\nInteraction", 540, 190, 120, 12)
+    g:draw_text("SVG rendering", 630, 190, 120, 12)
+end
+
+function hello:paint_layer_2(g)
+    g:set_color(250, 84, 108, 1)
+    g:fill_ellipse(self.circle_x, self.circle_y, self.circle_radius, self.circle_radius)
+end
+
+function hello:paint_layer_3(g)
+    -- Draggable rectangle
+    g:set_color(66, 207, 201, 1)
+    g:fill_rounded_rect(self.draggable_rect_x, self.draggable_rect_y, self.draggable_rect_size, self.draggable_rect_size, 5)
+    g:set_color(0, 0, 0, 1)
+    g:draw_text("Drag\n me!", self.draggable_rect_x + 8, self.draggable_rect_y + 10, self.draggable_rect_size, 12)
+end
+
+function hello:paint_layer_4(g)
+	g:scale(0.1, 0.1)
+    -- Draggable rectangle
+    local svg_demo = [[
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--!Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#f8e45c" d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8l0-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.3c4.2-4.8 8.7-9.2 13.5-13.3c3.7-3.2 7.5-6.2 11.5-9c0 0 0 0 0 0C313.1 47 353.4 37.9 392.8 45.4C462 58.6 512 119.1 512 189.5l0 3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20-.1-.1s0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5l0 3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2l0-3.3c0-47.3-33.6-88-80.1-96.9c-34-6.5-69 5.4-92 31.2c0 0 0 0-.1 .1s0 0-.1 .1l-17.8 20c-.3 .4-.7 .7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7z"/></svg>
+    ]]
+    g:draw_svg(svg_demo, 650 * 9, 50 * 9)
+    g:draw_text("Drag\n me!", self.draggable_rect_x + 8, self.draggable_rect_y + 10, self.draggable_rect_size, 12)
+end
+
+function hello:tick()
+    self.circle_y = self.circle_y + self.animation_speed
+    if self.circle_y > 160 + self.circle_radius then
+        self.circle_y = -self.circle_radius
+    end
+    self:repaint(2)
+    self.clock:delay(self.delay_time)
+end
+
+
+function hello:in_1_bang()
+    self:repaint()
+end
+#N canvas 963 23 951 1016 10;
+#X obj 2 3 tgl 40 0 empty empty empty 0 -9 0 10 #c6ffc7 #000000 #000000 0 1;
+#X obj 6 59 osc~ 220;
+#X obj 6 81 *~ 0.2;
+#X obj 6 136 *~;
+#X obj 6 158 dac~;
+#X obj 26 291 declare -path Extras;
+#X obj 2 373 pdlua;
+#X obj 62 3 gui;
+#X connect 0 0 3 1;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X coords 0 -1 1 1 800 400 1 0 0;
+--[[
+pdlua -- a Lua embedding for Pd
+Copyright (C) 2007,2008 Claude Heiland-Allen <claude@mathr.co.uk>
+Copyright (C) 2012 Martin Peach martin.peach@sympatico.ca
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--]]
+
+-- storage for Pd C<->Lua interaction
+pd._classes = { } -- take absolute paths and turn them into classes
+pd._pathnames = { } -- look up absolute path by creation name
+pd._objects = { }
+pd._clocks = { }
+pd._receives = { }
+pd._loadpath = ""
+
+-- add a path to Lua's "require" search paths
+pd._setrequirepath = function(path)
+  pd._packagepath = package.path
+  pd._packagecpath = package.cpath
+  if (pd._iswindows) then
+    package.path = path .. "\\?.lua;" .. path .. "\\?\\init.lua;" .. package.path
+    package.cpath = path .. "\\?.dll;" .. package.cpath
+  else
+    package.path = path .. "/?.lua;" .. path .. "/?/init.lua;" .. package.path
+    package.cpath = path .. "/?.so;" .. package.cpath
+  end
+end
+
+-- reset Lua's "require" search paths
+pd._clearrequirepath = function()
+  package.path = pd._packagepath
+  package.cpath = pd._packagecpath
+end
+
+-- check if we need to register a basename class first
+pd._checkbase = function (name)
+  return pd._pathnames[name] == true
+end
+
+-- constructor dispatcher
+pd._constructor = function (name, atoms)
+  local fullpath = pd._pathnames[name]
+  if nil ~= pd._classes[fullpath] then
+    local o = pd._classes[fullpath]:new():construct(name, atoms)
+    if o then
+      pd._objects[o._object] = o
+      return o._object
+    end
+  end
+  return nil
+end
+
+-- destructor dispatcher
+pd._destructor = function (object)
+  if nil ~= pd._objects[object] then
+    pd._objects[object]:destruct()
+  end
+end
+
+-- inlet method dispatcher
+pd._dispatcher = function (object, inlet, sel, atoms)
+  if nil ~= pd._objects[object] then
+    pd._objects[object]:dispatch(inlet, sel, atoms)
+  end
+end
+
+pd._dsp = function (object, samplerate, blocksize, inchans)
+  local obj = pd._objects[object]
+  if nil ~= obj and type(obj.dsp) == "function" then
+    pd._objects[object]:dsp(samplerate, blocksize, inchans)
+  end
+end
+
+pd._perform_dsp = function (object, ...)
+  local obj = pd._objects[object]
+  if nil ~= obj and type(obj.perform) == "function" then
+    return pd._objects[object]:perform(...)
+  end
+end
+
+-- repaint method dispatcher
+pd._repaint = function (object)
+  local obj = pd._objects[object]
+  if nil ~= obj and type(obj.repaint) == "function" then
+    obj:repaint(0)
+  end
+end
+
+-- mouse event dispatcher
+pd._mouseevent = function (object, x, y, event_type)
+  if nil ~= pd._objects[object] then
+    local obj = pd._objects[object]
+    if event_type == 0 and type(obj.mouse_down) == "function" then
+      obj:mouse_down(x, y)
+    end
+    if event_type == 1 and type(obj.mouse_up) == "function" then
+      obj:mouse_up(x, y)
+    end
+    if event_type == 2 and type(obj.mouse_move) == "function" then
+      obj:mouse_move(x, y)
+    end
+    if event_type == 3 and type(obj.mouse_drag) == "function" then
+      obj:mouse_drag(x, y)
+    end
+  end
+end
+
+-- clock method dispatcher
+pd._clockdispatch = function (c)
+  if nil ~= pd._clocks[c] then
+    local m = pd._clocks[c]._method
+    pd._clocks[c]._target[m](pd._clocks[c]._target)
+  end
+end
+
+--whoami method dispatcher
+pd._whoami = function (object)
+  if nil ~= pd._objects[object] then
+    return pd._objects[object]:whoami()
+  end
+end
+
+-- prototypical OO system
+pd.Prototype = { }
+
+function pd.Prototype:new(o)
+  o = o or {}
+  setmetatable(o, self)
+  self.__index = self
+  return o
+end
+
+-- clocks
+pd.Clock = pd.Prototype:new()
+
+function pd.Clock:register(object, method)
+  if nil ~= object then
+    if nil ~= object._object then
+      self._clock = pd._createclock(object._object, method)
+      self._target = object
+      self._method = method
+      pd._clocks[self._clock] = self
+      -- ag 20240906: record the clock in the target's _clocks table so that it
+      -- can be destroyed automatically with the object
+      if not object._clocks then
+        object._clocks = { }
+      end
+      object._clocks[self._clock] = self
+      return self
+    end
+  end
+  return nil
+end
+
+function pd.Clock:destruct()
+  -- ag 20240906: remove the clock from the target's _clocks table if any
+  if self._target and self._target._clocks then
+    --pd.post(string.format("%s: destroying clock %s", self._target._name, self._method))
+    self._target._clocks[self._clock] = nil
+  end
+  if self._clock then
+    pd._clocks[self._clock] = nil
+    pd._clockfree(self._clock)
+    self._clock = nil
+  end
+end
+
+function pd.Clock:dispatch()
+  if pd._objects[self._target] then
+    local m = self._target[self._method]
+    if type(m) == "function" then
+        return m(self._target)
+    else
+        self._target:error(
+        "no method for `" .. self._method ..
+        "' at clock of Lua object `" .. self._name .. "'"
+        )
+    end
+  end
+end
+
+function pd.Clock:set(systime)
+  pd._clockset(self._clock, systime)
+end
+
+function pd.Clock:delay(delaytime)
+  pd._clockdelay(self._clock, delaytime)
+end
+
+function pd.Clock:unset()
+  pd._clockunset(self._clock)
+end
+
+-- tables
+pd.Table = pd.Prototype:new()
+
+function pd.Table:sync(name)
+  self.name = name
+  self._length, self._array = pd._getarray(name)
+  if self._length < 0 then
+    return nil
+  else
+    return self
+  end
+end
+
+function pd.Table:destruct()
+  self._length = -3
+  self._array = nil
+end
+
+function pd.Table:get(i)
+  if type(i) == "number" and 0 <= i and i < self._length then
+    return pd._readarray(self._length, self._array, i)
+  else
+    return nil
+  end
+end
+
+function pd.Table:set(i, f)
+  if type(i) == "number" and type(f) == "number" and 0 <= i and i < self._length then
+    return pd._writearray(self._length, self._array, i, f)
+  else
+    return nil
+  end
+end
+
+function pd.Table:length()
+  if self._length >= 0 then
+    return self._length
+  else
+    return nil
+  end
+end
+
+function pd.Table:redraw()
+  pd._redrawarray(self.name)
+end
+
+-- receivers
+function pd._receivedispatch(receive, sel, atoms)
+  if nil ~= pd._receives[receive] then
+    pd._receives[receive]:dispatch(sel, atoms)
+  end
+end
+
+pd.Receive = pd.Prototype:new()
+
+function pd.Receive:register(object, name, method)
+  if nil ~= object then
+    if nil ~= object._object then
+      self._receive = pd._createreceive(object._object, name)
+      self._name = name
+      self._target = object
+      self._method = method
+      pd._receives[self._receive] = self
+      -- ag 20240906: record the receiver in the target's _receives table so
+      -- that it can be destroyed automatically with the object
+      if not object._receives then
+        object._receives = { }
+      end
+      object._receives[self._receive] = self
+      return self
+    end
+  end
+  return nil
+end
+
+function pd.Receive:destruct()
+  -- ag 20240906: remove the receiver from the target's _receives table if any
+  if self._target and self._target._receives then
+    --pd.post(string.format("%s: destroying receiver %s", self._target._name, self._method))
+    self._target._receives[self._receive] = nil
+  end
+  if self._receive then
+    pd._receives[self._receive] = nil
+    pd._receivefree(self._receive)
+    self._receive = nil
+    self._name = nil
+    self._target = nil
+    self._method = nil
+  end
+end
+
+function pd.Receive:dispatch(sel, atoms)
+  self._target[self._method](self._target, sel, atoms)
+end
+
+-- patchable objects
+pd.Class = pd.Prototype:new()
+
+function pd.Class:register(name)
+  -- if already registered, return existing
+  local regname
+  -- Those trailing slashes keep piling up, thus we need to check whether
+  -- pd._loadpath already has one. This is only a temporary kludge until a
+  -- proper fix is deployed. -ag 2023-02-02
+  --[[
+     Oh well, it appears that the "temporary kludge" is here to stay, so
+     let's at least fix it up to preserve an empty _loadpath, which is what we
+     get with pdluax. Which makes sense, since pdluax's _scriptname will be an
+     absolute path. But then an empty _loadpath should stay empty so that
+     self._loadpath .. self._scriptname returns a proper path.
+
+     This whole code has been touched so many times during sebshader's quest
+     to get relative paths in object names right, that I don't really dare to
+     touch it anymore, but this much we can do. -ag 20240905
+  ]]
+  local fullpath = string.sub(pd._loadpath, -1) == "/" and pd._loadpath or
+     pd._loadpath ~= "" and pd._loadpath .. '/' or ""
+  local fullname = fullpath .. name
+
+  if nil ~= pd._classes[fullname] then
+    return pd._classes[fullname]
+  end
+  if pd._loadname then
+    -- don't alter existing classes of basename,
+    -- if another file has ownership of basename
+    if not pd._pathnames[name] then
+      pd._pathnames[name] = true
+    end
+    regname = pd._loadname
+  else
+    regname = name
+  end
+  pd._pathnames[regname] = fullname
+  pd._classes[fullname] = self       -- record registration
+  self._class, self._class_gfx = pd._register(name)  -- register new class
+  self._name = name
+  self._loadpath = fullpath
+  if name == "pdlua" then
+    self._scriptname = "pd.lua"
+  else
+    self._scriptname = name .. ".pd_lua"
+  end -- mrpeach 20111027
+  return self                       -- return new
+end
+
+function pd.Class:construct(sel, atoms)
+  self._object = pd._create(self._class, self._class_gfx)
+  self.inlets = 0
+  self.outlets = 0
+  self._canvaspath = pd._canvaspath(self._object) .. "/"
+  if pdx then
+    pdx.reload(self)
+  end
+  if self:initialize(sel, atoms) then
+    pd._createinlets(self._object, self.inlets)
+    pd._createoutlets(self._object, self.outlets)
+    if type(self.paint) == "function" then
+        pd._creategui(self._object)
+    end
+    self:postinitialize()
+    return self
+  else
+    if pdx then
+      pdx.unreload(self)
+    end
+    return nil
+  end
+end
+
+function pd.Class:destruct()
+  -- ag 20240906: get rid of all clocks and receivers registered for us
+  if self._clocks then
+    local clocks = { }
+    -- since the destruct() method destructively updates our _clocks table,
+    -- record all registered clock objects in a new table
+    for _, c in pairs(self._clocks) do
+      table.insert(clocks, c)
+    end
+    -- now destroy them
+    for _, c in ipairs(clocks) do
+      c:destruct()
+    end
+    self._clocks = nil
+  end
+  if self._receives then
+    local receives = { }
+    -- since the destruct() method destructively updates our _receives table,
+    -- record all registered receivers in a new table
+    for _, r in pairs(self._receives) do
+      table.insert(receives, r)
+    end
+    -- now destroy them
+    for _, r in ipairs(receives) do
+      r:destruct()
+    end
+    self._receives = nil
+  end
+  pd._objects[self] = nil
+  self:finalize()
+  pd._destroy(self._object)
+end
+
+function pd.Class:dispatch(inlet, sel, atoms)
+  local m = self[string.format("in_%d_%s", inlet, sel)]
+  if type(m) == "function" then
+    if sel == "bang"    then return m(self)           end
+    if sel == "float"   then return m(self, atoms[1]) end
+    if sel == "symbol"  then return m(self, atoms[1]) end
+    if sel == "pointer" then return m(self, atoms[1]) end
+    if sel == "list"    then return m(self, atoms)    end
+    return m(self, atoms)
+  end
+  m = self["in_n_" .. sel]
+  if type(m) == "function" then
+    if sel == "bang"    then return m(self, inlet)           end
+    if sel == "float"   then return m(self, inlet, atoms[1]) end
+    if sel == "symbol"  then return m(self, inlet, atoms[1]) end
+    if sel == "pointer" then return m(self, inlet, atoms[1]) end
+    if sel == "list"    then return m(self, inlet, atoms)    end
+    return m(self, inlet, atoms)
+  end
+  m = self[string.format("in_%d", inlet)]
+  if type(m) == "function" then
+    return m(self, sel, atoms)
+  end
+  m = self["in_n"]
+  if type(m) == "function" then
+    return m(self, inlet, sel, atoms)
+  end
+  self:error(
+     string.format("no method for `%s' at inlet %d of Lua object `%s'",
+		   sel, inlet, self._name)
+  )
+end
+
+function pd.Class:outlet(outlet, sel, atoms)
+  pd._outlet(self._object, outlet, sel, atoms)
+end
+
+function pd.Class:initialize(sel, atoms) end
+
+function pd.Class:postinitialize() end
+
+function pd.Class:finalize() end
+
+function pd.Class:get_args()
+  return pd._get_args(self._object)
+end
+
+function pd.Class:set_args(args)
+  pd._set_args(self._object, args)
+end
+
+function pd.Class:canvas_realizedollar(s)
+  return pd._canvas_realizedollar(self._object, s)
+end
+
+function pd.Class:signal_setmultiout(n, channelcount)
+  pd._signal_setmultiout(self._object, n, channelcount)
+end
+
+function pd.Class:repaint(layer)
+  -- do some argument checking first
+  if type(layer) == "number" then
+    -- make sure that layer is a nonnegative integer
+    layer = math.max(0, math.floor(layer))
+  elseif layer then
+    self:error(string.format("repaint: invalid layer %s, must be number or nil", tostring(layer)))
+    return
+  end
+  if layer == nil or layer <= 1 then
+    if type(self.paint) == "function" then
+      local g = _gfx_internal.start_paint(self._object, 1);
+      print("paint")
+      print(g ~= nil)
+      if type(self.paint) == "function" and g ~= nil then
+        self:paint(g)
+        _gfx_internal.end_paint(g, 1)
+      end
+    end
+  end
+  if layer == nil or layer == 0 then
+    local i = 2
+    while true do
+      local paint_layer_method = "paint_layer_" .. tostring(i)
+      if type(self[paint_layer_method]) == "function" then
+        local g = _gfx_internal.start_paint(self._object, i)
+        if g ~= nil then
+          self[paint_layer_method](self, g)
+          _gfx_internal.end_paint(g, i)
+          i = i + 1
+        else
+          break
+        end
+      else
+        break -- Exit the loop when no more paint_layer_X methods are found
+      end
+    end
+  end
+  if layer ~= nil and layer >= 2 then
+    local paint_layer_method = "paint_layer_" .. tostring(layer)
+    if type(self[paint_layer_method]) == "function" then
+      local g = _gfx_internal.start_paint(self._object, layer)
+      if g ~= nil then
+        self[paint_layer_method](self, g)
+        _gfx_internal.end_paint(g, layer)
+      end
+    end
+  end
+end
+
+function pd.Class:get_size()
+  return _gfx_internal.get_size(self._object)
+end
+
+function pd.Class:set_size(width, height)
+  return _gfx_internal.set_size(self._object, width, height)
+end
+
+function pd.Class:dofilex(file)
+  -- in case of register being called, make sure
+  -- classes in other paths aren't getting affected
+  -- save old loadname in case of weird nesting loading
+  local namesave = pd._loadname
+  local pathsave = pd._loadpath
+  pd._loadname = nil
+  pd._loadpath = self._loadpath
+  local f, path = pd._dofilex(self._class, file)
+  pd._loadname = namesave
+  pd._loadpath = pathsave
+  return f, path
+end
+
+function pd.Class:dofile(file)
+  -- in case of register being called, make sure
+  -- classes in other paths aren't getting affected
+  -- save old loadname in case of weird nesting loading
+  local namesave = pd._loadname
+  local pathsave = pd._loadpath
+  pd._loadname = nil
+  pd._loadpath = self._loadpath
+  local f, path = pd._dofile(self._object, file)
+  pd._loadname = namesave
+  pd._loadpath = pathsave
+  return f, path
+end
+
+function pd.Class:error(msg)
+  pd._error(self._object, msg)
+end
+
+function pd.Class:whoami()
+  return self._scriptname or self._name
+end
+
+function pd.Class:get_class() -- accessor for t_class*
+  -- ag 20240905: this is now implemented on the C side (you probably
+  -- shouldn't use this any more, we only keep this here for backward
+  -- compatibility)
+  return pd._get_class(self) or nil
+end
+
+local lua = pd.Class:new():register("pdlua")  -- global controls (the [pdlua] object only)
+
+function lua:initialize(sel, atoms)
+  self.inlets = 1
+  self.outlets = 0    -- FIXME: might be nice to have errors go here?
+  return true
+end
+
+function lua:in_1_load(atoms)  -- execute a script
+  self:dofile(atoms[1])
+end
+
+
+local luax = pd.Class:new():register("pdluax")  -- classless lua externals (like [pdluax foo])
+
+function luax:initialize(sel, atoms)          -- motivation: pd-list 2007-09-23
+  if not atoms[1] then
+    -- create a dummy object, which can still be clicked for help
+    self.inlets = 0
+    self.outlets = 0
+    self._scriptname = ""
+    return true
+  end
+  local f, pathname = self:dofile(atoms[1] .. ".pd_luax")
+  if f and pathname then
+    local function basename(str)
+      return string.gsub(str, "(.*/)(.*)", "%2")
+    end
+    self._scriptname = pathname .. '/' .. basename(atoms[1]) .. ".pd_luax" -- mrpeach 20120201
+    local atomstail = { }          -- munge for better lua<->luax compatibility
+    for i,_ in ipairs(atoms) do
+      if i > 1 then
+        atomstail[i-1] = atoms[i]
+      end
+    end
+    return f(self, atoms[1], atomstail)
+  else
+    return false   -- error message already output by dofile()
+  end
+end
+
+-- convenience creation functions for classes, arrays, clocks, receivers
+
+function pd.class(...)
+   return pd.Class:new():register(...)
+end
+
+function pd.table(...)
+   return pd.Table:new():sync(...)
+end
+
+function pd.clock(...)
+   return pd.Clock:new():register(...)
+end
+
+function pd.receive(...)
+   return pd.Receive:new():register(...)
+end
+
+-- constants used in the signal and graphics API
+DATA = 0
+SIGNAL = 1
+Colors = {background = 0, foreground = 1, outline = 2}
+
+-- pre-load pdx.lua (advanced live coding support); if you don't want this,
+-- just comment out the line below
+pdx = require 'pdx'
+
+-- fin pd.lua
+
+--[[
+pdx.lua: useful extensions to pd.lua
+Copyright (C) 2020 Albert Gräf <aggraef@gmail.com>
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+--]]
+
+local pdx = {}
+
+--[[
+Reload functionality. pdx.reload() enables, and pdx.unreload() disables it.
+
+NOTE: As of pd-lua 0.12.8, this module is now pre-loaded, and pdx.reload()
+gets called automatically before running the initialize method of any object,
+so calling pdx.reload() explicitly is no longer needed. (Old code importing
+the module and doing the call will continue to work, though.) Instead, you
+will now have to call pdx.unreload() in your initialize method if you want to
+*disable* this feature for some reason.
+
+pdx.reload installs a "pdluax" receiver which reloads the object's script file
+when it receives the "reload" message without any arguments, or a "reload
+class" message with a matching class name.
+
+Before reloading the script, we also execute the object's prereload() method if
+it exists, and the postreload() method after reloading, so that the user can
+customize object reinitialization as needed (e.g., to call initialize() after
+reloading, or to perform some other custom reinitialization). This was
+suggested by @ben-wes (thanks Ben!).
+
+We have to go to some lengths here since we only want the script to be
+reloaded *once* for each class, not for every object in the class. This
+complicates things quite a bit. In particular, we need to keep track of object
+deletions to perform the necessary bookkeeping, in order to ensure that at any
+time there's exactly one participating object in the class which receives the
+message. Which means that we also need to keep track of the object's finalize
+method, so that we can chain to it in our own finalizer.
+--]]
+
+local reloadables = {}
+
+-- finalize method, here we perform the necessary bookkeeping when an object
+-- in the reloadables table gets deleted
+local function finalize(self)
+   if reloadables[self._name] then
+      -- remove the object from the reloadables table, and restore its
+      -- original finalizer
+      pdx.unreload(self)
+      -- call the object's own finalizer, if any
+      if self.finalize then
+	 self.finalize(self)
+      end
+   end
+end
+
+-- pre-reload actions
+local function do_prereload(self, data)
+   -- save the current state
+   data.state = {
+      self.inlets,
+      self.outlets,
+      type(self.paint) == "function"
+   }
+   -- invoke the prereload method if it exists
+   if self.prereload and type(self.prereload) == "function" then
+      self:prereload()
+   end
+end
+
+-- post-reload actions
+local function do_postreload(self, data)
+   -- update the object's finalizer and restore our own, in case
+   -- anything has changed there
+   if self.finalize ~= finalize then
+      data.finalize = self.finalize
+      self.finalize = finalize
+   end
+   -- invoke the postreload method if it exists
+   if self.postreload and type(self.postreload) == "function" then
+      self:postreload()
+   end
+   -- retrieve the prereload state
+   local inlets, outlets, has_gui = table.unpack(data.state)
+   data.state = nil
+   -- recreate inlets and outlets as needed
+   local function iolets_eq(a, b)
+      -- compare two iolet signatures a and b
+      if type(a) ~= type(b) then
+         return false
+      elseif type(a) == "table" then
+         if #a ~= #b then
+            return false
+         else
+            for i = 1, #a do
+               if a[i] ~= b[i] then
+                  return false
+               end
+            end
+            return true
+         end
+      else
+         return a == b
+      end
+   end
+   if not iolets_eq(self.inlets, inlets) then
+      pd._createinlets(self._object, self.inlets)
+   end
+   if not iolets_eq(self.outlets, outlets) then
+      pd._createoutlets(self._object, self.outlets)
+   end
+   -- also create the gui if a paint method was added during reload
+   if not has_gui and type(self.paint) == "function" then
+      -- NOTE: At present, you can only switch from non-gui to gui, but that
+      -- will be the most common use case anyway. The extra 1 flag in the call
+      -- informs the gui that redrawing the object may be in order.
+      pd._creategui(self._object, 1)
+   end
+end
+
+-- Our receiver. This is the centerpiece of the extension. In the future, more
+-- functionality may be added here. At present this catches the "reload"
+-- message, checking the class name if given, doing the actual reloading of
+-- the script, as well as invoking some callbacks before and afterwards which
+-- provide hooks for user customizations.
+local function pdluax(self, sel, atoms)
+   if sel == "reload" then
+      -- reload message, check that any extra argument matches the class name
+      if atoms[1] == nil or atoms[1] == self._name then
+         -- iterate over *all* objects in this class and invoke their
+         -- prereload methods
+         for obj, data in pairs(reloadables[self._name]) do
+            if type(obj) == "table" then
+               do_prereload(obj, data)
+            end
+         end
+         -- only one instance (the one with the receiver) does the actual
+         -- loading of the script file (no need to load it more than once)
+         pd.post(string.format("pdx: reloading %s", self._name))
+         self:dofilex(self._scriptname)
+         -- iterate over *all* objects in this class, invoke their postreload
+         -- methods, and update the objects themselves as needed (iolets, gui)
+         for obj, data in pairs(reloadables[self._name]) do
+            if type(obj) == "table" then
+               do_postreload(obj, data)
+            end
+         end
+      end
+   end
+end
+
+-- purge an object from the reloadables table
+function pdx.unreload(self)
+   if reloadables[self._name] then
+      if reloadables[self._name].current == self then
+	 -- self is the current receiver, find another one
+	 local current = nil
+	 for obj, data in pairs(reloadables[self._name]) do
+	    if type(obj) == "table" and obj ~= self then
+	       -- install the receiver
+	       data.recv = pd.Receive:new():register(obj, "pdluax", "_pdluax")
+	       obj._pdluax = pdluax
+	       -- record that we have a new receiver and bail out
+	       current = obj
+	       break
+	    end
+	 end
+	 reloadables[self._name].current = current
+	 -- get rid of the old receiver
+	 reloadables[self._name][self].recv:destruct()
+	 self._pdluax = nil
+      end
+      -- restore the object's finalize method
+      self.finalize = reloadables[self._name][self].finalize
+      -- purge the object from the reloadables table
+      reloadables[self._name][self] = nil
+      -- if the list of reloadables in this class is now empty, purge the
+      -- entire class from the reloadables table
+      if reloadables[self._name].current == nil then
+	 reloadables[self._name] = nil
+      end
+   end
+end
+
+-- register a new object in the reloadables table
+function pdx.reload(self)
+   if reloadables[self._name] then
+      -- We already have an object for this class, simply record the new one
+      -- and install our finalizer so that we can perform the necessary
+      -- cleanup when the object gets deleted. Also check that we don't
+      -- register the same object twice (this won't really do any harm, but
+      -- would be a waste of time).
+      if reloadables[self._name][self] == nil then
+	 reloadables[self._name][self] = { finalize = self.finalize }
+	 self.finalize = finalize
+      end
+   elseif self._name ~= "pdlua" and self._name ~= "pdluax" then
+      -- New class, make this the default receiver. Note that since dofilex()
+      -- is designed for regular (.pd_lua) objects only, we explicitly exclude
+      -- the built-in pdlua and pdluax classes here, to prevent crashes.
+      reloadables[self._name] = { current = self }
+      reloadables[self._name][self] = { finalize = self.finalize }
+      -- install our finalizer
+      self.finalize = finalize
+      -- add the receiver
+      reloadables[self._name][self].recv =
+	 pd.Receive:new():register(self, "pdluax", "_pdluax")
+      self._pdluax = pdluax
+   end
+end
+
+return pdx

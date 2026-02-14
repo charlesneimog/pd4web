@@ -1,0 +1,14 @@
+#N canvas 963 23 951 1016 10;
+#X obj 2 3 tgl 40 0 empty empty empty 0 -9 0 10 #c6ffc7 #000000 #000000 0 1;
+#X obj 6 59 osc~ 220;
+#X obj 6 81 *~ 0.2;
+#X obj 6 136 *~;
+#X obj 6 158 dac~;
+#X obj 26 291 declare -path Extras;
+#X obj 2 373 pdlua;
+#X obj 62 3 gui;
+#X connect 0 0 3 1;
+#X connect 1 0 2 0;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X coords 0 -1 1 1 800 400 1 0 0;
