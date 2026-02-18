@@ -57,3 +57,4 @@ Tests/Basic/extra/WebPatch
 Tests/Basic/extra/favicon.ico
 Tests/Basic/extra/index.html
 Tests/Basic/internal/.build
+/Resources/thorvg/.cache/clangd/index

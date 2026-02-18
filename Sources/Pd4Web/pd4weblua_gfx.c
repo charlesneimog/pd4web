@@ -269,7 +269,7 @@ static void pdlua_gfx_clear(t_pdlua *obj, int layer, int removed) {
 
 // ─────────────────────────────────────
 static void gfx_displace(t_pdlua *x, t_glist *glist, int dx, int dy) {
-    // NOTE: No need to displace the object in the canvas since the because it will be fixed
+    // NOTE: No need to displace the object in the canvas since the because on pd4web we don't move objects
 }
 
 // ─────────────────────────────────────
@@ -284,7 +284,7 @@ static int gfx_initialize(t_pdlua *obj) {
     gfx->num_layers = 0;
     gfx->layer_tags = NULL;
 
-    char id[127];
+    // char id[127];
     // sprintf(id, "Pd4WebInstance_%p", m_NewPdInstance);
     // Pd4WebClassBindStruct *x = (Pd4WebClassBindStruct *)getbytes(sizeof(Pd4WebClassBindStruct));
     // x->id = gensym(id);
