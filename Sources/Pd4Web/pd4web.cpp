@@ -247,7 +247,7 @@ bool Pd4Web::SendFloat(std::string s, float f) {
  *
  * @param std::string The receiver symbol in Pure Data.
  * @param std::string The symbol string to send.
- */ 
+ */
 bool Pd4Web::SendSymbol(std::string s, std::string thing) {
     auto sender = Pd4WebSender::CreateSymbol(s, thing);
     std::lock_guard<std::mutex> lock(m_ToSendMutex);
@@ -1750,19 +1750,18 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         emscripten_set_canvas_element_size(sel, backingW, backingH);
         emscripten_set_element_css_size(sel, cssW, cssH);
 
+        // clang-format off
         EM_ASM(
             {
                 const canvas = document.querySelector(UTF8ToString($0));
                 if (canvas) {
-                    canvas.style.width = $1 + 'px';
-                    canvas.style.height = $2 + 'px';
-                    canvas.addEventListener('mousedown', () => canvas.focus());
-                    // if (!canvas.hasAttribute('tabindex')) {
-                    //     canvas.setAttribute('tabindex', '0');
-                    // }
+                    canvas.style.width = $1 + "px";
+                    canvas.style.height = $2 + "px";
+                    canvas.addEventListener("mousedown", () => canvas.focus());
                 }
             },
             sel, cssW, cssH);
+        // clang-format on
 
         m_UserData->canvas_width = backingW;
         m_UserData->canvas_height = backingH;
@@ -1805,8 +1804,18 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     } else {
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
-        emscripten_set_main_loop_arg(FakeLoop, m_UserData.get(), 60, false);
     }
+    int MidiInternalID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+}
+
+// ╭─────────────────────────────────────╮
+// │                MIDI                 │
+// ╰─────────────────────────────────────╯
+void MidiTick(void *userData) {
+    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+    libpd_set_instance(ud->libpd);
+    libpd_queued_receive_pd_messages();
+    libpd_queued_receive_midi_messages();
 }
 
 // ╭─────────────────────────────────────╮
@@ -1951,7 +1960,7 @@ void GetGLContext(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
+    ud->vg = nvglCreate(NVG_SDF_TEXT);
     if (!ud->vg) {
         JS_Alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -2253,8 +2262,12 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         std::string fg = ud->pd4web->GetFGColor();
         HexToRgbNormalized(fg.c_str(), &r, &g, &b);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgStrokeWidth(ud->vg, 1);
-        nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
+        const float thickness = 1.0f / PD4WEB_PATCH_ZOOM;
+        const float inset = thickness * 0.5f;
+        const float w = fmaxf(0.0f, cmd->canvas_width - thickness);
+        const float h = fmaxf(0.0f, cmd->canvas_height - thickness);
+        nvgStrokeWidth(ud->vg, thickness);
+        nvgRect(ud->vg, inset, inset, w, h);
         nvgStroke(ud->vg);
         nvgClosePath(ud->vg);
 
@@ -2273,6 +2286,11 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float width = cmd->w;
         float height = cmd->h;
         float thickness = cmd->line_width;
+        const float inset = thickness * 0.5f;
+        x += inset;
+        y += inset;
+        width = fmaxf(0.0f, width - thickness);
+        height = fmaxf(0.0f, height - thickness);
         nvgBeginPath(ud->vg);
         nvgRect(ud->vg, x, y, width, height);
         nvgStrokeWidth(ud->vg, thickness);
@@ -2335,6 +2353,12 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
         float height = cmd->h;
         float radius = cmd->radius;
         float thickness = cmd->line_width;
+        const float inset = thickness * 0.5f;
+        x += inset;
+        y += inset;
+        width = fmaxf(0.0f, width - thickness);
+        height = fmaxf(0.0f, height - thickness);
+        radius = fmaxf(0.0f, radius - inset);
         nvgBeginPath(ud->vg);
         nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
         nvgRoundedRect(ud->vg, x, y, width, height, radius);
@@ -2406,19 +2430,11 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
             nvgBeginPath(ud->vg);
             nvgFontSize(ud->vg, cmd->font_size);
             nvgTextAlign(ud->vg, NVG_ALIGN_TOP | NVG_ALIGN_LEFT);
-            nvgTextBox(ud->vg, round(cmd->x1), round(cmd->y1), cmd->w, cmd->text, nullptr);
+            nvgTextBox(ud->vg, round(cmd->x1), round(cmd->y1), round(cmd->w), cmd->text, nullptr);
         }
         break;
     }
     }
-}
-
-// ─────────────────────────────────────
-void FakeLoop(void *userData) {
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
-    libpd_set_instance(ud->libpd);
-    libpd_queued_receive_pd_messages();
-    libpd_queued_receive_midi_messages();
 }
 
 // ─────────────────────────────────────
@@ -2432,33 +2448,17 @@ void FakeLoop(void *userData) {
 void Loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
 
-    libpd_set_instance(ud->libpd);
-    libpd_queued_receive_pd_messages();
-    libpd_queued_receive_midi_messages();
-
     GetGLContext(ud);
     if (ud->vg == nullptr) {
         emscripten_log(EM_LOG_ERROR, "NanoVG context invalid");
         return;
     }
-    if (!ud->soundInit) {
-        // Before audio initialization, the internal tick of Pd is driven by the main loop.
-        // After audio is initialized, control of the tick is handed over to the audio processing
-        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
-        // the graphical interface becomes static and unresponsive due to the absence of tick
-        // updates.
-
-        float sampleRate = ud->pd4web->GetSampleRate();
-        float blockSize = 64.0f;
-        double now = emscripten_get_now();
-        double elapsed = now - ud->lastFrame;
-        ud->lastFrame = now;
-        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
-        libpd_process_float(ticks, nullptr, nullptr);
-    }
 
     float zoom = ud->pd4web->GetPatchZoom();
     float pxRatio = ud->devicePixelRatio;
+    // All coordinates below are already in backing-store pixels (we multiply by pxRatio).
+    // Passing pxRatio again to NanoVG would effectively double-scale and can blur text.
+    const float nvgPixelRatio = 1.0f;
 
     PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     std::vector<PdLuaObjLayers> objs_to_redraw;
@@ -2488,14 +2488,13 @@ void Loop(void *userData) {
             int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
 
             if (!layer.fb) {
-                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
-                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
             }
 
             nvgluBindFramebuffer(layer.fb);
             glViewport(0, 0, fbw, fbh);
 
-            nvgBeginFrame(ud->vg, fbw, fbh, pxRatio);
+            nvgBeginFrame(ud->vg, fbw, fbh, nvgPixelRatio);
             nvgScissor(ud->vg, 0, 0, fbw, fbh);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -2555,7 +2554,7 @@ void Loop(void *userData) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
 
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, nvgPixelRatio);
     nvgSave(ud->vg);
     nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
                dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
@@ -2587,7 +2586,7 @@ void Loop(void *userData) {
     nvgluBindFramebuffer(nullptr);
 
     // Final draw on screen
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, nvgPixelRatio);
     nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
                dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
 
@@ -2621,6 +2620,10 @@ void Pd4Web::Init() {
         .latencyHint = "interactive",
         .sampleRate = static_cast<uint32_t>(m_SampleRate),
     };
+
+    // Midi tick
+    int MidiTickId = emscripten_set_interval(MidiTick, 13, nullptr);
+
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
     m_AudioContext = emscripten_create_audio_context(&attrs);
