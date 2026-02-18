@@ -100,12 +100,18 @@ end
 
 -- ──────────────────────────────────────────
 function bng:in_1(_)
-    self.value = not self.value
+	self.value = not self.value
 	self.filled = true
 	self:repaint()
 	self.clock:delay(1)
 	self.blink_delay = 0
-	self:outlet(1, "bang", {"bang"})
+	self:outlet(1, "bang", { "bang" })
+end
+
+-- ──────────────────────────────────────────
+function bng:in_1_size(args)
+	local size = args[1]
+	self:set_size(size, size)
 end
 
 -- ──────────────────────────────────────────
