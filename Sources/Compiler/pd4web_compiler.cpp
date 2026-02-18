@@ -141,8 +141,8 @@ bool Pd4Web::init() {
     }
 
     // nanovg
-    ok = gitClone("https://github.com/charlesneimog/nanovg.git", "nanovg",
-                  "a4d6be4822299ff12d3c6dc0c6ad5d16e2241c29");
+    ok = gitClone("https://github.com/charlesneimog/nanovgXC.git", "nanovg",
+                  "ca45466654f6cb730bcbbfc1cf86a250a18d81f4");
     if (!ok) {
         print("Failed to clone nanovg", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

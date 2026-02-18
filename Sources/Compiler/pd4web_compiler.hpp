@@ -32,8 +32,8 @@ const TSLanguage *tree_sitter_c(void);
 }
 
 #define PD4WEB_VERSION_MAJOR 3
-#define PD4WEB_VERSION_MINOR 0
-#define PD4WEB_VERSION_PATCH "1"
+#define PD4WEB_VERSION_MINOR 1
+#define PD4WEB_VERSION_PATCH "0-alpha"
 
 #define PUREDATA_VERSION "0.56-2"
 #define EMSDK_VERSION "5.0.0"

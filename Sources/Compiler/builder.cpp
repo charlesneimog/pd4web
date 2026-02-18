@@ -14,11 +14,12 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     print("Creating config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
+    std::string patchVersion = PD4WEB_VERSION_PATCH;
 
     // TODO: Update version
     replaceAll(configFile, "@PD4WEB_VERSION_MAJOR@", std::to_string(PD4WEB_VERSION_MAJOR));
     replaceAll(configFile, "@PD4WEB_VERSION_MINOR@", std::to_string(PD4WEB_VERSION_MINOR));
-    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", PD4WEB_VERSION_PATCH);
+    replaceAll(configFile, "@PD4WEB_VERSION_PATCH@", "\"" + patchVersion + "\"");
 
     replaceAll(configFile, "@PD4WEB_PROJECT_NAME@", "\"" + p->ProjectName + "\"");
 
