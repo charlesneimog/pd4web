@@ -54,7 +54,7 @@ bool Pd4Web::init() {
 
     if (needInstall) {
         print("Python not found or is a Windows Store stub. Attempting to install via winget...",
-j             Pd4WebLogLevel::PD4WEB_LOG2);
+             Pd4WebLogLevel::PD4WEB_LOG2);
 
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);

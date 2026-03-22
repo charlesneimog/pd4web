@@ -201,11 +201,11 @@ std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> 
         if (ext == ".pd_lua") {
             std::string name = entry.path().stem().string();
             std::string path = entry.path().string();
-            // list all files and folders inside the library and save them in json for later copy them to the project
-            // ignore hidden files and folders (starting with .)
-            
-            // list files and folders inside the library and save them in json for later copy them to the project
-            // ignore hidden files and folders (starting with .)
+            // list all files and folders inside the library and save them in json for later copy
+            // them to the project ignore hidden files and folders (starting with .)
+
+            // list files and folders inside the library and save them in json for later copy them
+            // to the project ignore hidden files and folders (starting with .)
             std::vector<std::string> files;
             std::vector<std::string> folders;
 
@@ -219,7 +219,6 @@ std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> 
                     files.push_back(part.filename().string());
                 }
             }
-
 
             full_json[Lib]["lua_objects"][filename] = {
                 name,
@@ -629,9 +628,9 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
                         std::vector<std::string> cfgArgs = {
                             m_Cmake.string(),
                             p->OutputFolder.string(),
-                            m_Pd4WebRoot / LibYaml.Name,
+                            (m_Pd4WebRoot / LibYaml.Name).string(),
                             "-B",
-                            m_Pd4WebRoot / LibYaml.Name / ".build",
+                            (m_Pd4WebRoot / LibYaml.Name / ".build").string(),
                             "-G",
                             "Ninja",
                             "-DCMAKE_BUILD_TYPE=Release",
