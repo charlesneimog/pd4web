@@ -84,7 +84,6 @@ set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(OPENSSL_MSVC_STATIC_RT TRUE)
 set(BUILD_SHARED_LIBS OFF)
 
-
 cpmaddpackage(
     NAME
     libgit2
@@ -97,9 +96,7 @@ cpmaddpackage(
     "BUILD_SHARED_LIBS OFF"
     "BUILD_CLI OFF"
     "BUILD_TESTS OFF"
-    "BUILD_EXAMPLES OFF"
-)
-
+    "BUILD_EXAMPLES OFF")
 
 cpmaddpackage(
     URI
@@ -137,7 +134,10 @@ cpmaddpackage(
     "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}-cmake.tar.xz"
     OPTIONS
     "BOOST_ENABLE_CMAKE ON"
-    "BUILD_SHARED_LIBS OFF")
+    "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
+    "BUILD_SHARED_LIBS OFF"
+    "BOOST_INCLUDE_LIBRARIES process\\\;asio\\\\;filesystem" # Note the escapes!
+)
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
@@ -184,7 +184,12 @@ endif()
 # ╰──────────────────────────────────────╯
 if(PY_PD4WEB_BUILD)
     find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
-    python3_add_library(pypd4web MODULE pypd4web.cpp USE_SABI 3.11)
+    python3_add_library(
+        pypd4web
+        MODULE
+        pypd4web.cpp
+        USE_SABI
+        3.11)
     target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x030B0000)
     target_link_libraries(pypd4web PRIVATE pd4web_compiler)
 
@@ -210,11 +215,15 @@ if(PY_PD4WEB_BUILD)
     add_custom_target(
         pd4web_data ALL
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pypd4web> "${CMAKE_BINARY_DIR}/dist/pd4web"
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py "${CMAKE_BINARY_DIR}/dist/pd4web"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/ "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/Pd4Web"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/pd4web/__init__.py
+                "${CMAKE_BINARY_DIR}/dist/pd4web"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/
+                "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/Pd4Web"
         # cmake
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SHARE_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/share"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BIN_FOLDER} "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/bin"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SHARE_FOLDER}
+                "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/share"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_BIN_FOLDER}
+                "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin/cmake/bin"
         # ninja
         COMMAND ${CMAKE_COMMAND} -E copy "${PD4WEB_NINJA_BINARY}" "${CMAKE_BINARY_DIR}/dist/pd4web/Pd4Web/bin"
         COMMENT "Copying pypd4web module and __init__.py to dist/"
@@ -240,6 +249,10 @@ if(PY_PD4WEB_BUILD)
         target_link_options(pypd4web PRIVATE -Wl,-dead_strip)
     elseif(MSVC)
         target_compile_options(pypd4web PRIVATE /Gy)
-        target_link_options(pypd4web PRIVATE /OPT:REF /OPT:ICF)
+        target_link_options(
+            pypd4web
+            PRIVATE
+            /OPT:REF
+            /OPT:ICF)
     endif()
 endif()

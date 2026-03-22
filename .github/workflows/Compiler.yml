@@ -38,10 +38,10 @@ jobs:
             build/CMakeFiles
             ~/.ccache
             ~/.cache/sccache
-          key: build-cv16-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+          key: build-cv17-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
           restore-keys: |
-            build-cv16-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-cv16-${{ matrix.os }}-${{ runner.arch }}-
+            build-cv17-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-cv17-${{ matrix.os }}-${{ runner.arch }}-
 
       - uses: actions/setup-python@v5
         with:
