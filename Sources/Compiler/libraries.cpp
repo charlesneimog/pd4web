@@ -68,6 +68,11 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
         newLib.Developer = libNode["Developer"].get_value<std::string>();
         newLib.Repository = libNode["Repository"].get_value<std::string>();
         newLib.Version = libNode["Version"].get_value<std::string>();
+        if (libNode.contains("RunConfigure")) {
+            newLib.ConfigureBeforeCheckObjects = libNode["RunConfigure"].get_value<bool>();
+        } else {
+            newLib.ConfigureBeforeCheckObjects = false;
+        }
 
         std::string url = m_SourcesNode[newLib.Source].get_value<std::string>();
         std::string urlGit = formatLibUrl(url, newLib.Developer, newLib.Repository);
@@ -133,6 +138,103 @@ std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::
     Patch->PdLuaFolderSearch.push_back(dir);
 
     return results;
+}
+
+// ─────────────────────────────────────
+std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
+    std::vector<std::string> lua_requires;
+
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        return lua_requires;
+    }
+
+    std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+
+    std::regex re(R"(require\s*\(\s*["']([^"']+)["']\s*\))");
+    std::smatch match;
+
+    auto begin = content.cbegin();
+    auto end = content.cend();
+
+    while (std::regex_search(begin, end, match, re)) {
+        lua_requires.push_back(match[1]);
+        begin = match.suffix().first;
+    }
+
+    return lua_requires;
+}
+
+// ─────────────────────────────────────
+std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> &p,
+                                                         std::string Lib) {
+    std::vector<std::string> absNames;
+    const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
+    json full_json;
+    std::ifstream in(jsonFile);
+    if (in.is_open()) {
+        in >> full_json;
+        in.close();
+        if (full_json.contains(Lib)) {
+            if (full_json[Lib].contains("lua_objects")) {
+                print("Found lua objects in library '" + Lib + "'", Pd4WebLogLevel::PD4WEB_LOG2,
+                      p->printLevel + 1);
+                const auto &libEntry = full_json[Lib]["lua_objects"];
+                std::vector<std::string> keys;
+                for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
+                    keys.push_back(it.key());
+                }
+                p->ExternalObjectsJson = full_json;
+                return keys;
+            }
+        }
+    }
+
+    // find lua objects
+    fs::path completPath = p->Pd4WebRoot / Lib;
+    std::vector<std::string> patchNames;
+    std::vector<std::string> patchPath;
+
+    for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
+        std::string ext = entry.path().extension().string();
+        std::string filename = entry.path().stem().string();
+        if (ext == ".pd_lua") {
+            std::string name = entry.path().stem().string();
+            std::string path = entry.path().string();
+            // list all files and folders inside the library and save them in json for later copy them to the project
+            // ignore hidden files and folders (starting with .)
+            
+            // list files and folders inside the library and save them in json for later copy them to the project
+            // ignore hidden files and folders (starting with .)
+            std::vector<std::string> files;
+            std::vector<std::string> folders;
+
+            for (const auto &part : entry.path()) {
+                if (part.filename().string().starts_with(".")) {
+                    continue;
+                }
+                if (fs::is_directory(part)) {
+                    folders.push_back(part.filename().string());
+                } else {
+                    files.push_back(part.filename().string());
+                }
+            }
+
+
+            full_json[Lib]["lua_objects"][filename] = {
+                name,
+                path,
+                files,
+                folders,
+            };
+        }
+    }
+
+    for (size_t i = 0; i < patchNames.size(); ++i) {
+        full_json[Lib]["abstractions"][patchNames[i]] = {patchNames[i], patchPath[i]};
+    }
+
+    return {};
 }
 
 // ─────────────────────────────────────
@@ -453,7 +555,7 @@ void Pd4Web::treesitterCheckForSetupFunction(std::string &content, TSNode root,
                                              std::vector<std::string> &objectNames,
                                              std::vector<std::string> &setupNames,
                                              std::vector<std::string> &setupSignatures) {
-    PD4WEB_LOGGER(); 
+    PD4WEB_LOGGER();
 
     std::stack<TSNode> stack;
     stack.push(root);
@@ -520,6 +622,28 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
                 }
                 p->ExternalObjectsJson = full_json;
                 return keys;
+            } else {
+
+                for (Library LibYaml : m_Libraries) {
+                    if (LibYaml.Name == Lib && LibYaml.ConfigureBeforeCheckObjects) {
+                        std::vector<std::string> cfgArgs = {
+                            m_Cmake.string(),
+                            p->OutputFolder.string(),
+                            m_Pd4WebRoot / LibYaml.Name,
+                            "-B",
+                            m_Pd4WebRoot / LibYaml.Name / ".build",
+                            "-G",
+                            "Ninja",
+                            "-DCMAKE_BUILD_TYPE=Release",
+                            "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
+                            "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
+                            "-Wno-dev"};
+                        int result = execProcess(m_Emcmake.string(), cfgArgs);
+                        if (result != 0) {
+                            print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
+                        }
+                    }
+                }
             }
         }
     } catch (const std::exception &e) {

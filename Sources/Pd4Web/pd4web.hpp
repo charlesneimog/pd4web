@@ -395,6 +395,10 @@ class Pd4Web {
     std::vector<void *> m_BindSymbols;
     std::vector<Pd4WebSender *> m_ToSendData;
 
+    // Ticks
+    int m_MidiTickID;
+
+
     // Theme
     std::string m_BgColor;
     std::string m_FgColor;

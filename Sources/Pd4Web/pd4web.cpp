@@ -1805,7 +1805,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
     }
-    int MidiInternalID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+    m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
 }
 
 // ╭─────────────────────────────────────╮
@@ -1960,7 +1960,8 @@ void GetGLContext(Pd4WebUserData *ud) {
     }
 
     emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvglCreate(NVG_SDF_TEXT);
+    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
+
     if (!ud->vg) {
         JS_Alert("Failed to create NanoVG context");
         emscripten_webgl_destroy_context(ud->ctx);
@@ -2448,17 +2449,33 @@ void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
 void Loop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
 
+    libpd_set_instance(ud->libpd);
+    libpd_queued_receive_pd_messages();
+    libpd_queued_receive_midi_messages();
+
     GetGLContext(ud);
     if (ud->vg == nullptr) {
         emscripten_log(EM_LOG_ERROR, "NanoVG context invalid");
         return;
     }
+    if (!ud->soundInit) {
+        // Before audio initialization, the internal tick of Pd is driven by the main loop.
+        // After audio is initialized, control of the tick is handed over to the audio processing
+        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
+        // the graphical interface becomes static and unresponsive due to the absence of tick
+        // updates.
+
+        float sampleRate = ud->pd4web->GetSampleRate();
+        float blockSize = 64.0f;
+        double now = emscripten_get_now();
+        double elapsed = now - ud->lastFrame;
+        ud->lastFrame = now;
+        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
+        libpd_process_float(ticks, nullptr, nullptr);
+    }
 
     float zoom = ud->pd4web->GetPatchZoom();
     float pxRatio = ud->devicePixelRatio;
-    // All coordinates below are already in backing-store pixels (we multiply by pxRatio).
-    // Passing pxRatio again to NanoVG would effectively double-scale and can blur text.
-    const float nvgPixelRatio = 1.0f;
 
     PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
     std::vector<PdLuaObjLayers> objs_to_redraw;
@@ -2488,13 +2505,14 @@ void Loop(void *userData) {
             int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
 
             if (!layer.fb) {
-                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh, NVG_IMAGE_PREMULTIPLIED);
+                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
+                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
             }
 
             nvgluBindFramebuffer(layer.fb);
             glViewport(0, 0, fbw, fbh);
 
-            nvgBeginFrame(ud->vg, fbw, fbh, nvgPixelRatio);
+            nvgBeginFrame(ud->vg, fbw, fbh, 1);
             nvgScissor(ud->vg, 0, 0, fbw, fbh);
             glClearColor(0, 0, 0, 0);
             glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -2554,7 +2572,7 @@ void Loop(void *userData) {
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glDisable(GL_SCISSOR_TEST);
 
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, nvgPixelRatio);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
     nvgSave(ud->vg);
     nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
                dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
@@ -2586,7 +2604,7 @@ void Loop(void *userData) {
     nvgluBindFramebuffer(nullptr);
 
     // Final draw on screen
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, nvgPixelRatio);
+    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
     nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
                dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
 

@@ -58,3 +58,5 @@ Tests/Basic/extra/favicon.ico
 Tests/Basic/extra/index.html
 Tests/Basic/internal/.build
 /Resources/thorvg/.cache/clangd/index
+/Tests/Fonts/.build
+/Tests/Fonts/.cache/clangd/index

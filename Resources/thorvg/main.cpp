@@ -20,8 +20,8 @@
 
 // ------------------------------------------------------------
 // Globals
-EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx1;
-EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx2;
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx1; // thorvg
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx2; // nanovg
 
 tvg::GlCanvas *tvgCanvas = nullptr;
 NVGcontext *nvg = nullptr;
@@ -63,7 +63,7 @@ void redraw_thorvg() {
     text1->text("Hello World");
     text1->size(80.0f);
     text1->fill(0, 0, 0);
-    // text1->scale(totalScale);
+    text1->scale(totalScale);
     text1->translate(20.0f * totalScale, 20.0f * totalScale);
     tvgCanvas->add(text1);
 
@@ -172,7 +172,7 @@ EM_BOOL wheel_thor_wg(int, const EmscriptenWheelEvent *e, void *) {
 // ------------------------------------------------------------
 // Init ThorVG
 
-int init_thorvg() {
+int init_thorvg_webgl() {
     if (tvg::Initializer::init(0) != tvg::Result::Success) {
         return -1;
     }
@@ -212,9 +212,6 @@ int init_thorvg() {
 
     // Load font
     tvg::Text::load("dejavu-sans-webfont.ttf");
-
-
-
 
     // Wheel callback
     emscripten_set_wheel_callback("#canvas1", nullptr, EM_TRUE, wheel_thor);
@@ -262,118 +259,104 @@ int init_nanovg() {
 }
 
 // ------------------------------------------------------------
-// Init WebGPU
-
-void init_webgpu_canvas(const char *selector, uint32_t width, uint32_t height) {
-    if (!selector) {
-        std::cout << "No selector" << std::endl;
-        return;
-    };
-
+// Init ThorVG (WebGPU)
+int init_thorvg_webgpu() {
     // Resolve framebuffer size from CSS size * device pixel ratio.
     double cssW = 0.0, cssH = 0.0;
-    emscripten_get_element_css_size(selector, &cssW, &cssH);
+    emscripten_get_element_css_size("#canvas3", &cssW, &cssH);
     dpr3 = emscripten_get_device_pixel_ratio();
 
-    if (width == 0) {
-        width = static_cast<uint32_t>(cssW * dpr3);
-    }
-    if (height == 0) {
-        height = static_cast<uint32_t>(cssH * dpr3);
-    }
+    int width = static_cast<uint32_t>(cssW * dpr3);
+    int height = static_cast<uint32_t>(cssH * dpr3);
 
     fbWidth3 = width;
     fbHeight3 = height;
-    emscripten_set_canvas_element_size(selector, fbWidth3, fbHeight3);
+    emscripten_set_canvas_element_size("#canvas3", fbWidth3, fbHeight3);
 
-    // Create an instance only once. We use WaitAny for synchronous adapter/device requests.
-    if (!instance) {
-        wgpu::InstanceDescriptor desc{};
-        static constexpr auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
-        desc.requiredFeatureCount = 1;
-        desc.requiredFeatures = &kTimedWaitAny;
-        instance = wgpu::CreateInstance(&desc);
-        assert(instance);
-    }
-
-    // Request device once.
-    if (!device) {
-        wgpu::RequestAdapterWebXROptions xrOptions = {};
-        wgpu::RequestAdapterOptions options = {};
-        options.nextInChain = &xrOptions;
-
-        wgpu::Adapter adapter;
-        wgpu::Future f1 = instance.RequestAdapter(
-            &options, wgpu::CallbackMode::WaitAnyOnly,
-            [&](wgpu::RequestAdapterStatus status, wgpu::Adapter ad, wgpu::StringView message) {
-                if (message.length) {
-                    std::printf("RequestAdapter: %.*s\n", (int)message.length, message.data);
-                }
-                if (status == wgpu::RequestAdapterStatus::Unavailable) {
-                    std::printf("WebGPU unavailable; exiting cleanly\n");
-                    std::exit(0);
-                }
-                assert(status == wgpu::RequestAdapterStatus::Success);
-                adapter = std::move(ad);
-            });
-        instance.WaitAny(f1, UINT64_MAX);
-        assert(adapter);
-
-        wgpu::Limits limits{};
-        wgpu::DeviceDescriptor devDesc{};
-        devDesc.requiredLimits = &limits;
-        devDesc.SetUncapturedErrorCallback(
-            [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message) {
-                if (message.length) {
-                    std::printf("UncapturedError (type=%d): %.*s\n", (int)errorType,
-                                (int)message.length, message.data);
-                }
-            });
-        devDesc.SetDeviceLostCallback(
-            wgpu::CallbackMode::AllowSpontaneous,
-            [](const wgpu::Device &, wgpu::DeviceLostReason reason, wgpu::StringView message) {
-                if (message.length) {
-                    std::printf("DeviceLost (reason=%d): %.*s\n", (int)reason, (int)message.length,
-                                message.data);
-                }
-            });
-
-        wgpu::Future f2 = adapter.RequestDevice(
-            &devDesc, wgpu::CallbackMode::WaitAnyOnly,
-            [&](wgpu::RequestDeviceStatus status, wgpu::Device dev, wgpu::StringView message) {
-                if (message.length) {
-                    std::printf("RequestDevice: %.*s\n", (int)message.length, message.data);
-                }
-                assert(status == wgpu::RequestDeviceStatus::Success);
-                device = std::move(dev);
-            });
-        instance.WaitAny(f2, UINT64_MAX);
-        assert(device);
-    }
-
-    // Create / re-create surface bound to the given canvas selector.
+    // Init WebGPU
     {
-        wgpu::EmscriptenSurfaceSourceCanvasHTMLSelector canvasDesc{};
-        canvasDesc.selector = selector;
+        // Create an instance only once. We use WaitAny for synchronous adapter/device requests.
+        if (!instance) {
+            wgpu::InstanceDescriptor desc{};
+            static constexpr auto kTimedWaitAny = wgpu::InstanceFeatureName::TimedWaitAny;
+            desc.requiredFeatureCount = 1;
+            desc.requiredFeatures = &kTimedWaitAny;
+            instance = wgpu::CreateInstance(&desc);
+            assert(instance);
+        }
 
-        wgpu::SurfaceDescriptor surfDesc{};
-        surfDesc.nextInChain = &canvasDesc;
-        surface3 = instance.CreateSurface(&surfDesc);
-        assert(surface3);
+        // Request device once.
+        if (!device) {
+            wgpu::RequestAdapterWebXROptions xrOptions = {};
+            wgpu::RequestAdapterOptions options = {};
+            options.nextInChain = &xrOptions;
+
+            wgpu::Adapter adapter;
+            wgpu::Future f1 = instance.RequestAdapter(
+                &options, wgpu::CallbackMode::WaitAnyOnly,
+                [&](wgpu::RequestAdapterStatus status, wgpu::Adapter ad, wgpu::StringView message) {
+                    if (message.length) {
+                        std::printf("RequestAdapter: %.*s\n", (int)message.length, message.data);
+                    }
+                    if (status == wgpu::RequestAdapterStatus::Unavailable) {
+                        std::printf("WebGPU unavailable; exiting cleanly");
+                        return;
+                    }
+                    assert(status == wgpu::RequestAdapterStatus::Success);
+                    adapter = std::move(ad);
+                });
+            instance.WaitAny(f1, UINT64_MAX);
+            assert(adapter);
+
+            wgpu::Limits limits{};
+            wgpu::DeviceDescriptor devDesc{};
+            devDesc.requiredLimits = &limits;
+            devDesc.SetUncapturedErrorCallback(
+                [](const wgpu::Device &, wgpu::ErrorType errorType, wgpu::StringView message) {
+                    if (message.length) {
+                        std::printf("UncapturedError (type=%d): %.*s\n", (int)errorType,
+                                    (int)message.length, message.data);
+                    }
+                });
+            devDesc.SetDeviceLostCallback(
+                wgpu::CallbackMode::AllowSpontaneous,
+                [](const wgpu::Device &, wgpu::DeviceLostReason reason, wgpu::StringView message) {
+                    if (message.length) {
+                        std::printf("DeviceLost (reason=%d): %.*s\n", (int)reason,
+                                    (int)message.length, message.data);
+                    }
+                });
+
+            wgpu::Future f2 = adapter.RequestDevice(
+                &devDesc, wgpu::CallbackMode::WaitAnyOnly,
+                [&](wgpu::RequestDeviceStatus status, wgpu::Device dev, wgpu::StringView message) {
+                    if (message.length) {
+                        std::printf("RequestDevice: %.*s\n", (int)message.length, message.data);
+                    }
+                    assert(status == wgpu::RequestDeviceStatus::Success);
+                    device = std::move(dev);
+                });
+            instance.WaitAny(f2, UINT64_MAX);
+            assert(device);
+        }
+
+        // Create / re-create surface bound to the given canvas selector.
+        {
+            wgpu::EmscriptenSurfaceSourceCanvasHTMLSelector canvasDesc{};
+            canvasDesc.selector = "#canvas3";
+
+            wgpu::SurfaceDescriptor surfDesc{};
+            surfDesc.nextInChain = &canvasDesc;
+            surface3 = instance.CreateSurface(&surfDesc);
+            assert(surface3);
+        }
+
+        if (!instance || !device || !surface3) {
+            return -1;
+        }
+        std::cout << "WebGPU is Ok" << std::endl;
     }
-}
 
-// ------------------------------------------------------------
-// Init ThorVG (WebGPU)
-
-int init_thorvg_webgpu() {
-    init_webgpu_canvas("#canvas3", 0, 0);
-
-    if (!instance || !device || !surface3) {
-        return -1;
-    }
-
-    std::cout << "WebGPU is Ok" << std::endl;
     tvgCanvasWg = tvg::WgCanvas::gen(tvg::EngineOption::SmartRender);
     if (!tvgCanvasWg) {
         std::cerr << "Not possible create canvas" << std::endl;
@@ -404,7 +387,7 @@ int main() {
         return -1;
     }
 
-    if (init_thorvg() != 0) {
+    if (init_thorvg_webgl() != 0) {
         return -1;
     }
     if (init_nanovg() != 0) {

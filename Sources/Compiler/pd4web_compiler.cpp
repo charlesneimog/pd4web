@@ -54,7 +54,7 @@ bool Pd4Web::init() {
 
     if (needInstall) {
         print("Python not found or is a Windows Store stub. Attempting to install via winget...",
-              Pd4WebLogLevel::PD4WEB_LOG2);
+j             Pd4WebLogLevel::PD4WEB_LOG2);
 
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
@@ -141,8 +141,9 @@ bool Pd4Web::init() {
     }
 
     // nanovg
-    ok = gitClone("https://github.com/charlesneimog/nanovgXC.git", "nanovg",
-                  "ca45466654f6cb730bcbbfc1cf86a250a18d81f4");
+    ok = gitClone("https://github.com/charlesneimog/nanovg.git", "nanovg",
+                  "a4d6be4822299ff12d3c6dc0c6ad5d16e2241c29");
+
     if (!ok) {
         print("Failed to clone nanovg", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

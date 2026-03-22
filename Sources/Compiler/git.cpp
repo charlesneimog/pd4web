@@ -348,14 +348,14 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
     // Falhou -> tenta pull
     if (!gitPull(git, gitFolder)) {
         git_repository_free(repo);
-        printf("Falhou ao dar Pull\n");
+        print("Failed Pull\n",Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     // Segunda tentativa após pull
     if (!try_checkout_tag(repo)) {
         git_repository_free(repo);
-        printf("Falhou ao dar Checkout\n");
+        print("Failed Checkout\n",Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 

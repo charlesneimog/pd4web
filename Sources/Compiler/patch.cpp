@@ -181,6 +181,9 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, PatchLine &pl) {
 // ─────────────────────────────────────
 void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     PD4WEB_LOGGER();
+
+    listLuaObjectsInLibrary(Patch, pl.Lib);
+
     if (Patch->PdLua) {
         std::vector<fs::path> results;
         std::vector<std::string> subdirs = {"Extras", "Libs"};

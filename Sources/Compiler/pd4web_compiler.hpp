@@ -164,6 +164,7 @@ struct Library {
     std::string Repository;
     std::string Version;
     std::string Url;
+    bool ConfigureBeforeCheckObjects;
 };
 
 // ──────────────────────────────────────────
@@ -347,12 +348,15 @@ class Pd4Web {
     bool processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl);
 
     // Libraries
+    std::vector<std::string> GetLuaRequires(const std::string &filePath);
     bool libIsSupported(std::string libName);
     bool downloadSupportedLib(std::string libName);
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);
     bool libsDownload(YamlNode node);
     std::vector<std::string> listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
+    std::vector<std::string> listLuaObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
+
     bool findSetupFunction(std::string objName, std::string Lib);
     void processCallExpression(std::string &content, TSNode node,
                                std::vector<std::string> &objectNames,
