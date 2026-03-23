@@ -136,6 +136,7 @@ cpmaddpackage(
     "BOOST_ENABLE_CMAKE ON"
     "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
     "BUILD_SHARED_LIBS OFF"
+    "BOOST_CONTEXT_IMPLEMENTATION ucontext"
     "BOOST_INCLUDE_LIBRARIES process\\\;asio\\\\;filesystem" # Note the escapes!
 )
 

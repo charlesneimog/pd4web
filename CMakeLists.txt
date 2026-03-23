@@ -23,7 +23,7 @@ elseif(MSVC)
         "MultiThreaded"
         CACHE STRING "" FORCE)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "14.0")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0")
     find_program(GIT_EXECUTABLE git)
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
 

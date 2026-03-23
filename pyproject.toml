@@ -15,11 +15,11 @@ build-dir = "build"
 wheel.packages = ["pd4web"]
 wheel.py-api = "cp311"
 cmake.args = [
-    "-DPD_PD4WEB_BUILD=ON",
-    "-DPY_PD4WEB_BUILD=ON",
-    "-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0",
+  "-DPD_PD4WEB_BUILD=ON",
+  "-DPY_PD4WEB_BUILD=ON",
+  "-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0",
+  "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64",
 ]
 
 [project.scripts]
 pd4web = "pd4web:main"
-

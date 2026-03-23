@@ -60,3 +60,4 @@ Tests/Basic/internal/.build
 /Resources/thorvg/.cache/clangd/index
 /Tests/Fonts/.build
 /Tests/Fonts/.cache/clangd/index
+/site
