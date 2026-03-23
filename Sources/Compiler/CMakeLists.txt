@@ -125,20 +125,37 @@ if(MSVC)
 endif()
 
 set(BOOST_VERSION "1.89.0")
-cpmaddpackage(
-    NAME
-    Boost
-    VERSION
-    ${BOOST_VERSION}
-    URL
-    "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}-cmake.tar.xz"
-    OPTIONS
-    "BOOST_ENABLE_CMAKE ON"
-    "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
-    "BUILD_SHARED_LIBS OFF"
-    "BOOST_CONTEXT_IMPLEMENTATION ucontext"
-    "BOOST_INCLUDE_LIBRARIES process\\\;asio\\\\;filesystem" # Note the escapes!
-)
+
+if(APPLE)
+    cpmaddpackage(
+        NAME
+        Boost
+        VERSION
+        ${BOOST_VERSION}
+        URL
+        "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}-cmake.tar.xz"
+        OPTIONS
+        "BOOST_ENABLE_CMAKE ON"
+        "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
+        "BUILD_SHARED_LIBS OFF"
+        "BOOST_CONTEXT_IMPLEMENTATION ucontext"
+        "BOOST_INCLUDE_LIBRARIES process\\\;asio\\\\;filesystem" # Note the escapes!
+    )
+else()
+    cpmaddpackage(
+        NAME
+        Boost
+        VERSION
+        ${BOOST_VERSION}
+        URL
+        "https://github.com/boostorg/boost/releases/download/boost-${BOOST_VERSION}/boost-${BOOST_VERSION}-cmake.tar.xz"
+        OPTIONS
+        "BOOST_ENABLE_CMAKE ON"
+        "BOOST_SKIP_INSTALL_RULES ON" # Set `OFF` for installation
+        "BUILD_SHARED_LIBS OFF"
+        "BOOST_INCLUDE_LIBRARIES process\\\;asio\\\\;filesystem" # Note the escapes!
+    )
+endif()
 
 # ╭──────────────────────────────────────╮
 # │           pd4web_compiler            │
