@@ -93,6 +93,7 @@ bool Pd4Web::init() {
     }
 
     m_PythonWindows = pythonExe;
+   
     if (m_PythonWindows.empty()) {
         print("Python interpreter path is empty after detection. Please install Python manually. "
               "Go to https://www.python.org/downloads/",
@@ -100,6 +101,7 @@ bool Pd4Web::init() {
         return false;
     }
 
+    print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
     if (needInstall) {
         print("Installing certifi package for SSL certificates...", Pd4WebLogLevel::PD4WEB_LOG2);
         std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};

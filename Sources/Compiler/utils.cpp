@@ -86,6 +86,14 @@ std::string Pd4Web::getCertFile() {
             }
         }
         if (certPath.empty()) {
+            // Check if m_PythonWindows is set before attempting installation
+            if (m_PythonWindows.empty()) {
+                print("Certificate not found, but Python path not initialized. "
+                      "Skipping certifi installation. Please run pd4web init first.",
+                      Pd4WebLogLevel::PD4WEB_WARNING);
+                return {};
+            }
+
             print("Certificate not found, installing certifi package for SSL certificates...",
                   Pd4WebLogLevel::PD4WEB_LOG2);
             std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
