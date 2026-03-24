@@ -203,21 +203,45 @@ bool Pd4Web::getNinja() {
 bool Pd4Web::getCmakeBinary() {
     PD4WEB_LOGGER();
 
-    fs::path cmakeBinary;
+    std::vector<fs::path> candidates;
 #if defined(__linux__)
-    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake-linux";
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake-linux");
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "cmake-linux");
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake");
 #elif defined(__APPLE__)
-    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake-mac";
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake-mac");
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "cmake-mac");
+    // Older/alternate bundles might ship unrenamed.
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake");
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "cmake");
 #elif defined(_WIN32)
-    cmakeBinary = m_Pd4WebRoot / "bin/cmake/bin/cmake.exe";
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "bin" / "cmake.exe");
+    candidates.push_back(m_Pd4WebRoot / "bin" / "cmake" / "cmake.exe");
 #else
     print("Unsupported platform for CMake binary.", Pd4WebLogLevel::PD4WEB_ERROR);
     return false;
 #endif
 
-    if (!fs::exists(cmakeBinary)) {
-        print("Binary " + cmakeBinary.string() + "does not exist, this is a bug, please report",
-              Pd4WebLogLevel::PD4WEB_ERROR);
+    fs::path cmakeBinary;
+    for (const auto &candidate : candidates) {
+        if (fs::exists(candidate)) {
+            cmakeBinary = candidate;
+            break;
+        }
+    }
+
+    if (cmakeBinary.empty()) {
+        std::string msg = "CMake binary not found. Tried:";
+        for (const auto &candidate : candidates) {
+            msg += "\n  - " + candidate.string();
+        }
+        fs::path cmakeRoot = m_Pd4WebRoot / "bin" / "cmake";
+        if (fs::exists(cmakeRoot)) {
+            msg += "\nCMake folder exists at: " + cmakeRoot.string();
+        } else {
+            msg += "\nCMake folder missing at: " + cmakeRoot.string();
+        }
+        print(msg, Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 

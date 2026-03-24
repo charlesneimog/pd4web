@@ -31,7 +31,7 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/" DESTINATION "Pd4Web/Pd4Web")
 
 if(APPLE)
-    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "bin/cmake/")
+    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "Pd4Web/bin/cmake/")
     pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share" DESTINATION "Pd4Web/bin/cmake/")
 else()
     pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION "Pd4Web/bin/cmake/")

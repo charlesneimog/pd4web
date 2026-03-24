@@ -91,6 +91,7 @@ if(WIN32)
   file(REMOVE "${EXTRACTED_DIR}/bin/cmcldeps.exe")
   file(REMOVE "${EXTRACTED_DIR}/bin/cpack.exe")
   file(REMOVE "${EXTRACTED_DIR}/bin/ctest.exe")
+
 elseif(APPLE AND EXISTS "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
   file(RENAME "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake"
        "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake-mac")
@@ -100,6 +101,7 @@ elseif(APPLE AND EXISTS "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake")
   file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/cmake-gui")
   file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/cpack")
   file(REMOVE "${EXTRACTED_DIR}/CMake.app/Contents/bin/ctest")
+
 elseif(LINUX AND EXISTS "${EXTRACTED_DIR}/bin/cmake")
   file(RENAME "${EXTRACTED_DIR}/bin/cmake" "${EXTRACTED_DIR}/bin/cmake-linux")
   set(PD4WEB_CMAKE_BINARY "${EXTRACTED_DIR}/bin/cmake-linux")
