@@ -69,6 +69,8 @@ void Pd4Web::printVersion() {
 // ─────────────────────────────────────
 std::string Pd4Web::getCertFile() {
 #if defined(_WIN32)
+    static std::atomic<bool> certInstallAttempted{false};
+
     wchar_t path[MAX_PATH];
     if (SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, path))) {
         int python_minor = 10;
@@ -91,6 +93,11 @@ std::string Pd4Web::getCertFile() {
                 print("Certificate not found, but Python path not initialized. "
                       "Skipping certifi installation. Please run pd4web init first.",
                       Pd4WebLogLevel::PD4WEB_WARNING);
+                return {};
+            }
+
+            // Avoid trying to install certifi repeatedly in the same process.
+            if (certInstallAttempted.exchange(true)) {
                 return {};
             }
 
@@ -218,7 +225,15 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     return proc.exit_code();
 
 #else // Windows branch
-    const std::string certPath = getCertFile();
+    // Guard against recursion: getCertFile() may call execProcess() to install certifi.
+    static thread_local bool resolvingCertPath = false;
+    std::string certPath;
+    if (!resolvingCertPath) {
+        resolvingCertPath = true;
+        certPath = getCertFile();
+        resolvingCertPath = false;
+    }
+
     if (!certPath.empty()) {
         _putenv_s("SSL_CERT_FILE", certPath.c_str());
     }
