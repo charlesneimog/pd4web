@@ -95,6 +95,35 @@ bool Pd4Web::checkAllPaths() {
 #if defined(_WIN32)
         out << "EMSDK_PY = r'" << m_PythonWindows.string() << "'\n";
 #endif
+
+#if defined(__APPLE__)
+        fs::path envemscripten = m_Pd4WebRoot / "emsdk" / "python";
+        // list all files inside envemscripten, them inside each folder, check if there is a bin/python3 or bin/python3.13, and if there is create a symlink to m_PythonWindows
+        fs::path emscriptenPython;
+        for (const auto &entry : fs::directory_iterator(envemscripten)) {
+            if (fs::is_directory(entry.path())) {
+                fs::path test1 = entry.path() / "bin" / "python3";
+                if (fs::exists(test1)) {
+                    emscriptenPython = entry.path() / "bin" / "python3.13";
+                }
+                fs::path test2 = entry.path() / "bin" / "python3.13";
+                if (fs::exists(test2)) {
+                    emscriptenPython = test2;
+                }
+            }
+        }
+
+        // if emscriptenPython is not empty, save it on EMSDK_PY
+        if (!emscriptenPython.empty()) {
+            out << "EMSDK_PY = r'" << emscriptenPython.string() << "'\n";
+        } else {
+            print("Failed to find Python for Emscripten, if you have it installed you can set it manually on " + envemscripten.string(), Pd4WebLogLevel::PD4WEB_WARNING);
+        }
+#endif
+
+
+        out.close();
+
     }
 
     return true;
