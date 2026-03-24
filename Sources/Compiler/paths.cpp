@@ -203,13 +203,17 @@ bool Pd4Web::getNinja() {
     return false;
 #endif
 
+    print("Checking Ninja binary at: " + ninjaBin.string(), Pd4WebLogLevel::PD4WEB_LOG2);
+
     if (!fs::exists(ninjaBin)) {
+        print("File not found: " + ninjaBin.string(), Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
 #if defined(__linux__) || defined(__APPLE__)
     fs::path link = m_Pd4WebRoot / "bin/ninja";
     if (!fs::exists(link)) {
+        print("Creating symlink for Ninja at: " + link.string(), Pd4WebLogLevel::PD4WEB_LOG2);
         fs::create_symlink(ninjaBin, link);
     }
     ninjaBin = link;
