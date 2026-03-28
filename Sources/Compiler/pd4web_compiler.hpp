@@ -33,11 +33,11 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 1
-#define PD4WEB_VERSION_PATCH "0-alpha"
+#define PD4WEB_VERSION_PATCH "1-alpha"
 
 #define PUREDATA_VERSION "0.56-2"
-#define EMSDK_VERSION "4.0.10"
-#define PYTHON_WINGET_VERSION "Python.Python.3.13"
+#define EMSDK_VERSION "5.0.4"
+#define PYTHON_WINGET_VERSION "Python.Python.3.14"
 
 using json = nlohmann::json;
 using YamlNode = ::fkyaml::v0_4_2::basic_node<>;
@@ -149,7 +149,7 @@ struct Patch {
     unsigned Sr = 48000;
     unsigned TemplateId;
 
-    std::shared_ptr<Patch> Father;
+    std::weak_ptr<Patch> Father;
     std::vector<std::shared_ptr<Patch>> Childs;
     int printLevel = 1; // just to better debug info
 
@@ -263,7 +263,7 @@ class Pd4Web {
     unsigned m_ChnsInCount;
 
     unsigned m_Fps;
-    bool m_RenderGui;
+    bool m_RenderGui = true;
     bool m_AutoTheme;
     float m_PatchZoom;
     bool m_PdLua;

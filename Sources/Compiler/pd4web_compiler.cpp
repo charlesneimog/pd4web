@@ -54,7 +54,7 @@ bool Pd4Web::init() {
 
     if (needInstall) {
         print("Python not found or is a Windows Store stub. Attempting to install via winget...",
-             Pd4WebLogLevel::PD4WEB_LOG2);
+              Pd4WebLogLevel::PD4WEB_LOG2);
 
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
@@ -200,7 +200,6 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     cxxopts::Options options("pd4web", "pd4web compiles PureData patches with external objects for "
                                        "Wasm, allowing to run entire patches in web browsers.\n");
 
-    bool disableGui = false;
     bool failFast = false;
 
     std::vector<std::string> NumberInput = {};
@@ -229,7 +228,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
 
         ("z,patch-zoom",
             "Set the patch zoom level.",
-            cxxopts::value<float>(m_PatchZoom)->default_value("1"))
+            cxxopts::value<float>(m_PatchZoom)->default_value("2"))
 
         ("o,output-folder", 
             "Output folder. (default: Same as the patch being compiled)", 
@@ -265,8 +264,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
             "Export Pd4WebModule as an ES6 module, enabling native import/export, better TypeScript support.",
             cxxopts::value<bool>(m_ExportES6Module)->default_value("false"))
 
-        ("nogui", "Disable GUI interface.", 
-            cxxopts::value<bool>(disableGui)->default_value("false"))
+        ("nogui", "Disable GUI interface.")
 
         ("plugdata", "If the patch was developed using PlugData, always use this flag.", 
             cxxopts::value<bool>(m_UsingPlugdata)->default_value("false"))
@@ -284,6 +282,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     options.parse_positional({"patch_file"});
     auto result = options.parse(argc, argv);
 
+    bool disableGui = result.count("nogui") > 0;
     m_RenderGui = !disableGui;
     m_FailFast = failFast;
 

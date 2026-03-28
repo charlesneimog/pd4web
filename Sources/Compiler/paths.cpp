@@ -98,7 +98,8 @@ bool Pd4Web::checkAllPaths() {
 
 #if defined(__APPLE__)
         fs::path envemscripten = m_Pd4WebRoot / "emsdk" / "python";
-        // list all files inside envemscripten, them inside each folder, check if there is a bin/python3 or bin/python3.13, and if there is create a symlink to m_PythonWindows
+        // list all files inside envemscripten, them inside each folder, check if there is a
+        // bin/python3 or bin/python3.13, and if there is create a symlink to m_PythonWindows
         fs::path emscriptenPython;
         for (const auto &entry : fs::directory_iterator(envemscripten)) {
             if (fs::is_directory(entry.path())) {
@@ -117,13 +118,14 @@ bool Pd4Web::checkAllPaths() {
         if (!emscriptenPython.empty()) {
             out << "EMSDK_PY = r'" << emscriptenPython.string() << "'\n";
         } else {
-            print("Failed to find Python for Emscripten, if you have it installed you can set it manually on " + envemscripten.string(), Pd4WebLogLevel::PD4WEB_WARNING);
+            print("Failed to find Python for Emscripten, if you have it installed you can set it "
+                  "manually on " +
+                      envemscripten.string(),
+                  Pd4WebLogLevel::PD4WEB_WARNING);
         }
 #endif
 
-
         out.close();
-
     }
 
     return true;
@@ -158,6 +160,16 @@ bool Pd4Web::cmdInstallEmsdk() {
         return false;
     }
 #endif
+
+    // Install ninja, to avoid mac warnings
+    print("Installing ninja, this can take a some time.", Pd4WebLogLevel::PD4WEB_LOG2);
+    std::vector<std::string> ninjacmd = {"install", EMSDK_VERSION};
+    result = execProcess(m_EmsdkInstaller, ninjacmd);
+    if (result != 0) {
+        print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
     print("");
     return true;
 }

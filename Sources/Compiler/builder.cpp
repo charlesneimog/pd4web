@@ -234,26 +234,27 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         externalTargets += "\n" + std::string(32, ' ') + "pdlua";
     }
 
-    for (auto &pl : p->ExternalObjects) {
-        if (pl.isExternal) {
-            std::string str = pl.Name;
-            size_t pos = 0;
-            while ((pos = str.find('~', pos)) != std::string::npos) {
-                str.replace(pos, 1, "_tilde");
-                pos += 6;
-            }
-            externalTargets += "\n" + std::string(32, ' ') + str;
-        }
-    }
-
-    for (auto &pl : p->ExtraObjects) {
-        std::string str = pl.Name;
+    std::unordered_set<std::string> addedTargets;
+    auto addTarget = [&](const std::string &name) {
+        std::string str = name;
         size_t pos = 0;
         while ((pos = str.find('~', pos)) != std::string::npos) {
             str.replace(pos, 1, "_tilde");
             pos += 6;
         }
-        externalTargets += "\n" + std::string(32, ' ') + str;
+        if (addedTargets.insert(str).second) { // only add if not already present
+            externalTargets += "\n" + std::string(32, ' ') + str;
+        }
+    };
+
+    for (auto &pl : p->ExternalObjects) {
+        if (pl.isExternal) {
+            addTarget(pl.Name);
+        }
+    }
+
+    for (auto &pl : p->ExtraObjects) {
+        addTarget(pl.Name);
     }
 
     std::string ExternalsTargets = "target_link_libraries(pd4web PRIVATE " + externalTargets + ")";

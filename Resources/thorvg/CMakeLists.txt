@@ -1,7 +1,10 @@
 cmake_minimum_required(VERSION 3.28)
 project(pd4web_thorvg_test LANGUAGES C CXX)
 
-if(NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+if(NOT
+   CMAKE_SYSTEM_NAME
+   STREQUAL
+   "Emscripten")
     message(FATAL_ERROR "This requires emcc compiler")
 endif()
 
@@ -12,7 +15,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(BUILD_SHARED_LIBS OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -flto -pthread -matomics -mbulk-memory -msimd128 --use-port=emdawnwebgpu")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -flto -pthread -matomics -mbulk-memory -msimd128 --use-port=emdawnwebgpu")
 
 # ──────────────────────────────────────
 set(CPM_FILE ${CMAKE_BINARY_DIR}/CPM.cmake)
@@ -30,7 +33,7 @@ cpmaddpackage("gh:charlesneimog/nanovgXC#master")
 # ╭──────────────────────────────────────╮
 # │                Thorvg                │
 # ╰──────────────────────────────────────╯
-cpmaddpackage("gh:thorvg/thorvg@1.0.1")
+cpmaddpackage("gh:thorvg/thorvg@1.0.3")
 file(GLOB THORVG_COMMON "${thorvg_SOURCE_DIR}/src/common/*.cpp")
 file(GLOB THORVG_RENDERER "${thorvg_SOURCE_DIR}/src/renderer/*.cpp")
 file(GLOB THORVG_GL "${thorvg_SOURCE_DIR}/src/renderer/gl_engine/*.cpp")
@@ -62,8 +65,17 @@ target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/raw")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/ttf")
 target_include_directories(thorvg PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_compile_definitions(thorvg PRIVATE THORVG_GL_RASTER_SUPPORT=1 THORVG_THREAD_SUPPORT=1 THORVG_WG_RASTER_SUPPORT=1 THORVG_GL_TARGET_GLES=1 THORVG_FILE_IO_SUPPORT=1
-                                          THORVG_TTF_LOADER_SUPPORT=1)
+# Enable multi-threading
+set(THORVG_THREADS ON)
+set(THORVG_ENGINES "gl;wg")
+set(THORVG_EXTRA "opengl_es")
+set(THORVG_LOADERS "ttf")
+set(THORVG_GL_TARGET_GLES ON)
+set(THORVG_GL_RASTER_SUPPORT ON)
+set(THORVG_FILE_IO_SUPPORT ON)
+set(THORVG_TTF_LOADER_SUPPORT ON)
+
+include("thorvg.cmake")
 
 add_executable(pd4web_thorvg_test main.cpp)
 target_link_options(

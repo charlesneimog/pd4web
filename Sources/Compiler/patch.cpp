@@ -215,11 +215,14 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
             Abstraction->PatchFile = AbsPath;
             Abstraction->PatchFolder = AbsPath.parent_path();
             Abstraction->Pd4WebRoot = p->Pd4WebRoot;
+            Abstraction->DeclaredPaths = p->DeclaredPaths;
+            Abstraction->DeclaredLibs = p->DeclaredLibs;
             pl.isAbstraction = true;
             pl.isExternal = false;
 
             print("\n");
-            print("Processing clone SubPatch '" + Abstraction->PatchFile.filename().string(),
+            print("Processing abstraction inside declared path '" + path +
+                      "': " + Abstraction->PatchFile.filename().string(),
                   Pd4WebLogLevel::PD4WEB_LOG1, p->printLevel + 1);
             processSubpatch(p, Abstraction);
 
@@ -234,11 +237,14 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
         auto Abstraction = std::make_shared<Patch>();
         Abstraction->PatchFile = AbsPath;
         Abstraction->PatchFolder = AbsPath.parent_path();
+        Abstraction->DeclaredPaths = p->DeclaredPaths;
+        Abstraction->DeclaredLibs = p->DeclaredLibs;
         pl.isAbstraction = true;
         pl.isExternal = false;
 
         print("\n");
-        print("Processing clone SubPatch '" + Abstraction->PatchFile.filename().string(),
+        print("Processing abstraction in current folder '" +
+                  Abstraction->PatchFile.filename().string() + "'",
               Pd4WebLogLevel::PD4WEB_LOG1, p->printLevel + 1);
         processSubpatch(p, Abstraction);
         pl.Found = true;
@@ -260,11 +266,13 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
                     auto Abstraction = std::make_shared<Patch>();
                     Abstraction->PatchFile = AbsPath;
                     Abstraction->PatchFolder = AbsPath.parent_path();
+                    Abstraction->DeclaredPaths = p->DeclaredPaths;
+                    Abstraction->DeclaredLibs = p->DeclaredLibs;
                     pl.isAbstraction = true;
                     pl.isExternal = false;
 
                     print("\n");
-                    print("Processing clone SubPatch '" +
+                    print("Processing abstraction from library '" +
                               Abstraction->PatchFile.filename().string(),
                           Pd4WebLogLevel::PD4WEB_LOG1, p->printLevel + 1);
                     processSubpatch(p, Abstraction);
@@ -312,6 +320,8 @@ void Pd4Web::isExtraObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
             auto Abstraction = std::make_shared<Patch>();
             Abstraction->PatchFile = AbsPath;
             Abstraction->PatchFolder = AbsPath.parent_path();
+            Abstraction->DeclaredPaths = p->DeclaredPaths;
+            Abstraction->DeclaredLibs = p->DeclaredLibs;
             Abstraction->Pd4WebRoot = p->Pd4WebRoot;
             pl.isAbstraction = true;
             pl.isExternal = false;
@@ -606,6 +616,8 @@ bool Pd4Web::processObjClone(std::shared_ptr<Patch> &p, PatchLine &pl) {
         auto Abstraction = std::make_shared<Patch>();
         Abstraction->PatchFile = AbsPath;
         Abstraction->PatchFolder = AbsPath.parent_path();
+        Abstraction->DeclaredPaths = p->DeclaredPaths;
+        Abstraction->DeclaredLibs = p->DeclaredLibs;
         pl.isAbstraction = true;
         pl.isExternal = false;
         print("\n");
@@ -656,7 +668,9 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
         if (!pl.Found) {
             print("Not Found object '" + Obj +
                       "'. If this is an external object check "
-                      "https://charlesneimog.github.io/pd4web/patch/externals/",
+                      "https://charlesneimog.github.io/pd4web/patch/externals/. The line is this "
+                      "one: " +
+                      pl.Line + ". Inside this path: " + p->PatchFile.string(),
                   Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
             print(pl.Line, Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
@@ -789,7 +803,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
         }
 
         // 4) Substituição de objetos de GUI no canvas raiz do patch principal
-        if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4) {
+        if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4 && p->RenderGui) {
             static const std::unordered_set<std::string> guiObjs{
                 "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
             std::string baseName = strip_lib(pl.Name);
@@ -801,6 +815,28 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
                 p->LuaGuiObjects = true;
                 print("Replacing Gui Object '" + baseName + "' with 'l." + baseName + "'",
                       Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+            }
+        }
+
+        // TODO: Adicional replaces, make this dynamic
+        for (auto &token : pl.Tokens) {
+            if (pl.Type == PatchLine::MSG) {
+                if (token == "else/allpass_unit") {
+                    token = "allpass_unit";
+                    fs::path AbsPath = fs::path(
+                    p->ExternalObjectsJson["else"]["abstractions"]["allpass_unit"][1].get<std::string>());
+
+                    auto Abstraction = std::make_shared<Patch>();
+                    Abstraction->PatchFile = AbsPath;
+                    Abstraction->PatchFolder = AbsPath.parent_path();
+                    Abstraction->DeclaredPaths = p->DeclaredPaths;
+                    Abstraction->DeclaredLibs = p->DeclaredLibs;
+                    print("\n");
+                    print("Processing abstraction from library '" +
+                              Abstraction->PatchFile.filename().string(),
+                          Pd4WebLogLevel::PD4WEB_LOG1, p->printLevel + 1);
+                    processSubpatch(p, Abstraction);
+                }
             }
         }
 
@@ -869,19 +905,40 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         i++;
     }
 
-    // update father declare libs and paths
-    for (auto lib : p->DeclaredLibs) {
-        f->DeclaredLibs.push_back(lib);
+    // update father declare libs
+    for (const auto &lib : p->DeclaredLibs) {
+        if (std::find(f->DeclaredLibs.begin(), f->DeclaredLibs.end(), lib) ==
+            f->DeclaredLibs.end()) {
+            f->DeclaredLibs.push_back(lib);
+        }
     }
-    for (auto lib : p->DeclaredPaths) {
-        f->DeclaredPaths.push_back(lib);
+
+    // update father declare paths
+    for (const auto &path : p->DeclaredPaths) {
+        if (std::find(f->DeclaredPaths.begin(), f->DeclaredPaths.end(), path) ==
+            f->DeclaredPaths.end()) {
+            f->DeclaredPaths.push_back(path);
+        }
     }
+
     for (auto &pl : p->PatchLines) {
         if (pl.isExternal || pl.isAbstraction) {
             f->ExternalObjects.push_back(pl);
         }
 
         if (pl.isExtraExternal) {
+            f->ExtraObjects.push_back(pl);
+        }
+    }
+
+    if (p->ExternalObjects.size() > 0) {
+        for (auto &pl : p->ExternalObjects) {
+            f->ExternalObjects.push_back(pl);
+        }
+    }
+
+    if (p->ExtraObjects.size() > 0) {
+        for (auto &pl : p->ExtraObjects) {
             f->ExtraObjects.push_back(pl);
         }
     }
