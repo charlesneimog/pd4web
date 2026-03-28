@@ -15,7 +15,7 @@
 #X msg 133 224 browse https://charlesneimog.github.io/pd4web/patch/install/;
 #X msg 157 303 browse https://charlesneimog.github.io/pd4web/patch/install/;
 #X msg 163 388 dir;
-#X obj 163 362 r s-compile;
+#X obj 163 362 r s-pd4web-compiler;
 #X msg 106 485 open pd4web.pd \$1;
 #X connect 0 0 13 0;
 #X connect 1 0 9 0;
@@ -37,7 +37,7 @@
 #X obj 1 2 cnv 15 500 40 empty empty Pd4Web\ Compiler\ -\ Patches\ on\ Websites 50 12 0 18 #dfdfdf #000000 0;
 #X obj 69 32 cnv 5 5 5 empty empty Charles\ K.\ Neimog\ |\ charlesneimog.github.io/pd4web 0 0 0 12 #dfdfdf #000000 0;
 #X obj 3 289 cnv 19 500 65 empty empty empty 20 12 0 12 #c6ffc7 #404040 0;
-#X obj 225 305 bng 23 250 50 0 s-compile r-compile empty 0 -10 0 12 #c6ffc7 #000000 #000000;
+#X obj 225 305 bng 23 250 50 0 s-pd4web-compiler r-pd4web-compiler empty 0 -10 0 12 #c6ffc7 #000000 #000000;
 #X text 167 331 Open Pd4Web Compiler!;
 #X text 181 249 READ THE DOCS!;
 #X obj 4 105 pd4web.compiler;
