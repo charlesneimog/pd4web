@@ -161,14 +161,14 @@ bool Pd4Web::cmdInstallEmsdk() {
     }
 #endif
 
-    // Install ninja, to avoid mac warnings
-    print("Installing ninja, this can take a some time.", Pd4WebLogLevel::PD4WEB_LOG2);
-    std::vector<std::string> ninjacmd = {"install", EMSDK_VERSION};
-    result = execProcess(m_EmsdkInstaller, ninjacmd);
-    if (result != 0) {
-        print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
-    }
+    // // Install ninja, to avoid mac warnings
+    // print("Installing ninja, this can take a some time.", Pd4WebLogLevel::PD4WEB_LOG2);
+    // std::vector<std::string> ninjacmd = {"install", EMSDK_VERSION};
+    // result = execProcess(m_EmsdkInstaller, ninjacmd);
+    // if (result != 0) {
+    //     print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
+    //     return false;
+    // }
 
     print("");
     return true;

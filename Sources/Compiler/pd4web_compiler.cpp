@@ -34,23 +34,25 @@ bool Pd4Web::init() {
     char pythonPath[MAX_PATH];
     DWORD pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
 
-    // Inline check for Python stub (Windows Store) or missing
-    bool needInstall = false;
-    if (pyLen == 0) {
-        needInstall = true;
-    } else {
-        HANDLE hFile = CreateFileA(pythonPath, GENERIC_READ, FILE_SHARE_READ, nullptr,
-                                   OPEN_EXISTING, 0, nullptr);
-        if (hFile == INVALID_HANDLE_VALUE) {
-            needInstall = true;
-        } else {
-            DWORD fileSize = GetFileSize(hFile, nullptr);
-            CloseHandle(hFile);
-            if (fileSize < 5000) {
-                needInstall = true;
-            }
+    auto isValidPython = [this](const std::string &pythonExe) -> bool {
+        if (pythonExe.empty()) {
+            return false;
         }
-    }
+
+        std::vector<std::string> pyCheckCmd = {
+            "-c", "import sys; raise SystemExit(0 if sys.version_info >= (3, 8) else 1)"};
+        try {
+            return execProcess(pythonExe, pyCheckCmd) == 0;
+        } catch (const std::exception &) {
+            return false;
+        }
+    };
+
+    std::string pythonExe = (pyLen > 0 && pyLen < MAX_PATH) ? std::string(pythonPath) : "";
+    bool hasValidPython = isValidPython(pythonExe);
+
+    // Install Python when missing or not executable (e.g. Windows Store alias stub).
+    bool needInstall = !hasValidPython;
 
     if (needInstall) {
         print("Python not found or is a Windows Store stub. Attempting to install via winget...",
@@ -67,7 +69,7 @@ bool Pd4Web::init() {
         std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";
         std::vector<std::string> wingetCheckCmd = {
             "install", "-e", std::string("--id=") + PYTHON_WINGET_VERSION,
-            "--accept-source-agreements", "--accept-package-agreements"};
+            "--accept-source-agreements", "--accept-package-agreements", "--source", "winget"};
 
         int wingetResult = execProcess(wingetExe, wingetCheckCmd);
         if (wingetResult != 0) {
@@ -82,17 +84,28 @@ bool Pd4Web::init() {
     }
 
     pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
-    if (pyLen == 0) {
+    pythonExe = (pyLen > 0 && pyLen < MAX_PATH) ? std::string(pythonPath) : "";
+    if (!isValidPython(pythonExe)) {
         print("Python interpreter not found after installation attempt. Please install Python "
               "manually. Go to https://www.python.org/downloads/",
               Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
-    m_PythonWindows = pythonPath;
+
+    m_PythonWindows = pythonExe;
+   
+    if (m_PythonWindows.empty()) {
+        print("Python interpreter path is empty after detection. Please install Python manually. "
+              "Go to https://www.python.org/downloads/",
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
     if (needInstall) {
         print("Installing certifi package for SSL certificates...", Pd4WebLogLevel::PD4WEB_LOG2);
         std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
-        int pipResult = execProcess(pythonPath, pipInstallCmd);
+        int pipResult = execProcess(m_PythonWindows.string(), pipInstallCmd);
         if (pipResult != 0) {
             print("Failed to install certifi package via pip. SSL connections may fail.",
                   Pd4WebLogLevel::PD4WEB_WARNING);
@@ -101,8 +114,8 @@ bool Pd4Web::init() {
         }
     }
 
-    _putenv_s("EMSDK_PY", pythonPath);
-    print("Using Python interpreter at: " + std::string(pythonPath),
+    _putenv_s("EMSDK_PY", m_PythonWindows.string().c_str());
+    print("Using Python interpreter at: " + m_PythonWindows.string(),
           Pd4WebLogLevel::PD4WEB_VERBOSE);
 #endif
     // libtree-sitter
