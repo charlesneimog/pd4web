@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.0"
+   width="201.00002pt"
+   height="247.99998pt"
+   viewBox="0 0 201.00002 247.99998"
+   preserveAspectRatio="xMidYMid"
+   id="svg4"
+   sodipodi:docname="E2UB5L6H_400x400.svg"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="namedview4"
+     pagecolor="#ffffff"
+     bordercolor="#999999"
+     borderopacity="1"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="pt"
+     inkscape:zoom="2.276"
+     inkscape:cx="250"
+     inkscape:cy="250.21968"
+     inkscape:window-width="1860"
+     inkscape:window-height="1164"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg4">
+    <inkscape:page
+       x="0"
+       y="-1.9464678e-20"
+       width="201.00002"
+       height="247.99998"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <g
+     transform="matrix(0.1,0,0,-0.1,-99.999993,315)"
+     fill="#000000"
+     stroke="none"
+     id="g4"
+     style="fill:#aa0000">
+    <path
+       d="m 1000,2855 v -295 h 140 140 v 154 c 0,131 2,155 16,160 20,8 1408,8 1428,0 14,-5 16,-29 16,-160 v -154 h 135 135 v 295 295 H 2005 1000 Z"
+       id="path1"
+       style="fill:#aa0000" />
+    <path
+       d="m 1924,2140 -37,-80 h -203 -204 v -140 -140 h 204 203 l 37,-80 37,-81 77,3 77,3 v 295 295 l -77,3 -77,3 z"
+       id="path2"
+       style="fill:#aa0000" />
+    <path
+       d="m 1000,1920 v -130 h 135 135 v 130 130 h -135 -135 z"
+       id="path3"
+       style="fill:#aa0000" />
+    <path
+       d="M 1000,970 V 670 h 1005 1005 v 300 300 h -135 -134 l -3,-147 -3,-148 h -725 -725 l -3,148 -3,147 h -139 -140 z"
+       id="path4"
+       style="fill:#aa0000" />
+  </g>
+</svg>

@@ -1869,7 +1869,6 @@ void RenderPatchComments(Pd4WebUserData *ud) {
                 cmd.h = bounds[3] - bounds[1];
             } else {
                 nvgFontSize(ud->vg, 10);
-
                 float bounds[4];
                 float charWidthBounds[4];
                 nvgTextBounds(ud->vg, 0, 0, "A", nullptr, charWidthBounds);

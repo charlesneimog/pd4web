@@ -1,0 +1,132 @@
+[project]
+site_name = "pd4web"
+site_url = "https://charlesneimog.github.io/pd4web"
+docs_dir = "Documentation"
+copyright = "Copyright © 2026 | Charles K. Neimog | University of São Paulo."
+name = "material"
+nav = [
+  { "Home" = "index.md" },
+  { "Compile your patch" = [
+    { "Installation" = "patch/install.md" },
+    { "Compilation" = "patch/compile.md" },
+    { "Objects" = [
+      { "GUI Objects" = "patch/gui.md" },
+      { "Externals Objects" = "patch/externals.md" },
+    ] },
+    { "Website Templates" = [
+      "patch/templates/index.md",
+      { "Website Templates List" = [
+        "patch/templates/1-score.md",
+        "patch/templates/2-hands.md",
+        "patch/templates/3-choir.md",
+        "patch/templates/4-p5js.md",
+        "patch/templates/5-tutorial.md",
+      ] },
+    ] },
+    { "Problems" = [
+      "patch/problems/where-they-live.md",
+      "patch/problems/memory.md",
+      "patch/problems/compilation.md",
+      "patch/problems/flutex.md",
+    ] },
+    { "Uploading your patch" = [
+      "patch/upload/github.md",
+      "patch/upload/cloudflare.md",
+      "patch/upload/others.md",
+    ] },
+  ] },
+  { "JavaScript API" = [
+    "javascript/01-getting-started.md",
+    "javascript/02-audio-initialization.md",
+    "javascript/03-send-data.md",
+    "javascript/04-receive-data.md",
+    "javascript/05-typescript.md",
+  ] },
+  { "Externals Libraries" = "libraries.md" },
+  { "Adding Externals Support" = "devs.md" },
+]
+
+extra_css = ["extra/extra.css"]
+
+[project.theme]
+name = "material"
+custom_dir = "Documentation/overrides"
+logo = "assets/favicon.svg"
+favicon = "assets/favicon.svg"
+
+features = [
+  "navigation.top",
+  "navigation.sections",
+  "content.code.annotate",
+  "content.code.copy",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "search.highlight",
+  "search.suggest",
+  "toc.integrate",
+  "toc.follow",
+  "navigation.instant",
+  "header.autohide",
+]
+
+[project.extra]
+logo_dark_mode = "assets/icon-dark.svg"
+logo_light_mode = "assets/icon-light.svg"
+
+# Palette (converted)
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "material/brightness-auto"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "white"
+accent = "light blue"
+toggle.icon = "material/lightbulb"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "black"
+accent = "light blue"
+toggle.icon = "material/lightbulb-outline"
+toggle.name = "Switch to light mode"
+
+# ─────────────────────────────
+# Markdown extensions
+# ─────────────────────────────
+
+[project.markdown_extensions.pymdownx.tabbed]
+alternate_style = true
+
+[project.markdown_extensions.pymdownx.emoji]
+emoji_index = "zensical.extensions.emoji.twemoji"
+emoji_generator = "zensical.extensions.emoji.to_svg"
+
+[project.markdown_extensions.pymdownx.extra]
+[project.markdown_extensions.pymdownx.details]
+[project.markdown_extensions.pymdownx.inlinehilite]
+[project.markdown_extensions.pymdownx.magiclink]
+[project.markdown_extensions.pymdownx.highlight]
+[project.markdown_extensions.abbr]
+[project.markdown_extensions.admonition]
+[project.markdown_extensions.attr_list]
+[project.markdown_extensions.md_in_html]
+[project.markdown_extensions.pymdownx.superfences]
+[project.markdown_extensions.footnotes]
+[project.markdown_extensions.pymdownx.keys]
+[project.markdown_extensions.def_list]
+
+[project.markdown_extensions.pymdownx.tasklist]
+custom_checkbox = true
+
+# ─────────────────────────────
+# Analytics
+# ─────────────────────────────
+
+[project.extra.analytics]
+provider = "google"
+property = "G-E81RWT6R4V"

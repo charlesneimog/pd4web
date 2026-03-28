@@ -10,16 +10,14 @@ hide:
   }
 </style>
 
-# Home
+# pd4web
 
 <p align="center" markdown>
-  ![Image title](./assets/favicon.svg){ width="60px" }
+  ![Image title](./assets/icon-light.svg#only-light){ width="10%" }
+  ![Image title](./assets/icon-dark.svg#only-dark){ width="10%" }
 </p>
 
----
-<h3 align="center" markdown>
-    Pd for the web, beyond vanilla
-</h3>
+<h4 align="center"><i>Pd for the web, beyond vanilla</i></h4>
 
 
 ### <h3 align="center"> **Key Features** </h3>
