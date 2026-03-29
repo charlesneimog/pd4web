@@ -13,7 +13,7 @@ hide:
 # pd4web
 
 <p align="center" markdown>
-  ![Image title](./assets/icon-light.svg#only-light){ width="10%" }
+  ![Image title](./assets/icon.svg#only-light){ width="10%" }
   ![Image title](./assets/icon-dark.svg#only-dark){ width="10%" }
 </p>
 
