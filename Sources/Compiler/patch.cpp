@@ -766,14 +766,9 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
     std::string editPatch;
 
     for (auto &pl : p->PatchLines) {
-        // 1) Remover prefixo de lib em '#X obj' quando houver '/' no token do objeto,
-        //    independente de pl.isExternal/pl.isAbstraction. Exceção: 'clone' (tratado abaixo).
         if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4) {
             auto &objNameTok = pl.Tokens[4];
             if (pl.Name == "clone") {
-                // 2) Tratamento especial para clone: remover prefixos dos tokens que
-                // representam
-                //    o nome da abstração, preservando ';' e ignorando flags e números.
                 print("Editing clone object from '" + objNameTok + "'");
                 static const std::unordered_set<std::string> reserved{"#X",  "obj", "clone", "-do",
                                                                       "-di", "-x",  "-s",    "f"};
@@ -790,7 +785,6 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
                 }
 
             } else {
-                // 3) Para qualquer outro objeto, se houver prefixo 'lib/', remova.
                 if (objNameTok.find('/') != std::string::npos && pl.Name != "/" &&
                     pl.Name != "/~") {
                     std::string oldTok = objNameTok;
@@ -802,7 +796,6 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             }
         }
 
-        // 4) Substituição de objetos de GUI no canvas raiz do patch principal
         if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4 && p->RenderGui) {
             static const std::unordered_set<std::string> guiObjs{
                 "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
@@ -818,7 +811,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             }
         }
 
-        // TODO: Adicional replaces, make this dynamic
+        // TODO: Remove this on next release of else
         for (auto &token : pl.Tokens) {
             if (pl.Type == PatchLine::MSG) {
                 if (token == "else/allpass_unit") {

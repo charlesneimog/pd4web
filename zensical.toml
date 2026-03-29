@@ -70,8 +70,8 @@ features = [
 ]
 
 [project.extra]
-logo_dark_mode = "assets/icon-dark.svg"
-logo_light_mode = "assets/icon-light.svg"
+logo_dark_mode = "assets/favicon.svg"
+logo_light_mode = "assets/favicon.svg"
 
 # Palette (converted)
 [[project.theme.palette]]
