@@ -57,16 +57,23 @@ favicon = "assets/favicon.svg"
 features = [
   "navigation.top",
   "navigation.sections",
+  "navigation.footer",
   "content.code.annotate",
   "content.code.copy",
   "navigation.tabs",
-  "navigation.tabs.sticky",
   "search.highlight",
   "search.suggest",
   "toc.integrate",
   "toc.follow",
+  "navigation.instant.prefetch",
+  "navigation.tracking",
+  "navigation.tabs.sticky",
+  "navigation.expand",
+  "content.tabs.link",
+  "content.footnote.tooltips",
+  # Preview
   "navigation.instant",
-  "header.autohide",
+  "navigation.instant.progress",
 ]
 
 [project.extra]

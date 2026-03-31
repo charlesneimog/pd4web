@@ -17,7 +17,7 @@ hide:
   ![Image title](./assets/icon-dark.svg#only-dark){ width="10%" }
 </p>
 
-<h4 align="center"><i>Pd for the web, beyond vanilla</i></h4>
+<h4 align="center"><i>Pd for Web, ready to use</i></h4>
 
 
 ### <h3 align="center"> **Key Features** </h3>
