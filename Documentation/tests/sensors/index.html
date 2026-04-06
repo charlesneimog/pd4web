@@ -54,6 +54,119 @@
                 -ms-overflow-style: none;
                 scrollbar-width: none;
             }
+
+            @media (prefers-color-scheme: light) {
+                :root {
+                    --bg: rgb(255, 255, 255);
+                    --fg: rgb(0, 0, 0, 0.9);
+                }
+            }
+
+            @media (prefers-color-scheme: dark) {
+                :root {
+                    --bg: rgb(48, 48, 48);
+                    --fg: rgb(255, 255, 255, 0.9);
+
+                    /* .pd4web-sound-switch { */
+                    /*     filter: invert(1); */
+                    /* } */
+                }
+            }
+
+            body {
+                font-size: 10px;
+                touch-action: pan-x pan-y;
+                background-color: var(--bg);
+            }
+
+            span {
+                color: @fg;
+            }
+
+            #wasm-loader {
+                position: fixed; /* fica fixo na tela */
+                top: 10px; /* 50% da altura */
+                left: 50%; /* 50% da largura */
+                transform: translate(-50%, -50%); /* centraliza exatamente */
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 200px;
+                padding: 8px;
+                border-radius: 5px;
+                background-color: rgba(0, 0, 0, 0.05);
+                box-shadow:
+                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            /* Status texto menor e centralizado */
+            #status {
+                font-size: 10px;
+                text-align: center;
+                margin-bottom: 4px;
+                color: var(--fg);
+            }
+
+            /* Progress bar menor */
+            #progress {
+                width: 150px;
+                height: 8px;
+                border-radius: 4px;
+            }
+
+            .pd4web-patch-canvas {
+                tabindex: 0;
+                margin: 10px auto;
+                display: flex;
+                border-radius: 5px;
+                box-shadow:
+                    rgba(14, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(14, 30, 37, 0.32) 0px 2px 16px 0px;
+            }
+
+            .pd4web-patch-canvas:focus {
+                box-shadow:
+                    rgba(100, 30, 37, 0.12) 0px 2px 4px 0px,
+                    rgba(100, 30, 37, 0.32) 0px 2px 16px 0px;
+                outline: none;
+            }
+
+            .pd4web-sound-switch {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 25px;
+                height: 25px;
+                margin: 0 auto;
+                transform: none;
+            }
+
+            /* Animation */
+            @keyframes spin {
+                0% {
+                    transform: rotate(0deg);
+                }
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.2);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .pulse-icon {
+                animation: pulse 1s infinite;
+            }
         </style>
     </head>
     <body class="bg-background text-on-surface font-body selection:bg-primary selection:text-white">
@@ -77,13 +190,13 @@
             <span id="status">Loading...</span>
             <progress id="progress" value="0" max="100" style="width: 300px"></progress>
         </div>
-        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
         <main class="pt-32 pb-40 px-8 max-w-md mx-auto space-y-16">
             <div>
                 <span id="sensor-message" class="font-label text-primary/40 tracking-widest uppercase"
                     >No Sensor selected</span
                 >
             </div>
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
             <section aria-labelledby="sensors-heading">
                 <header class="mb-8 flex justify-between items-baseline border-b border-primary/10 pb-2">
                     <h2
@@ -219,12 +332,13 @@
                 });
             }
 
+            var Pd4Web = null;
+
             fetchWithProgress("./pd4web.wasm")
                 .then((wasmBuffer) => {
                     Pd4WebModule({ wasmBinary: wasmBuffer }).then((Pd4WebModulePromise) => {
-                        const Pd4Web = new Pd4WebModulePromise.Pd4Web();
+                        Pd4Web = new Pd4WebModulePromise.Pd4Web();
                         Pd4Web.openPatch("index.pd", {
-                            // canvasId: "Pd4WebCanvas",
                             soundToggleId: "Pd4WebAudioSwitch",
                             renderGui: false,
                         });
@@ -257,6 +371,24 @@
                 sensorMessage.innerText = `No sensor selector`;
             }
 
+            // Send data
+            function sendData(list) {
+                if (Pd4Web === null) {
+                    return;
+                }
+
+                if (list.length == 2) {
+                    Pd4Web.sendFloat("freq-z-toggle", 0);
+                    Pd4Web.sendFloat("freq-x", list[0]);
+                    Pd4Web.sendFloat("freq-y", list[1]);
+                } else {
+                    Pd4Web.sendFloat("freq-z-toggle", 1);
+                    Pd4Web.sendFloat("freq-x", list[0]);
+                    Pd4Web.sendFloat("freq-y", list[1]);
+                    Pd4Web.sendFloat("freq-z", list[2]);
+                }
+            }
+
             // ──────────────────────────────────────
             const sensors = {
                 gps: {
@@ -264,7 +396,13 @@
                         if (!("geolocation" in navigator)) return alert("GPS not available.");
                         state.refs.gps = navigator.geolocation.watchPosition(
                             (pos) => {
-                                sensorMessage.innerText = `Lat ${pos.coords.latitude} Log ${pos.coords.longitude}`;
+                                const lat = Math.round(((pos.coords.latitude + 90) * (1000 - 100)) / (90 - -90) + 100);
+                                const lon = Math.round(
+                                    ((pos.coords.longitude + 180) * (1000 - 100)) / (180 - -180) + 100,
+                                );
+                                sendData([lat, lon]);
+
+                                sensorMessage.innerText = `Lat ${lat} Lon ${lon}`;
                             },
                             (err) => alert("GPS Error:", err),
                             { enableHighAccuracy: true },
@@ -278,7 +416,13 @@
                         try {
                             const sensor = new Accelerometer({ frequency: 60 });
                             sensor.addEventListener("reading", () => {
-                                sensorMessage.innerText = `Accelerometer x: ${sensor.x} y: ${sensor.y} z: ${sensor.z}`;
+                                const x = Math.round(((sensor.x + 10) * (1000 - 100)) / (10 - -10) + 100);
+                                const y = Math.round(((sensor.y + 10) * (1000 - 100)) / (10 - -10) + 100);
+                                const z = Math.round(((sensor.z + 10) * (1000 - 100)) / (10 - -10) + 100);
+
+                                sendData([x, y, z]);
+
+                                sensorMessage.innerText = `Accelerometer x: ${x} y: ${y} z: ${z}`;
                             });
                             sensor.start();
                             state.refs.accel = sensor;
@@ -294,7 +438,12 @@
                         try {
                             const sensor = new Gyroscope({ frequency: 60 });
                             sensor.addEventListener("reading", () => {
-                                sensorMessage.innerText = `Gyroscope x: ${sensor.x} y: ${sensor.y} z: ${sensor.z}`;
+                                const x = Math.round(((sensor.x + 10) * (1000 - 100)) / (10 - -10) + 100);
+                                const y = Math.round(((sensor.y + 10) * (1000 - 100)) / (10 - -10) + 100);
+                                const z = Math.round(((sensor.z + 10) * (1000 - 100)) / (10 - -10) + 100);
+                                sendData([x, y, z]);
+
+                                sensorMessage.innerText = `Gyroscope x: ${x} y: ${y} z: ${z}`;
                             });
                             sensor.start();
                             state.refs.gyro = sensor;
@@ -310,7 +459,11 @@
                         try {
                             const sensor = new Magnetometer({ frequency: 60 });
                             sensor.addEventListener("reading", () => {
-                                sensorMessage.innerText = `Magnetometer x: ${sensor.x} y: ${sensor.y} z: ${sensor.z}`;
+                                const x = Math.round(((sensor.x + 50) * (1000 - 100)) / (50 - -50) + 100);
+                                const y = Math.round(((sensor.y + 50) * (1000 - 100)) / (50 - -50) + 100);
+                                const z = Math.round(((sensor.z + 50) * (1000 - 100)) / (50 - -50) + 100);
+                                sendData([x, y, z]);
+                                sensorMessage.innerText = `Magnetometer x: ${x} y: ${y} z: ${z}`;
                             });
                             sensor.start();
                             state.refs.mag = sensor;
