@@ -1,0 +1,365 @@
+<!doctype html>
+<html class="light" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <title>Digital Curator | Sensor Observatory</title>
+        <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&display=swap"
+            rel="stylesheet"
+        />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+            rel="stylesheet"
+        />
+        <script src="./pd4web.threads.js"></script>
+        <script src="./pd4web.js"></script>
+        <script id="tailwind-config">
+            tailwind.config = {
+                darkMode: "class",
+                theme: {
+                    extend: {
+                        colors: {
+                            background: "#ffffff",
+                            surface: "#f9f9ff",
+                            "surface-container": "#f3f4f6",
+                            primary: "#111827",
+                            "on-surface": "#111827",
+                            "on-surface-variant": "#4b5563",
+                            outline: "#e5e7eb",
+                            "outline-variant": "#f3f4f6",
+                        },
+                        fontFamily: {
+                            headline: ["Inter"],
+                            body: ["Inter"],
+                            label: ["Inter"],
+                        },
+                    },
+                },
+            };
+        </script>
+        <style>
+            .material-symbols-outlined {
+                font-variation-settings:
+                    "FILL" 0,
+                    "wght" 300,
+                    "GRAD" 0,
+                    "opsz" 24;
+            }
+            body::-webkit-scrollbar {
+                display: none;
+            }
+            body {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        </style>
+    </head>
+    <body class="bg-background text-on-surface font-body selection:bg-primary selection:text-white">
+        <header
+            class="fixed top-0 w-full z-50 bg-[#f9f9ff]/80 backdrop-blur-xl shadow-[0_40px_60px_-15px_rgba(20,27,43,0.04)]"
+        >
+            <div class="flex items-center justify-between px-8 py-4 w-full max-w-7xl mx-auto">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-xl text-[#000000]">sensors</span>
+                    <h1 class="text-xl font-black text-[#000000] tracking-tighter uppercase font-['Inter']">
+                        Digital Curator
+                    </h1>
+                </div>
+                <div class="flex items-center">
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-[#141b2b]/40">v1.0.42</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="wasm-loader" style="text-align: center; margin: 10px">
+            <span id="status">Loading...</span>
+            <progress id="progress" value="0" max="100" style="width: 300px"></progress>
+        </div>
+        <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
+        <main class="pt-32 pb-40 px-8 max-w-md mx-auto space-y-16">
+            <section aria-labelledby="sensors-heading">
+                <header class="mb-8 flex justify-between items-baseline border-b border-primary/10 pb-2">
+                    <h2
+                        class="font-headline text-[10px] font-black uppercase tracking-[0.3em] text-primary"
+                        id="sensors-heading"
+                    >
+                        Active Sensors
+                    </h2>
+                    <span class="font-label text-[9px] text-primary/40 tracking-widest uppercase"
+                        >Status: Connected</span
+                    >
+                </header>
+                <div class="divide-y divide-outline-variant">
+                    <div class="group flex items-center justify-between py-4 transition-all duration-300">
+                        <div class="flex items-center gap-4">
+                            <span
+                                class="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors text-lg"
+                                >location_on</span
+                            >
+                            <span class="font-headline text-xs font-medium tracking-tight text-on-surface uppercase"
+                                >GPS / Navigation</span
+                            >
+                        </div>
+                        <button
+                            id="btn-gps"
+                            onclick="toggleSensor('gps')"
+                            class="w-8 h-4 bg-outline-variant rounded-sm relative flex items-center px-0.5 transition-colors duration-300"
+                        >
+                            <div
+                                id="dot-gps"
+                                class="w-3 h-3 bg-on-surface-variant/40 rounded-sm translate-x-0 transition-transform duration-300"
+                            ></div>
+                        </button>
+                    </div>
+
+                    <div class="group flex items-center justify-between py-4">
+                        <div class="flex items-center gap-4">
+                            <span
+                                class="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors text-lg"
+                                >vibration</span
+                            >
+                            <span class="font-headline text-xs font-medium tracking-tight text-on-surface uppercase"
+                                >Accelerometer</span
+                            >
+                        </div>
+                        <button
+                            id="btn-accel"
+                            onclick="toggleSensor('accel')"
+                            class="w-8 h-4 bg-outline-variant rounded-sm relative flex items-center px-0.5 transition-colors duration-300"
+                        >
+                            <div
+                                id="dot-accel"
+                                class="w-3 h-3 bg-on-surface-variant/40 rounded-sm translate-x-0 transition-transform duration-300"
+                            ></div>
+                        </button>
+                    </div>
+
+                    <div class="group flex items-center justify-between py-4">
+                        <div class="flex items-center gap-4">
+                            <span
+                                class="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors text-lg"
+                                >screen_rotation</span
+                            >
+                            <span class="font-headline text-xs font-medium tracking-tight text-on-surface uppercase"
+                                >Gyroscope</span
+                            >
+                        </div>
+                        <button
+                            id="btn-gyro"
+                            onclick="toggleSensor('gyro')"
+                            class="w-8 h-4 bg-outline-variant rounded-sm relative flex items-center px-0.5 transition-colors duration-300"
+                        >
+                            <div
+                                id="dot-gyro"
+                                class="w-3 h-3 bg-on-surface-variant/40 rounded-sm translate-x-0 transition-transform duration-300"
+                            ></div>
+                        </button>
+                    </div>
+
+                    <div class="group flex items-center justify-between py-4">
+                        <div class="flex items-center gap-4">
+                            <span
+                                class="material-symbols-outlined text-primary/30 group-hover:text-primary transition-colors text-lg"
+                                >explore</span
+                            >
+                            <span class="font-headline text-xs font-medium tracking-tight text-on-surface uppercase"
+                                >Magnetometer</span
+                            >
+                        </div>
+                        <button
+                            id="btn-mag"
+                            onclick="toggleSensor('mag')"
+                            class="w-8 h-4 bg-outline-variant rounded-sm relative flex items-center px-0.5 transition-colors duration-300"
+                        >
+                            <div
+                                id="dot-mag"
+                                class="w-3 h-3 bg-on-surface-variant/40 rounded-sm translate-x-0 transition-transform duration-300"
+                            ></div>
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <script>
+            const statusElement = document.getElementById("status");
+            const progressElement = document.getElementById("progress");
+            function fetchWithProgress(url) {
+                return new Promise((resolve, reject) => {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open("GET", url, true);
+                    xhr.responseType = "arraybuffer";
+                    xhr.onprogress = (event) => {
+                        if (event.lengthComputable) {
+                            const percent = Math.floor((event.loaded / event.total) * 100);
+                            progressElement.value = percent;
+                            statusElement.textContent = `Downloading WASM... ${percent}%`;
+                        }
+                    };
+
+                    xhr.onload = () => {
+                        if (xhr.status === 200) {
+                            resolve(xhr.response);
+                        } else {
+                            reject(new Error(`Failed to load ${url}, status ${xhr.status}`));
+                        }
+                    };
+
+                    xhr.onerror = () => reject(new Error(`Network error loading ${url}`));
+                    xhr.send();
+                });
+            }
+
+            fetchWithProgress("./pd4web.wasm")
+                .then((wasmBuffer) => {
+                    Pd4WebModule({ wasmBinary: wasmBuffer }).then((Pd4WebModulePromise) => {
+                        const Pd4Web = new Pd4WebModulePromise.Pd4Web();
+                        Pd4Web.openPatch("index.pd", {
+                            // canvasId: "Pd4WebCanvas",
+                            soundToggleId: "Pd4WebAudioSwitch",
+                            renderGui: false,
+                        });
+                        const wasmLoader = document.getElementById("wasm-loader");
+                        statusElement.style.display = "none";
+                        progressElement.style.display = "none";
+                        wasmLoader.style.display = "none";
+                    });
+                })
+                .catch((err) => {
+                    statusElement.textContent = "Failed to load WASM.";
+                    console.error(err);
+                });
+        </script>
+
+        <script>
+            const state = { active: null, refs: {}, audioCtx: null, osc: null };
+
+            // Frequency Generator (200Hz - 1000Hz)
+            function generateFrequency(value, minThreshold, maxThreshold) {
+                if (!state.audioCtx) {
+                    state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    state.osc = state.audioCtx.createOscillator();
+                    state.osc.type = "sine";
+                    state.osc.connect(state.audioCtx.destination);
+                    state.osc.start();
+                }
+                if (state.audioCtx.state === "suspended") state.audioCtx.resume();
+
+                // Normalize value and map to 200-1000 range
+                const clamp = Math.max(minThreshold, Math.min(maxThreshold, value));
+                const freq = 200 + ((clamp - minThreshold) / (maxThreshold - minThreshold)) * 800;
+
+                // state.osc.frequency.setTargetAtTime(freq, state.audioCtx.currentTime, 0.1);
+                console.log(`Sensor Frequency: ${freq.toFixed(0)}Hz (Raw: ${value.toFixed(2)})`);
+            }
+
+            function stopAudio() {
+                if (state.audioCtx) state.audioCtx.suspend();
+            }
+
+            // Defensive Sensor Interfaces
+            const sensors = {
+                gps: {
+                    start: () => {
+                        if (!("geolocation" in navigator)) return alert("GPS not available.");
+                        state.refs.gps = navigator.geolocation.watchPosition(
+                            (pos) => {
+                                // Maps latitude fractional variations (walking steps) to frequency
+                                const movementVariant = Math.abs(pos.coords.latitude % 0.001) * 1000;
+                                generateFrequency(movementVariant, 0, 1);
+                            },
+                            (err) => console.warn("GPS Error:", err),
+                            { enableHighAccuracy: true },
+                        );
+                    },
+                    stop: () => navigator.geolocation.clearWatch(state.refs.gps),
+                },
+                accel: {
+                    start: () => {
+                        if (!("Accelerometer" in window)) return alert("Accelerometer API not supported.");
+                        try {
+                            const sensor = new Accelerometer({ frequency: 60 });
+                            sensor.addEventListener("reading", () => {
+                                const magnitude = Math.sqrt(sensor.x ** 2 + sensor.y ** 2 + sensor.z ** 2);
+                                generateFrequency(magnitude, 0, 20); // 0 to ~2G force
+                            });
+                            sensor.start();
+                            state.refs.accel = sensor;
+                        } catch (e) {
+                            console.warn("Accel start failed:", e);
+                        }
+                    },
+                    stop: () => state.refs.accel?.stop(),
+                },
+                gyro: {
+                    start: () => {
+                        if (!("Gyroscope" in window)) return alert("Gyroscope API not supported.");
+                        try {
+                            const sensor = new Gyroscope({ frequency: 60 });
+                            sensor.addEventListener("reading", () => {
+                                const rotation = Math.sqrt(sensor.x ** 2 + sensor.y ** 2 + sensor.z ** 2);
+                                generateFrequency(rotation, 0, 10); // rad/s limits
+                            });
+                            sensor.start();
+                            state.refs.gyro = sensor;
+                        } catch (e) {
+                            console.warn("Gyro start failed:", e);
+                        }
+                    },
+                    stop: () => state.refs.gyro?.stop(),
+                },
+                mag: {
+                    start: () => {
+                        if (!("Magnetometer" in window)) return alert("Magnetometer API not supported.");
+                        try {
+                            const sensor = new Magnetometer({ frequency: 60 });
+                            sensor.addEventListener("reading", () => {
+                                const flux = Math.sqrt(sensor.x ** 2 + sensor.y ** 2 + sensor.z ** 2);
+                                generateFrequency(flux, 0, 100); // Microteslas limits
+                            });
+                            sensor.start();
+                            state.refs.mag = sensor;
+                        } catch (e) {
+                            console.warn("Mag start failed:", e);
+                        }
+                    },
+                    stop: () => state.refs.mag?.stop(),
+                },
+            };
+
+            // Toggle Logic (Ensures only one sensor runs at a time)
+            function toggleSensor(id) {
+                // 1. Turn off currently active sensor
+                if (state.active) {
+                    sensors[state.active].stop();
+
+                    const btn = document.getElementById(`btn-${state.active}`);
+                    const dot = document.getElementById(`dot-${state.active}`);
+                    btn.classList.replace("bg-primary", "bg-outline-variant");
+                    dot.classList.replace("translate-x-4", "translate-x-0");
+                    dot.classList.replace("bg-white", "bg-on-surface-variant/40");
+                }
+
+                // 2. If user clicked the already active sensor, just shut down completely
+                if (state.active === id) {
+                    state.active = null;
+                    stopAudio();
+                    return;
+                }
+
+                // 3. Turn on the new sensor
+                state.active = id;
+                const newBtn = document.getElementById(`btn-${id}`);
+                const newDot = document.getElementById(`dot-${id}`);
+
+                newBtn.classList.replace("bg-outline-variant", "bg-primary");
+                newDot.classList.replace("translate-x-0", "translate-x-4");
+                newDot.classList.replace("bg-on-surface-variant/40", "bg-white");
+
+                sensors[id].start();
+            }
+        </script>
+    </body>
+</html>
