@@ -79,6 +79,23 @@
         </div>
         <span class="pd4web-sound-switch" id="Pd4WebAudioSwitch"></span>
         <main class="pt-32 pb-40 px-8 max-w-md mx-auto space-y-16">
+            <section class="mt-12">
+                <div class="flex justify-between items-baseline mb-4">
+                    <span class="font-headline text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">
+                        Live Output
+                    </span>
+                    <span id="sensor-val" class="font-mono text-xs font-bold text-primary">0.00</span>
+                </div>
+                <input
+                    type="range"
+                    id="sensor-slider"
+                    min="0"
+                    max="100"
+                    value="0"
+                    disabled
+                    class="w-full h-2 bg-outline-variant rounded-lg appearance-none accent-primary"
+                />
+            </section>
             <section aria-labelledby="sensors-heading">
                 <header class="mb-8 flex justify-between items-baseline border-b border-primary/10 pb-2">
                     <h2
@@ -249,14 +266,24 @@
 
                 // Normalize value and map to 200-1000 range
                 const clamp = Math.max(minThreshold, Math.min(maxThreshold, value));
-                const freq = 200 + ((clamp - minThreshold) / (maxThreshold - minThreshold)) * 800;
+                const percent = ((clamp - minThreshold) / (maxThreshold - minThreshold)) * 100;
+                const freq = 200 + (percent / 100) * 800;
 
-                // state.osc.frequency.setTargetAtTime(freq, state.audioCtx.currentTime, 0.1);
+                // --- NEW: Update the UI Slider ---
+                document.getElementById("sensor-slider").value = percent;
+                document.getElementById("sensor-val").innerText = value.toFixed(2);
+                // ---------------------------------
+
                 console.log(`Sensor Frequency: ${freq.toFixed(0)}Hz (Raw: ${value.toFixed(2)})`);
             }
 
             function stopAudio() {
                 if (state.audioCtx) state.audioCtx.suspend();
+
+                // --- NEW: Reset the UI Slider ---
+                document.getElementById("sensor-slider").value = 0;
+                document.getElementById("sensor-val").innerText = "0.00";
+                // ---------------------------------
             }
 
             // Defensive Sensor Interfaces
