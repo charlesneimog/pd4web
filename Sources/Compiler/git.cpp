@@ -55,7 +55,9 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolder, const std::string &tag) {
+// TODO: gitRootFolderName is a bad name, I am talking about libname, or repo name
+bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolderRoot,
+                      const std::string &tag) {
     PD4WEB_LOGGER();
 
 #if defined(__linux__)
@@ -69,13 +71,15 @@ bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolder, const s
         print("Failed to configure libgit2", Pd4WebLogLevel::PD4WEB_ERROR);
     }
 #endif
-    fs::path path = m_Pd4WebRoot / gitFolder;
+    fs::path path = m_Pd4WebRoot / gitFolderRoot;
     if (gitRepoExists(path)) {
-        gitCheckout(url, gitFolder, tag);
+        gitCheckout(url, gitFolderRoot, tag);
         return true;
     }
 
-    print("Cloning " + url + "... This may take a while.", Pd4WebLogLevel::PD4WEB_LOG2);
+    print("Cloning " + url + "inside " + path.string() + " This may take a while.",
+          Pd4WebLogLevel::PD4WEB_LOG2);
+
     git_repository *repo = nullptr;
     git_clone_options clone_opts = GIT_CLONE_OPTIONS_INIT;
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
@@ -172,7 +176,7 @@ bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolder, const s
     git_object_free(obj);
     git_repository_free(repo);
     if (gitRepoExists(path)) {
-        gitCheckout(url, gitFolder, tag);
+        gitCheckout(url, gitFolderRoot, tag);
         return true;
     } else {
         return false;
@@ -348,14 +352,14 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
     // Falhou -> tenta pull
     if (!gitPull(git, gitFolder)) {
         git_repository_free(repo);
-        print("Failed Pull\n",Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Failed Pull\n", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     // Segunda tentativa após pull
     if (!try_checkout_tag(repo)) {
         git_repository_free(repo);
-        print("Failed Checkout\n",Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Failed Checkout\n", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 

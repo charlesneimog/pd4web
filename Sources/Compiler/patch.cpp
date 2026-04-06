@@ -346,6 +346,13 @@ void Pd4Web::isExternalLibObj(std::shared_ptr<Patch> &p, PatchLine &pl) {
         return;
     }
     std::string libprefix = pl.Lib;
+    if (libIsSupported(pl.Lib)) {
+        bool ok = downloadSupportedLib(pl.Lib);
+        if (!ok) {
+            print("Error when trying to donwload library '" + pl.Lib + "'.",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+    }
 
     // object with prefix
     for (Library SupportedLib : m_Libraries) {
@@ -479,7 +486,7 @@ std::string Pd4Web::getObjName(std::string &objToken) {
 
 // ─────────────────────────────────────
 bool Pd4Web::processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl) {
-    if (p->CanvasLevel == 1 && !p->IsSubpatch) {
+    if (p->CanvasLevel == 1 && !p->IsSubpatch && p->RenderGui) {
         std::string xpix = pl.Tokens[2];
         std::string ypix = pl.Tokens[3];
         std::vector<std::string> updatedTokens = {"#X", "obj", xpix, ypix};
@@ -636,6 +643,13 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
     pl.Name = Obj;
     pl.Lib = Lib;
+    if (libIsSupported(pl.Lib) && pl.Lib != "") {
+        bool ok = downloadSupportedLib(pl.Lib);
+        if (!ok) {
+            print("Error when trying to donwload library '" + pl.Lib + "'.",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+    }
 
     if (Obj == "declare") {
         pl.isExternal = false;
@@ -816,8 +830,9 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             if (pl.Type == PatchLine::MSG) {
                 if (token == "else/allpass_unit") {
                     token = "allpass_unit";
-                    fs::path AbsPath = fs::path(
-                    p->ExternalObjectsJson["else"]["abstractions"]["allpass_unit"][1].get<std::string>());
+                    fs::path AbsPath =
+                        fs::path(p->ExternalObjectsJson["else"]["abstractions"]["allpass_unit"][1]
+                                     .get<std::string>());
 
                     auto Abstraction = std::make_shared<Patch>();
                     Abstraction->PatchFile = AbsPath;

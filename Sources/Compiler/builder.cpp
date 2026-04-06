@@ -421,7 +421,7 @@ void Pd4Web::copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir) {
     // pd.cmake
     fs::path pdcmake = p->Pd4WebRoot / "pd.cmake" / "pd.cmake";
     fs::copy(pdcmake, p->OutputFolder / "Pd4Web", fs::copy_options::skip_existing);
-    print("pd.cmake to " + p->OutputFolder.string() + "Pd4Web");
+    print("pd.cmake to " + (p->OutputFolder / "Pd4Web").string());
 
     // nanovg
     fs::path nanovg = p->Pd4WebRoot / "nanovg";

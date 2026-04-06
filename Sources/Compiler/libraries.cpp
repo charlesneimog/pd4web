@@ -6,8 +6,16 @@
 // ─────────────────────────────────────
 bool Pd4Web::libIsSupported(std::string libName) {
     PD4WEB_LOGGER();
+
     for (Library lib : m_Libraries) {
         if (lib.Name == libName) {
+            fs::path completPath = fs::path(m_Pd4WebRoot) / libName;
+            if (!fs::exists(completPath)) {
+                bool ok = gitClone(lib.Url, libName, lib.Version);
+                if (!ok) {
+                    return false;
+                }
+            }
             return true;
         }
     }
@@ -19,7 +27,7 @@ bool Pd4Web::downloadSupportedLib(std::string libName) {
     PD4WEB_LOGGER();
     for (Library Lib : m_Libraries) {
         if (Lib.Name == libName) {
-            bool ok = gitClone(Lib.Url, Lib.Name, Lib.Version);
+            bool ok = gitClone(Lib.Url, libName, Lib.Version);
             if (!ok) {
                 print("Failed to clone library'" + libName + "'", Pd4WebLogLevel::PD4WEB_ERROR);
                 return false;
@@ -168,6 +176,7 @@ std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
 // ─────────────────────────────────────
 std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> &p,
                                                          std::string Lib) {
+
     std::vector<std::string> absNames;
     const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
     json full_json;
@@ -240,6 +249,7 @@ std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> 
 std::vector<std::string> Pd4Web::listAbstractionsInLibrary(std::shared_ptr<Patch> &p,
                                                            std::string Lib) {
     PD4WEB_LOGGER();
+
     std::vector<std::string> absNames;
     const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
     json full_json;
@@ -584,6 +594,14 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
     std::vector<std::string> objectNames;
     std::vector<std::string> setupSignatures;
     std::vector<std::string> setupNames;
+
+    if (libIsSupported(Lib)) {
+        bool ok = downloadSupportedLib(Lib);
+        if (!ok) {
+            print("Error when trying to donwload library '" + Lib + "'.",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+    }
 
     // Use filesystem::path to join paths reliably
     fs::path completPath = p->Pd4WebRoot / Lib;

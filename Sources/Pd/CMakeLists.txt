@@ -6,9 +6,9 @@ set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
 set(PDCMAKE_VERSION "v0.2.13")
 if(NOT EXISTS "${PDCMAKE_FILE}")
     file(DOWNLOAD
-         # "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake"
+         "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake"
          # "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/heads/main/pd.cmake" 
-         "https://raw.githubusercontent.com/charlesneimog/pd.cmake/refs/heads/main/pd.cmake"
+         # "https://raw.githubusercontent.com/charlesneimog/pd.cmake/refs/heads/main/pd.cmake"
          ${PDCMAKE_FILE})
 endif()
 
