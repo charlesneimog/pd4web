@@ -19,6 +19,8 @@ cmake.args = [
   "-DPY_PD4WEB_BUILD=ON",
   "-DCMAKE_OSX_DEPLOYMENT_TARGET=11.0",
   "-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64",
+  "-DPD_OUTPUT_PATH=./pd4web",
+  "-DPD_LIB_DIR=./",
 ]
 
 [project.scripts]

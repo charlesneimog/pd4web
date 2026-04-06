@@ -38,10 +38,10 @@ jobs:
             build/CMakeFiles
             ~/.ccache
             ~/.cache/sccache
-          key: build-cv20-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+          key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
           restore-keys: |
-            build-cv20-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-cv20-${{ matrix.os }}-${{ runner.arch }}-
+            build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+            build-cv21-${{ matrix.os }}-${{ runner.arch }}-
 
       - uses: actions/setup-python@v5
         with:
@@ -124,6 +124,7 @@ jobs:
             "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
 
+
       - name: Install Python Packages
         run: |
           pip install build --break-system-packages
@@ -133,6 +134,7 @@ jobs:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
           CMAKE_OSX_DEPLOYMENT_TARGET: "11.0"
         run: |
+          python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
           python -m pip install build --break-system-packages
           python -m build --wheel
 
@@ -155,8 +157,8 @@ jobs:
       - name: Upload PureData Object
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
-          path: build/pd4web
+          name: pd4web-object-${{ matrix.os }}
+          path: pd4web
 
       - name: Upload Python Module
         uses: actions/upload-artifact@v4
