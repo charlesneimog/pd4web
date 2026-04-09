@@ -14,6 +14,10 @@ hide:
 
 If you are a Pure Data user, use the __Pd Patch (Graphical Interface)__. If you know how to do Python code (write code), them use the Python Package.
 
+!!! warning "`pd4web` requires Python"
+    Python is typically preinstalled on macOS and most Linux distributions. On Windows, `pd4web` installs it automatically if needed. In rare cases on macOS, Python may not be available by default - download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
+
+
 ---
 <a name="pd4web-pdpatch"></a>
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
