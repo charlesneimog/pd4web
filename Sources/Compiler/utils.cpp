@@ -234,6 +234,11 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
         resolvingCertPath = false;
     }
 
+    fs::path pythonDir = m_PythonWindows;
+    std::string pathEnv = std::getenv("PATH") ? std::getenv("PATH") : "";
+    pathEnv = pythonDir.string() + ";" + pathEnv;
+    _putenv_s("PATH", pathEnv.c_str());
+
     if (!certPath.empty()) {
         _putenv_s("SSL_CERT_FILE", certPath.c_str());
     }

@@ -105,9 +105,9 @@ bool Pd4Web::checkAllPaths() {
             if (fs::is_directory(entry.path())) {
                 fs::path test1 = entry.path() / "bin" / "python3";
                 if (fs::exists(test1)) {
-                    emscriptenPython = entry.path() / "bin" / "python3.13";
+                    emscriptenPython = entry.path() / "bin" / "python3.14";
                 }
-                fs::path test2 = entry.path() / "bin" / "python3.13";
+                fs::path test2 = entry.path() / "bin" / "python3.14";
                 if (fs::exists(test2)) {
                     emscriptenPython = test2;
                 }
