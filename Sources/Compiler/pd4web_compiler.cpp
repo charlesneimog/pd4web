@@ -34,7 +34,9 @@ bool Pd4Web::init() {
     std::string pythonid = PYTHON_WINGET_VERSION;
     size_t firstDot = pythonid.find('.');
     size_t lastDot = pythonid.rfind('.');
-    std::string pythonfolder = pythonid.substr(0, firstDot) + pythonid.substr(lastDot + 1);
+    std::string majorVersion = pythonid.substr(lastDot - 1, 1); // "3"
+    std::string minorVersion = pythonid.substr(lastDot + 1);    // "14"
+    std::string pythonfolder = "Python" + majorVersion + minorVersion;
     const char *localAppData = std::getenv("LOCALAPPDATA");
     fs::path pythonFsPath =
         fs::path(localAppData) / "Programs" / "Python" / pythonfolder / "python.exe";
