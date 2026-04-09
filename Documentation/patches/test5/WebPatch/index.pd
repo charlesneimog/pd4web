@@ -1,0 +1,13 @@
+#N canvas 0 0 925 1132 10; 
+#X obj 36 73 osc~ 400; 
+#X obj 36 130 *~; 
+#X obj 36 169 *~ 0.3; 
+#X obj 36 214 dac~; 
+#X obj 96 73 r toggle; 
+#X obj 36 30 r freq; 
+#X connect 0 0 1 0; 
+#X connect 1 0 2 0; 
+#X connect 2 0 3 0; 
+#X connect 2 0 3 1; 
+#X connect 4 0 1 1; 
+#X connect 5 0 0 0; 
