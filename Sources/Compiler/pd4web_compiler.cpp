@@ -100,7 +100,7 @@ bool Pd4Web::init() {
 
     if (!isValidPython(pythonExe)) {
         if (fs::exists(pythonFsPath)) {
-            pythonExe = pythonFsPath;
+            pythonExe = pythonFsPath.string();
         } else {
             print("Python interpreter not found after installation attempt. Please install Python "
                   "manually. Go to https://www.python.org/downloads/",
