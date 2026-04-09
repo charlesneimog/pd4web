@@ -234,13 +234,33 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
         resolvingCertPath = false;
     }
 
-    fs::path pythonDir = m_PythonWindows;
-    std::string pathEnv = std::getenv("PATH") ? std::getenv("PATH") : "";
-    pathEnv = pythonDir.string() + ";" + pathEnv;
-    _putenv_s("PATH", pathEnv.c_str());
+    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows)) {
+        const fs::path pythonDir = m_PythonWindows.parent_path();
+        const fs::path pythonScripts = pythonDir / "Scripts";
+
+        const std::string oldPath = std::getenv("PATH") ? std::getenv("PATH") : "";
+        std::string pathEnv = pythonDir.string();
+        if (fs::exists(pythonScripts)) {
+            pathEnv += ";" + pythonScripts.string();
+        }
+        if (!oldPath.empty()) {
+            pathEnv += ";" + oldPath;
+        }
+
+        const std::string pythonExe = m_PythonWindows.string();
+        _putenv_s("PATH", pathEnv.c_str());
+        _putenv_s("PYTHON", pythonExe.c_str());
+        _putenv_s("EMSDK_PY", pythonExe.c_str());
+
+        // Ensure the Win32 process environment used by CreateProcessA is updated too.
+        SetEnvironmentVariableA("PATH", pathEnv.c_str());
+        SetEnvironmentVariableA("PYTHON", pythonExe.c_str());
+        SetEnvironmentVariableA("EMSDK_PY", pythonExe.c_str());
+    }
 
     if (!certPath.empty()) {
         _putenv_s("SSL_CERT_FILE", certPath.c_str());
+        SetEnvironmentVariableA("SSL_CERT_FILE", certPath.c_str());
     }
     // Lambda to quote arguments if they contain spaces or quotes
     auto quoteArg = [](const std::string &arg) -> std::string {

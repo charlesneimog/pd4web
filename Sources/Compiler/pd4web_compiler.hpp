@@ -283,6 +283,7 @@ class Pd4Web {
     fs::path m_Clang;
     fs::path m_NodeJs;
     fs::path m_PythonWindows;
+    bool m_PythonWindowsNeedInstall;
 
     // Libraries
     YamlNode m_SourcesNode;

@@ -137,16 +137,33 @@ bool Pd4Web::cmdInstallEmsdk() {
 
 #if defined(_WIN32)
     print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
-    std::vector<std::string> cmd = {"install", EMSDK_VERSION};
-    int result = execProcess(m_EmsdkInstaller.string(), cmd);
+    fs::path emsdkPy = m_Pd4WebRoot / "emsdk" / "emsdk.py";
+    std::vector<std::string> cmd;
+    int result = -1;
+
+    // Use explicit Python to avoid Windows Store/App Execution Alias resolution issues.
+    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows) && fs::exists(emsdkPy)) {
+        cmd = {emsdkPy.string(), "install", EMSDK_VERSION};
+        result = execProcess(m_PythonWindows.string(), cmd);
+    } else {
+        cmd = {"install", EMSDK_VERSION};
+        result = execProcess(m_EmsdkInstaller.string(), cmd);
+    }
+
     if (result != 0) {
         print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
-    cmd = {"install", "node-22.16.0-64bit"};
-    result = execProcess(m_EmsdkInstaller.string(), cmd);
+    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows) && fs::exists(emsdkPy)) {
+        cmd = {emsdkPy.string(), "install", "node-22.16.0-64bit"};
+        result = execProcess(m_PythonWindows.string(), cmd);
+    } else {
+        cmd = {"install", "node-22.16.0-64bit"};
+        result = execProcess(m_EmsdkInstaller.string(), cmd);
+    }
+
     if (result != 0) {
         print("Failed to install Node.js", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

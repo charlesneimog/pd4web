@@ -44,6 +44,7 @@ bool Pd4Web::init() {
     m_PythonWindows = pythonFsPath;
 
     if (!fs::exists(m_PythonWindows)) {
+        m_PythonWindowsNeedInstall = true;
         print("Installing Python First", Pd4WebLogLevel::PD4WEB_LOG2);
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
@@ -164,6 +165,10 @@ bool Pd4Web::init() {
     m_Init = true;
     m_Error = false;
     print("Pd4Web initialized successfully", Pd4WebLogLevel::PD4WEB_LOG1);
+    if (m_PythonWindowsNeedInstall) {
+        print("Restart pd4web to be able to compile patches", Pd4WebLogLevel::PD4WEB_ERROR);
+        return true;
+    }
 
     return true;
 }
