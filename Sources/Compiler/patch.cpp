@@ -929,6 +929,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         }
     }
 
+    // update externals and extras of abstraction
     for (auto &pl : p->PatchLines) {
         if (pl.isExternal || pl.isAbstraction) {
             f->ExternalObjects.push_back(pl);
@@ -939,12 +940,14 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         }
     }
 
+    // update externals inside abstractions of children
     if (p->ExternalObjects.size() > 0) {
         for (auto &pl : p->ExternalObjects) {
             f->ExternalObjects.push_back(pl);
         }
     }
 
+    // update extras inside abstractions of children
     if (p->ExtraObjects.size() > 0) {
         for (auto &pl : p->ExtraObjects) {
             f->ExtraObjects.push_back(pl);
@@ -958,6 +961,8 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     if (p->Output > f->Output) {
         f->Output = p->Output;
     }
+
+    f->ExternalObjectsJson = p->ExternalObjectsJson;
 
     updatePatchFile(p);
     return true;
