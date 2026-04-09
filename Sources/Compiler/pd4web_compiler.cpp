@@ -67,9 +67,13 @@ bool Pd4Web::init() {
             return false;
         }
         std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";
-        std::vector<std::string> wingetCheckCmd = {
-            "install", "-e", std::string("--id=") + PYTHON_WINGET_VERSION,
-            "--accept-source-agreements", "--accept-package-agreements", "--source", "winget"};
+        std::vector<std::string> wingetCheckCmd = {"install",
+                                                   "-e",
+                                                   std::string("--id=") + PYTHON_WINGET_VERSION,
+                                                   "--accept-source-agreements",
+                                                   "--accept-package-agreements",
+                                                   "--source",
+                                                   "winget"};
 
         int wingetResult = execProcess(wingetExe, wingetCheckCmd);
         if (wingetResult != 0) {
@@ -85,15 +89,28 @@ bool Pd4Web::init() {
 
     pyLen = SearchPathA(nullptr, "python.exe", nullptr, MAX_PATH, pythonPath, nullptr);
     pythonExe = (pyLen > 0 && pyLen < MAX_PATH) ? std::string(pythonPath) : "";
+
+    std::string pythonid = PYTHON_WINGET_VERSION;
+    size_t firstDot = pythonid.find('.');
+    size_t lastDot = pythonid.rfind('.');
+    std::string pythonfolder = pythonid.substr(0, firstDot) + pythonid.substr(lastDot + 1);
+    const char *localAppData = std::getenv("LOCALAPPDATA");
+    fs::path pythonFsPath =
+        fs::path(localAppData) / "Programs" / "Python" / pythonfolder / "python.exe";
+
     if (!isValidPython(pythonExe)) {
-        print("Python interpreter not found after installation attempt. Please install Python "
-              "manually. Go to https://www.python.org/downloads/",
-              Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
+        if (fs::exists(pythonFsPath)) {
+            pythonExe = pythonFsPath;
+        } else {
+            print("Python interpreter not found after installation attempt. Please install Python "
+                  "manually. Go to https://www.python.org/downloads/",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
     }
 
     m_PythonWindows = pythonExe;
-   
+
     if (m_PythonWindows.empty()) {
         print("Python interpreter path is empty after detection. Please install Python manually. "
               "Go to https://www.python.org/downloads/",
@@ -114,7 +131,6 @@ bool Pd4Web::init() {
         }
     }
 
-    _putenv_s("EMSDK_PY", m_PythonWindows.string().c_str());
     print("Using Python interpreter at: " + m_PythonWindows.string(),
           Pd4WebLogLevel::PD4WEB_VERBOSE);
 #endif
