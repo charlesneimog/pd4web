@@ -1,0 +1,15 @@
+#N canvas 0 0 925 1132 10;
+#X obj 55 206 clone 10 Libs/clone-plaits;
+#X obj 55 228 dac~;
+#X obj 52 122 metro 200;
+#X obj 52 144 expr random(60 \, 84);
+#X msg 55 184 next \$1;
+#X obj 55 11 loadbang;
+#X obj 55 33 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X connect 0 0 1 0;
+#X connect 0 0 1 1;
+#X connect 2 0 3 0;
+#X connect 3 0 4 0;
+#X connect 4 0 0 0;
+#X connect 5 0 6 0;
+#X connect 6 0 2 0;

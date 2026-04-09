@@ -1,0 +1,18 @@
+#N canvas 0 0 925 1132 10;
+#X obj 9 136 soundfiler;
+#X obj 81 135 array define buffer1;
+#X obj 55 236 tabplay~ buffer1;
+#X obj 56 294 dac~;
+#X obj 55 165 loadbang;
+#X obj 148 305 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 148 274 delay 500 1 msec;
+#X obj 33 48 loadbang;
+#X msg 9 104 read -resize Audios/CONGA.wav buffer1;
+#X connect 2 0 3 0;
+#X connect 2 0 3 1;
+#X connect 2 1 6 0;
+#X connect 4 0 2 0;
+#X connect 5 0 2 0;
+#X connect 6 0 5 0;
+#X connect 7 0 8 0;
+#X connect 8 0 0 0;
