@@ -37,10 +37,12 @@
 #X obj 1 2 cnv 15 500 40 empty empty Pd4Web\ Compiler\ -\ Patches\ on\ Websites 50 12 0 18 #dfdfdf #000000 0;
 #X obj 69 32 cnv 5 5 5 empty empty Charles\ K.\ Neimog\ |\ charlesneimog.github.io/pd4web 0 0 0 12 #dfdfdf #000000 0;
 #X obj 3 289 cnv 19 500 65 empty empty empty 20 12 0 12 #c6ffc7 #404040 0;
-#X obj 225 305 bng 23 250 50 0 s-pd4web-compiler-readme r-pd4web-compiler empty 0 -10 0 12 #c6ffc7 #000000 #000000;
-#X text 167 331 Open Pd4Web Compiler!;
+#X obj 64 303 bng 23 250 50 0 s-pd4web-compiler-readme r-pd4web-compiler empty 0 -10 0 12 #c6ffc7 #000000 #000000;
+#X text 6 329 Open Pd4Web Compiler!;
 #X text 181 249 READ THE DOCS!;
 #X obj 4 105 pd4web.compiler;
 #X text 115 105 <= This MUST work \, if not \, report on gihtub!, f 63;
 #X obj 2 47 declare -path pd4web;
+#X text 238 310 OR;
+#X text 311 305 Create a new object called [pd4web] on a new patch., f 26;
 #X connect 4 0 2 0;
