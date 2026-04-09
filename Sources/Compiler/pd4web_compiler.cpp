@@ -165,11 +165,6 @@ bool Pd4Web::init() {
     m_Init = true;
     m_Error = false;
     print("Pd4Web initialized successfully", Pd4WebLogLevel::PD4WEB_LOG1);
-    if (m_PythonWindowsNeedInstall) {
-        print("Restart pd4web to be able to compile patches", Pd4WebLogLevel::PD4WEB_ERROR);
-        return true;
-    }
-
     return true;
 }
 
