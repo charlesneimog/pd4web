@@ -31,6 +31,10 @@ bool Pd4Web::init() {
     git_libgit2_init();
 
 #if defined(_WIN32)
+    const std::string pythonManualInstallMsg =
+        "winget is not installed. Download Python from "
+        "https://www.python.org/downloads/release/python-3144/.";
+
     std::string pythonid = PYTHON_WINGET_VERSION;
     size_t firstDot = pythonid.find('.');
     size_t lastDot = pythonid.rfind('.');
@@ -49,9 +53,7 @@ bool Pd4Web::init() {
         char wingetPath[MAX_PATH];
         DWORD len = SearchPathA(nullptr, "winget.exe", nullptr, MAX_PATH, wingetPath, nullptr);
         if (len == 0) {
-            print("winget not found. Please install Python manually! Go to "
-                  "https://www.python.org/downloads/",
-                  Pd4WebLogLevel::PD4WEB_ERROR);
+            print(pythonManualInstallMsg, Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
         std::string wingetExe = (len > 0) ? std::string(wingetPath) : "winget";

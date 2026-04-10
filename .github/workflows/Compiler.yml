@@ -11,6 +11,8 @@ on:
 env:
   BUILD_TYPE: Release
   SCCACHE_DIR: ~/.cache/sccache
+  LIBNAME: pd4web
+  LIBVERSION: "3.1.2-a1"
 
 jobs:
   pd4web-compiler:
@@ -45,7 +47,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install NASM (Windows)
         if: runner.os == 'Windows'
@@ -124,7 +126,6 @@ jobs:
             "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
           }
 
-
       - name: Install Python Packages
         run: |
           pip install build --break-system-packages
@@ -177,6 +178,46 @@ jobs:
           pattern: pypd4web-*
           merge-multiple: true
           path: dist
+
+      - name: Download puredata
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pd4web-object-*
+          merge-multiple: true
+          path: puredata
+
+      - name: Upload using docker deken
+        run: |
+          cd puredata
+          mkdir -p ${{ env.LIBNAME }}
+
+          tmp=$(mktemp -d)
+          unzip -q pd4web-object-macos-latest.zip -d "$tmp"
+          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
+          rm -rf "$tmp"
+
+          tmp=$(mktemp -d)
+          unzip -q pd4web-object-ubuntu-latest.zip -d "$tmp"
+          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
+          rm -rf "$tmp"
+
+          tmp=$(mktemp -d)
+          unzip -q pd4web-object-windows-latest.zip -d "$tmp"
+          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
+          rm -rf "$tmp"
+
+          docker run --rm \
+            --user $(id -u) \
+            --volume $(pwd):/deken \
+            registry.git.iem.at/pd/deken \
+            deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
+
+          docker run --rm \
+            --user $(id -u) --volume $(pwd):/deken \
+            --env DEKEN_USERNAME=charlesneimog     \
+            --env DEKEN_PASSWORD=${{secrets.DEKEN_PASSWORD}}             \
+            registry.git.iem.at/pd/deken           \
+            deken upload *.dek
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
