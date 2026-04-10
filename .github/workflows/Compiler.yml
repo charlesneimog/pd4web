@@ -184,28 +184,13 @@ jobs:
         with:
           pattern: pd4web-object-*
           merge-multiple: true
-          path: puredata
+          path: ${{ env.LIBNAME }}
 
       - name: Upload using docker deken
+        env:
+          DEKEN_USERNAME: charlesneimog
+          DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
         run: |
-          cd puredata
-          mkdir -p ${{ env.LIBNAME }}
-
-          tmp=$(mktemp -d)
-          unzip -q pd4web-object-macos-latest.zip -d "$tmp"
-          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
-          rm -rf "$tmp"
-
-          tmp=$(mktemp -d)
-          unzip -q pd4web-object-ubuntu-latest.zip -d "$tmp"
-          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
-          rm -rf "$tmp"
-
-          tmp=$(mktemp -d)
-          unzip -q pd4web-object-windows-latest.zip -d "$tmp"
-          rsync -a --ignore-existing "$tmp"/ ${{ env.LIBNAME }}
-          rm -rf "$tmp"
-
           docker run --rm \
             --user $(id -u) \
             --volume $(pwd):/deken \
@@ -213,11 +198,11 @@ jobs:
             deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
 
           docker run --rm \
-            --user $(id -u) --volume $(pwd):/deken \
-            --env DEKEN_USERNAME=charlesneimog     \
-            --env DEKEN_PASSWORD=${{secrets.DEKEN_PASSWORD}}             \
-            registry.git.iem.at/pd/deken           \
-            deken upload *.dek
+            --user $(id -u) \
+            --volume $(pwd):/deken \
+            -e DEKEN_USERNAME -e DEKEN_PASSWORD \
+            registry.git.iem.at/pd/deken \
+            deken upload -v ${{ env.LIBVERSION }} *.dek
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
