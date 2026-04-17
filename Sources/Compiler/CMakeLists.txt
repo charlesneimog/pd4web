@@ -96,7 +96,9 @@ cpmaddpackage(
     "BUILD_SHARED_LIBS OFF"
     "BUILD_CLI OFF"
     "BUILD_TESTS OFF"
-    "BUILD_EXAMPLES OFF")
+    "BUILD_EXAMPLES OFF"
+    "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+    "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 
 cpmaddpackage(
     URI
@@ -105,7 +107,9 @@ cpmaddpackage(
     "OPENSSL_USE_STATIC_LIBS ON"
     "BUILD_SHARED_LIBS OFF"
     "BUILD_EXAMPLES OFF"
-    "BUILD_TESTING OFF")
+    "BUILD_TESTING OFF"
+    "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+    "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 
 # https://github.com/nabijaczleweli/whereami-cpp.git
 
