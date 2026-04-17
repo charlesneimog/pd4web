@@ -20,7 +20,19 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, macos-latest, macos-intel-latest, windows-latest]
+                include:
+                    - os: ubuntu-latest
+                      name: ubuntu
+                    - os: windows-latest
+                      name: windows
+                    - os: macos-latest
+                      name: macos-arm64
+                      arch: arm64
+                      deployment_target: "11.0"
+                    - os: macos-intel-latest
+                      name: macos-x86_64
+                      arch: x86_64
+                      deployment_target: "10.15"
 
         steps:
             - name: Checkout
@@ -40,10 +52,10 @@ jobs:
                       build/CMakeFiles
                       ~/.ccache
                       ~/.cache/sccache
-                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv21-${{ matrix.os }}-${{ matrix.arch || 'default' }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
+                      build-cv21-${{ matrix.os }}-${{ matrix.arch || 'default' }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv21-${{ matrix.os }}-${{ matrix.arch || 'default' }}-${{ runner.arch }}-
 
             - uses: actions/setup-python@v5
               with:
@@ -130,13 +142,16 @@ jobs:
                   pip install build --break-system-packages
 
             - name: Build wheels
-              env:
-                  MACOSX_DEPLOYMENT_TARGET: "10.15"
-                  CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
               run: |
                   python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
                   python -m pip install build --break-system-packages
-                  python -m build --wheel
+                  if [ "$RUNNER_OS" = "macOS" ]; then
+                      python -m build --wheel \
+                        -Ccmake.define.CMAKE_OSX_ARCHITECTURES=${{ matrix.arch }} \
+                        -Ccmake.define.CMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.deployment_target }}
+                  else
+                      python -m build --wheel
+                  fi
 
             - name: Show ccache stats (macOS/Linux)
               if: runner.os != 'Windows'
@@ -157,13 +172,13 @@ jobs:
             - name: Upload PureData Object
               uses: actions/upload-artifact@v4
               with:
-                  name: pd4web-object-${{ matrix.os }}
+                  name: pd4web-object-${{ matrix.name }}
                   path: pd4web
 
             - name: Upload Python Module
               uses: actions/upload-artifact@v4
               with:
-                  name: pypd4web-${{ matrix.os }}
+                  name: pypd4web-${{ matrix.name }}
                   path: dist/*.whl
 
     publish-pypi:
