@@ -477,7 +477,10 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
 
     int result = execProcess(m_Emcmake.string(), cfgArgs);
     if (result != 0) {
-        print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Configuration step failed, try to use the flag '--clear-before-compile' or "
+              "configure to clear the configuration before compile. WARNING: This will remove "
+              "WebPatch, Pd4Web, and .build",
+              Pd4WebLogLevel::PD4WEB_ERROR);
         return;
     }
 
