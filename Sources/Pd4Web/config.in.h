@@ -34,6 +34,21 @@ extern "C" {
 // ╭─────────────────────────────────────╮
 // │             Sound Icons             │
 // ╰─────────────────────────────────────╯
+#define ICON_DOWNLOADING                                                                           \
+    "data:image/"                                                                                  \
+    "svg+xml;base64,"                                                                              \
+    "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIj48IS0tIUZv" \
+    "bnQgQXdlc29tZSBGcmVlIDcuMi4wIGJ5IEBmb250YXdlc29tZSAtIGh0dHBzOi8vZm9udGF3ZXNvbWUuY29tIExpY2Vu" \
+    "c2UgLSBodHRwczovL2ZvbnRhd2Vzb21lLmNvbS9saWNlbnNlL2ZyZWUgQ29weXJpZ2h0IDIwMjYgRm9udGljb25zLCBJ" \
+    "bmMuLS0+"                                                                                     \
+    "PHBhdGggZD0iTTE0NCA0ODBjLTc5LjUgMC0xNDQtNjQuNS0xNDQtMTQ0IDAtNjMuNCA0MS0xMTcuMiA5Ny45LTEzNi41" \
+    "LTEuMy03LjctMS45LTE1LjUtMS45LTIzLjUgMC03OS41IDY0LjUtMTQ0IDE0NC0xNDQgNTUuNCAwIDEwMy41IDMxLjMg" \
+    "MTI3LjYgNzcuMSAxNC4yLTguMyAzMC44LTEzLjEgNDguNC0xMy4xIDUzIDAgOTYgNDMgOTYgOTYgMCAxNS43LTMuOCAz" \
+    "MC42LTEwLjUgNDMuNyA0NCAyMC4zIDc0LjUgNjQuNyA3NC41IDExNi4zIDAgNzAuNy01Ny4zIDEyOC0xMjggMTI4bC0z" \
+    "MDQgMHpNMzc3IDMxM2M5LjQtOS40IDkuNC0yNC42IDAtMzMuOXMtMjQuNi05LjQtMzMuOSAwbC0zMSAzMSAwLTEwMi4x" \
+    "YzAtMTMuMy0xMC43LTI0LTI0LTI0cy0yNCAxMC43LTI0IDI0bDAgMTAyLjEtMzEtMzFjLTkuNC05LjQtMjQuNi05LjQt" \
+    "MzMuOSAwcy05LjQgMjQuNiAwIDMzLjlsNzIgNzJjOS40IDkuNCAyNC42IDkuNCAzMy45IDBsNzItNzJ6Ii8+PC9zdmc+"
+
 #define ICON_SOUND_OFF                                                                             \
     "data:image/"                                                                                  \
     "svg+xml;base64,"                                                                              \

@@ -32,8 +32,14 @@ int submodule_file_check_cb(git_submodule *sm, const char *name, void *payload) 
     auto *ctx = static_cast<SubmoduleFileCheckContext *>(payload);
     fs::path submodulePath = ctx->repoRoot / git_submodule_path(sm);
     fs::path fileAbs = fs::absolute(ctx->filePath);
+    const std::string submoduleAbs = fs::absolute(submodulePath).string();
+    std::string submodulePrefix = submoduleAbs;
+    if (!submodulePrefix.empty() && submodulePrefix.back() != fs::path::preferred_separator) {
+        submodulePrefix.push_back(fs::path::preferred_separator);
+    }
+    const std::string fileAbsStr = fileAbs.string();
     if (fs::is_directory(submodulePath) &&
-        fileAbs.string().starts_with(fs::absolute(submodulePath).string())) {
+        (fileAbsStr == submoduleAbs || fileAbsStr.rfind(submodulePrefix, 0) == 0)) {
         ctx->isInSubmodule = true;
         return 1;
     }
@@ -54,6 +60,53 @@ bool Pd4Web::isFileFromGitSubmodule(const fs::path &repoRoot, const fs::path &fi
     return ctx.isInSubmodule;
 }
 
+namespace {
+struct SubmoduleUpdateContext {
+    bool ok = true;
+};
+
+bool updateSubmodulesRecursive(git_repository *repo);
+
+int submodule_update_recursive_cb(git_submodule *sm, const char *name, void *payload) {
+    auto *ctx = static_cast<SubmoduleUpdateContext *>(payload);
+
+    (void)name;
+
+    git_submodule_sync(sm);
+
+    git_submodule_update_options update_opts = GIT_SUBMODULE_UPDATE_OPTIONS_INIT;
+    update_opts.checkout_opts.checkout_strategy = GIT_CHECKOUT_SAFE;
+
+    int err = git_submodule_update(sm, 1, &update_opts);
+    if (err != 0) {
+        ctx->ok = false;
+        return err;
+    }
+
+    git_repository *subrepo = nullptr;
+    err = git_submodule_open(&subrepo, sm);
+    if (err != 0) {
+        ctx->ok = false;
+        return err;
+    }
+
+    bool nestedOk = updateSubmodulesRecursive(subrepo);
+    git_repository_free(subrepo);
+    if (!nestedOk) {
+        ctx->ok = false;
+        return -1;
+    }
+
+    return 0;
+}
+
+bool updateSubmodulesRecursive(git_repository *repo) {
+    SubmoduleUpdateContext ctx{true};
+    int err = git_submodule_foreach(repo, submodule_update_recursive_cb, &ctx);
+    return err == 0 && ctx.ok;
+}
+} // namespace
+
 // ─────────────────────────────────────
 // TODO: gitRootFolderName is a bad name, I am talking about libname, or repo name
 bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolderRoot,
@@ -73,11 +126,10 @@ bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolderRoot,
 #endif
     fs::path path = m_Pd4WebRoot / gitFolderRoot;
     if (gitRepoExists(path)) {
-        gitCheckout(url, gitFolderRoot, tag);
-        return true;
+        return gitCheckout(url, gitFolderRoot, tag);
     }
 
-    print("Cloning " + url + "inside " + path.string() + " This may take a while.",
+    print("Cloning " + url + " inside " + path.string() + " This may take a while.",
           Pd4WebLogLevel::PD4WEB_LOG2);
 
     git_repository *repo = nullptr;
@@ -95,38 +147,55 @@ bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolderRoot,
     int error = git_clone(&repo, url.c_str(), pathStr.c_str(), &clone_opts);
     if (error != 0) {
         const git_error *e = git_error_last();
-        print("git_clone error " + std::to_string(error) + " " + e->message,
+        std::string cloneErrorMessage = (e && e->message) ? e->message : "unknown error";
+        print("git_clone error " + std::to_string(error) + " " + cloneErrorMessage,
               Pd4WebLogLevel::PD4WEB_WARNING);
+        print("libgit2 clone failed, trying git CLI fallback", Pd4WebLogLevel::PD4WEB_WARNING);
+
         std::vector<std::string> args = {"clone", url, pathStr, "--recursive"};
+        std::string gitPath;
 #ifdef _WIN32
-        char gitPath[MAX_PATH];
-        DWORD len = SearchPathA(nullptr, "git.exe", nullptr, MAX_PATH, gitPath, nullptr);
+        char gitPathBuf[MAX_PATH] = {};
+        DWORD len = SearchPathA(nullptr, "git.exe", nullptr, MAX_PATH, gitPathBuf, nullptr);
+        if (len == 0 || len >= MAX_PATH) {
+            print("git_clone error " + std::to_string(error) + " " + cloneErrorMessage +
+                      ". And git not found in PATH",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        gitPath = gitPathBuf;
 #else
         const char *path_env = std::getenv("PATH");
         if (!path_env) {
+            print("git_clone error " + std::to_string(error) + " " + cloneErrorMessage +
+                      ". And PATH is not available for git fallback",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
+
         std::istringstream ss(path_env);
         std::string dir;
-        fs::path p;
-        std::string gitPath;
+        bool gitFound = false;
         while (std::getline(ss, dir, ':')) {
-            p = fs::path(dir) / "git";
-            if (fs::exists(p)) {
+            fs::path p = fs::path(dir) / "git";
+            if (fs::exists(p) && fs::is_regular_file(p) && access(p.c_str(), X_OK) == 0) {
                 gitPath = p.string();
+                gitFound = true;
                 break;
             }
         }
-        if (!fs::exists(p) && !fs::is_regular_file(p) && !access(p.c_str(), X_OK) == 0) {
-            print("git_clone error " + std::to_string(error) + " " + e->message +
+
+        if (!gitFound) {
+            print("git_clone error " + std::to_string(error) + " " + cloneErrorMessage +
                       ". And git not found in PATH",
                   Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
         }
 #endif
 
         int r = execProcess(gitPath, args);
         if (r != 0) {
-            print("git_clone error " + std::to_string(error) + " " + e->message +
+            print("git_clone error " + std::to_string(error) + " " + cloneErrorMessage +
                       ". Using git cli also failed",
                   Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
@@ -135,52 +204,10 @@ bool Pd4Web::gitClone(const std::string &url, const fs::path &gitFolderRoot,
             print("Failed to open repository " + pathStr, Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
-    } else {
-        git_submodule_foreach(
-            repo,
-            [](git_submodule *sm, const char *name, void *payload) -> int {
-                Pd4Web *self = static_cast<Pd4Web *>(payload);
-                std::string submodname = name;
-                int err = git_submodule_update(sm, 1, nullptr); // 1 = initialize
-                if (err != 0) {
-                    const git_error *e = git_error_last();
-                    self->print("Failed to update submodule '" + std::string(name) + "'",
-                                Pd4WebLogLevel::PD4WEB_ERROR);
-                }
-                return err;
-            },
-            this);
     }
 
-    // Manual tag checkout
-    git_object *obj = nullptr;
-    std::string ref = "refs/tags/" + tag;
-    error = git_revparse_single(&obj, repo, ref.c_str());
-    if (error != 0) {
-        error = git_revparse_single(&obj, repo, tag.c_str());
-        if (error != 0) {
-            print("Error resolving tag or commit '" + tag + "'", Pd4WebLogLevel::PD4WEB_ERROR);
-            git_repository_free(repo);
-            return false;
-        }
-    }
-
-    error = git_checkout_tree(repo, obj, nullptr);
-    if (error != 0) {
-        print("Error checking out tree for tag '" + tag + "'", Pd4WebLogLevel::PD4WEB_ERROR);
-        git_object_free(obj);
-        git_repository_free(repo);
-        return false;
-    }
-
-    git_object_free(obj);
     git_repository_free(repo);
-    if (gitRepoExists(path)) {
-        gitCheckout(url, gitFolderRoot, tag);
-        return true;
-    } else {
-        return false;
-    }
+    return gitCheckout(url, gitFolderRoot, tag);
 }
 
 // ─────────────────────────────────────
@@ -345,7 +372,12 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
 
     // Primeira tentativa
     if (try_checkout_tag(repo)) {
+        bool submoduleOk = updateSubmodulesRecursive(repo);
         git_repository_free(repo);
+        if (!submoduleOk) {
+            print("Failed to initialize submodules", Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
         return true;
     }
 
@@ -356,6 +388,14 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
         return false;
     }
 
+    // Re-open repository after pull to refresh refs/cache.
+    git_repository_free(repo);
+    repo = nullptr;
+    if (git_repository_open(&repo, pathStr.c_str()) != 0) {
+        print("Failed to reopen repository " + pathStr, Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
     // Segunda tentativa após pull
     if (!try_checkout_tag(repo)) {
         git_repository_free(repo);
@@ -363,6 +403,12 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
         return false;
     }
 
+    bool submoduleOk = updateSubmodulesRecursive(repo);
+
     git_repository_free(repo);
+    if (!submoduleOk) {
+        print("Failed to initialize submodules", Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
     return true;
 }

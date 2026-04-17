@@ -1,213 +1,213 @@
 name: pd4web-compiler
 on:
-  workflow_dispatch:
-    inputs:
-      publish_pypi:
-        description: "Publish built wheels to PyPI"
-        required: false
-        default: false
-        type: boolean
+    workflow_dispatch:
+        inputs:
+            publish_pypi:
+                description: "Publish built wheels to PyPI"
+                required: false
+                default: false
+                type: boolean
 
 env:
-  BUILD_TYPE: Release
-  SCCACHE_DIR: ~/.cache/sccache
-  LIBNAME: pd4web
-  LIBVERSION: "3.1.2-a1"
+    BUILD_TYPE: Release
+    SCCACHE_DIR: ~/.cache/sccache
+    LIBNAME: pd4web
+    LIBVERSION: "3.1.3"
 
 jobs:
-  pd4web-compiler:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    pd4web-compiler:
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, macos-latest, windows-latest]
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+              with:
+                  submodules: recursive
+                  fetch-depth: 0
 
-      # Cache build deps and compiler caches
-      - name: Cache CMake and dependencies
-        id: build-cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            build/_deps
-            build/CMakeCache.txt
-            build/CMakeFiles
-            ~/.ccache
-            ~/.cache/sccache
-          key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
-          restore-keys: |
-            build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-            build-cv21-${{ matrix.os }}-${{ runner.arch }}-
+            # Cache build deps and compiler caches
+            - name: Cache CMake and dependencies
+              id: build-cache
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      build/_deps
+                      build/CMakeCache.txt
+                      build/CMakeFiles
+                      ~/.ccache
+                      ~/.cache/sccache
+                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  restore-keys: |
+                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+            - uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
 
-      - name: Install NASM (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/setup-nasm@v1
+            - name: Install NASM (Windows)
+              if: runner.os == 'Windows'
+              uses: ilammy/setup-nasm@v1
 
-      - name: Install Perl and Ninja (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          choco install strawberryperl -y
-          choco install ninja -y
+            - name: Install Perl and Ninja (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  choco install strawberryperl -y
+                  choco install ninja -y
 
-      - name: Install sccache (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = "Stop"
-          $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mozilla/sccache/releases/latest"
-          $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
-          if (-not $asset) { throw "sccache Windows asset not found" }
-          $zipPath = Join-Path $env:TEMP "sccache.zip"
-          Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
-          $dest = Join-Path $env:LocalAppData "sccache-bin"
-          if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-          Expand-Archive -LiteralPath $zipPath -DestinationPath $dest
-          $exe = Get-ChildItem $dest -Recurse -Filter "sccache.exe" | Select-Object -First 1
-          if (-not $exe) { throw "sccache.exe not found after install" }
-          Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
-          Write-Host "sccache installed at $($exe.FullName)"
+            - name: Install sccache (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  $ErrorActionPreference = "Stop"
+                  $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mozilla/sccache/releases/latest"
+                  $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
+                  if (-not $asset) { throw "sccache Windows asset not found" }
+                  $zipPath = Join-Path $env:TEMP "sccache.zip"
+                  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
+                  $dest = Join-Path $env:LocalAppData "sccache-bin"
+                  if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
+                  Expand-Archive -LiteralPath $zipPath -DestinationPath $dest
+                  $exe = Get-ChildItem $dest -Recurse -Filter "sccache.exe" | Select-Object -First 1
+                  if (-not $exe) { throw "sccache.exe not found after install" }
+                  Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
+                  Write-Host "sccache installed at $($exe.FullName)"
 
-      - name: Install PureData for Windows
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
-          # Remove-Item -Path build/pd.cmake -Force
+            - name: Install PureData for Windows
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
+                  # Remove-Item -Path build/pd.cmake -Force
 
-      - name: Install PureData for macOS
-        if: runner.os == 'macOS'
-        run: |
-          brew update
-          brew install --cask pd
-          brew install ccache
-          brew install git
-          brew install perl
-          brew uninstall --ignore-dependencies openssl@3
+            - name: Install PureData for macOS
+              if: runner.os == 'macOS'
+              run: |
+                  brew update
+                  brew install --cask pd
+                  brew install ccache
+                  brew install git
+                  brew install perl
+                  brew uninstall --ignore-dependencies openssl@3
 
-      - name: Install PureData for Linux
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common ccache
-          sudo add-apt-repository ppa:pure-data/pure-data -y || true
-          sudo apt-get update
-          sudo apt-get install -y puredata
+            - name: Install PureData for Linux
+              if: runner.os == 'Linux'
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y software-properties-common ccache
+                  sudo add-apt-repository ppa:pure-data/pure-data -y || true
+                  sudo apt-get update
+                  sudo apt-get install -y puredata
 
-      - name: Configure ccache
-        if: runner.os != 'Windows'
-        run: |
-          ccache --set-config=max_size=500M
-          ccache --set-config=compression=true
-          ccache -z
+            - name: Configure ccache
+              if: runner.os != 'Windows'
+              run: |
+                  ccache --set-config=max_size=500M
+                  ccache --set-config=compression=true
+                  ccache -z
 
-      - name: Start sccache server (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          sccache --start-server
+            - name: Start sccache server (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  sccache --start-server
 
-      - name: Configure compiler launcher
-        shell: pwsh
-        run: |
-          if ($env:RUNNER_OS -eq 'Windows') {
-            "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
-          } else {
-            "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
-          }
+            - name: Configure compiler launcher
+              shell: pwsh
+              run: |
+                  if ($env:RUNNER_OS -eq 'Windows') {
+                    "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+                  } else {
+                    "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+                  }
 
-      - name: Install Python Packages
-        run: |
-          pip install build --break-system-packages
+            - name: Install Python Packages
+              run: |
+                  pip install build --break-system-packages
 
-      - name: Build wheels
-        env:
-          MACOSX_DEPLOYMENT_TARGET: "10.15"
-          CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
-        run: |
-          python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
-          python -m pip install build --break-system-packages
-          python -m build --wheel
+            - name: Build wheels
+              env:
+                  MACOSX_DEPLOYMENT_TARGET: "10.15"
+                  CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
+              run: |
+                  python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
+                  python -m pip install build --break-system-packages
+                  python -m build --wheel
 
-      - name: Show ccache stats (macOS/Linux)
-        if: runner.os != 'Windows'
-        run: ccache -s
+            - name: Show ccache stats (macOS/Linux)
+              if: runner.os != 'Windows'
+              run: ccache -s
 
-      - name: Show sccache stats (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: sccache --show-stats
+            - name: Show sccache stats (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: sccache --show-stats
 
-      - name: Repair Linux wheels
-        if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}
-        run: |
-          python -m pip install auditwheel
-          auditwheel repair dist/*.whl -w dist/
-          rm dist/*-linux_*.whl
+            - name: Repair Linux wheels
+              if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}
+              run: |
+                  python -m pip install auditwheel
+                  auditwheel repair dist/*.whl -w dist/
+                  rm dist/*-linux_*.whl
 
-      - name: Upload PureData Object
-        uses: actions/upload-artifact@v4
-        with:
-          name: pd4web-object-${{ matrix.os }}
-          path: pd4web
+            - name: Upload PureData Object
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pd4web-object-${{ matrix.os }}
+                  path: pd4web
 
-      - name: Upload Python Module
-        uses: actions/upload-artifact@v4
-        with:
-          name: pypd4web-${{ matrix.os }}
-          path: dist/*.whl
+            - name: Upload Python Module
+              uses: actions/upload-artifact@v4
+              with:
+                  name: pypd4web-${{ matrix.os }}
+                  path: dist/*.whl
 
-  publish-pypi:
-    if: ${{ github.event.inputs.publish_pypi == 'true' }}
-    needs: pd4web-compiler
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download wheels
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pypd4web-*
-          merge-multiple: true
-          path: dist
+    publish-pypi:
+        if: ${{ github.event.inputs.publish_pypi == 'true' }}
+        needs: pd4web-compiler
+        runs-on: ubuntu-latest
+        steps:
+            - name: Download wheels
+              uses: actions/download-artifact@v4
+              with:
+                  pattern: pypd4web-*
+                  merge-multiple: true
+                  path: dist
 
-      - name: Download puredata
-        uses: actions/download-artifact@v4
-        with:
-          pattern: pd4web-object-*
-          merge-multiple: true
-          path: ${{ env.LIBNAME }}
+            - name: Download puredata
+              uses: actions/download-artifact@v4
+              with:
+                  pattern: pd4web-object-*
+                  merge-multiple: true
+                  path: ${{ env.LIBNAME }}
 
-      - name: Upload using docker deken
-        env:
-          DEKEN_USERNAME: charlesneimog
-          DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
-        run: |
-          docker run --rm \
-            --user $(id -u) \
-            --volume $(pwd):/deken \
-            registry.git.iem.at/pd/deken \
-            deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
+            - name: Upload using docker deken
+              env:
+                  DEKEN_USERNAME: charlesneimog
+                  DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
+              run: |
+                  docker run --rm \
+                    --user $(id -u) \
+                    --volume $(pwd):/deken \
+                    registry.git.iem.at/pd/deken \
+                    deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
 
-          docker run --rm \
-            --user $(id -u) \
-            --volume $(pwd):/deken \
-            -e DEKEN_USERNAME -e DEKEN_PASSWORD \
-            registry.git.iem.at/pd/deken \
-            deken upload -v ${{ env.LIBVERSION }} *.dek
+                  docker run --rm \
+                    --user $(id -u) \
+                    --volume $(pwd):/deken \
+                    -e DEKEN_USERNAME -e DEKEN_PASSWORD \
+                    registry.git.iem.at/pd/deken \
+                    deken upload -v ${{ env.LIBVERSION }} *.dek
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          skip-existing: true
-          packages-dir: dist
+            - name: Publish to PyPI
+              uses: pypa/gh-action-pypi-publish@release/v1
+              with:
+                  user: __token__
+                  password: ${{ secrets.PYPI_API_TOKEN }}
+                  skip-existing: true
+                  packages-dir: dist
