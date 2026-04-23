@@ -221,81 +221,49 @@ bool Pd4Web::gitPull(std::string git, fs::path gitFolder) {
         return false;
     }
 
-    // Cria/lookup do remote origin
+    // Ensure we have an origin remote pointing to the requested URL.
     git_remote *remote = nullptr;
     if (git_remote_lookup(&remote, repo, "origin") != 0) {
         if (git_remote_create(&remote, repo, "origin", git.c_str()) != 0) {
             git_repository_free(repo);
             return false;
         }
+    } else {
+        const char *remoteUrl = git_remote_url(remote);
+        if (!remoteUrl || git != remoteUrl) {
+            if (git_remote_set_url(repo, "origin", git.c_str()) != 0) {
+                git_remote_free(remote);
+                git_repository_free(repo);
+                return false;
+            }
+
+            git_remote_free(remote);
+            remote = nullptr;
+            if (git_remote_lookup(&remote, repo, "origin") != 0) {
+                git_repository_free(repo);
+                return false;
+            }
+        }
     }
 
-    // Fetch remoto
+    // Fetch branches and tags similarly to: git fetch origin --tags.
     git_fetch_options fetch_opts = GIT_FETCH_OPTIONS_INIT;
     fetch_opts.download_tags = GIT_REMOTE_DOWNLOAD_TAGS_ALL;
-    if (git_remote_fetch(remote, nullptr, &fetch_opts, nullptr) != 0) {
+
+    char headsRefspec[] = "+refs/heads/*:refs/remotes/origin/*";
+    char tagsRefspec[] = "+refs/tags/*:refs/tags/*";
+    char *refspecItems[] = {headsRefspec, tagsRefspec};
+    git_strarray refspecs = {refspecItems, 2};
+
+    if (git_remote_fetch(remote, &refspecs, &fetch_opts, "pd4web fetch") != 0) {
+        const git_error *e = git_error_last();
+        std::string fetchErrorMessage = (e && e->message) ? e->message : "unknown error";
+        print("git_remote_fetch error " + fetchErrorMessage, Pd4WebLogLevel::PD4WEB_WARNING);
         git_remote_free(remote);
         git_repository_free(repo);
         return false;
     }
 
-    // Recupera branch atual
-    git_reference *local_ref = nullptr;
-    if (git_repository_head(&local_ref, repo) != 0) {
-        git_remote_free(remote);
-        git_repository_free(repo);
-        return false;
-    }
-
-    const char *branch = git_reference_shorthand(local_ref);
-    std::string remote_branch = "refs/remotes/origin/" + std::string(branch);
-
-    // Lookup remote ref
-    git_reference *remote_ref = nullptr;
-    if (git_reference_lookup(&remote_ref, repo, remote_branch.c_str()) != 0) {
-        git_reference_free(local_ref);
-        git_remote_free(remote);
-        git_repository_free(repo);
-        return false;
-    }
-
-    // Lookup remote commit
-    const git_oid *remote_oid = git_reference_target(remote_ref);
-    git_object *target_commit = nullptr;
-    if (git_object_lookup(&target_commit, repo, remote_oid, GIT_OBJECT_COMMIT) != 0) {
-        git_reference_free(remote_ref);
-        git_reference_free(local_ref);
-        git_remote_free(remote);
-        git_repository_free(repo);
-        return false;
-    }
-
-    // Checkout forçado para o estado remoto
-    git_checkout_options checkout_opts = GIT_CHECKOUT_OPTIONS_INIT;
-    checkout_opts.checkout_strategy = GIT_CHECKOUT_FORCE; // força sobrescrita
-
-    if (git_checkout_tree(repo, target_commit, &checkout_opts) != 0) {
-        git_object_free(target_commit);
-        git_reference_free(remote_ref);
-        git_reference_free(local_ref);
-        git_remote_free(remote);
-        git_repository_free(repo);
-        return false;
-    }
-
-    // Reset HEAD para corresponder à origem (hard reset)
-    if (git_reset(repo, target_commit, GIT_RESET_HARD, nullptr) != 0) {
-        git_object_free(target_commit);
-        git_reference_free(remote_ref);
-        git_reference_free(local_ref);
-        git_remote_free(remote);
-        git_repository_free(repo);
-        return false;
-    }
-
-    git_object_free(target_commit);
-    git_reference_free(remote_ref);
-    git_reference_free(local_ref);
     git_remote_free(remote);
     git_repository_free(repo);
     return true;
@@ -329,13 +297,17 @@ std::string Pd4Web::getCurrentCommit(const fs::path &repoPath) {
 }
 
 // ─────────────────────────────────────
+// ─────────────────────────────────────
 bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string tag) {
     PD4WEB_LOGGER();
 
+    print(("Checkout " + git + " inside " + gitFolder.string() + " for tag: " + tag),
+          Pd4WebLogLevel::PD4WEB_LOG2);
+
     fs::path path = m_Pd4WebRoot / gitFolder;
     git_repository *repo = nullptr;
-
     const std::string pathStr = path.string();
+
     if (git_repository_open(&repo, pathStr.c_str()) != 0) {
         print("Failed to open repository " + pathStr, Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
@@ -345,9 +317,9 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
         std::string full_tag = "refs/tags/" + tag;
         git_object *tag_obj = nullptr;
 
-        // Tenta primeiro como tag
+        // Try as tag first
         if (git_revparse_single(&tag_obj, r, full_tag.c_str()) != 0) {
-            // Tenta como hash direto (commit SHA ou nome resolvível)
+            // Try as direct hash
             if (git_revparse_single(&tag_obj, r, tag.c_str()) != 0) {
                 return false;
             }
@@ -370,7 +342,7 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
         return true;
     };
 
-    // Primeira tentativa
+    // First attempt: Check out local cache
     if (try_checkout_tag(repo)) {
         bool submoduleOk = updateSubmodulesRecursive(repo);
         git_repository_free(repo);
@@ -381,22 +353,22 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
         return true;
     }
 
-    // Falhou -> tenta pull
+    // Tag not found locally. Fetch from remote using existing gitPull logic.
+    git_repository_free(repo);
+    repo = nullptr;
+
     if (!gitPull(git, gitFolder)) {
-        git_repository_free(repo);
-        print("Failed Pull\n", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Failed Pull (Fetch)\n", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
-    // Re-open repository after pull to refresh refs/cache.
-    git_repository_free(repo);
-    repo = nullptr;
+    // Re-open repository to refresh refs/cache after fetch.
     if (git_repository_open(&repo, pathStr.c_str()) != 0) {
         print("Failed to reopen repository " + pathStr, Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
-    // Segunda tentativa após pull
+    // Second attempt: Check out after fetch
     if (!try_checkout_tag(repo)) {
         git_repository_free(repo);
         print("Failed Checkout\n", Pd4WebLogLevel::PD4WEB_ERROR);
@@ -404,11 +376,12 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
     }
 
     bool submoduleOk = updateSubmodulesRecursive(repo);
-
     git_repository_free(repo);
+
     if (!submoduleOk) {
         print("Failed to initialize submodules", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
+
     return true;
 }
