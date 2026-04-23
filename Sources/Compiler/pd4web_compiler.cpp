@@ -100,6 +100,9 @@ bool Pd4Web::init() {
     print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
 
 #endif
+
+    // TODO: in here, I must read the versions from the version.yaml
+
     // libtree-sitter
     m_cppParser = ts_parser_new();
     m_cParser = ts_parser_new();
@@ -122,7 +125,7 @@ bool Pd4Web::init() {
 
     // clone pd-lua
     ok = gitClone("https://github.com/EL-LOCUS-SOLUS/pd-lua.git", "pdlua",
-                  "54e941ff901473986a5e4ce1197c0dbc0d96e3ed");
+                  "8362a25b317ee02ccb21225b1fdc535989c76206");
     if (!ok) {
         print("Failed to clone pd-lua", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;

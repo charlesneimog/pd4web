@@ -177,6 +177,8 @@ std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
 std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> &p,
                                                          std::string Lib) {
 
+    PD4WEB_LOGGER();
+
     std::vector<std::string> absNames;
     const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
     json full_json;
@@ -200,7 +202,7 @@ std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> 
     }
 
     // find lua objects
-    fs::path completPath = p->Pd4WebRoot / Lib;
+    fs::path completPath = p->PatchFolder / Lib;
     std::vector<std::string> patchNames;
     std::vector<std::string> patchPath;
 

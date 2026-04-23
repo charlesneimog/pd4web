@@ -58,7 +58,7 @@ class Pd4WebLogger {
     std::string m_Name;
 };
 
-// #define PD4WEB_LOGGER_ENABLED
+#define PD4WEB_LOGGER_ENABLED
 #if defined(PD4WEB_LOGGER_ENABLED)
 #define PD4WEB_LOGGER() Pd4WebLogger pd4web_logger_##__LINE__(__FUNCTION__)
 #else
@@ -258,6 +258,7 @@ class Pd4Web {
     bool m_CleanBuild = false;
     int m_Memory = 128;
     bool m_UsingPlugdata = false;
+    bool m_AttempToClear = false;
 
     unsigned m_ChnsOutCount;
     unsigned m_ChnsInCount;

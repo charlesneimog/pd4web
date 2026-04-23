@@ -174,14 +174,14 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     replaceAll(cmakeTemplate, "@PROJECT_NAME@", p->ProjectName);
     replaceAll(cmakeTemplate, "@MEMORY_SIZE@", std::to_string(p->MemorySize));
     // TODO: Version
-    replaceAll(cmakeTemplate, "@LIBPD_TAG@", "0.56-0");
+    replaceAll(cmakeTemplate, "@LIBPD_TAG@", "0.56-2");
 
     // Lua (condicional)
     if (p->PdLua) {
         replaceAll(
             cmakeTemplate, "@PD4WEB_LUA_DEFS@",
             "add_definitions(-DPD4WEB_LUA)\n"
-            "include_directories(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua\")");
+            "include_directories(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/luas/lua\")");
     } else {
         replaceAll(cmakeTemplate, "@PD4WEB_LUA_DEFS@", "");
     }
@@ -422,8 +422,11 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
 void Pd4Web::copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir) {
     // pd.cmake
     fs::path pdcmake = p->Pd4WebRoot / "pd.cmake" / "pd.cmake";
-    fs::copy(pdcmake, p->OutputFolder / "Pd4Web", fs::copy_options::skip_existing);
-    print("pd.cmake to " + (p->OutputFolder / "Pd4Web").string());
+
+    fs::path destDir = p->OutputFolder / ".build";
+    fs::create_directories(destDir);
+    fs::copy(pdcmake, destDir, fs::copy_options::skip_existing);
+    print("pd.cmake to " + (p->OutputFolder / ".build").string());
 
     // nanovg
     fs::path nanovg = p->Pd4WebRoot / "nanovg";

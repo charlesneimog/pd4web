@@ -371,8 +371,25 @@ bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string 
     // Second attempt: Check out after fetch
     if (!try_checkout_tag(repo)) {
         git_repository_free(repo);
-        print("Failed Checkout\n", Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
+        if (fs::exists(path) && !m_AttempToClear) {
+            m_AttempToClear = true;
+            fs::path path = m_Pd4WebRoot / gitFolder;
+            std::error_code ec;
+            fs::remove_all(path, ec);
+            if (ec) {
+                print("Error to clear old clone: " + ec.message(), Pd4WebLogLevel::PD4WEB_ERROR);
+                print("Failed Checkout\n", Pd4WebLogLevel::PD4WEB_ERROR);
+            }
+            bool ok = gitClone(git, gitFolder, tag);
+            if (ok) {
+                m_AttempToClear = false;
+            }
+            return ok;
+
+        } else {
+            print("Failed Checkout\n", Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
     }
 
     bool submoduleOk = updateSubmodulesRecursive(repo);

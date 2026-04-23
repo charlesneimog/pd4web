@@ -190,6 +190,7 @@ void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
         for (const auto &subdir : subdirs) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
             if (pl.Found) {
+                Patch->DeclaredPaths.push_back(subdir);
                 break;
             }
         }
