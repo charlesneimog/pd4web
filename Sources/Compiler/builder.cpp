@@ -488,7 +488,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 2: Build
-    int cpuCount = std::thread::hardware_concurrency();
+    int cpuCount = std::min(1, static_cast<int>(std::thread::hardware_concurrency()) - 2);
     std::vector<std::string> buildArgs = {"--build", buildDir.string(),
                                           "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
