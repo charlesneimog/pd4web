@@ -20,7 +20,10 @@ If you are a Pure Data user, use the __Pd Patch (Graphical Interface)__. If you 
 
 ---
 <a name="pd4web-pdpatch"></a>
+
 ## <h2 align="center">:fontawesome-solid-tv: Pd Patch (Graphical Interface)</h2>
+
+!!! warning "For Windows, `winget` is required to install `python`, if you use a old version of Windows, you need to install Python 3.14 manually"
 
 On Pure Data, `pd4web`provides a simple GUI. To use the `pd4web` object in Pure Data, follow these steps:
 

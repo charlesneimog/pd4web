@@ -44,6 +44,8 @@ To receive this use one object `[r myreceiver]` in Pd.
 
 ### `Pd4Web.sendFile`
 
+!!! warning "Alpha function, report on errors"
+
 `Pd4Web` uses an internal file system within the [AudioWorklet](https://developer.mozilla.org/en-US/docs/Web/API/AudioWorklet). This is great because it keeps everything safe and secure, but it also means that to load audio files, text files, or anything else inside Pd, you first need to send those files into the `Pd4Web` file system. To do that, you must send the file’s binary data.
 
 For example, suppose your HTML page includes:
