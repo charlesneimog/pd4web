@@ -332,7 +332,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
 
     std::vector<std::string> ExternalsAlreadyAdded;
     for (PatchLine &pl : p->ExternalObjects) {
-        print("Finding setup function for external" + pl.Name);
+        print("Finding setup function for external: " + pl.Name);
 
         if (pl.isAbstraction && pl.Type != PatchLine::OBJ && pl.Tokens[1] != "obj") {
             continue;
