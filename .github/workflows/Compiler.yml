@@ -12,7 +12,7 @@ env:
     BUILD_TYPE: Release
     SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
-    LIBVERSION: "3.1.4"
+    LIBVERSION: "3.1.5"
 
 jobs:
     pd4web-compiler:
@@ -129,10 +129,18 @@ jobs:
               run: |
                   pip install build --break-system-packages
 
+            - name: Set macOS deployment target
+              if: startsWith(matrix.os, 'macos')
+              run: |
+                  if [[ "${{ matrix.os }}" == "macos-26-intel" ]]; then
+                      echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
+                      echo "CMAKE_OSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
+                  else
+                      echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+                      echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
+                  fi
+
             - name: Build wheels
-              env:
-                  MACOSX_DEPLOYMENT_TARGET: "10.15"
-                  CMAKE_OSX_DEPLOYMENT_TARGET: "10.15"
               run: |
                   python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
                   python -m pip install build --break-system-packages
