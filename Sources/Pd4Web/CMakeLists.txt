@@ -56,14 +56,6 @@ add_custom_target(
   COMMENT "Checking pdlua.c, pdlua.h and pdlua_gfx.h")
 
 # pd.cmake
-set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-set(PDCMAKE_VERSION "v0.2.1")
-if(NOT EXISTS "${PDCMAKE_FILE}")
-  file(
-    DOWNLOAD
-    https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/${PDCMAKE_VERSION}/pd.cmake
-    ${PDCMAKE_FILE})
-endif()
 include(${PDCMAKE_FILE})
 
 pd_add_external(pdlua "${pd_lua_SOURCE_DIR}/pdlua.c")
