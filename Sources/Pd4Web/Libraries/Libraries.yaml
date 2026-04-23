@@ -34,7 +34,7 @@ Libraries:
     Source: GITHUB
     Developer: EL-LOCUS-SOLUS
     Repository: pd-lua
-    Version: 54e941ff901473986a5e4ce1197c0dbc0d96e3ed
+    Version: 8362a25b317ee02ccb21225b1fdc535989c76206
 # ─────────────── pd-fftease ───────────────
   - Name: fftease
     Source: GITHUB
@@ -66,7 +66,7 @@ Libraries:
     Source: GITHUB
     Developer: ch-nry
     Repository: pd-pmpd
-    Version: v0.14.1
+    Version: v0.14.2
     Unsupported: [pmpd3d~, pmpd2d~, pmpd~]
 
 # ─────────────── cyclone ─────────────
@@ -74,7 +74,7 @@ Libraries:
     Source: GITHUB
     Developer: porres
     Repository: pd-cyclone
-    Version: cyclone_0.9-1
+    Version: cyclone_0.9-4
     Unsupported:
       - active
       - mousefilter
@@ -116,9 +116,9 @@ Libraries:
 # ───────────────── else ─────────────────
   - Name: else
     Source: GITHUB
-    Developer: porres
+    Developer: charlesneimog
     Repository: pd-else
-    Version: 3409cbea9b12d72b800e488ee46cf3f7d9cf2164
+    Version: 9ec63c878ffbcb0d129adb0c3ad738bc3adee770
     Unsupported:
       # Need implementation
       - sfz~

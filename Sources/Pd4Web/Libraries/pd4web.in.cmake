@@ -9,9 +9,7 @@ include(FetchContent)
 # ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
-set(PDCMAKE_FILE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd.cmake"
-    CACHE INTERNAL "pd cmake file path")
+set(PDCMAKE_FILE "${CMAKE_BINARY_DIR}/pd.cmake" CACHE INTERNAL "pd cmake file path")
 include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
