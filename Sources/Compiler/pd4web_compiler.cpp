@@ -129,7 +129,7 @@ bool Pd4Web::init() {
     }
 
     // clone pd.cmake
-    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v0.2.14");
+    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v2.0.14");
     if (!ok) {
         print("Failed to clone pd.cmake", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
