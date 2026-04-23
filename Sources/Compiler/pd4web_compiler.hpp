@@ -33,10 +33,10 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 1
-#define PD4WEB_VERSION_PATCH "5"
+#define PD4WEB_VERSION_PATCH "6"
 
 #define PUREDATA_VERSION "master"
-#define EMSDK_VERSION "5.0.5"
+#define EMSDK_VERSION "5.0.6"
 #define PYTHON_WINGET_VERSION "Python.Python.3.14"
 
 using json = nlohmann::json;

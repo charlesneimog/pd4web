@@ -36,7 +36,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/Resources/cmake/getninja.cmake)
 
 add_subdirectory(Sources/Compiler)
 if(PD_PD4WEB_BUILD)
-    add_subdirectory(Sources/Pd) 
+    add_subdirectory(Sources/Pd)
 else()
     message(STATUS "Skipping Pd external build")
 endif()
