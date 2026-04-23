@@ -3,162 +3,162 @@
 #│           Download Sources           │
 #╰──────────────────────────────────────╯
 Sources:
-  GITHUB: https://github.com/{}/{}
-  GITLAB: https://gitlab.com/{}/{}
+    GITHUB: https://github.com/{}/{}
+    GITLAB: https://gitlab.com/{}/{}
 #╭──────────────────────────────────────╮
 #│              Libraries               │
 #╰──────────────────────────────────────╯
 Libraries:
-# ─────────────── pd-xlab ───────────────
-  - Name: xlab
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-xlab
-    Version: 85e589a08f3f0e3d950d2a934a6558a34d465a2a
-    RunConfigure: true
+    # ─────────────── pd-xlab ───────────────
+    - Name: xlab
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-xlab
+      Version: 85e589a08f3f0e3d950d2a934a6558a34d465a2a
+      RunConfigure: true
 
-# ─────────────── pd-saf ───────────────
-  - Name: saf
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-saf
-    Version: 10f6ce5ed3476f732e2a47b5f911192acc7f774b
-# ─────────────── audience ───────────────
-  - Name: audience
-    Source: GITHUB
-    Developer: LATM-USP
-    Repository: audience
-    Version: 761002325629d6157bd9d46df56abee79871595d
-# ─────────────── pd-lua ───────────────
-  - Name: pdlua
-    Source: GITHUB
-    Developer: EL-LOCUS-SOLUS
-    Repository: pd-lua
-    Version: 8362a25b317ee02ccb21225b1fdc535989c76206
-# ─────────────── pd-fftease ───────────────
-  - Name: fftease
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-fftease
-    Version: 1de285dc870e041fb63911bae1100735563f64dd
-# ─────────────── soundtouch~ ───────────────
-  - Name: soundtouch~
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-soundtouch
-    Version: 35bee0ca34bd4e24c0df28831aed56442968ad35
-# ─────────────── earplug~ ───────────────
-  - Name: earplug~
-    Source: GITHUB
-    Developer: pd-externals
-    Repository: earplug
-    Version: d7c9bb8528c7fc583fb0d2e9181aa510af87f165
+    # ─────────────── pd-saf ───────────────
+    - Name: saf
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-saf
+      Version: 10f6ce5ed3476f732e2a47b5f911192acc7f774b
+    # ─────────────── audience ───────────────
+    - Name: audience
+      Source: GITHUB
+      Developer: LATM-USP
+      Repository: audience
+      Version: 761002325629d6157bd9d46df56abee79871595d
+    # ─────────────── pd-lua ───────────────
+    - Name: pdlua
+      Source: GITHUB
+      Developer: EL-LOCUS-SOLUS
+      Repository: pd-lua
+      Version: fb1268c43ac59bf65c716ef79c205a38fa6b93fb
+    # ─────────────── pd-fftease ───────────────
+    - Name: fftease
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-fftease
+      Version: 1de285dc870e041fb63911bae1100735563f64dd
+    # ─────────────── soundtouch~ ───────────────
+    - Name: soundtouch~
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-soundtouch
+      Version: 35bee0ca34bd4e24c0df28831aed56442968ad35
+    # ─────────────── earplug~ ───────────────
+    - Name: earplug~
+      Source: GITHUB
+      Developer: pd-externals
+      Repository: earplug
+      Version: d7c9bb8528c7fc583fb0d2e9181aa510af87f165
 
-# ───────────── partialtrack ─────────────
-  - Name: partialtrack~
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-partialtrack
-    Version: 5b7abde223adc94db7f70ba122a4c613f20b7509
+    # ───────────── partialtrack ─────────────
+    - Name: partialtrack~
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-partialtrack
+      Version: 5b7abde223adc94db7f70ba122a4c613f20b7509
 
-# ───────────────── pmpd ─────────────────
-  - Name: pmpd
-    Source: GITHUB
-    Developer: ch-nry
-    Repository: pd-pmpd
-    Version: v0.14.2
-    Unsupported: [pmpd3d~, pmpd2d~, pmpd~]
+    # ───────────────── pmpd ─────────────────
+    - Name: pmpd
+      Source: GITHUB
+      Developer: ch-nry
+      Repository: pd-pmpd
+      Version: v0.14.2
+      Unsupported: [pmpd3d~, pmpd2d~, pmpd~]
 
-# ─────────────── cyclone ─────────────
-  - Name: cyclone
-    Source: GITHUB
-    Developer: porres
-    Repository: pd-cyclone
-    Version: cyclone_0.9-4
-    Unsupported:
-      - active
-      - mousefilter
-      - mousestate
-      - scope~
-      - coll
-      - mtr
-      - capture
-      - hrandfile
-      - prob
-      - funbuff
-      - seq
-      - hrandgrowfile
-      - hrandfile
-      - capture~
-      - table
+    # ─────────────── cyclone ─────────────
+    - Name: cyclone
+      Source: GITHUB
+      Developer: porres
+      Repository: pd-cyclone
+      Version: cyclone_0.9-4
+      Unsupported:
+          - active
+          - mousefilter
+          - mousestate
+          - scope~
+          - coll
+          - mtr
+          - capture
+          - hrandfile
+          - prob
+          - funbuff
+          - seq
+          - hrandgrowfile
+          - hrandfile
+          - capture~
+          - table
 
-# ─────────────── ambi~ ───────────────
-  - Name: ambi~
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-ambi
-    Version: 62ce81e25c4fcc289cd1f627ef90cbf4d59f5c8b
+    # ─────────────── ambi~ ───────────────
+    - Name: ambi~
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-ambi
+      Version: 62ce81e25c4fcc289cd1f627ef90cbf4d59f5c8b
 
-# ─────────────── o.scofo~ ───────────────
-  - Name: o.scofo~
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: OScofo
-    Version: 7bfb86590ab3e53846c65341498313fd118d0949
+    # ─────────────── o.scofo~ ───────────────
+    - Name: o.scofo~
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: OScofo
+      Version: 7bfb86590ab3e53846c65341498313fd118d0949
 
-# ───────────── timbreIDLib ───────────
-  - Name: timbreIDLib
-    Source: GITHUB
-    Developer: wbrent
-    Repository: timbreIDLib
-    Version: ef2e24a
+    # ───────────── timbreIDLib ───────────
+    - Name: timbreIDLib
+      Source: GITHUB
+      Developer: wbrent
+      Repository: timbreIDLib
+      Version: ef2e24a
 
-# ───────────────── else ─────────────────
-  - Name: else
-    Source: GITHUB
-    Developer: charlesneimog
-    Repository: pd-else
-    Version: 9ec63c878ffbcb0d129adb0c3ad738bc3adee770
-    Unsupported:
-      # Need implementation
-      - sfz~
-      # - sfont~
-      - play.file~
-      - sfload
+    # ───────────────── else ─────────────────
+    - Name: else
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: pd-else
+      Version: 9ec63c878ffbcb0d129adb0c3ad738bc3adee770
+      Unsupported:
+          # Need implementation
+          - sfz~
+          # - sfont~
+          - play.file~
+          - sfload
 
-      # Osc is not support on browsers
+          # Osc is not support on browsers
 
-      # Pd GUI Related
-      - oscope~
-      - midi
-      - numbox~
-      # - keyboard
-      - pic
-      - bicoeff
-      - function
-      - canvas.active
-      - else
-      - colors
-      - rec
-      - mouse
-      - messbox
-      - pad
-      - note
-      - openfile
-      - keycode
-      # Need fixes
-      - bl.imp2~
-      - slew2~
-      - bl.imp~
+          # Pd GUI Related
+          - oscope~
+          - midi
+          - numbox~
+          # - keyboard
+          - pic
+          - bicoeff
+          - function
+          - canvas.active
+          - else
+          - colors
+          - rec
+          - mouse
+          - messbox
+          - pad
+          - note
+          - openfile
+          - keycode
+          # Need fixes
+          - bl.imp2~
+          - slew2~
+          - bl.imp~
 
-      # Incompatible with Web enviroment
-      - osc.format
-      - osc.send
-      - pdlink
-      - pdlink~
-      - keymap
-      - properties
+          # Incompatible with Web enviroment
+          - osc.format
+          - osc.send
+          - pdlink
+          - pdlink~
+          - keymap
+          - properties
 
-      # need extra objects
-      - pvoc.freeze~
-      # - freeze~
+          # need extra objects
+          - pvoc.freeze~
+          # - freeze~

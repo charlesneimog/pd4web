@@ -9,7 +9,9 @@ include(FetchContent)
 # ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
-set(PDCMAKE_FILE "${CMAKE_BINARY_DIR}/pd.cmake" CACHE INTERNAL "pd cmake file path")
+set(PDCMAKE_FILE
+    "${CMAKE_BINARY_DIR}/pd.cmake"
+    CACHE INTERNAL "pd cmake file path")
 include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
@@ -27,6 +29,7 @@ set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/")
 @PD_SOURCE_DIR@
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/")
 
 add_compile_definitions(PDTHREADS PDINSTANCE)
 
@@ -47,18 +50,24 @@ endif()
 # ╭──────────────────────────────────────╮
 # │          Pd4Web executable           │
 # ╰──────────────────────────────────────╯
-add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
+add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
 target_include_directories(pd4web PUBLIC "${nanovg_SOURCE_DIR}/src")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
-    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/lua")
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua/luas/lua")
 endif()
 
 target_include_directories(pd4web PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 
-target_link_libraries(pd4web PRIVATE embind libpd nanovg pdlua)
+target_link_libraries(
+    pd4web
+    PRIVATE embind
+            libpd
+            nanovg
+            pdlua)
 target_link_options(
     pd4web
     PRIVATE

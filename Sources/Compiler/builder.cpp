@@ -189,6 +189,8 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     std::string LibrariesInclude = "";
 
     std::vector<std::string> AddedLibs;
+    // pdlua is separeted to avoid conflict with else
+    LibrariesInclude += "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake\")\n";
 
     for (auto Lib : p->DeclaredLibs) {
         if (Lib != "pdlua" &&
@@ -212,8 +214,6 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
         }
     }
 
-    // pdlua is separeted to avoid conflict with else
-    LibrariesInclude += "include(\"${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake\")\n";
     replaceAll(cmakeTemplate, "@LIBRARIES_SCRIPT_INCLUDE@", LibrariesInclude);
 
     std::string pdsource =

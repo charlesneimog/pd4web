@@ -107,6 +107,7 @@
         <script>
             const getEId = (id) => document.getElementById(id);
             const ui = { status: getEId("status"), progress: getEId("progress"), loader: getEId("wasm-loader") };
+            var Pd4Web = null;
 
             /* Download the wasm file */
             const fetchWasm = (url) =>
@@ -132,12 +133,13 @@
             (async () => {
                 try {
                     const wasmBinary = await fetchWasm("./pd4web.wasm");
-                    const { Pd4Web } = await Pd4WebModule({ wasmBinary });
-                    new Pd4Web().openPatch("index.pd", {
-                        canvasId: "Pd4WebCanvas",
-                        soundToggleId: "Pd4WebAudioSwitch",
+                    Pd4WebModule({ wasmBinary }).then((module) => {
+                        Pd4Web = new module.Pd4Web();
+                        Pd4Web.openPatch("index.pd", {
+                            soundToggleId: "Pd4WebAudioSwitch",
+                        });
+                        ui.loader.style.display = "none";
                     });
-                    ui.loader.style.display = "none";
                 } catch (error) {
                     ui.status.textContent = "Failed to load WASM.";
                     console.error(error);
@@ -155,4 +157,3 @@
         </script>
     </body>
 </html>
-

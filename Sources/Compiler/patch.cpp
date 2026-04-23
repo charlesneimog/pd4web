@@ -644,6 +644,26 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
     pl.Name = Obj;
     pl.Lib = Lib;
+
+    // check if object is a library
+    if (pl.Lib == "") {
+        for (Library lib : m_Libraries) {
+            if (lib.Name == Obj) {
+                print("'" + pl.Name + "' is library name", Pd4WebLogLevel::PD4WEB_LOG1);
+                fs::path completPath = fs::path(m_Pd4WebRoot) / pl.Name;
+                if (!fs::exists(completPath)) {
+                    bool ok = gitClone(lib.Url, pl.Name, lib.Version);
+                    if (!ok) {
+                        return false;
+                    }
+                    pl.Lib = pl.Name;
+                } else {
+                    pl.Lib = pl.Name;
+                }
+            }
+        }
+    }
+
     if (libIsSupported(pl.Lib) && pl.Lib != "") {
         bool ok = downloadSupportedLib(pl.Lib);
         if (!ok) {

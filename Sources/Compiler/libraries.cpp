@@ -206,6 +206,10 @@ std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> 
     std::vector<std::string> patchNames;
     std::vector<std::string> patchPath;
 
+    if (!fs::exists(completPath)) {
+        return {};
+    }
+
     for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
         std::string ext = entry.path().extension().string();
         std::string filename = entry.path().stem().string();

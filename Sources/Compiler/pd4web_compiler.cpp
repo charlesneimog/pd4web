@@ -125,7 +125,7 @@ bool Pd4Web::init() {
 
     // clone pd-lua
     ok = gitClone("https://github.com/EL-LOCUS-SOLUS/pd-lua.git", "pdlua",
-                  "8362a25b317ee02ccb21225b1fdc535989c76206");
+                  "fb1268c43ac59bf65c716ef79c205a38fa6b93fb");
     if (!ok) {
         print("Failed to clone pd-lua", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
