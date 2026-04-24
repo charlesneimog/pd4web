@@ -324,9 +324,22 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
     std::string Call = "";
 
     std::string extraDefinitions = "";
-    for (std::string Lib : p->DeclaredLibs) {
+
+    std::unordered_set<std::string> emitted;
+
+    for (const std::string &Lib : p->DeclaredLibs) {
+
         if (Lib == "cyclone") {
-            extraDefinitions += "#if !defined(CYCLONE_OBJ_API)\n#define CYCLONE_OBJ_API\n#endif\n";
+            if (emitted.insert("CYCLONE_OBJ_API").second) {
+                extraDefinitions +=
+                    "#if !defined(CYCLONE_OBJ_API)\n#define CYCLONE_OBJ_API\n#endif\n";
+            }
+        }
+
+        if (Lib == "pmpd") {
+            if (emitted.insert("PMPD_EXPORT").second) {
+                extraDefinitions += "#if !defined(PMPD_EXPORT)\n#define PMPD_EXPORT\n#endif\n";
+            }
         }
     }
 
@@ -488,7 +501,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 2: Build
-    int cpuCount = std::min(1, static_cast<int>(std::thread::hardware_concurrency()) - 2);
+    int cpuCount = std::max(1, static_cast<int>(std::thread::hardware_concurrency()) - 2);
     std::vector<std::string> buildArgs = {"--build", buildDir.string(),
                                           "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 

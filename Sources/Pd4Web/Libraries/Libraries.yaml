@@ -118,7 +118,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-else
-      Version: 9ec63c878ffbcb0d129adb0c3ad738bc3adee770
+      Version: dc219b2a42e5ecb358982e6f5d2d06660df71c89
       Unsupported:
           # Need implementation
           - sfz~
