@@ -176,6 +176,8 @@ jobs:
 
     publish-pypi:
         if: ${{ github.event.inputs.publish_pypi == 'true' }}
+        permissions:
+            contents: write
         needs: pd4web-compiler
         runs-on: ubuntu-latest
         steps:
@@ -227,3 +229,5 @@ jobs:
                   target_commitish: ${{ github.sha }}
                   draft: true
                   prerelease: false
+                  files: |
+                      ${{ env.LIBNAME }}/**
