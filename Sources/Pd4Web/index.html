@@ -136,6 +136,7 @@
                     Pd4WebModule({ wasmBinary }).then((module) => {
                         Pd4Web = new module.Pd4Web();
                         Pd4Web.openPatch("index.pd", {
+                            canvasId: "Pd4WebCanvas",
                             soundToggleId: "Pd4WebAudioSwitch",
                         });
                         ui.loader.style.display = "none";
