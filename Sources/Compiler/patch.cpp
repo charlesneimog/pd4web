@@ -24,6 +24,7 @@ bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
         while (iss >> token) {
             tokens.push_back(token);
         }
+
         PatchLine pl;
         pl.Tokens = tokens;
         pl.Line = line;
@@ -34,13 +35,14 @@ bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
 }
 
 // ─────────────────────────────────────
-bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
+bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex) {
     PD4WEB_LOGGER();
     if (m_Error) {
         return false;
     }
 
     std::vector<std::string> Line = pl.Tokens;
+
     if (Line.size() < 2) {
         return true;
     }
@@ -49,11 +51,13 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
         m_inArray = false;
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
+            p->ObjInsideGraph = false;
             p->CanvasLevel--;
         } else if (Line[1] == "declare") {
             pl.Type = PatchLine::DECLARE;
             processDeclareClass(p, pl);
         } else if (Line[1] == "obj") {
+            pl.InsideGraph = p->ObjInsideGraph;
             processObjClass(p, pl);
             pl.Type = PatchLine::OBJ;
         } else if (Line[1] == "msg") {
@@ -85,8 +89,35 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl) {
     } else if (m_inArray) {
         // Nothing To-Do;
     } else if (Line[0] == "#N") {
-        // Reative o CanvasLevel se você precisa que a troca de GUI funcione
+        size_t j = lineIndex + 1;
+        while (j < p->PatchLines.size()) {
+            const auto &L = p->PatchLines[j];
+            if (L.Tokens[1] == "coords" && p->CanvasLevel == 1) {
+                p->GraphCount++;
+                p->ObjInsideGraph = true;
+                p->Width = std::stoi(L.Tokens[6]);
+                p->Height = std::stoi(L.Tokens[7]);
+            }
+            if (L.Tokens[1] == "restore") {
+                p->MarginX = std::stoi(L.Tokens[2]);
+                p->MarginY = std::stoi(L.Tokens[3]);
+                // printf("Position of the Canvas %d %d\n", p->MarginX, p->MarginY);
+                break;
+            }
+            j++;
+        }
+
+        if (p->GraphCount > 1 && p->CanvasLevel == 1) {
+            print("You main patch has more then one graph, pd4web just support one graph per main "
+                  "patch",
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+        }
+
         p->CanvasLevel++;
+        if (p->CanvasLevel > 1) {
+            p->SubPatchNames.push_back(Line[6]);
+            print("Processing subpatch: " + p->SubPatchNames[p->SubPatchNames.size() - 1]);
+        }
     } else if (Line[0][0] == '#') {
         print("Class unknown " + Line[0] + " in " + p->PatchFile.string(),
               Pd4WebLogLevel::PD4WEB_WARNING);
@@ -481,7 +512,7 @@ std::string Pd4Web::getObjName(std::string &objToken) {
     if (slashPos != std::string::npos) {
         Obj = Obj.substr(slashPos + 1);
     }
-    print("Processing object '" + Obj + "'", Pd4WebLogLevel::PD4WEB_LOG2);
+
     return Obj;
 }
 
@@ -641,6 +672,11 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
     std::string Obj = getObjName(pl.Tokens[4]);
     std::string Lib = getObjLib(pl.Tokens[4]);
+    if (p->ObjInsideGraph) {
+        print("Processing object '" + Obj + "'. Inside Graph!", Pd4WebLogLevel::PD4WEB_LOG2);
+    } else {
+        print("Processing object '" + Obj + "'", Pd4WebLogLevel::PD4WEB_LOG2);
+    }
 
     pl.Name = Obj;
     pl.Lib = Lib;
@@ -835,7 +871,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
             static const std::unordered_set<std::string> guiObjs{
                 "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
             std::string baseName = strip_lib(pl.Name);
-            if (guiObjs.count(baseName) && mainPatch && p->CanvasLevel == 1) {
+            if (guiObjs.count(baseName) && pl.InsideGraph) {
                 const auto &oldTok = pl.Tokens[4];
                 bool hadSemi = !oldTok.empty() && oldTok.back() == ';';
                 pl.Tokens[4] = "l." + baseName + (hadSemi ? ";" : "");
@@ -923,15 +959,15 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     }
 
     unsigned int i = 0;
-    for (PatchLine &Line : p->PatchLines) {
-        ok = processLine(p, Line);
+    for (size_t i = 0; i < p->PatchLines.size(); i++) {
+        PatchLine &Line = p->PatchLines[i];
+        ok = processLine(p, Line, i);
         if (!ok) {
             print("Failed to process Abstraction line " + std::to_string(i) + ". " +
                       p->PatchFile.string(),
                   Pd4WebLogLevel::PD4WEB_ERROR);
             return false;
         }
-        i++;
     }
 
     // update father declare libs
@@ -1092,16 +1128,15 @@ bool Pd4Web::compilePatch() {
     print("Processing Patch '" + p->ProjectName + ".pd'", Pd4WebLogLevel::PD4WEB_LOG1,
           p->printLevel);
     unsigned int i = 1;
-    for (PatchLine &PatchLine : p->PatchLines) {
-        ok = processLine(p, PatchLine);
+    for (size_t i = 0; i < p->PatchLines.size(); i++) {
+        PatchLine &Line = p->PatchLines[i];
+        ok = processLine(p, Line, i);
         if (!ok) {
             print("Failed to process Patch of line " + std::to_string(i) + ": " +
                       p->PatchFile.string(),
                   Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
             return false;
         }
-
-        i++;
     }
 
     print("Final number of Input Channels is " + std::to_string(p->Input));

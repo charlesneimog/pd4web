@@ -1348,8 +1348,8 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     }
 
     // Calculate position with zoom and margins
-    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
-    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
+    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
+    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
 
     // Create event data on main thread
     TouchEventData touchData;
@@ -1424,8 +1424,8 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     }
 
     // Calculate position with zoom and margins
-    int xpos = round((e->targetX / ud->pd4web->GetPatchZoom()) + canvas->gl_xmargin);
-    int ypos = round((e->targetY / ud->pd4web->GetPatchZoom()) + canvas->gl_ymargin);
+    int xpos = round((e->targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
+    int ypos = round((e->targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
 
     // Create event data on main thread
     MouseEventData mouseData;
@@ -1714,8 +1714,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         JS_CreateTextInput(PatchCanvaId.c_str());
 
         t_canvas *canvas = pd_getcanvaslist();
-        int canvasWidth = canvas->gl_pixwidth;
-        int canvasHeight = canvas->gl_pixheight;
+        int canvasWidth = PD4WEB_PATCH_WIDTH;   // canvas->gl_pixwidth;
+        int canvasHeight = PD4WEB_PATCH_HEIGHT; // canvas->gl_pixheight;
 
         std::string PatchCanvaSel = "#" + PatchCanvaId;
         const char *sel = PatchCanvaSel.c_str();
@@ -1765,12 +1765,24 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         m_UserData->canvas_width = backingW;
         m_UserData->canvas_height = backingH;
-        m_UserData->canvas_marginx = canvas->gl_xmargin;
-        m_UserData->canvas_marginy = canvas->gl_ymargin;
+        m_UserData->canvas_marginx = PD4WEB_PATCH_MARGINX;
+        m_UserData->canvas_marginy = PD4WEB_PATCH_MARGINY;
         m_UserData->devicePixelRatio = dpr;
 
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
             gobj_vis(obj, canvas, 1);
+            // pd4web guarantees that there will be only one main canvas per patch
+            if (strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
+                t_canvas *child_canvas = (t_canvas *)obj;
+                for (t_gobj *childobj = child_canvas->gl_list; childobj;
+                     childobj = childobj->g_next) {
+
+                    t_text *t = (t_text *)childobj;
+                    int x = t->te_xpix;
+                    int y = t->te_ypix;
+                    gobj_vis(childobj, child_canvas, 1);
+                }
+            }
         }
 
         m_UserData->mousedown = false;
@@ -1827,6 +1839,7 @@ void RenderPatchComments(Pd4WebUserData *ud) {
         return;
     }
 
+    // BUG: FIX FOR GOP
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
         if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
             t_text *txt = (t_text *)obj;

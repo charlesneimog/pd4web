@@ -32,8 +32,8 @@ const TSLanguage *tree_sitter_c(void);
 }
 
 #define PD4WEB_VERSION_MAJOR 3
-#define PD4WEB_VERSION_MINOR 1
-#define PD4WEB_VERSION_PATCH "8"
+#define PD4WEB_VERSION_MINOR 2
+#define PD4WEB_VERSION_PATCH "0"
 
 #define PUREDATA_VERSION "master"
 #define EMSDK_VERSION "5.0.6"
@@ -108,6 +108,7 @@ struct PatchLine {
     std::string Name;
     std::string Lib;
     std::string CloneAbs;
+    bool InsideGraph = false;
 };
 
 // ──────────────────────────────────────────
@@ -121,7 +122,7 @@ struct Patch {
     std::string ProjectName;
 
     int MemorySize = 64;
-    int Zoom = 1;
+    int Zoom = 2;
     std::vector<PatchLine> PatchLines;
     // std::vector<PatchLine> ExternalPatchLines;
     std::string PdVersion = PUREDATA_VERSION;
@@ -153,7 +154,15 @@ struct Patch {
     std::vector<std::shared_ptr<Patch>> Childs;
     int printLevel = 1; // just to better debug info
 
+    // Graphs
     int CanvasLevel = 0;
+    bool ObjInsideGraph = false;
+    int GraphCount = 0;
+    std::vector<std::string> SubPatchNames;
+    int Width = 0;
+    int Height = 0;
+    int MarginX = 0;
+    int MarginY = 0;
 };
 
 // ──────────────────────────────────────────
@@ -323,7 +332,7 @@ class Pd4Web {
 
     // Patch
     bool openPatch(std::shared_ptr<Patch> &Patch);
-    bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl);
+    bool processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex);
     bool processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl);
     bool processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &p);
     fs::path getAbsPath(std::shared_ptr<Patch> &Patch, PatchLine &pl);

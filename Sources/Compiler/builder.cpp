@@ -29,6 +29,11 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
 
     replaceAll(configFile, "@PD4WEB_GUI@", p->RenderGui ? "1" : "0");
     replaceAll(configFile, "@PD4WEB_PATCH_ZOOM@", std::to_string(p->Zoom));
+    replaceAll(configFile, "@PD4WEB_PATCH_WIDTH@", std::to_string(p->Width));
+    replaceAll(configFile, "@PD4WEB_PATCH_HEIGHT@", std::to_string(p->Height));
+    replaceAll(configFile, "@PD4WEB_PATCH_MARGINX@", std::to_string(p->MarginX));
+    replaceAll(configFile, "@PD4WEB_PATCH_MARGINY@", std::to_string(p->MarginY));
+
     replaceAll(configFile, "@PD4WEB_MIDI@", std::to_string(p->Midi));
 
     // number input
