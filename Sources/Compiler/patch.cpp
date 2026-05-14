@@ -89,6 +89,14 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
     } else if (m_inArray) {
         // Nothing To-Do;
     } else if (Line[0] == "#N") {
+        if (Line.size() == 6) {
+            std::string token = Line[6];
+            if (!token.empty() && token.back() == ';') {
+                token.pop_back();
+            }
+            p->FontSize = std::stoi(token);
+        }
+
         size_t j = lineIndex + 1;
         while (j < p->PatchLines.size()) {
             const auto &L = p->PatchLines[j];
@@ -101,7 +109,6 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
             if (L.Tokens[1] == "restore") {
                 p->MarginX = std::stoi(L.Tokens[2]);
                 p->MarginY = std::stoi(L.Tokens[3]);
-                // printf("Position of the Canvas %d %d\n", p->MarginX, p->MarginY);
                 break;
             }
             j++;
@@ -729,10 +736,7 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     isPdObj(p, pl);
 
     if (pl.isExternal) {
-        if (p->PdLua) {
-            isLuaObj(p, pl);
-        }
-
+        isLuaObj(p, pl);
         isAbstraction(p, pl);
         isExternalLibObj(p, pl);
 
@@ -943,6 +947,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
     p->Pd4WebFiles = f->Pd4WebFiles;
     p->Pd4WebRoot = f->Pd4WebRoot;
     p->IsSubpatch = true;
+    p->PdLua = f->PdLua;
 
     f->Childs.push_back(p);
     bool ok = openPatch(p);

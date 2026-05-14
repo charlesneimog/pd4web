@@ -33,6 +33,7 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     replaceAll(configFile, "@PD4WEB_PATCH_HEIGHT@", std::to_string(p->Height));
     replaceAll(configFile, "@PD4WEB_PATCH_MARGINX@", std::to_string(p->MarginX));
     replaceAll(configFile, "@PD4WEB_PATCH_MARGINY@", std::to_string(p->MarginY));
+    replaceAll(configFile, "@PD4WEB_PATCH_FONTSIZE@", std::to_string(p->FontSize));
 
     replaceAll(configFile, "@PD4WEB_MIDI@", std::to_string(p->Midi));
 
@@ -253,7 +254,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
     };
 
     for (auto &pl : p->ExternalObjects) {
-        if (pl.isExternal) {
+        if (pl.isExternal && !pl.isLuaExternal) {
             addTarget(pl.Name);
         }
     }

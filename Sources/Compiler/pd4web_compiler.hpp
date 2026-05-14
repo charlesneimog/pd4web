@@ -163,6 +163,7 @@ struct Patch {
     int Height = 0;
     int MarginX = 0;
     int MarginY = 0;
+    int FontSize = 10;
 };
 
 // ──────────────────────────────────────────

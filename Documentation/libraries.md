@@ -83,7 +83,7 @@ List of Pd externals supported by <code>pd4web</code>.
     <tbody>
         <tr>
             <td><a href="https://github.com/charlesneimog/pd-ambi">pd-soundtouch</a></td>
-            <td><code>[soundtouch~]</code> is a transposition object for Pd</td>
+            <td><code>soundtouch~</code> is a transposition object for Pd</td>
             <td>1</td>
             <td>0</td>
             <td>Katja Vetter</td>

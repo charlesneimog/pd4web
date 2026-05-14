@@ -398,7 +398,6 @@ class Pd4Web {
     // Ticks
     int m_MidiTickID;
 
-
     // Theme
     std::string m_BgColor;
     std::string m_FgColor;
@@ -435,7 +434,7 @@ class Pd4Web {
 // ╰─────────────────────────────────────╯
 void Loop(void *userData);
 void GetGLContext(Pd4WebUserData *ud);
-void RenderPatchComments(Pd4WebUserData *ud);
+void GetPatchComments(Pd4WebUserData *ud);
 void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data);
 void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data);
 void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data);

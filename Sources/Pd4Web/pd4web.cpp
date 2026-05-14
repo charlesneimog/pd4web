@@ -1530,7 +1530,7 @@ void setAsyncMainLoop(void *userData) {
     int fps = ud->pd4web->GetFps();
     GetGLContext(ud);
 
-    RenderPatchComments(ud);
+    GetPatchComments(ud);
     emscripten_set_main_loop_arg(Loop, userData, fps, 20);
 }
 
@@ -1833,76 +1833,92 @@ void MidiTick(void *userData) {
 // ╭─────────────────────────────────────╮
 // │            Gui Interface            │
 // ╰─────────────────────────────────────╯
-void RenderPatchComments(Pd4WebUserData *ud) {
+void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
+    t_text *txt = (t_text *)obj;
+    t_binbuf *bb = txt->te_binbuf;
+    if (!bb) {
+        return;
+    }
+
+    char *textbuf = nullptr;
+    int textsize = 0;
+    binbuf_gettext(bb, &textbuf, &textsize);
+
+    if (!textbuf || textsize <= 0) {
+        return;
+    }
+
+    char safe_buf[1025];
+    int copy_len = (textsize < 1024) ? textsize : 1024;
+    memcpy(safe_buf, textbuf, copy_len);
+    safe_buf[copy_len] = '\0';
+
+    GuiCommand cmd;
+    cmd.command = DRAW_TEXT;
+
+    std::string fg = ud->pd4web->GetFGColor();
+    strncpy(cmd.current_color, fg.c_str(), sizeof(cmd.current_color) - 1);
+    cmd.current_color[sizeof(cmd.current_color) - 1] = '\0';
+
+    strncpy(cmd.layer_id, "default_layer_0", sizeof(cmd.layer_id) - 1);
+    cmd.layer_id[sizeof(cmd.layer_id) - 1] = '\0';
+    snprintf(cmd.text, sizeof(cmd.text), "%s", safe_buf);
+    cmd.x1 = 0;
+    cmd.y1 = 0;
+
+    cmd.w = txt->te_width;
+    cmd.h = 16;
+    if (txt->te_width == 0) {
+        float bounds[4];
+        cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, nullptr, bounds);
+        cmd.h = bounds[3] - bounds[1];
+    } else {
+        nvgFontSize(ud->vg, 10);
+        float bounds[4];
+        float charWidthBounds[4];
+        nvgTextBounds(ud->vg, 0, 0, "A", nullptr, charWidthBounds);
+        float charWidth = (charWidthBounds[2] - charWidthBounds[0]) / 1.35;
+        float wrapWidth = charWidth * txt->te_width;
+        nvgTextBoxBounds(ud->vg, 0, 0, wrapWidth, cmd.text, nullptr, bounds);
+        cmd.w = (bounds[2] - bounds[0]);
+        cmd.h = (bounds[3] - bounds[1]);
+        cmd.objw = (bounds[2] - bounds[0]);
+        cmd.objh = (bounds[3] - bounds[1]);
+    }
+
+    cmd.font_size = PD4WEB_PATCH_FONTSIZE;
+    cmd.objx = txt->te_xpix - x;
+    cmd.objy = txt->te_ypix - y;
+
+    char obj_layer_id[64];
+    snprintf(obj_layer_id, 64, "layer_%p", obj);
+    ClearLayerCommand(obj_layer_id, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
+    AddNewCommand(obj_layer_id, 0, &cmd);
+    EndPaintLayerCommand(obj_layer_id, 0);
+}
+
+// ─────────────────────────────────────
+void GetPatchComments(Pd4WebUserData *ud) {
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
         return;
     }
 
-    // BUG: FIX FOR GOP
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
         if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
-            t_text *txt = (t_text *)obj;
-            t_binbuf *bb = txt->te_binbuf;
-            if (!bb) {
-                continue;
+            RenderComments(ud, obj, 0, 0);
+        }
+        if (strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
+            t_canvas *child_canvas = (t_canvas *)obj;
+            int x = child_canvas->gl_xmargin;
+            int y = child_canvas->gl_ymargin;
+            for (t_gobj *childobj = child_canvas->gl_list; childobj; childobj = childobj->g_next) {
+                t_text *t = (t_text *)childobj;
+                if (childobj->g_pd && childobj->g_pd->c_name &&
+                    strcmp(childobj->g_pd->c_name->s_name, "text") == 0) {
+                    RenderComments(ud, childobj, x, y);
+                }
             }
-
-            char *textbuf = nullptr;
-            int textsize = 0;
-            binbuf_gettext(bb, &textbuf, &textsize);
-
-            if (!textbuf || textsize <= 0) {
-                continue;
-            }
-
-            char safe_buf[1025];
-            int copy_len = (textsize < 1024) ? textsize : 1024;
-            memcpy(safe_buf, textbuf, copy_len);
-            safe_buf[copy_len] = '\0';
-
-            GuiCommand cmd;
-            cmd.command = DRAW_TEXT;
-
-            std::string fg = ud->pd4web->GetFGColor();
-            strncpy(cmd.current_color, fg.c_str(), sizeof(cmd.current_color) - 1);
-            cmd.current_color[sizeof(cmd.current_color) - 1] = '\0';
-
-            strncpy(cmd.layer_id, "default_layer_0", sizeof(cmd.layer_id) - 1);
-            cmd.layer_id[sizeof(cmd.layer_id) - 1] = '\0';
-            snprintf(cmd.text, sizeof(cmd.text), "%s", safe_buf);
-            cmd.x1 = 0;
-            cmd.y1 = 0;
-
-            cmd.w = txt->te_width;
-            cmd.h = 16;
-            if (txt->te_width == 0) {
-                float bounds[4];
-                cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, nullptr, bounds);
-                cmd.h = bounds[3] - bounds[1];
-            } else {
-                nvgFontSize(ud->vg, 10);
-                float bounds[4];
-                float charWidthBounds[4];
-                nvgTextBounds(ud->vg, 0, 0, "A", nullptr, charWidthBounds);
-                float charWidth = (charWidthBounds[2] - charWidthBounds[0]) / 1.35;
-                float wrapWidth = charWidth * txt->te_width;
-                nvgTextBoxBounds(ud->vg, 0, 0, wrapWidth, cmd.text, nullptr, bounds);
-                cmd.w = (bounds[2] - bounds[0]);
-                cmd.h = (bounds[3] - bounds[1]);
-                cmd.objw = (bounds[2] - bounds[0]);
-                cmd.objh = (bounds[3] - bounds[1]);
-            }
-
-            cmd.font_size = 10;
-            cmd.objx = txt->te_xpix;
-            cmd.objy = txt->te_ypix;
-
-            char obj_layer_id[64];
-            snprintf(obj_layer_id, 64, "layer_%p", obj);
-            ClearLayerCommand(obj_layer_id, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
-            AddNewCommand(obj_layer_id, 0, &cmd);
-            EndPaintLayerCommand(obj_layer_id, 0);
         }
     }
 }
