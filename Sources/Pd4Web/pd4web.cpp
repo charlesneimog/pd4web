@@ -1612,6 +1612,9 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
         if (options.hasOwnProperty("fgColor")) {
             m_FgColor = options["fgColor"].as<std::string>();
         }
+        if (options.hasOwnProperty("supressSoundIdWarning")) {
+            m_SoundIdWarning = options["supressSoundIdWarning"].as<bool>();
+        }
     }
 
     // Call internal OpenPatch
@@ -1688,8 +1691,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->soundToggleSel = soundToggleId;
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
-        emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
-                                    "Pd4Web.init() from a click event!");
+        if (m_SoundIdWarning) {
+            emscripten_log(EM_LOG_WARN, "You didn't assign a sound toggle ID. You need to run "
+                                        "Pd4Web.init() from a click event!");
+        }
     }
 
     libpd_add_to_search_path("./Libs/");

@@ -401,6 +401,7 @@ class Pd4Web {
     // Theme
     std::string m_BgColor;
     std::string m_FgColor;
+    bool m_SoundIdWarning;
 
     // User data
     std::shared_ptr<Pd4WebUserData> m_UserData;
