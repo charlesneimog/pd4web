@@ -7,12 +7,17 @@ on:
                 required: false
                 default: false
                 type: boolean
+            publish_pdobject:
+                description: "Publish PureData Object"
+                required: false
+                default: false
+                type: boolean
 
 env:
     BUILD_TYPE: Release
     SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
-    LIBVERSION: "3.1.8"
+    LIBVERSION: "3.2.1.a1"
 
 jobs:
     pd4web-compiler:
@@ -196,6 +201,7 @@ jobs:
                   path: ${{ env.LIBNAME }}
 
             - name: Upload using docker deken
+              if: ${{ github.event.inputs.publish_pdobject == 'true' }}
               env:
                   DEKEN_USERNAME: charlesneimog
                   DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
