@@ -297,7 +297,6 @@ std::string Pd4Web::getCurrentCommit(const fs::path &repoPath) {
 }
 
 // ─────────────────────────────────────
-// ─────────────────────────────────────
 bool Pd4Web::gitCheckout(std::string git, const fs::path gitFolder, std::string tag) {
     PD4WEB_LOGGER();
 

@@ -349,11 +349,12 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
         }
     }
 
+    loadObjectsJson(p);
     std::vector<std::string> ExternalsAlreadyAdded;
     for (PatchLine &pl : p->ExternalObjects) {
-        print("Finding setup function for external: " + pl.Name);
+        print("Finding setup function for external: '" + pl.Name + "'");
 
-        if (pl.isAbstraction && pl.Type != PatchLine::OBJ && pl.Tokens[1] != "obj") {
+        if (pl.isAbstraction) {
             continue;
         }
 
@@ -362,7 +363,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
             continue;
         }
 
-        if (pl.isExternal && !pl.isLuaExternal && !pl.Lib.empty()) {
+        if (pl.isExternal && !pl.isLuaExternal) {
             if (p->ExternalObjectsJson.contains(pl.Lib)) {
                 if (p->ExternalObjectsJson[pl.Lib].contains("objects")) {
                     if (p->ExternalObjectsJson[pl.Lib]["objects"].contains(pl.Name)) {
@@ -381,8 +382,10 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                                 "();\n";
                     }
                 }
+            } else {
+                printf("not found object inside externalsObjectsJson\n");
             }
-        } else if (pl.isExternal && !pl.isLuaExternal && pl.Lib.empty() && !pl.Name.empty()) {
+        } else if (pl.isExternal && !pl.isLuaExternal) {
             if (p->ExternalObjectsJson.contains(pl.Name)) {
                 if (p->ExternalObjectsJson[pl.Name]["objects"].contains(pl.Name)) {
                     print("Found " +
@@ -399,6 +402,8 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
                         p->ExternalObjectsJson[pl.Name]["objects"][pl.Name][1].get<std::string>() +
                         "();\n";
                 }
+            } else {
+                printf("not found object inside externalsObjectsJson\n");
             }
         }
         ExternalsAlreadyAdded.push_back(pl.Name);

@@ -361,6 +361,8 @@ class Pd4Web {
 
     // Libraries
     std::vector<std::string> GetLuaRequires(const std::string &filePath);
+    void loadObjectsJson(std::shared_ptr<Patch> &p);
+
     bool libIsSupported(std::string libName);
     bool downloadSupportedLib(std::string libName);
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);

@@ -174,6 +174,21 @@ std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
 }
 
 // ─────────────────────────────────────
+void Pd4Web::loadObjectsJson(std::shared_ptr<Patch> &p) {
+    std::vector<std::string> absNames;
+    const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
+    json full_json;
+    std::ifstream in(jsonFile);
+    if (in.is_open()) {
+        in >> full_json;
+        in.close();
+        p->ExternalObjectsJson = full_json;
+    } else {
+        print("Failed to load list of objects from libraries", Pd4WebLogLevel::PD4WEB_ERROR);
+    }
+}
+
+// ─────────────────────────────────────
 std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> &p,
                                                          std::string Lib) {
 

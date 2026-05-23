@@ -89,41 +89,68 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
     } else if (m_inArray) {
         // Nothing To-Do;
     } else if (Line[0] == "#N") {
-        if (Line.size() == 6) {
+        if (Line.size() > 6) {
             std::string token = Line[6];
             if (!token.empty() && token.back() == ';') {
                 token.pop_back();
             }
-            p->FontSize = std::stoi(token);
+            try {
+                p->FontSize = std::stoi(token);
+            } catch (const std::exception &) {
+                print("Invalid font size token: '" + token + "'", Pd4WebLogLevel::PD4WEB_WARNING);
+            }
         }
-
         size_t j = lineIndex + 1;
         while (j < p->PatchLines.size()) {
             const auto &L = p->PatchLines[j];
-            if (L.Tokens[1] == "coords" && p->CanvasLevel == 1) {
-                p->GraphCount++;
-                p->ObjInsideGraph = true;
-                p->Width = std::stoi(L.Tokens[6]);
-                p->Height = std::stoi(L.Tokens[7]);
-            }
-            if (L.Tokens[1] == "restore") {
-                p->MarginX = std::stoi(L.Tokens[2]);
-                p->MarginY = std::stoi(L.Tokens[3]);
-                break;
+            if (L.Tokens.size() > 1) {
+                if (L.Tokens[1] == "coords" && p->CanvasLevel == 1) {
+                    if (L.Tokens.size() > 7) {
+                        p->GraphCount++;
+                        p->ObjInsideGraph = true;
+                        try {
+                            p->Width = std::stoi(L.Tokens[6]);
+                            p->Height = std::stoi(L.Tokens[7]);
+                        } catch (const std::exception &) {
+                            print("Invalid coords values in line: " + L.Line,
+                                  Pd4WebLogLevel::PD4WEB_WARNING);
+                        }
+                    } else {
+                        print("Malformed coords line: " + L.Line, Pd4WebLogLevel::PD4WEB_WARNING);
+                    }
+                }
+                if (L.Tokens[1] == "restore") {
+                    if (L.Tokens.size() > 3) {
+                        try {
+                            p->MarginX = std::stoi(L.Tokens[2]);
+                            p->MarginY = std::stoi(L.Tokens[3]);
+                        } catch (const std::exception &) {
+                            print("Invalid restore coordinates in line: " + L.Line,
+                                  Pd4WebLogLevel::PD4WEB_WARNING);
+                        }
+                    } else {
+                        print("Malformed restore line: " + L.Line, Pd4WebLogLevel::PD4WEB_WARNING);
+                    }
+                    break;
+                }
             }
             j++;
         }
-
         if (p->GraphCount > 1 && p->CanvasLevel == 1) {
-            print("You main patch has more then one graph, pd4web just support one graph per main "
-                  "patch",
+            print("Your main patch has more than one graph. pd4web supports only one graph per "
+                  "main patch.",
                   Pd4WebLogLevel::PD4WEB_ERROR);
         }
 
         p->CanvasLevel++;
         if (p->CanvasLevel > 1) {
-            p->SubPatchNames.push_back(Line[6]);
-            print("Processing subpatch: " + p->SubPatchNames[p->SubPatchNames.size() - 1]);
+            if (Line.size() > 6) {
+                p->SubPatchNames.push_back(Line[6]);
+                print("Processing subpatch: " + p->SubPatchNames.back());
+            } else {
+                print("Malformed subpatch definition line: " + pl.Line,
+                      Pd4WebLogLevel::PD4WEB_WARNING);
+            }
         }
     } else if (Line[0][0] == '#') {
         print("Class unknown " + Line[0] + " in " + p->PatchFile.string(),
@@ -219,7 +246,6 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, PatchLine &pl) {
 // ─────────────────────────────────────
 void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     PD4WEB_LOGGER();
-
     listLuaObjectsInLibrary(Patch, pl.Lib);
 
     if (Patch->PdLua) {
@@ -235,6 +261,10 @@ void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
         for (const auto &subdir : Patch->DeclaredPaths) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
         }
+    }
+
+    if (!pl.Found) {
+        pl.isLuaExternal = false;
     }
 }
 
