@@ -1,126 +1,149 @@
-#include <thorvg.h>
 #include <emscripten.h>
 #include <emscripten/html5.h>
 #include <GLES3/gl3.h>
+
 #include <cstdio>
 #include <cmath>
-#include <iostream>
 
-EMSCRIPTEN_WEBGL_CONTEXT_HANDLE ctx1 = 0;
-tvg::GlCanvas *tvgCanvas = nullptr;
-float zoomThor = 1.0f;
-uint32_t fbWidth1, fbHeight1;
-double dpr1;
+#include <thorvg.h>
 
-void redraw_thorvg() {
-    if (!tvgCanvas) {
+EMSCRIPTEN_WEBGL_CONTEXT_HANDLE glContext = 0;
+tvg::GlCanvas *canvas = nullptr;
+float zoom = 1.0f;
+uint32_t fbWidth = 0;
+uint32_t fbHeight = 0;
+double dpr = 1.0;
+
+// ─────────────────────────────────────
+static void redraw() {
+    if (!canvas) {
         return;
     }
 
-    printf("redraw\n");
-    emscripten_webgl_make_context_current(ctx1);
-
-    glViewport(0, 0, fbWidth1, fbHeight1);
-    glClearColor(1, 1, 1, 1);
+    emscripten_webgl_make_context_current(glContext);
+    glViewport(0, 0, fbWidth, fbHeight);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-    auto paints = tvgCanvas->paints();
-    for (auto p : paints) {
-        tvgCanvas->remove(p);
+    // Remove previous paints
+    auto paints = canvas->paints();
+    for (auto paint : paints) {
+        canvas->remove(paint);
     }
 
-    float totalScale = zoomThor * dpr1;
+    float scale = zoom * static_cast<float>(dpr);
 
     auto text1 = tvg::Text::gen();
     text1->font("dejavu-sans-webfont");
     text1->text("Hello World");
     text1->size(80);
     text1->fill(0, 0, 0);
-    text1->scale(totalScale);
-    text1->translate(20.0f * totalScale, 20.0f * totalScale);
-    tvgCanvas->add(text1);
+    text1->scale(scale);
+    text1->translate(20.0f * scale, 100.0f * scale);
+
+    canvas->add(text1);
 
     auto text2 = tvg::Text::gen();
     text2->font("dejavu-sans-webfont");
-    text2->text("from ThorVG");
-    text2->size(20);
+    text2->text("from ThorVG + WebGL");
+    text2->size(32);
     text2->fill(0, 0, 0);
-    text2->scale(totalScale);
-    text2->translate(150.0f * totalScale, 150.0f * totalScale);
-    tvgCanvas->add(text2);
+    text2->scale(scale);
+    text2->translate(20.0f * scale, 180.0f * scale);
 
-    tvgCanvas->draw();
-    tvgCanvas->sync();
+    canvas->add(text2);
+
+    canvas->draw();
+    canvas->sync();
 }
 
-EM_BOOL wheel_thor(int, const EmscriptenWheelEvent *e, void *) {
-    float factor = std::exp(-e->deltaY * 0.001f);
-    zoomThor *= factor;
-    redraw_thorvg();
+// ─────────────────────────────────────
+static EM_BOOL wheelCallback(int, const EmscriptenWheelEvent *event, void *) {
+    float factor = std::exp(-event->deltaY * 0.001f);
+
+    zoom *= factor;
+
+    redraw();
+
     return EM_TRUE;
 }
 
-int init_thorvg_webgl() {
-    if (tvg::Initializer::init(0) != tvg::Result::Success) {
-        printf("ThorVG init failed\n");
+// ─────────────────────────────────────
+static int init() {
+    if (tvg::Initializer::init() != tvg::Result::Success) {
+        printf("ThorVG initialization failed\n");
         return -1;
     }
 
-    EmscriptenWebGLContextAttributes attr;
-    emscripten_webgl_init_context_attributes(&attr);
-    attr.majorVersion = 2;
-    attr.stencil = true;
-    attr.antialias = true;
+    EmscriptenWebGLContextAttributes attrs;
+    emscripten_webgl_init_context_attributes(&attrs);
 
-    ctx1 = emscripten_webgl_create_context("#canvas1", &attr);
-    if (ctx1 <= 0) {
-        printf("WebGL context creation failed\n");
-        return -1;
-    }
-    emscripten_webgl_make_context_current(ctx1);
+    attrs.majorVersion = 2;
+    attrs.minorVersion = 0;
+    attrs.alpha = true;
+    attrs.depth = false;
+    attrs.stencil = true;
+    attrs.antialias = true;
 
-    double cssW, cssH;
-    emscripten_get_element_css_size("#canvas1", &cssW, &cssH);
-    dpr1 = emscripten_get_device_pixel_ratio();
-    fbWidth1 = static_cast<int>(cssW * dpr1);
-    fbHeight1 = static_cast<int>(cssH * dpr1);
-    emscripten_set_canvas_element_size("#canvas1", fbWidth1, fbHeight1);
-
-    tvgCanvas = tvg::GlCanvas::gen();
-    if (!tvgCanvas) {
-        printf("not possible to create canvas\n");
+    glContext = emscripten_webgl_create_context("#canvas", &attrs);
+    if (glContext <= 0) {
+        printf("Failed to create WebGL2 context\n");
         return -1;
     }
 
-    auto res = tvgCanvas->target(nullptr, // display
-                                 nullptr, // surface
-                                 reinterpret_cast<void *>(ctx1), 0, fbWidth1, fbHeight1,
-                                 tvg::ColorSpace::ABGR8888S);
-    if (res != tvg::Result::Success) {
-        printf("GlCanvas::target failed: %d\n", (int)res);
+    emscripten_webgl_make_context_current(glContext);
+
+    double cssWidth = 0.0;
+    double cssHeight = 0.0;
+
+    emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
+
+    dpr = emscripten_get_device_pixel_ratio();
+
+    fbWidth = static_cast<uint32_t>(cssWidth * dpr);
+    fbHeight = static_cast<uint32_t>(cssHeight * dpr);
+    emscripten_set_canvas_element_size("#canvas", fbWidth, fbHeight);
+
+    canvas = tvg::GlCanvas::gen();
+
+    if (!canvas) {
+        printf("Failed to create ThorVG GL canvas\n");
         return -1;
     }
 
-    res = tvgCanvas->viewport(0, 0, fbWidth1, fbHeight1);
-    if (res != tvg::Result::Success) {
-        printf("GlCanvas::viewport failed: %d\n", (int)res);
+    auto result = canvas->target(nullptr, nullptr, reinterpret_cast<void *>(glContext), 0, fbWidth,
+                                 fbHeight, tvg::ColorSpace::ABGR8888S);
+
+    if (result != tvg::Result::Success) {
+        printf("canvas->target() failed: %d\n", (int)result);
+        return -1;
+    }
+
+    result = canvas->viewport(0, 0, fbWidth, fbHeight);
+
+    if (result != tvg::Result::Success) {
+        printf("canvas->viewport() failed: %d\n", (int)result);
         return -1;
     }
 
     if (tvg::Text::load("dejavu-sans-webfont.ttf") != tvg::Result::Success) {
-        printf("Font load failed\n");
+        printf("Failed to load font\n");
     }
 
-    emscripten_set_wheel_callback("#canvas1", nullptr, EM_TRUE, wheel_thor);
+    emscripten_set_wheel_callback("#canvas", nullptr, EM_TRUE, wheelCallback);
 
-    redraw_thorvg();
+    redraw();
+
     return 0;
 }
 
+// ─────────────────────────────────────
 int main() {
-    if (init_thorvg_webgl() != 0) {
+    if (init() != 0) {
         return -1;
     }
+
     printf("ThorVG WebGL initialized\n");
+
     return 0;
 }

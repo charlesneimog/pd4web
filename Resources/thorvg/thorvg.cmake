@@ -1,3 +1,52 @@
+# ──────────────────────────────────────
+set(CPM_FILE ${CMAKE_BINARY_DIR}/CPM.cmake)
+set(CPM_VERSION "0.42.0")
+if(NOT EXISTS "${CPM_FILE}")
+    file(DOWNLOAD "https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake" ${CPM_FILE})
+endif()
+include(${CPM_FILE})
+
+# ╭──────────────────────────────────────╮
+# │                Thorvg                │
+# ╰──────────────────────────────────────╯
+cpmaddpackage("gh:thorvg/thorvg@1.0.5")
+file(
+    GLOB
+    THORVG_SOURCES
+    # common
+    "${thorvg_SOURCE_DIR}/src/common/*.cpp"
+    # renders
+    "${thorvg_SOURCE_DIR}/src/renderer/*.cpp"
+    "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/*.cpp"
+    "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/gl/*.cpp"
+    # loaders
+    "${thorvg_SOURCE_DIR}/src/loaders/*.cpp"
+    "${thorvg_SOURCE_DIR}/src/loaders/raw/*.cpp"
+    "${thorvg_SOURCE_DIR}/src/loaders/sfnt/*.cpp")
+
+# common
+add_library(thorvg STATIC ${THORVG_SOURCES})
+
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/inc")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/common/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/raw/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/sfnt/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/gl/")
+
+# Enable multi-threading
+set(THORVG_THREADS ON)
+set(THORVG_ENGINES "gl;wg")
+set(THORVG_EXTRA "opengl_es")
+set(THORVG_LOADERS "ttf")
+set(THORVG_GL_TARGET_GLES ON)
+set(THORVG_GL_RASTER_SUPPORT ON)
+set(THORVG_FILE_IO_SUPPORT ON)
+set(THORVG_TTF_LOADER_SUPPORT ON)
+add_definitions(-DTHORVG_GL_ENGINE_SUPPORT=1)
+add_definitions(-DTHORVG_GL_ENGINE_SUPPORT=1)
+
 # ────────────────────────────────
 # Individual Options (all OFF by default)
 option(THORVG_THREADS "Enable multi-threading" OFF)
@@ -21,6 +70,9 @@ option(THORVG_CAPI_BINDING_SUPPORT "Enable C API bindings" OFF)
 option(THORVG_LOTTIE_EXPRESSIONS_SUPPORT "Enable Lottie expressions" OFF)
 option(THORVG_OPENMP_SUPPORT "Enable OpenMP" OFF)
 option(THORVG_GL_TARGET_GLES "Use OpenGL ES" OFF)
+
+add_definitions(-DTHORVG_SFNT_LOADER_SUPPORT=1)
+add_definitions(-DTHORVG_OTF_LOADER_SUPPORT=1)
 
 # ────────────────────────────────
 # Configure config.h
