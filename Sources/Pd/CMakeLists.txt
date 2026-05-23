@@ -5,8 +5,7 @@ project(pd4web)
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
 set(PDCMAKE_VERSION "v0.2.13")
 if(NOT EXISTS "${PDCMAKE_FILE}")
-    file(DOWNLOAD
-         "https://raw.githubusercontent.com/charlesneimog/pd.cmake/refs/heads/flags-test/pd.cmake"
+    file(DOWNLOAD "https://raw.githubusercontent.com/charlesneimog/pd.cmake/refs/heads/flags-test/pd.cmake"
          ${PDCMAKE_FILE})
 endif()
 
@@ -26,16 +25,40 @@ pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/" DESTINATION "Pd4Web/Pd4Web")
+pd_add_datafile(
+    pd4web.compiler
+    "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
+    DESTINATION
+    "Pd4Web/Pd4Web")
 
 if(APPLE)
-    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin" DESTINATION "Pd4Web/bin/cmake/")
-    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share" DESTINATION "Pd4Web/bin/cmake/")
+    pd_add_datafile(
+        pd4web.compiler
+        "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin"
+        DESTINATION
+        "Pd4Web/bin/cmake/")
+    pd_add_datafile(
+        pd4web.compiler
+        "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share"
+        DESTINATION
+        "Pd4Web/bin/cmake/")
 else()
-    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/bin" DESTINATION "Pd4Web/bin/cmake/")
-    pd_add_datafile(pd4web.compiler "${PD4WEB_CMAKE_FOLDER}/share" DESTINATION "Pd4Web/bin/cmake/")
+    pd_add_datafile(
+        pd4web.compiler
+        "${PD4WEB_CMAKE_FOLDER}/bin"
+        DESTINATION
+        "Pd4Web/bin/cmake/")
+    pd_add_datafile(
+        pd4web.compiler
+        "${PD4WEB_CMAKE_FOLDER}/share"
+        DESTINATION
+        "Pd4Web/bin/cmake/")
 endif()
-pd_add_datafile(pd4web.compiler "${PD4WEB_NINJA_BINARY}" DESTINATION "Pd4Web/bin")
+pd_add_datafile(
+    pd4web.compiler
+    "${PD4WEB_NINJA_BINARY}"
+    DESTINATION
+    "Pd4Web/bin")
 
 if(UNIX AND NOT APPLE)
     target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
@@ -45,5 +68,9 @@ elseif(APPLE)
     target_link_options(pd4web.compiler PRIVATE -Wl,-dead_strip)
 elseif(MSVC)
     target_compile_options(pd4web.compiler PRIVATE /Gy)
-    target_link_options(pd4web.compiler PRIVATE /OPT:REF /OPT:ICF)
+    target_link_options(
+        pd4web.compiler
+        PRIVATE
+        /OPT:REF
+        /OPT:ICF)
 endif()
