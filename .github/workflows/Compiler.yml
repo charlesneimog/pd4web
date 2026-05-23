@@ -17,7 +17,7 @@ env:
     BUILD_TYPE: Release
     SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
-    LIBVERSION: "3.2.1.a1"
+    LIBVERSION: "3.2.1.a2"
 
 jobs:
     pd4web-compiler:
