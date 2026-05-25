@@ -14,7 +14,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-xlab
-      Version: 85e589a08f3f0e3d950d2a934a6558a34d465a2a
+      Version: 9bfb877cf0e038783dc62dbee68b3e3ee2f029f7
       RunConfigure: true
 
     # ─────────────── pd-saf ───────────────
@@ -23,6 +23,7 @@ Libraries:
       Developer: charlesneimog
       Repository: pd-saf
       Version: 10f6ce5ed3476f732e2a47b5f911192acc7f774b
+
     # ─────────────── audience ───────────────
     - Name: audience
       Source: GITHUB
@@ -112,6 +113,13 @@ Libraries:
       Developer: wbrent
       Repository: timbreIDLib
       Version: ef2e24a
+
+    # ───────────── OpenScofo ───────────
+    - Name: OpenScofo
+      Source: GITHUB
+      Developer: charlesneimog
+      Repository: OpenScofo
+      Version: 05e88d3ab706aaa716806e5030b11e928a090967
 
     # ───────────────── else ─────────────────
     - Name: else
