@@ -300,6 +300,31 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
         }
     }
 
+    for (auto lib : p->DeclaredLibs) {
+        if (p->ExternalObjectsJson[lib].contains("abstractions")) {
+            if (p->ExternalObjectsJson[lib]["abstractions"].contains(pl.Name)) {
+                AbsPath = fs::path(p->ExternalObjectsJson[lib]["abstractions"][pl.Name][1]);
+                if (fs::exists(AbsPath)) {
+                    auto Abstraction = std::make_shared<Patch>();
+                    Abstraction->PatchFile = AbsPath;
+                    Abstraction->PatchFolder = AbsPath.parent_path();
+                    Abstraction->DeclaredPaths = p->DeclaredPaths;
+                    Abstraction->DeclaredLibs = p->DeclaredLibs;
+                    pl.isAbstraction = true;
+                    pl.isExternal = false;
+
+                    print("\n");
+                    print("Processing abstraction in current folder '" +
+                              Abstraction->PatchFile.filename().string() + "'",
+                          Pd4WebLogLevel::PD4WEB_LOG1, p->printLevel + 1);
+                    processSubpatch(p, Abstraction);
+                    pl.Found = true;
+                    return;
+                }
+            }
+        }
+    }
+
     // with prefix
     AbsPath = p->PatchFolder / pl.Lib / (pl.Name + ".pd");
     if (fs::exists(AbsPath)) {
@@ -985,6 +1010,7 @@ bool Pd4Web::processSubpatch(std::shared_ptr<Patch> &f, std::shared_ptr<Patch> &
         return false;
     }
     getSupportedLibraries(p);
+    loadObjectsJson(p);
 
     if (m_PdObjects.empty()) {
         print("Pd Objects should already be listed here, this is an internal error, please "
