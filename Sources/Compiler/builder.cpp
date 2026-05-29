@@ -139,9 +139,27 @@ void Pd4Web::copyCmakeLibFiles(std::shared_ptr<Patch> &p, std::string LibName) {
             print("Copying build script '" + LibName + ".cmake' to Pd4Web/Externals",
                   Pd4WebLogLevel::PD4WEB_LOG2, 2);
 
-            fs::copy(p->Pd4WebFiles / "Libraries" / (LibName + ".cmake"),
-                     p->OutputFolder / "Pd4Web" / "Externals" / (LibName + ".cmake"),
-                     fs::copy_options::skip_existing);
+            fs::path Pd4WebCmake = p->Pd4WebFiles / "Libraries" / (LibName + ".cmake");
+            if (fs::exists(Pd4WebCmake)) {
+                fs::copy(Pd4WebCmake,
+                         p->OutputFolder / "Pd4Web" / "Externals" / (LibName + ".cmake"),
+                         fs::copy_options::skip_existing);
+            } else {
+                std::string LibCmake = "cmake_minimum_required(VERSION 3.25)\n\n";
+                LibCmake += "project(" + LibName + ")\n";
+                LibCmake += "set(LIB_DIR ${PD4WEB_EXTERNAL_DIR}/${PROJECT_NAME})\n";
+                LibCmake += "add_subdirectory(${LIB_DIR} EXCLUDE_FROM_ALL)\n";
+                std::filesystem::path FilePath =
+                    p->OutputFolder / "Pd4Web" / "Externals" / (LibName + ".cmake");
+                std::ofstream OutFile(FilePath);
+                if (OutFile.is_open()) {
+                    OutFile << LibCmake;
+                    OutFile.close();
+                } else {
+                    print("Failed to create cmake file for Library: " + LibName,
+                          Pd4WebLogLevel::PD4WEB_ERROR);
+                }
+            }
         }
     }
 

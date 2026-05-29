@@ -14,7 +14,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-xlab
-      Version: 9bfb877cf0e038783dc62dbee68b3e3ee2f029f7
+      Version: 222c12b436cb2ef8b5f1283cd2fb8535d9f41acc
       RunConfigure: true
 
     # ─────────────── pd-saf ───────────────
@@ -119,7 +119,11 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: OpenScofo
-      Version: 05e88d3ab706aaa716806e5030b11e928a090967
+      Version: f57c5b686bc956e44713696779d378bbb7859296
+      CmakeOptions:
+          - OPENSCOFO_BUILD_PY_MODULE: OFF
+          - OPENSCOFO_BUILD_MAX_MODULE: OFF
+          - OPENSCOFO_BUILD_CSOUND_MODULE: OFF
 
     # ───────────────── else ─────────────────
     - Name: else
