@@ -11,7 +11,7 @@
 // ─────────────────────────────────────
 void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
     PD4WEB_LOGGER();
-    print("Creating config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+    print("Creating pd4web_config.h file", Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
 
     std::string configFile = readFile((p->Pd4WebFiles / "config.in.h").string());
     std::string patchVersion = PD4WEB_VERSION_PATCH;
@@ -57,7 +57,7 @@ void Pd4Web::createConfigFile(std::shared_ptr<Patch> &p) {
         "static int PD4WEB_QWERTY_INPUT_SIZE = " + std::to_string(m_QwertyInput.size()) + ";\n\n";
     replaceAll(configFile, "@PD4WEB_QWERTY_INPUT@", pd4web_qwerty_input);
 
-    writeFile((p->OutputFolder / "Pd4Web" / "config.h").string(), configFile);
+    writeFile((p->OutputFolder / "Pd4Web" / "pd4web_config.h").string(), configFile);
 }
 
 // ─────────────────────────────────────
@@ -315,7 +315,7 @@ void Pd4Web::createMainCmake(std::shared_ptr<Patch> &p) {
 
     for (auto DeclaredPath : p->DeclaredPaths) {
         fs::path fullSrc = fs::path(baseDir) / DeclaredPath;
-        if (fs::exists(fullSrc)) {
+        if (!fs::exists(DeclaredPath) && fs::exists(fullSrc)) {
             preloadFlags += "\n\t--preload-file \\\"${CMAKE_CURRENT_SOURCE_DIR}/" + DeclaredPath +
                             "@" + DeclaredPath + "\\\"";
         }
@@ -441,7 +441,7 @@ void Pd4Web::createExternalsCppFile(std::shared_ptr<Patch> &p) {
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_EXTRA@", extraDefinitions);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_DECLARATION@", Declaration);
     replaceAll(externalsTemplate, "@PD4WEB_EXTERNAL_SETUP@", Call);
-    writeFile((p->OutputFolder / "Pd4Web" / "externals.cpp").string(), externalsTemplate);
+    writeFile((p->OutputFolder / "Pd4Web" / "pd4web_externals.cpp").string(), externalsTemplate);
 }
 
 // ─────────────────────────────────────
