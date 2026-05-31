@@ -35,7 +35,7 @@
 #include <emscripten/html5_webgl.h>
 #include <emscripten/threading.h>
 
-#include <config.h>
+#include <pd4web_config.h>
 
 #include <m_pd.h>
 
@@ -269,7 +269,8 @@ static void pdlua_gfx_clear(t_pdlua *obj, int layer, int removed) {
 
 // ─────────────────────────────────────
 static void gfx_displace(t_pdlua *x, t_glist *glist, int dx, int dy) {
-    // NOTE: No need to displace the object in the canvas since the because on pd4web we don't move objects
+    // NOTE: No need to displace the object in the canvas since the because on pd4web we don't move
+    // objects
 }
 
 // ─────────────────────────────────────

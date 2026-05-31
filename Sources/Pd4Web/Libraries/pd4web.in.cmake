@@ -51,7 +51,7 @@ endif()
 # │          Pd4Web executable           │
 # ╰──────────────────────────────────────╯
 add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
-                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web_externals.cpp")
 target_include_directories(pd4web PUBLIC "${nanovg_SOURCE_DIR}/src")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
@@ -77,7 +77,7 @@ target_link_options(
     -sEXPORT_ES6=${PD4WEB_AS_ES6}
     -sUSE_PTHREADS=1
     -sPTHREAD_POOL_SIZE=4
-    -sWASMFS=1
+    -sWASMFS=0
     -sWASM=1
     -sWASM_WORKERS=1
     -sAUDIO_WORKLET=1
