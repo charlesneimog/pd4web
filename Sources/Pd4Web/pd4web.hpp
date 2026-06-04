@@ -198,6 +198,11 @@ struct Pd4WebUserData {
     NVGcontext *vg;
     NVGLUframebuffer *fb = nullptr;
     NVGLUframebuffer *mainFBO = nullptr;
+
+    // Files
+    std::vector<uint8_t> fileBuffer;
+    bool fileWrite;
+    std::string filename;
 };
 
 // ─────────── PdLua Graphics ───────────

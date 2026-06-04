@@ -304,4 +304,7 @@ void Pd4Web::parseArgs(int argc, char *argv[]) {
     m_QwertyInput.insert(m_QwertyInput.end(), QwertyInput.begin(), QwertyInput.end());
 
     validateArgs();
+    if (!m_BuildFolder.string().empty()) {
+        fs::create_directories(m_BuildFolder);
+    }
 }

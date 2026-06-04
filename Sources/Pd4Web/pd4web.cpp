@@ -355,19 +355,27 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
  * @param std::string Destination filename inside the pd4web filesystem
  */
 bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
+    if (m_UserData->fileWrite) {
+        emscripten_log(EM_LOG_WARN, "Possible to write just one file");
+        return false;
+    }
+
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
     std::vector<uint8_t> buffer(length);
+    m_UserData->fileBuffer.resize(length);
+    m_UserData->filename = filename;
     for (size_t i = 0; i < length; i++) {
-        buffer[i] = uint8Array[i].as<uint8_t>();
+        m_UserData->fileBuffer[i] = uint8Array[i].as<uint8_t>();
     }
-    std::ofstream out(filename, std::ios::binary);
-    if (!out) {
-        emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-        return false;
-    }
-    out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-    out.close();
+    // std::ofstream out(filename, std::ios::binary);
+    // if (!out) {
+    //     emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+    //     return false;
+    // }
+    // out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
+    // out.close();
+    m_UserData->fileWrite = true;
     return true;
 }
 
@@ -760,6 +768,19 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
 
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
+
+    // TODO: How to do this?
+    if (ud->fileWrite) {
+        std::ofstream out(ud->filename, std::ios::binary);
+        if (!out) {
+            emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+        } else {
+            out.write(reinterpret_cast<const char *>(ud->fileBuffer.data()), ud->fileBuffer.size());
+            out.close();
+            ud->fileBuffer.resize(0);
+            ud->fileWrite = false;
+        }
+    }
 
     {
         std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
@@ -1529,9 +1550,8 @@ void setAsyncMainLoop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     int fps = ud->pd4web->GetFps();
     GetGLContext(ud);
-
     GetPatchComments(ud);
-    emscripten_set_main_loop_arg(Loop, userData, fps, 20);
+    emscripten_set_main_loop_arg(Loop, userData, fps, 0);
 }
 
 // ─────────────────────────────────────
@@ -2492,19 +2512,7 @@ void Loop(void *userData) {
         return;
     }
     if (!ud->soundInit) {
-        // Before audio initialization, the internal tick of Pd is driven by the main loop.
-        // After audio is initialized, control of the tick is handed over to the audio processing
-        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
-        // the graphical interface becomes static and unresponsive due to the absence of tick
-        // updates.
-
-        float sampleRate = ud->pd4web->GetSampleRate();
-        float blockSize = 64.0f;
-        double now = emscripten_get_now();
-        double elapsed = now - ud->lastFrame;
-        ud->lastFrame = now;
-        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
-        libpd_process_float(ticks, nullptr, nullptr);
+        libpd_poll_gui();
     }
 
     float zoom = ud->pd4web->GetPatchZoom();
