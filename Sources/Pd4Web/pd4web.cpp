@@ -355,27 +355,20 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
  * @param std::string Destination filename inside the pd4web filesystem
  */
 bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
-    if (m_UserData->fileWrite) {
-        emscripten_log(EM_LOG_WARN, "Possible to write just one file");
-        return false;
-    }
-
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
-    std::vector<uint8_t> buffer(length);
-    m_UserData->fileBuffer.resize(length);
-    m_UserData->filename = filename;
+    PendingFile file;
+    file.filename = std::move(filename);
+    file.buffer.resize(length);
     for (size_t i = 0; i < length; i++) {
-        m_UserData->fileBuffer[i] = uint8Array[i].as<uint8_t>();
+        file.buffer[i] = uint8Array[i].as<uint8_t>();
     }
-    // std::ofstream out(filename, std::ios::binary);
-    // if (!out) {
-    //     emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-    //     return false;
-    // }
-    // out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
-    // out.close();
-    m_UserData->fileWrite = true;
+
+    {
+        std::lock_guard<std::mutex> lock(m_UserData->pendingFilesMutex);
+        m_UserData->pendingFiles.push(std::move(file));
+    }
+
     return true;
 }
 
@@ -770,15 +763,17 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
     libpd_set_instance(ud->libpd);
 
     // TODO: How to do this?
-    if (ud->fileWrite) {
-        std::ofstream out(ud->filename, std::ios::binary);
-        if (!out) {
-            emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-        } else {
-            out.write(reinterpret_cast<const char *>(ud->fileBuffer.data()), ud->fileBuffer.size());
-            out.close();
-            ud->fileBuffer.resize(0);
-            ud->fileWrite = false;
+    {
+        std::lock_guard<std::mutex> lock(ud->pendingFilesMutex);
+        while (!ud->pendingFiles.empty()) {
+            auto &file = ud->pendingFiles.front();
+            std::ofstream out(file.filename, std::ios::binary);
+            if (!out) {
+                emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+            } else {
+                out.write(reinterpret_cast<const char *>(file.buffer.data()), file.buffer.size());
+            }
+            ud->pendingFiles.pop();
         }
     }
 

@@ -145,6 +145,11 @@ struct TouchEventData {
     enum EventType { TOUCH_START, TOUCH_END, TOUCH_MOVE, TOUCH_CANCEL } event_type;
 };
 
+struct PendingFile {
+    std::string filename;
+    std::vector<uint8_t> buffer;
+};
+
 struct Pd4WebUserData {
     class Pd4Web *pd4web;
     t_pdinstance *libpd;
@@ -200,9 +205,8 @@ struct Pd4WebUserData {
     NVGLUframebuffer *mainFBO = nullptr;
 
     // Files
-    std::vector<uint8_t> fileBuffer;
-    bool fileWrite;
-    std::string filename;
+    std::queue<PendingFile> pendingFiles;
+    std::mutex pendingFilesMutex; // if threads can access simultaneously
 };
 
 // ─────────── PdLua Graphics ───────────
