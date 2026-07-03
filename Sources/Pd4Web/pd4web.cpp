@@ -154,6 +154,156 @@ EM_JS(int, JS_IsDarkMode, (), {
 EM_JS(void, JS_Alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
+
+// ─────────────────────────────────────
+EM_JS(void, JS_ClearPd4WebComments, (), {
+    document.querySelectorAll("canvas[data-pd4web-comment='1']").forEach((el) => el.remove());
+});
+
+// ─────────────────────────────────────
+EM_JS(void, JS_RenderCommentCanvas,
+      (const char *canvasSel, const char *commentId, const char *text, int patchX, int patchY,
+       int wrapChars, int fontSize, const char *color, int marginX, int marginY, float zoom,
+       float dpr),
+      {
+          const patchCanvas = document.querySelector(UTF8ToString(canvasSel));
+          if (!patchCanvas) {
+              return;
+          }
+
+          const id = "pd4web_comment_" + UTF8ToString(commentId);
+          const commentText = UTF8ToString(text);
+          const fg = UTF8ToString(color);
+          const scale = Math.max(zoom, 0.001);
+          const pxRatio = Math.max(dpr, window.devicePixelRatio || 1);
+          const cssFontSize = Math.max(fontSize * scale, 1);
+          const font = `${cssFontSize}px Inter, Arial, sans-serif`;
+          const lineHeight = Math.max(cssFontSize * 1.2, 1);
+
+          let el = document.getElementById(id);
+          if (!el) {
+              el = document.createElement("canvas");
+              el.id = id;
+              el.dataset.pd4webComment = "1";
+              el.style.position = "absolute";
+              el.style.pointerEvents = "none";
+              el.style.zIndex = "1";
+              document.body.appendChild(el);
+          }
+
+          const ctx = el.getContext("2d");
+          if (!ctx) {
+              return;
+          }
+
+          ctx.font = font;
+          ctx.textBaseline = "top";
+
+          function wrapLine(line, maxWidth) {
+              if (maxWidth <= 0 || ctx.measureText(line).width <= maxWidth) {
+                  return [line];
+              }
+
+              const words = line.split(/(\s+)/);
+              const lines = [];
+              let current = "";
+
+              for (const word of words) {
+                  const next = current + word;
+                  if (current && ctx.measureText(next).width > maxWidth) {
+                      lines.push(current.trimEnd());
+                      current = word.trimStart();
+                  } else {
+                      current = next;
+                  }
+              }
+
+              if (current) {
+                  lines.push(current.trimEnd());
+              }
+
+              return lines.length ? lines : [line];
+          }
+
+          const charWidth = Math.max(ctx.measureText("M").width * 0.75, 1);
+          const wrapWidth = wrapChars > 0 ? charWidth * wrapChars : 0;
+          const sourceLines = commentText.split(/\r?\n/);
+          const lines = [];
+          for (const sourceLine of sourceLines) {
+              lines.push(...wrapLine(sourceLine, wrapWidth));
+          }
+
+          let contentWidth = wrapWidth;
+          if (contentWidth <= 0) {
+              contentWidth = lines.reduce((maxWidth, line) => {
+                  return Math.max(maxWidth, ctx.measureText(line).width);
+              }, 0);
+          }
+
+          const contentHeight = Math.max(lineHeight * Math.max(lines.length, 1), lineHeight);
+          const cssW = Math.max(Math.ceil(contentWidth), 1);
+          const cssH = Math.max(Math.ceil(contentHeight), 1);
+          const backingW = Math.max(Math.ceil(cssW * pxRatio), 1);
+          const backingH = Math.max(Math.ceil(cssH * pxRatio), 1);
+
+          if (el.width !== backingW) {
+              el.width = backingW;
+          }
+          if (el.height !== backingH) {
+              el.height = backingH;
+          }
+          el.style.width = `${cssW}px`;
+          el.style.height = `${cssH}px`;
+
+          function positionComment() {
+              const rect = patchCanvas.getBoundingClientRect();
+              const cssX = (patchX - marginX) * scale;
+              const cssY = (patchY - marginY) * scale;
+              el.style.left = `${window.scrollX + rect.left + cssX}px`;
+              el.style.top = `${window.scrollY + rect.top + cssY}px`;
+          }
+
+          positionComment();
+          ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
+          ctx.clearRect(0, 0, cssW, cssH);
+          ctx.font = font;
+          ctx.textBaseline = "top";
+          ctx.fillStyle = fg;
+
+          for (let i = 0; i < lines.length; i++) {
+              ctx.fillText(lines[i], 0, i * lineHeight);
+          }
+
+          if (!window.__pd4webCommentPositionListener) {
+              window.__pd4webCommentPositionListener = () => {
+                  document.querySelectorAll("canvas[data-pd4web-comment='1']").forEach((comment) => {
+                      const canvas = document.querySelector(comment.dataset.patchCanvasSel);
+                      if (!canvas) {
+                          return;
+                      }
+                      const rect = canvas.getBoundingClientRect();
+                      const commentZoom = Number(comment.dataset.zoom) || 1;
+                      const commentX = Number(comment.dataset.patchX) || 0;
+                      const commentY = Number(comment.dataset.patchY) || 0;
+                      const commentMarginX = Number(comment.dataset.marginX) || 0;
+                      const commentMarginY = Number(comment.dataset.marginY) || 0;
+                      comment.style.left =
+                          `${window.scrollX + rect.left + (commentX - commentMarginX) * commentZoom}px`;
+                      comment.style.top =
+                          `${window.scrollY + rect.top + (commentY - commentMarginY) * commentZoom}px`;
+                  });
+              };
+              window.addEventListener("resize", window.__pd4webCommentPositionListener);
+              window.addEventListener("scroll", window.__pd4webCommentPositionListener, true);
+          }
+
+          el.dataset.patchCanvasSel = UTF8ToString(canvasSel);
+          el.dataset.patchX = String(patchX);
+          el.dataset.patchY = String(patchY);
+          el.dataset.marginX = String(marginX);
+          el.dataset.marginY = String(marginY);
+          el.dataset.zoom = String(scale);
+      });
     
 // ─────────────────────────────────────
 EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
@@ -364,7 +514,19 @@ bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
         file.buffer[i] = uint8Array[i].as<uint8_t>();
     }
 
-    {
+    if (!m_Pd4WebAudioWorkletInit) {
+        std::lock_guard<std::mutex> lock(m_UserData->pendingFilesMutex);
+        while (!m_UserData->pendingFiles.empty()) {
+            auto &file = m_UserData->pendingFiles.front();
+            std::ofstream out(file.filename, std::ios::binary);
+            if (!out) {
+                emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+            } else {
+                out.write(reinterpret_cast<const char *>(file.buffer.data()), file.buffer.size());
+            }
+            m_UserData->pendingFiles.pop();
+        }
+    } else {
         std::lock_guard<std::mutex> lock(m_UserData->pendingFilesMutex);
         m_UserData->pendingFiles.push(std::move(file));
     }
@@ -1837,7 +1999,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
     }
-    m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+
+    if (m_UseMidi) {
+        m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+    }
 }
 
 // ╭─────────────────────────────────────╮
@@ -1970,7 +2135,8 @@ static void HexToRgbNormalized(const char *hex, float *r, float *g, float *b) {
  * Otherwise, it configures WebGL2 attributes for high-performance rendering,
  * creates the context, and initializes NanoVG for vector graphics rendering.
  * It also loads a font ("InterRegular.ttf") named "inter" into NanoVG.
- * The background color is set to a default value, and the color and stencil buffers are cleared.
+ * The background color is set to a default value, and the color and stencil buffers are
+ * cleared.
  *
  * If any step fails, appropriate cleanup is performed and alerts are shown.
  *
