@@ -119,7 +119,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: OpenScofo
-      Version: 7b4d837ee106ea207c5e458223a083d3ecd7c3ce
+      Version: 5cd82889eb2f35b0f93124d5347c704fc083af76
       CmakeOptions:
           - OPENSCOFO_BUILD_PY_MODULE: OFF
           - OPENSCOFO_BUILD_MAX_MODULE: OFF
