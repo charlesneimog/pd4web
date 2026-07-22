@@ -138,12 +138,11 @@ bool Pd4Web::init() {
         return false;
     }
 
-    // nanovg
-    ok = gitClone("https://github.com/charlesneimog/nanovg.git", "nanovg",
-                  "a4d6be4822299ff12d3c6dc0c6ad5d16e2241c29");
+    // ThorVG (the renderer API is pinned to 1.1.0).
+    ok = gitClone("https://github.com/thorvg/thorvg.git", "thorvg", "v1.1.0");
 
     if (!ok) {
-        print("Failed to clone nanovg", Pd4WebLogLevel::PD4WEB_ERROR);
+        print("Failed to clone ThorVG", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 

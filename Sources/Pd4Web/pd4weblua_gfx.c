@@ -35,7 +35,11 @@
 #include <emscripten/html5_webgl.h>
 #include <emscripten/threading.h>
 
+#if __has_include(<pd4web_config.h>)
 #include <pd4web_config.h>
+#else
+#include "config.h"
+#endif
 
 #include <m_pd.h>
 
@@ -80,9 +84,38 @@ static int reset_transform(lua_State *L);
 
 static int free_path(lua_State *L);
 static void pdlua_gfx_clear(t_pdlua *obj, int layer, int removed);
+void pdlua_gfx_repaint(t_pdlua *o, int firsttime);
+
+typedef struct {
+    uint64_t id;
+    t_pdlua *object;
+} t_render_object_entry;
+static t_render_object_entry render_objects[256];
+
+void pdlua_gfx_process_recovery(void) {
+    uint64_t id = 0;
+    int layer = -1;
+    if (!TakeRenderRecovery(&id, &layer)) return;
+    (void)layer; // Pd-Lua repaint callbacks publish their complete current layer set.
+    for (int i = 0; i < 256; ++i) {
+        if (render_objects[i].id == id && render_objects[i].object) {
+            pdlua_gfx_repaint(render_objects[i].object, 0);
+            return;
+        }
+    }
+}
 
 void pdlua_gfx_free(t_pdlua_gfx *gfx) {
-    // TODO: need to free images
+    if (!gfx->render_object_id) return;
+    RemoveRenderObject(gfx->render_object_id);
+    for (int i = 0; i < 256; ++i) {
+        if (render_objects[i].id == gfx->render_object_id) {
+            render_objects[i].id = 0;
+            render_objects[i].object = NULL;
+            break;
+        }
+    }
+    gfx->render_object_id = 0;
 }
 
 // ─────────────────────────────────────
@@ -136,10 +169,9 @@ void pdlua_gfx_mouse_drag(t_pdlua *o, int x, int y) {
 
 // ─────────────────────────────────────
 typedef struct _path_state {
-    float *path_segments;
-    int num_path_segments;
-    int num_path_segments_allocated;
-    float path_start_x, path_start_y;
+    GuiPathElement elements[512];
+    int count;
+    float current_x, current_y;
 } t_path_state;
 
 // ─────────────────────────────────────
@@ -264,13 +296,17 @@ static void transform_point_float(t_pdlua_gfx *gfx, float *x, float *y) {
 
 // ─────────────────────────────────────
 static void pdlua_gfx_clear(t_pdlua *obj, int layer, int removed) {
-    // TODO:
+    if (!obj || !obj->gfx.render_object_id) return;
+    if (removed || layer < 0) RemoveRenderObject(obj->gfx.render_object_id);
+    else RemoveRenderLayer(obj->gfx.render_object_id, layer);
 }
 
 // ─────────────────────────────────────
 static void gfx_displace(t_pdlua *x, t_glist *glist, int dx, int dy) {
-    // NOTE: No need to displace the object in the canvas since the because on pd4web we don't move
-    // objects
+    (void)dx;
+    (void)dy;
+    UpdateRenderObject(x->gfx.render_object_id, text_xpix((t_object *)x, glist),
+                       text_ypix((t_object *)x, glist), x->gfx.width, x->gfx.height);
 }
 
 // ─────────────────────────────────────
@@ -280,10 +316,19 @@ static int gfx_initialize(t_pdlua *obj) {
     gfx->object_tag[127] = '\0';
     gfx->order_tag[0] = '\0';
     gfx->object = obj;
-    gfx->transforms = NULL;
+    gfx->render_object_id = AllocateRenderObjectIdC();
+    for (int i = 0; i < 256; ++i) {
+        if (!render_objects[i].id) {
+            render_objects[i].id = gfx->render_object_id;
+            render_objects[i].object = obj;
+            break;
+        }
+    }
     gfx->num_transforms = 0;
     gfx->num_layers = 0;
     gfx->layer_tags = NULL;
+    gfx->current_layer_tag = gfx->object_tag;
+    strcpy(gfx->current_color, "#000000");
 
     // char id[127];
     // sprintf(id, "Pd4WebInstance_%p", m_NewPdInstance);
@@ -308,6 +353,7 @@ static int set_size(lua_State *L) {
     obj->gfx.height = luaL_checknumber(L, 3);
     int x = obj->pd.te_xpix;
     int y = obj->pd.te_ypix;
+    UpdateRenderObject(obj->gfx.render_object_id, x, y, obj->gfx.width, obj->gfx.height);
     pdlua_gfx_repaint(obj, 0);
     return 0;
 }
@@ -316,7 +362,6 @@ static int set_size(lua_State *L) {
 static int start_paint(lua_State *L) {
     if (!lua_islightuserdata(L, 1)) {
         lua_pushnil(L);
-        printf("running tag is NULL\n");
         return 1;
     }
 
@@ -338,46 +383,14 @@ static int start_paint(lua_State *L) {
         return 1;
     }
 
-    // malloc new layers
-    int new_num_layers = layer + 1;
-    if (gfx->layer_tags) {
-        char **new_tags = resizebytes(gfx->layer_tags, sizeof(char *) * gfx->num_layers,
-                                      sizeof(char *) * new_num_layers);
-        if (!new_tags) {
-            lua_pushnil(L);
-            return 1;
-        }
-        gfx->layer_tags = new_tags;
-    } else {
-        gfx->layer_tags = getbytes(sizeof(char *) * new_num_layers);
-        if (!gfx->layer_tags) {
-            printf("failed to alloc\n");
-            lua_pushnil(L);
-            return 1;
-        }
-    }
-
-    // Initialize any new entries to NULL
-    for (int i = gfx->num_layers; i < new_num_layers; ++i) {
-        gfx->layer_tags[i] = NULL;
-    }
-
-    gfx->num_layers = new_num_layers;
-    gfx->layer_tags[layer] = getbytes(64);
-    if (!gfx->layer_tags[layer]) {
-        printf("failed to alloc for tags\n");
-        lua_pushnil(L);
-        return 1;
-    }
+    gfx->num_layers = layer + 1;
 
     gfx->first_draw = 0;
 
     int x = text_xpix((t_object *)obj, obj->canvas);
     int y = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    ClearLayerCommand(obj_layer_id, gfx->current_layer, x, y, gfx->width, gfx->height);
+    ClearLayerCommand(gfx->render_object_id, gfx->current_layer, x, y, gfx->width, gfx->height);
 
     lua_pushlightuserdata(L, gfx);
     luaL_setmetatable(L, "GraphicsContext");
@@ -389,10 +402,8 @@ static int end_paint(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
     t_pdlua *obj = gfx->object;
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
 
-    EndPaintLayerCommand(obj_layer_id, gfx->current_layer);
+    EndPaintLayerCommand(gfx->render_object_id, gfx->current_layer);
     return 0;
 }
 
@@ -461,10 +472,8 @@ static int fill_ellipse(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
 
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -489,9 +498,7 @@ static int stroke_ellipse(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -510,9 +517,7 @@ static int fill_all(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -538,9 +543,7 @@ static int fill_rect(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -566,9 +569,7 @@ static int stroke_rect(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -596,9 +597,7 @@ static int fill_rounded_rect(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -626,9 +625,7 @@ static int stroke_rounded_rect(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -655,9 +652,7 @@ static int draw_line(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
@@ -696,9 +691,7 @@ static int draw_text(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -720,86 +713,37 @@ static int draw_svg(lua_State *L) {
     strncpy(cmd.current_color, gfx->current_color, sizeof(cmd.current_color) - 1);
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
-    size_t len = strlen(svg);
-    cmd.svg = malloc(len + 1);
-    if (!cmd.svg) {
-        return luaL_error(L, "Out of memory allocating SVG");
-    }
-    memcpy(cmd.svg, svg, len + 1);
+    cmd.svg = (char *)svg; // Copied into owned bounded transport storage by AddNewCommand().
 
     cmd.x1 = x;
     cmd.y1 = y;
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, sizeof(obj_layer_id), "layer_%p", obj);
 
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
 
     return 0;
 }
 
-// ─────────────────────────────────────
-static uint64_t pdlua_image_hash(unsigned char *str) {
-    uint64_t hash = 5381;
-    int c;
-
-    while ((c = *str++)) {
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+static int transformed_path(t_pdlua_gfx *gfx, const t_path_state *path,
+                            GuiPathElement *output) {
+    for (int i = 0; i < path->count; ++i) {
+        output[i] = path->elements[i];
+        int points = 0;
+        switch (output[i].verb) {
+        case LUA_PATH_MOVE_TO:
+        case LUA_PATH_LINE_TO: points = 1; break;
+        case LUA_PATH_QUAD_TO: points = 2; break;
+        case LUA_PATH_CUBIC_TO: points = 3; break;
+        case LUA_PATH_CLOSE: points = 0; break;
+        }
+        for (int point = 0; point < points; ++point) {
+            transform_point_float(gfx, &output[i].values[point * 2],
+                                  &output[i].values[point * 2 + 1]);
+        }
     }
-
-    return hash;
-}
-
-// ─────────────────────────────────────
-uint32_t pdlua_float_hash(float f) {
-    union {
-        float f;
-        uint32_t i;
-    } u;
-    u.f = f;
-    return u.i * 0x9E3779B9;
-}
-
-// ─────────────────────────────────────
-static char *pdlua_base64_encode(const unsigned char *data, size_t input_length) {
-
-    static char encoding_table[] = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-                                    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
-                                    'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
-                                    'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
-                                    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+', '/'};
-
-    static int mod_table[] = {0, 2, 1};
-
-    size_t output_length = 4 * ((input_length + 2) / 3);
-
-    char *encoded_data = malloc(output_length + 1);
-    if (encoded_data == NULL) {
-        return NULL;
-    }
-
-    for (size_t i = 0, j = 0; i < input_length;) {
-
-        uint32_t octet_a = i < input_length ? (unsigned char)data[i++] : 0;
-        uint32_t octet_b = i < input_length ? (unsigned char)data[i++] : 0;
-        uint32_t octet_c = i < input_length ? (unsigned char)data[i++] : 0;
-
-        uint32_t triple = (octet_a << 0x10) + (octet_b << 0x08) + octet_c;
-
-        encoded_data[j++] = encoding_table[(triple >> 3 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 2 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
-        encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
-    }
-
-    for (int i = 0; i < mod_table[input_length % 3]; i++) {
-        encoded_data[output_length - 1 - i] = '=';
-    }
-
-    encoded_data[output_length] = '\0';
-    return encoded_data;
+    return path->count;
 }
 
 // ─────────────────────────────────────
@@ -813,7 +757,7 @@ static int stroke_path(lua_State *L) {
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    if (path->num_path_segments < 3) {
+    if (path->count < 2) {
         return 0;
     }
 
@@ -823,18 +767,11 @@ static int stroke_path(lua_State *L) {
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    cmd.path_coords = malloc(path->num_path_segments * 2 * sizeof(t_float));
-    cmd.path_size = path->num_path_segments;
-    for (int i = 0; i < path->num_path_segments; i++) {
-        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
-        transform_point_float(gfx, &x, &y);
-        cmd.path_coords[i * 2] = x;
-        cmd.path_coords[i * 2 + 1] = y;
-    }
+    GuiPathElement elements[512];
+    cmd.path_elements = elements;
+    cmd.path_element_count = transformed_path(gfx, path, elements);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -849,27 +786,20 @@ static int fill_path(lua_State *L) {
     strncpy(cmd.layer_id, gfx->current_layer_tag, sizeof(cmd.layer_id) - 1);
 
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    if (path->num_path_segments < 3) {
+    if (path->count < 2) {
         return 0;
     }
 
     cmd.canvas_width = gfx->width;
     cmd.canvas_height = gfx->height;
 
-    cmd.path_coords = malloc(path->num_path_segments * 2 * sizeof(t_float));
-    cmd.path_size = path->num_path_segments;
-    for (int i = 0; i < path->num_path_segments; i++) {
-        float x = path->path_segments[i * 2], y = path->path_segments[i * 2 + 1];
-        transform_point_float(gfx, &x, &y);
-        cmd.path_coords[i * 2] = x;
-        cmd.path_coords[i * 2 + 1] = y;
-    }
+    GuiPathElement elements[512];
+    cmd.path_elements = elements;
+    cmd.path_element_count = transformed_path(gfx, path, elements);
     cmd.objx = text_xpix((t_object *)obj, obj->canvas);
     cmd.objy = text_ypix((t_object *)obj, obj->canvas);
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    AddNewCommand(obj_layer_id, gfx->current_layer, &cmd);
+    AddNewCommand(gfx->render_object_id, gfx->current_layer, &cmd);
     return 0;
 }
 
@@ -877,13 +807,7 @@ static int fill_path(lua_State *L) {
 static int translate(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
 
-    if (gfx->num_transforms == 0) {
-        gfx->transforms = getbytes(sizeof(gfx_transform));
-
-    } else {
-        gfx->transforms = resizebytes(gfx->transforms, gfx->num_transforms * sizeof(gfx_transform),
-                                      (gfx->num_transforms + 1) * sizeof(gfx_transform));
-    }
+    if (gfx->num_transforms >= 32) return luaL_error(L, "transform capacity exceeded");
 
     gfx->transforms[gfx->num_transforms].type = TRANSLATE;
     gfx->transforms[gfx->num_transforms].x = luaL_checknumber(L, 1);
@@ -897,8 +821,7 @@ static int translate(lua_State *L) {
 static int scale(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
 
-    gfx->transforms = resizebytes(gfx->transforms, gfx->num_transforms * sizeof(gfx_transform),
-                                  (gfx->num_transforms + 1) * sizeof(gfx_transform));
+    if (gfx->num_transforms >= 32) return luaL_error(L, "transform capacity exceeded");
 
     gfx->transforms[gfx->num_transforms].type = SCALE;
     gfx->transforms[gfx->num_transforms].x = luaL_checknumber(L, 1);
@@ -911,142 +834,68 @@ static int scale(lua_State *L) {
 // ─────────────────────────────────────
 static int reset_transform(lua_State *L) {
     t_pdlua_gfx *gfx = pop_graphics_context(L);
-    freebytes(gfx->transforms, gfx->num_transforms * sizeof(gfx_transform));
-    gfx->transforms = NULL;
     gfx->num_transforms = 0;
     return 0;
 }
 
 // ─────────────────────────────────────
-static void add_path_segment(t_path_state *path, float x, float y) {
-    int path_segment_space = (path->num_path_segments + 1) * 2;
-    int old_size = path->num_path_segments_allocated;
-    int new_size = MAX(path_segment_space, path->num_path_segments_allocated);
-    if (!path->num_path_segments_allocated) {
-        path->path_segments = (float *)getbytes(new_size * sizeof(float));
-    } else {
-        // BUG: Futex error (resize memory from the Audio Worklet)
-        path->path_segments = (float *)resizebytes(path->path_segments, old_size * sizeof(float),
-                                                   new_size * sizeof(float));
-    }
-
-    path->num_path_segments_allocated = new_size;
-
-    path->path_segments[path->num_path_segments * 2] = x;
-    path->path_segments[path->num_path_segments * 2 + 1] = y;
-    path->num_path_segments++;
-}
-
-// ─────────────────────────────────────
-static int start_path(lua_State *L) {
-    t_path_state *path = (t_path_state *)lua_newuserdata(L, sizeof(t_path_state));
-    luaL_setmetatable(L, "Path");
-
-    path->num_path_segments = 0;
-    path->num_path_segments_allocated = 0;
-    path->path_start_x = luaL_checknumber(L, 1);
-    path->path_start_y = luaL_checknumber(L, 2);
-
-    add_path_segment(path, path->path_start_x, path->path_start_y);
+static int append_path(t_path_state *path, enum LuaPathVerb verb, const float *values, int count) {
+    if (path->count >= 512) return 0;
+    GuiPathElement *element = &path->elements[path->count++];
+    memset(element, 0, sizeof(*element));
+    element->verb = verb;
+    if (values && count > 0) memcpy(element->values, values, count * sizeof(float));
     return 1;
 }
 
-// ─────────────────────────────────────
-// Function to add a line to the current path
+static int start_path(lua_State *L) {
+    t_path_state *path = (t_path_state *)lua_newuserdata(L, sizeof(t_path_state));
+    luaL_setmetatable(L, "Path");
+    memset(path, 0, sizeof(*path));
+    float values[2] = {luaL_checknumber(L, 1), luaL_checknumber(L, 2)};
+    append_path(path, LUA_PATH_MOVE_TO, values, 2);
+    path->current_x = values[0];
+    path->current_y = values[1];
+    return 1;
+}
+
 static int line_to(lua_State *L) {
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    float x = luaL_checknumber(L, 2);
-    float y = luaL_checknumber(L, 3);
-    add_path_segment(path, x, y);
+    float values[2] = {luaL_checknumber(L, 2), luaL_checknumber(L, 3)};
+    if (!append_path(path, LUA_PATH_LINE_TO, values, 2)) return luaL_error(L, "path capacity exceeded");
+    path->current_x = values[0];
+    path->current_y = values[1];
     return 0;
 }
 
-// ─────────────────────────────────────
 static int quad_to(lua_State *L) {
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    float x2 = luaL_checknumber(L, 2);
-    float y2 = luaL_checknumber(L, 3);
-    float x3 = luaL_checknumber(L, 4);
-    float y3 = luaL_checknumber(L, 5);
-
-    float x1 =
-        path->num_path_segments > 0 ? path->path_segments[(path->num_path_segments - 1) * 2] : x2;
-    float y1 = path->num_path_segments > 0
-                   ? path->path_segments[(path->num_path_segments - 1) * 2 + 1]
-                   : y2;
-
-    // heuristic for deciding the number of lines in our bezier curve
-    float dx = x3 - x1;
-    float dy = y3 - y1;
-    float distance = sqrtf(dx * dx + dy * dy);
-    float resolution = MAX(10.0f, distance);
-
-    // Get the last point
-    float t = 0.0;
-    while (t <= 1.0) {
-        t += 1.0 / resolution;
-
-        // Calculate quadratic bezier curve as points (source:
-        // https://en.wikipedia.org/wiki/B%C3%A9zier_curve)
-        float x = (1.0f - t) * (1.0f - t) * x1 + 2.0f * (1.0f - t) * t * x2 + t * t * x3;
-        float y = (1.0f - t) * (1.0f - t) * y1 + 2.0f * (1.0f - t) * t * y2 + t * t * y3;
-        add_path_segment(path, x, y);
-    }
-
+    float values[4] = {luaL_checknumber(L, 2), luaL_checknumber(L, 3),
+                       luaL_checknumber(L, 4), luaL_checknumber(L, 5)};
+    if (!append_path(path, LUA_PATH_QUAD_TO, values, 4)) return luaL_error(L, "path capacity exceeded");
+    path->current_x = values[2];
+    path->current_y = values[3];
     return 0;
 }
 
-// ─────────────────────────────────────
 static int cubic_to(lua_State *L) {
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    float x2 = luaL_checknumber(L, 2);
-    float y2 = luaL_checknumber(L, 3);
-    float x3 = luaL_checknumber(L, 4);
-    float y3 = luaL_checknumber(L, 5);
-    float x4 = luaL_checknumber(L, 6);
-    float y4 = luaL_checknumber(L, 7);
-
-    float x1 =
-        path->num_path_segments > 0 ? path->path_segments[(path->num_path_segments - 1) * 2] : x2;
-    float y1 = path->num_path_segments > 0
-                   ? path->path_segments[(path->num_path_segments - 1) * 2 + 1]
-                   : y2;
-
-    // heuristic for deciding the number of lines in our bezier curve
-    float dx = x3 - x1;
-    float dy = y3 - y1;
-    float distance = sqrtf(dx * dx + dy * dy);
-    float resolution = MAX(10.0f, distance);
-
-    // Get the last point
-    float t = 0.0;
-    while (t <= 1.0) {
-        t += 1.0 / resolution;
-
-        // Calculate cubic bezier curve as points (source:
-        // https://en.wikipedia.org/wiki/B%C3%A9zier_curve)
-        float x = (1 - t) * (1 - t) * (1 - t) * x1 + 3 * (1 - t) * (1 - t) * t * x2 +
-                  3 * (1 - t) * t * t * x3 + t * t * t * x4;
-        float y = (1 - t) * (1 - t) * (1 - t) * y1 + 3 * (1 - t) * (1 - t) * t * y2 +
-                  3 * (1 - t) * t * t * y3 + t * t * t * y4;
-
-        add_path_segment(path, x, y);
-    }
-
+    float values[6] = {luaL_checknumber(L, 2), luaL_checknumber(L, 3),
+                       luaL_checknumber(L, 4), luaL_checknumber(L, 5),
+                       luaL_checknumber(L, 6), luaL_checknumber(L, 7)};
+    if (!append_path(path, LUA_PATH_CUBIC_TO, values, 6)) return luaL_error(L, "path capacity exceeded");
+    path->current_x = values[4];
+    path->current_y = values[5];
     return 0;
 }
 
-// ─────────────────────────────────────
-// Function to close the current path
 static int close_path(lua_State *L) {
     t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    add_path_segment(path, path->path_start_x, path->path_start_y);
+    if (!append_path(path, LUA_PATH_CLOSE, NULL, 0)) return luaL_error(L, "path capacity exceeded");
     return 0;
 }
 
-// ─────────────────────────────────────
 static int free_path(lua_State *L) {
-    t_path_state *path = (t_path_state *)luaL_checkudata(L, 1, "Path");
-    freebytes(path->path_segments, path->num_path_segments_allocated * sizeof(int));
+    (void)L;
     return 0;
 }

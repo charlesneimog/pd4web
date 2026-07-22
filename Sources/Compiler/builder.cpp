@@ -74,9 +74,18 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
                  fs::copy_options::skip_symlinks);
 
     fs::copy(p->Pd4WebFiles / "pd4web.cpp", p->OutputFolder / "Pd4Web" / "pd4web.cpp",
-             fs::copy_options::skip_existing);
+             fs::copy_options::overwrite_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.hpp", p->OutputFolder / "Pd4Web" / "pd4web.hpp",
-             fs::copy_options::skip_existing);
+             fs::copy_options::overwrite_existing);
+    for (const char *source : {"RenderCommand.hpp", "RenderCommand.cpp",
+                               "RenderTransactionQueue.hpp", "ThorVGRenderer.hpp",
+                               "ThorVGRenderer.cpp"}) {
+        fs::copy(p->Pd4WebFiles / source, p->OutputFolder / "Pd4Web" / source,
+                 fs::copy_options::overwrite_existing);
+    }
+    fs::copy(p->Pd4WebFiles / "Libraries" / "thorvg.cmake",
+             p->OutputFolder / "Pd4Web" / "thorvg.cmake",
+             fs::copy_options::overwrite_existing);
 
     // Pd Lua
     if (p->PdLua) {
@@ -470,11 +479,11 @@ void Pd4Web::copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir) {
     fs::copy(pdcmake, destDir, fs::copy_options::skip_existing);
     print("pd.cmake to " + (p->OutputFolder / ".build").string());
 
-    // nanovg
-    fs::path nanovg = p->Pd4WebRoot / "nanovg";
-    fs::path dest = p->OutputFolder / "Pd4Web" / "nanovg";
+    // ThorVG
+    fs::path thorvg = p->Pd4WebRoot / "thorvg";
+    fs::path dest = p->OutputFolder / "Pd4Web" / "thorvg";
     fs::create_directories(dest);
-    fs::copy(nanovg, dest, fs::copy_options::recursive | fs::copy_options::skip_existing);
+    fs::copy(thorvg, dest, fs::copy_options::recursive | fs::copy_options::skip_existing);
 }
 
 // ─────────────────────────────────────

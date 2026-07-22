@@ -50,14 +50,22 @@
 #include <lauxlib.h>
 #include <lualib.h>
 
+#if __has_include("pd4weblua.h")
+#include "pd4weblua.h"
+#else
 #include "pdlua.h"
+#endif
 
 #include "s_stuff.h" // for sys_register_loader()
 #include "m_imp.h" // for struct _class
 #include "g_canvas.h"
 /* BAD: support for Pd < 0.41 */
 
+#if __has_include("pd4weblua_gfx.c")
+#include "pd4weblua_gfx.c"
+#else
 #include "pdlua_gfx.h"
+#endif
 
 typedef void (*t_signal_setmultiout)(t_signal **, int); 
 static t_signal_setmultiout g_signal_setmultiout;

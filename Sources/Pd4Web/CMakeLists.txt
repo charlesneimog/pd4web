@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(pd4web)
 
-option(USE_WEBGPU
-       "Enable WebGPU backend (requires Emscripten with WebGPU support)" OFF)
 set(LIBPD_TAG "c09ef5b79b47f1e87629a2dec7c74407dc863001")
 set(PDLUA_TAG "0.12.23")
 
@@ -65,27 +63,22 @@ target_include_directories(
                "${CMAKE_CURRENT_SOURCE_DIR}")
 add_dependencies(pdlua update_gfw)
 
-# ╭──────────────────────────────────────╮
-# │                nanovg                │
-# ╰──────────────────────────────────────╯
-FetchContent_Declare(
-  nanovg
-  URL https://github.com/charlesneimog/nanovg/archive/refs/heads/main.zip)
-
-FetchContent_MakeAvailable(nanovg)
-include_directories(${nanovg_SOURCE_DIR}/src)
+# ThorVG 1.1 GL backend, SVG loader, and SFNT text loader.
+include(${CMAKE_CURRENT_SOURCE_DIR}/../../Resources/thorvg/thorvg.cmake)
 
 # ╭──────────────────────────────────────╮
 # │              Executable              │
 # ╰──────────────────────────────────────╯
 add_executable(pd4web ${CMAKE_CURRENT_SOURCE_DIR}/pd4web.cpp
+                      ${CMAKE_CURRENT_SOURCE_DIR}/RenderCommand.cpp
+                      ${CMAKE_CURRENT_SOURCE_DIR}/ThorVGRenderer.cpp
                       ${CMAKE_CURRENT_SOURCE_DIR}/externals.cpp)
 
 
 target_compile_definitions(pd4web PUBLIC PD4WEB_LUA)
 target_compile_options(pd4web PUBLIC -matomics -mbulk-memory)
 
-target_link_libraries(pd4web PUBLIC embind libpd pdlua)
+target_link_libraries(pd4web PUBLIC embind libpd pdlua thorvg)
 target_link_options(
   pd4web
   PUBLIC
@@ -137,16 +130,8 @@ add_custom_command(
 add_dependencies(pd4web update_gfw)
 target_compile_features(pd4web PUBLIC cxx_std_23)
 
-if(USE_WEBGPU)
-  message(WARNING "Using WebGPU")
-  target_link_options(pd4web PUBLIC --use-port=emdawnwebgpu)
-  target_compile_definitions(pd4web PUBLIC PD4WEB_WEBGPU)
-else()
-  target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMIN_WEBGL_VERSION=2
-                      -sOFFSCREEN_FRAMEBUFFER -sOFFSCREENCANVAS_SUPPORT)
-
-  target_link_libraries(pdlua PUBLIC nanovg)
-endif()
+target_link_options(pd4web PUBLIC -sUSE_WEBGL2=1 -sMAX_WEBGL_VERSION=2
+                    -sMIN_WEBGL_VERSION=2)
 
 # ╭──────────────────────────────────────╮
 # │            Fix Cmake LSP             │

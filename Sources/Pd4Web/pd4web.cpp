@@ -216,6 +216,25 @@ void SenderCallback(t_pd *obj, void *data) {
     return;
 }
 
+namespace {
+template <std::size_t N> void CopyBounded(char (&destination)[N], const std::string &source) {
+    const auto count = std::min(source.size(), N - 1);
+    std::memcpy(destination, source.data(), count);
+    destination[count] = '\0';
+}
+}
+
+bool Pd4Web::EnqueueSender(const Pd4WebSender &sender) noexcept {
+    auto *slot = m_ToSendQueue.beginPush();
+    if (!slot) {
+        m_DroppedSenders.fetch_add(1, std::memory_order_relaxed);
+        return false;
+    }
+    *slot = sender;
+    m_ToSendQueue.commitPush();
+    return true;
+}
+
 // ─────────────────────────────────────
 /**
  * Send a bang message to Pure Data (thread-safe).
@@ -226,10 +245,10 @@ void SenderCallback(t_pd *obj, void *data) {
  * @param s The receiver symbol in Pure Data.
  */
 bool Pd4Web::SendBang(std::string s) {
-    auto sender = Pd4WebSender::CreateBang(s);
-    std::lock_guard<std::mutex> lock(m_ToSendMutex);
-    m_ToSendData.push_back(sender);
-    return true;
+    Pd4WebSender sender{};
+    sender.type = BANG;
+    CopyBounded(sender.receiver, s);
+    return EnqueueSender(sender);
 }
 
 // ─────────────────────────────────────
@@ -243,10 +262,11 @@ bool Pd4Web::SendBang(std::string s) {
  * @param float The float value to send.
  */
 bool Pd4Web::SendFloat(std::string s, float f) {
-    auto sender = Pd4WebSender::CreateFloat(s, f);
-    std::lock_guard<std::mutex> lock(m_ToSendMutex);
-    m_ToSendData.push_back(sender);
-    return true;
+    Pd4WebSender sender{};
+    sender.type = FLOAT;
+    sender.f_value = f;
+    CopyBounded(sender.receiver, s);
+    return EnqueueSender(sender);
 }
 
 // ─────────────────────────────────────
@@ -261,10 +281,11 @@ bool Pd4Web::SendFloat(std::string s, float f) {
  * @param std::string The symbol string to send.
  */
 bool Pd4Web::SendSymbol(std::string s, std::string thing) {
-    auto sender = Pd4WebSender::CreateSymbol(s, thing);
-    std::lock_guard<std::mutex> lock(m_ToSendMutex);
-    m_ToSendData.push_back(sender);
-    return true;
+    Pd4WebSender sender{};
+    sender.type = SYMBOL;
+    CopyBounded(sender.receiver, s);
+    CopyBounded(sender.s_value, thing);
+    return EnqueueSender(sender);
 }
 
 // ─────────────────────────────────────
@@ -288,24 +309,28 @@ bool Pd4Web::SendList(std::string s, emscripten::val a) {
     }
 
     size_t length = a["length"].as<size_t>();
-    std::vector<Pd4WebAtom> atoms;
-    atoms.reserve(length);
+    Pd4WebSender sender{};
+    sender.type = LIST;
+    CopyBounded(sender.receiver, s);
 
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
-            atoms.push_back(Pd4WebAtom(v.as<float>()));
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            auto &atom = sender.list_data[sender.atomCount++];
+            atom.type = Pd4WebAtom::FLOAT_TYPE;
+            atom.f_value = v.as<float>();
         } else if (v.isString()) {
-            atoms.push_back(Pd4WebAtom(v.as<std::string>()));
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            auto &atom = sender.list_data[sender.atomCount++];
+            atom.type = Pd4WebAtom::SYMBOL_TYPE;
+            CopyBounded(atom.s_value, v.as<std::string>());
         } else {
             emscripten_log(EM_LOG_WARN, "SendList: unsupported type at index %zu", i);
         }
     }
 
-    auto sender = Pd4WebSender::CreateList(s, atoms);
-    std::lock_guard<std::mutex> lock(m_ToSendMutex);
-    m_ToSendData.push_back(sender);
-    return true;
+    return EnqueueSender(sender);
 }
 
 // ─────────────────────────────────────
@@ -332,24 +357,29 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     }
 
     size_t length = a["length"].as<size_t>();
-    std::vector<Pd4WebAtom> atoms;
-    atoms.reserve(length);
+    Pd4WebSender sender{};
+    sender.type = MESSAGE;
+    CopyBounded(sender.receiver, r);
+    CopyBounded(sender.selector, s);
 
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
-            atoms.push_back(Pd4WebAtom(v.as<float>()));
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            auto &atom = sender.list_data[sender.atomCount++];
+            atom.type = Pd4WebAtom::FLOAT_TYPE;
+            atom.f_value = v.as<float>();
         } else if (v.isString()) {
-            atoms.push_back(Pd4WebAtom(v.as<std::string>()));
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            auto &atom = sender.list_data[sender.atomCount++];
+            atom.type = Pd4WebAtom::SYMBOL_TYPE;
+            CopyBounded(atom.s_value, v.as<std::string>());
         } else {
             emscripten_log(EM_LOG_WARN, "SendMessage: unsupported type at index %zu", i);
         }
     }
 
-    auto sender = Pd4WebSender::CreateMessage(r, s, atoms);
-    std::lock_guard<std::mutex> lock(m_ToSendMutex);
-    m_ToSendData.push_back(sender);
-    return true;
+    return EnqueueSender(sender);
 }
 
 // ─────────────────────────────────────
@@ -753,8 +783,8 @@ void ReceivedMIDIByte(int port, int byte) {
  * ensuring thread-safe communication with libpd.
  *
  * Thread Safety:
- * - Messages are queued on the main thread with owned string data (no pointers)
- * - The mutex protects access to m_ToSendData vector
+ * - Messages are queued on the main thread in bounded slots with owned data
+ * - The SPSC queue is wait-free and preserves event order
  * - All libpd calls happen on this Audio Worklet thread only
  * - emscripten::val objects are converted to POD types on the main thread
  *
@@ -772,75 +802,58 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
 
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
+    pdlua_gfx_process_recovery();
 
-    {
-        std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
-        auto &data = ud->pd4web->getToSendData();
-
-        for (auto *sender : data) {
-            if (!sender) {
-                continue;
-            }
-
+    while (const auto *sender = ud->pd4web->BeginSender()) {
             switch (sender->type) {
             case BANG:
-                libpd_bang(sender->receiver.c_str());
+                libpd_bang(sender->receiver);
                 break;
 
             case FLOAT:
-                libpd_float(sender->receiver.c_str(), sender->f_value);
+                libpd_float(sender->receiver, sender->f_value);
                 break;
 
             case SYMBOL:
-                libpd_symbol(sender->receiver.c_str(), sender->s_value.c_str());
+                libpd_symbol(sender->receiver, sender->s_value);
                 break;
 
             case LIST: {
-                size_t len = sender->list_data.size();
+                size_t len = sender->atomCount;
                 if (len == 0) {
-                    // Empty list - send as bang
-                    libpd_bang(sender->receiver.c_str());
+                    libpd_bang(sender->receiver);
                 } else {
-                    // Start building the list message
                     if (libpd_start_message(len) == 0) {
-                        for (const auto &atom : sender->list_data) {
+                        for (size_t i = 0; i < len; ++i) {
+                            const auto &atom = sender->list_data[i];
                             if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
                                 libpd_add_float(atom.f_value);
                             } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
-                                libpd_add_symbol(atom.s_value.c_str());
+                                libpd_add_symbol(atom.s_value);
                             }
                         }
-
-                        if (libpd_finish_list(sender->receiver.c_str()) != 0) {
-                            emscripten_log(EM_LOG_ERROR, "Failed to send list to %s",
-                                           sender->receiver.c_str());
-                        }
-                    } else {
-                        emscripten_log(EM_LOG_ERROR, "Failed to start list message");
+                        libpd_finish_list(sender->receiver);
                     }
                 }
                 break;
             }
 
             case MESSAGE: {
-                size_t len = sender->list_data.size();
+                size_t len = sender->atomCount;
                 if (len > 0) {
-                    // Allocate atoms on stack for performance
-                    t_atom *atoms = (t_atom *)alloca(len * sizeof(t_atom));
+                    t_atom atoms[Pd4WebSender::MaxAtoms];
 
                     for (size_t i = 0; i < len; ++i) {
                         const auto &atom = sender->list_data[i];
                         if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
                             SETFLOAT(&atoms[i], atom.f_value);
                         } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
-                            SETSYMBOL(&atoms[i], gensym(atom.s_value.c_str()));
+                            SETSYMBOL(&atoms[i], gensym(atom.s_value));
                         }
                     }
-
-                    libpd_message(sender->receiver.c_str(), sender->selector.c_str(), len, atoms);
+                    libpd_message(sender->receiver, sender->selector, len, atoms);
                 } else {
-                    // Message with no arguments
-                    libpd_message(sender->receiver.c_str(), sender->selector.c_str(), 0, nullptr);
+                    libpd_message(sender->receiver, sender->selector, 0, nullptr);
                 }
                 break;
             }
@@ -858,17 +871,15 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
                 break;
 
             default:
-                emscripten_log(EM_LOG_ERROR, "Unknown sender type: %d", sender->type);
                 break;
             }
-            delete sender;
-        }
-        data.clear();
+        ud->pd4web->EndSender();
     }
 
     // Process audio
-    int ChCount = Out[0].numberOfChannels;
-    float LibPdOuts[128 * ChCount];
+    constexpr int MaxAudioChannels = 64;
+    int ChCount = std::min(Out[0].numberOfChannels, MaxAudioChannels);
+    float LibPdOuts[128 * MaxAudioChannels]{};
     libpd_process_float(2, In[0].data, LibPdOuts);
     int OutI = 0;
     for (int i = 0; i < ChCount; i++) {
@@ -1286,10 +1297,10 @@ void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data) {
                 lua_pushvalue(L, -2);
                 lua_pushinteger(L, 20);
                 lua_pushinteger(L, 20);
-                lua_pushstring(L, data.key.c_str());
+                lua_pushstring(L, data.key);
                 if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
-                    const char *err = lua_tostring(L, -1);
-                    emscripten_log(EM_LOG_ERROR, "Error calling key_down: %s", err);
+                    // The callback runs in the AudioWorklet. Defer diagnostics rather than
+                    // formatting or logging on the realtime thread.
                     lua_pop(L, 1);
                 }
             } else {
@@ -1386,12 +1397,6 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
         return EM_TRUE;
     }
 
-    // Get canvas to calculate positions
-    t_canvas *canvas = pd_getcanvaslist();
-    if (!canvas) {
-        return EM_TRUE;
-    }
-
     // Calculate position with zoom and margins
     int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
     int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
@@ -1419,31 +1424,10 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     }
 
     // Queue event for processing on Audio Worklet thread
-    auto sender = Pd4WebSender::CreateTouchEvent(touchData);
-    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
-    ud->pd4web->getToSendData().push_back(sender);
-
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, touchData.x, touchData.y, &x1, &y1, &x2, &y2, 0)) {
-            t_symbol *objname = (obj->g_pd->c_name);
-            if (eventType == EMSCRIPTEN_EVENT_TOUCHSTART) {
-                for (int i = 0; i < PD4WEB_NUMBER_INPUT_SIZE; i++) {
-                    std::string luaobj = PD4WEB_NUMBER_INPUT[i];
-                    if (strcmp(objname->s_name, (luaobj + ":gfx").c_str()) == 0) {
-                        JS_Pd4WebFocusNumberInput();
-                    }
-                }
-
-                for (int i = 0; i < PD4WEB_QWERTY_INPUT_SIZE; i++) {
-                    std::string luaobj = PD4WEB_QWERTY_INPUT[i];
-                    if (strcmp(objname->s_name, (luaobj + ":gfx").c_str()) == 0) {
-                        JS_Pd4WebFocusTextInput();
-                    }
-                }
-            }
-        }
-    }
+    Pd4WebSender sender{};
+    sender.type = TOUCH_EVENT;
+    sender.touch_data = touchData;
+    ud->pd4web->EnqueueSender(sender);
 
     return EM_TRUE;
 }
@@ -1493,9 +1477,10 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     }
 
     // Queue event for processing on Audio Worklet thread
-    auto sender = Pd4WebSender::CreateMouseEvent(mouseData);
-    std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
-    ud->pd4web->getToSendData().push_back(sender);
+    Pd4WebSender sender{};
+    sender.type = MOUSE_EVENT;
+    sender.mouse_data = mouseData;
+    ud->pd4web->EnqueueSender(sender);
 
     return EM_TRUE;
 }
@@ -1571,8 +1556,14 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
 void setAsyncMainLoop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     int fps = ud->pd4web->GetFps();
-    GetGLContext(ud);
-
+    ud->renderer = std::make_unique<ThorVGRenderer>();
+    if (!ud->renderer->initialize(ud->canvasSel, ud->pd4web->GetBGColor(),
+                                  ud->pd4web->GetFGColor(),
+                                  ud->pd4web->GetPatchZoom(), ud->canvas_marginx,
+                                  ud->canvas_marginy)) {
+        emscripten_log(EM_LOG_ERROR, "ThorVG WebGL initialization failed");
+        return;
+    }
     GetPatchComments(ud);
     emscripten_set_main_loop_arg(Loop, userData, fps, 20);
 }
@@ -1898,7 +1889,7 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     memcpy(safe_buf, textbuf, copy_len);
     safe_buf[copy_len] = '\0';
 
-    GuiCommand cmd;
+    GuiCommand cmd{};
     cmd.command = DRAW_TEXT;
 
     std::string fg = ud->pd4web->GetFGColor();
@@ -1913,33 +1904,24 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
 
     cmd.w = txt->te_width;
     cmd.h = 16;
-    if (txt->te_width == 0) {
-        float bounds[4];
-        cmd.w = nvgTextBounds(ud->vg, 0, 0, cmd.text, nullptr, bounds);
-        cmd.h = bounds[3] - bounds[1];
-    } else {
-        nvgFontSize(ud->vg, 10);
-        float bounds[4];
-        float charWidthBounds[4];
-        nvgTextBounds(ud->vg, 0, 0, "A", nullptr, charWidthBounds);
-        float charWidth = (charWidthBounds[2] - charWidthBounds[0]) / 1.35;
-        float wrapWidth = charWidth * txt->te_width;
-        nvgTextBoxBounds(ud->vg, 0, 0, wrapWidth, cmd.text, nullptr, bounds);
-        cmd.w = (bounds[2] - bounds[0]);
-        cmd.h = (bounds[3] - bounds[1]);
-        cmd.objw = (bounds[2] - bounds[0]);
-        cmd.objh = (bounds[3] - bounds[1]);
-    }
+    const float fontSize = PD4WEB_PATCH_FONTSIZE;
+    const float estimatedCharWidth = fontSize * 0.6f;
+    if (txt->te_width == 0) cmd.w = std::max(estimatedCharWidth, copy_len * estimatedCharWidth);
+    else cmd.w = txt->te_width * estimatedCharWidth;
+    const int estimatedLines = std::max(1, static_cast<int>(std::ceil(
+        (copy_len * estimatedCharWidth) / std::max(1.0f, cmd.w))));
+    cmd.h = estimatedLines * fontSize * 1.2f;
+    cmd.objw = cmd.w;
+    cmd.objh = cmd.h;
 
     cmd.font_size = PD4WEB_PATCH_FONTSIZE;
     cmd.objx = txt->te_xpix - x;
     cmd.objy = txt->te_ypix - y;
 
-    char obj_layer_id[64];
-    snprintf(obj_layer_id, 64, "layer_%p", obj);
-    ClearLayerCommand(obj_layer_id, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
-    AddNewCommand(obj_layer_id, 0, &cmd);
-    EndPaintLayerCommand(obj_layer_id, 0);
+    const ObjectId objectId = AllocateRenderObjectId();
+    ClearLayerCommand(objectId, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
+    AddNewCommand(objectId, 0, &cmd);
+    EndPaintLayerCommand(objectId, 0);
 }
 
 // ─────────────────────────────────────
@@ -1969,728 +1951,69 @@ void GetPatchComments(Pd4WebUserData *ud) {
 }
 
 // ─────────────────────────────────────
-static void HexToRgbNormalized(const char *hex, float *r, float *g, float *b) {
-    if (hex[0] == '#') {
-        hex++;
-    }
 
-    char rs[3] = {hex[0], hex[1], '\0'};
-    char gs[3] = {hex[2], hex[3], '\0'};
-    char bs[3] = {hex[4], hex[5], '\0'};
-
-    int ri = (int)strtol(rs, NULL, 16);
-    int gi = (int)strtol(gs, NULL, 16);
-    int bi = (int)strtol(bs, NULL, 16);
-
-    *r = ri / 255.0f;
-    *g = gi / 255.0f;
-    *b = bi / 255.0f;
+extern "C" uint64_t AllocateRenderObjectIdC(void) {
+    return AllocateRenderObjectId();
 }
 
-// ─────────────────────────────────────
-/**
- * Creates and initializes a WebGL2 context for rendering within Pd4Web.
- *
- * If the context is already ready, it sets it as the current context.
- * Otherwise, it configures WebGL2 attributes for high-performance rendering,
- * creates the context, and initializes NanoVG for vector graphics rendering.
- * It also loads a font ("InterRegular.ttf") named "inter" into NanoVG.
- * The background color is set to a default value, and the color and stencil buffers are cleared.
- *
- * If any step fails, appropriate cleanup is performed and alerts are shown.
- *
- * @param ud  Pointer to Pd4WebUserData containing canvas selector and context state.
- */
-// ─────────────────────────────────────
-void GetGLContext(Pd4WebUserData *ud) {
-    if (ud->contextReady) {
-        emscripten_webgl_make_context_current(ud->ctx);
-        return;
-    }
-
-    EmscriptenWebGLContextAttributes attrs;
-    emscripten_webgl_init_context_attributes(&attrs);
-
-    //
-    attrs.alpha = false; // or true if you want canvas transparency
-    attrs.depth = false;
-    attrs.stencil = true; // needed for NanoVG and FBO clipping
-    attrs.antialias = true;
-    attrs.premultipliedAlpha = false;
-    attrs.preserveDrawingBuffer = true; // <-- THIS IS IMPORTANT FOR DIRTY RECT
-    attrs.powerPreference = EM_WEBGL_POWER_PREFERENCE_HIGH_PERFORMANCE;
-    attrs.majorVersion = 2;
-    attrs.minorVersion = 0;
-    attrs.enableExtensionsByDefault = true;
-
-    // Optional, usually not needed for dirty rects:
-    attrs.explicitSwapControl = false;
-    attrs.renderViaOffscreenBackBuffer = false;
-
-    ud->ctx = emscripten_webgl_create_context(ud->canvasSel.c_str(), &attrs);
-    if (ud->ctx <= 0) {
-        return;
-    }
-
-    emscripten_webgl_make_context_current(ud->ctx);
-    ud->vg = nvgCreateContext(NVG_ANTIALIAS);
-
-    if (!ud->vg) {
-        JS_Alert("Failed to create NanoVG context");
-        emscripten_webgl_destroy_context(ud->ctx);
-        return;
-    }
-
-    ud->font_handler = nvgCreateFont(ud->vg, "inter", "InterRegular.ttf");
-    if (ud->font_handler == -1) {
-        JS_Alert("Failed to create NanoVG font");
-        return;
-    }
-    nvgFontFaceId(ud->vg, ud->font_handler);
-
-    float r, g, b;
-    std::string bg = ud->pd4web->GetBGColor();
-    HexToRgbNormalized(bg.c_str(), &r, &g, &b);
-    glClearColor(r, g, b, 1);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-    ud->contextReady = true;
+extern "C" void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, int w, int h) {
+    GetRenderTransport().beginLayer(objectId, layer, x, y, w, h);
 }
 
-// ─────────────────────────────────────
-/**
- * Retrieves the GUI command handlers (from pd-lua) for the current Pure Data instance.
- *
- * Returns a reference to the PdLuaObjsGui map associated with the current
- * libpd instance, allowing access to GUI-related Lua objects and commands.
- *
- * @return Reference to PdLuaObjsGui for the current Pure Data instance.
- */
-PdLuaObjsGui &GetLibPDInstanceCommands() {
-    static PdInstanceGui GuiCommands;
-    t_pdinstance *pd = libpd_this_instance();
-    return GuiCommands[pd];
+extern "C" void AddNewCommand(uint64_t, int, GuiCommand *command) {
+    if (!command) return;
+    GetRenderTransport().append(*command);
 }
 
-// ─────────────────────────────────────
-/**
- * Clears all GUI commands and resets drawing parameters for a specified object layer.
- *
- * Frees any allocated path coordinates in GUI commands, clears the command list,
- * marks the layer as dirty and ready for redraw, and updates the drawing rectangle
- * with the given position `(x, y)` and size `(w, h)`.
- *
- * @param obj_layer_id  Identifier string for the target object layer.
- * @param layer         Layer index within the object layer.
- * @param x             X-coordinate of the drawing area.
- * @param y             Y-coordinate of the drawing area.
- * @param w             Width of the drawing area.
- * @param h             Height of the drawing area.
- */
-void ClearLayerCommand(const char *obj_layer_id, int layer, int x, int y, int w, int h) {
-    std::string layer_id(obj_layer_id);
-
-    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
-    PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
-    PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
-
-    for (GuiCommand &cmd : obj_layer.gui_commands) {
-        if (cmd.path_coords) {
-            free(cmd.path_coords);
-            cmd.path_coords = nullptr;
-            cmd.path_size = 0;
-        }
-    }
-    obj_layer.gui_commands.clear();
-    obj_layer.dirty = true;
-    obj_layer.drawing = true;
-    obj_layer.objw = w;
-    obj_layer.objh = h;
-    obj_layer.objx = x;
-    obj_layer.objy = y;
+extern "C" void EndPaintLayerCommand(uint64_t, int) {
+    GetRenderTransport().publishLayer();
 }
 
-// ─────────────────────────────────────
-/**
- * Marks the end of the painting Process for a specified layer.
- *
- * Sets the drawing flag of the given layer to false, indicating that
- * rendering operations are complete for this layer.
- *
- * @param obj_layer_id  Identifier string for the target object layer.
- * @param layer         Layer index within the object layer.
- */
-void EndPaintLayerCommand(const char *obj_layer_id, int layer) {
-    std::string layer_id(obj_layer_id);
-
-    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
-    PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
-    PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
-    obj_layer.drawing = false;
+extern "C" void RemoveRenderLayer(uint64_t objectId, int layer) {
+    GetRenderTransport().publishLifecycle(RenderMessageType::RemoveLayer, objectId, layer);
 }
 
-// ─────────────────────────────────────
-/**
- * Adds a new GUI command to the specified object layer and layer index.
- *
- * Creates a deep copy of the provided `GuiCommand`, including duplicating
- * its path coordinates if present, then appends it to the layer's command list.
- * Marks the layer as dirty and currently drawing.
- *
- * @param obj_layer_id  Identifier string for the target object layer.
- * @param layer         Layer index within the object layer.
- * @param c             Pointer to the GuiCommand to add (must not be null).
- */
-void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c) {
-    if (!c) {
-        fprintf(stderr, "NULL command\n");
-        return;
-    }
-
-    std::string layer_id(obj_layer_id);
-
-    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
-    PdLuaObjLayers &obj_layers = pdlua_objs[layer_id];
-    PdLuaObjGuiLayer &obj_layer = obj_layers[layer];
-    GuiCommand copy = *c;
-
-    if (c->path_size > 0 && c->path_coords) {
-        size_t total_coords = c->path_size * 2;
-        copy.path_coords = (float *)malloc(sizeof(float) * total_coords);
-
-        if (copy.path_coords) {
-            memcpy(copy.path_coords, c->path_coords, sizeof(float) * total_coords);
-            copy.path_size = c->path_size;
-        } else {
-            copy.path_coords = nullptr;
-            copy.path_size = 0;
-        }
-    } else {
-        copy.path_coords = nullptr;
-        copy.path_size = 0;
-    }
-
-    if (c->command == DRAW_SVG) {
-        copy.svg = strdup(c->svg);
-        free(c->svg);
-        c->svg = NULL; // evita uso acidental após free
-    }
-
-    obj_layer.gui_commands.push_back(copy);
-    obj_layer.dirty = true;
-    obj_layer.drawing = true;
+extern "C" void RemoveRenderObject(uint64_t objectId) {
+    GetRenderTransport().publishLifecycle(RenderMessageType::RemoveObject, objectId);
 }
 
-// ─────────────────────────────────────
-// Drawing svg with nanovg + nanosvg borrowed from:
-//     https://github.com/VCVRack/Rack/blob/v2/src/window/Svg.cpp
-static void Pd4WebDrawSVG(NVGcontext *nvg, const char *svgText) {
-    auto *svg = nsvgParse(const_cast<char *>(svgText), "px", 96);
-    auto getNVGColor = [](uint32_t color) -> NVGcolor {
-        return nvgRGBA((color >> 0) & 0xff, (color >> 8) & 0xff, (color >> 16) & 0xff,
-                       (color >> 24) & 0xff);
-    };
-    auto getLineCrossing = [](Point<float> p0, Point<float> p1, Point<float> p2,
-                              Point<float> p3) -> float {
-        auto b = p2 - p0;
-        auto d = p1 - p0;
-        auto e = p3 - p2;
-        float m = d.x * e.y - d.y * e.x;
-        if (fabsf(m) < 1e-6) {
-            return NAN;
-        }
-        return -(d.x * b.y - d.y * b.x) / m;
-    };
-
-    auto getPaint = [&getNVGColor](NVGcontext *nvg, NSVGpaint *p) -> NVGpaint {
-        assert(p->type == NSVG_PAINT_LINEAR_GRADIENT || p->type == NSVG_PAINT_RADIAL_GRADIENT);
-        NSVGgradient *g = p->gradient;
-        assert(g->nstops >= 1);
-        NVGcolor icol = getNVGColor(g->stops[0].color);
-        NVGcolor ocol = getNVGColor(g->stops[g->nstops - 1].color);
-
-        float inverse[6];
-        nvgTransformInverse(inverse, g->xform);
-
-        Point<float> s, e;
-        // Is it always the case that the gradient should be transformed from (0, 0) to (0, 1)?
-        nvgTransformPoint(&s.x, &s.y, inverse, 0, 0);
-        nvgTransformPoint(&e.x, &e.y, inverse, 0, 1);
-
-        NVGpaint paint;
-        if (p->type == NSVG_PAINT_LINEAR_GRADIENT) {
-            paint = nvgLinearGradient(nvg, s.x, s.y, e.x, e.y, icol, ocol);
-        } else {
-            paint = nvgRadialGradient(nvg, s.x, s.y, 0.0, 160, icol, ocol);
-        }
-        return paint;
-    };
-
-    int shapeIndex = 0;
-    for (NSVGshape *shape = svg->shapes; shape; shape = shape->next, shapeIndex++) {
-        if (!(shape->flags & NSVG_FLAGS_VISIBLE)) {
-            continue;
-        }
-        nvgSave(nvg);
-        if (shape->opacity < 1.0) {
-            nvgGlobalAlpha(nvg, shape->opacity);
-        }
-        nvgBeginPath(nvg);
-        for (NSVGpath *path = shape->paths; path; path = path->next) {
-            nvgMoveTo(nvg, path->pts[0], path->pts[1]);
-            for (int i = 1; i < path->npts; i += 3) {
-                float *p = &path->pts[2 * i];
-                nvgBezierTo(nvg, p[0], p[1], p[2], p[3], p[4], p[5]);
-            }
-            if (path->closed) {
-                nvgClosePath(nvg);
-            }
-            int crossings = 0;
-            Point<float> p0 = Point<float>(path->pts[0], path->pts[1]);
-            Point<float> p1 = Point<float>(path->bounds[0] - 1.0, path->bounds[1] - 1.0);
-            for (NSVGpath *path2 = shape->paths; path2; path2 = path2->next) {
-                if (path2 == path) {
-                    continue;
-                }
-                if (path2->npts < 4) {
-                    continue;
-                }
-                for (int i = 1; i < path2->npts + 3; i += 3) {
-                    float *p = &path2->pts[2 * i];
-                    Point<float> p2 = Point<float>(p[-2], p[-1]);
-                    Point<float> p3 = (i < path2->npts)
-                                          ? Point<float>(p[4], p[5])
-                                          : Point<float>(path2->pts[0], path2->pts[1]);
-                    float crossing = getLineCrossing(p0, p1, p2, p3);
-                    float crossing2 = getLineCrossing(p2, p3, p0, p1);
-                    if (0.0 <= crossing && crossing < 1.0 && 0.0 <= crossing2) {
-                        crossings++;
-                    }
-                }
-            }
-
-            if (crossings % 2 == 0) {
-                nvgPathWinding(nvg, NVG_SOLID);
-            } else {
-                nvgPathWinding(nvg, NVG_HOLE);
-            }
-        }
-
-        if (shape->fill.type) {
-            switch (shape->fill.type) {
-            case NSVG_PAINT_COLOR: {
-                nvgFillColor(nvg, getNVGColor(shape->fill.color));
-            } break;
-            case NSVG_PAINT_LINEAR_GRADIENT:
-            case NSVG_PAINT_RADIAL_GRADIENT: {
-                nvgFillPaint(nvg, getPaint(nvg, &shape->fill));
-            } break;
-            }
-            nvgFill(nvg);
-        }
-
-        if (shape->stroke.type) {
-            nvgStrokeWidth(nvg, shape->strokeWidth);
-            nvgLineCap(nvg, (NVGlineCap)shape->strokeLineCap);
-            nvgLineJoin(nvg, (int)shape->strokeLineJoin);
-            switch (shape->stroke.type) {
-            case NSVG_PAINT_COLOR: {
-                nvgStrokeColor(nvg, getNVGColor(shape->stroke.color));
-            } break;
-            case NSVG_PAINT_LINEAR_GRADIENT: {
-                nvgStrokePaint(nvg, getPaint(nvg, &shape->stroke));
-            } break;
-            }
-            nvgStroke(nvg);
-        }
-        nvgRestore(nvg);
-    }
+extern "C" void UpdateRenderObject(uint64_t objectId, int x, int y, int w, int h) {
+    GetRenderTransport().publishObjectUpdate(objectId, x, y, w, h);
 }
 
-// ─────────────────────────────────────
-/**
- * Renders a GUI command using NanoVG based on its type and parameters.
- *
- * Sets fill and stroke colors from the command's current color, then
- * performs the appropriate drawing operation such as filling/stroking
- * rectangles, ellipses, paths, lines, rounded rectangles, or drawing text.
- *
- * @param ud   Pointer to Pd4WebUserData containing the NanoVG context.
- * @param cmd  Pointer to the GuiCommand to be drawn.
- */
-void Pd4WebDraw(Pd4WebUserData *ud, GuiCommand *cmd) {
-    float r, g, b;
-    HexToRgbNormalized(cmd->current_color, &r, &g, &b);
-
-    nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-    nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-
-    switch (cmd->command) {
-    case FILL_ALL: {
-        nvgBeginPath(ud->vg);
-        nvgRect(ud->vg, 0, 0, cmd->canvas_width, cmd->canvas_height);
-        nvgFill(ud->vg);
-        nvgClosePath(ud->vg);
-
-        nvgBeginPath(ud->vg);
-        std::string fg = ud->pd4web->GetFGColor();
-        HexToRgbNormalized(fg.c_str(), &r, &g, &b);
-        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        const float thickness = 1.0f / PD4WEB_PATCH_ZOOM;
-        const float inset = thickness * 0.5f;
-        const float w = fmaxf(0.0f, cmd->canvas_width - thickness);
-        const float h = fmaxf(0.0f, cmd->canvas_height - thickness);
-        nvgStrokeWidth(ud->vg, thickness);
-        nvgRect(ud->vg, inset, inset, w, h);
-        nvgStroke(ud->vg);
-        nvgClosePath(ud->vg);
-
-        break;
-    }
-    case FILL_RECT: {
-        nvgBeginPath(ud->vg);
-        nvgRect(ud->vg, cmd->x1, cmd->y1, cmd->w, cmd->h);
-        nvgFill(ud->vg);
-        nvgClosePath(ud->vg);
-        break;
-    }
-    case STROKE_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->w;
-        float height = cmd->h;
-        float thickness = cmd->line_width;
-        const float inset = thickness * 0.5f;
-        x += inset;
-        y += inset;
-        width = fmaxf(0.0f, width - thickness);
-        height = fmaxf(0.0f, height - thickness);
-        nvgBeginPath(ud->vg);
-        nvgRect(ud->vg, x, y, width, height);
-        nvgStrokeWidth(ud->vg, thickness);
-        nvgStroke(ud->vg);
-        nvgClosePath(ud->vg);
-        break;
-    }
-    case FILL_ELLIPSE: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->w;
-        float height = cmd->h;
-        float cx = x + width * 0.5f;
-        float cy = y + height * 0.5f;
-        float rx = width * 0.5f;
-        float ry = height * 0.5f;
-        nvgBeginPath(ud->vg);
-        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgEllipse(ud->vg, cx, cy, rx, ry);
-        nvgFill(ud->vg);
-        nvgClosePath(ud->vg);
-        break;
-    }
-    case STROKE_ELLIPSE: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->w;
-        float height = cmd->h;
-        float line_width = cmd->line_width;
-        float cx = x + width * 0.5f;
-        float cy = y + height * 0.5f;
-        float rx = width * 0.5f;
-        float ry = height * 0.5f;
-        nvgBeginPath(ud->vg);
-        nvgStrokeWidth(ud->vg, line_width);
-        nvgEllipse(ud->vg, cx, cy, rx, ry);
-
-        nvgStroke(ud->vg);
-        nvgClosePath(ud->vg);
-        break;
-    }
-
-    case FILL_ROUNDED_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->w;
-        float height = cmd->h;
-        float radius = cmd->radius;
-        nvgBeginPath(ud->vg);
-        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(ud->vg, x, y, width, height, radius);
-        nvgFill(ud->vg);
-        break;
-    }
-
-    case STROKE_ROUNDED_RECT: {
-        float x = cmd->x1;
-        float y = cmd->y1;
-        float width = cmd->w;
-        float height = cmd->h;
-        float radius = cmd->radius;
-        float thickness = cmd->line_width;
-        const float inset = thickness * 0.5f;
-        x += inset;
-        y += inset;
-        width = fmaxf(0.0f, width - thickness);
-        height = fmaxf(0.0f, height - thickness);
-        radius = fmaxf(0.0f, radius - inset);
-        nvgBeginPath(ud->vg);
-        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgRoundedRect(ud->vg, x, y, width, height, radius);
-        nvgStrokeWidth(ud->vg, thickness);
-        nvgStroke(ud->vg);
-        break;
-    }
-
-    case DRAW_LINE: {
-        float x1 = cmd->x1;
-        float y1 = cmd->y1;
-        float x2 = cmd->x2;
-        float y2 = cmd->y2;
-        float line_width = cmd->line_width;
-        nvgBeginPath(ud->vg);
-        nvgStrokeWidth(ud->vg, line_width);
-        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgMoveTo(ud->vg, x1, y1);
-        nvgLineTo(ud->vg, x2, y2);
-        nvgStroke(ud->vg);
-        break;
-    }
-
-    case STROKE_PATH: {
-        float line_width = cmd->line_width;
-        float *coords = cmd->path_coords;
-        int coords_len = cmd->path_size;
-        nvgBeginPath(ud->vg);
-        nvgStrokeWidth(ud->vg, line_width);
-        nvgStrokeColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        if (coords_len >= 2) {
-            nvgMoveTo(ud->vg, coords[0], coords[1]);
-            for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(ud->vg, coords[i * 2], coords[i * 2 + 1]);
-            }
-        }
-        nvgStroke(ud->vg);
-        break;
-    }
-    case FILL_PATH: {
-        float *coords = cmd->path_coords;
-        int coords_len = cmd->path_size;
-        nvgBeginPath(ud->vg);
-        if (coords_len >= 2) {
-            nvgMoveTo(ud->vg, coords[0], coords[1]);
-            for (int i = 1; i < coords_len; i++) {
-                nvgLineTo(ud->vg, coords[i * 2], coords[i * 2 + 1]);
-            }
-            nvgClosePath(ud->vg);
-        }
-        nvgFillColor(ud->vg, nvgRGBAf(r, g, b, 1.0f));
-        nvgFill(ud->vg);
-        break;
-    }
-    case DRAW_SVG: {
-        float const x = cmd->x1;
-        float const y = cmd->x2;
-        nvgSave(ud->vg);
-        nvgTranslate(ud->vg, x, y);
-        Pd4WebDrawSVG(ud->vg, cmd->svg);
-        nvgRestore(ud->vg);
-        free(cmd->svg);
-    }
-    case DRAW_TEXT: {
-        if (cmd->text[0] == '\0' || cmd->w <= 0 || cmd->font_size <= 0) {
-            break;
-        }
-        if (ud->font_handler >= 0) {
-            nvgBeginPath(ud->vg);
-            nvgFontSize(ud->vg, cmd->font_size);
-            nvgTextAlign(ud->vg, NVG_ALIGN_TOP | NVG_ALIGN_LEFT);
-            nvgTextBox(ud->vg, round(cmd->x1), round(cmd->y1), round(cmd->w), cmd->text, nullptr);
-        }
-        break;
-    }
-    }
+extern "C" void ClearRenderPatch(void) {
+    GetRenderTransport().publishLifecycle(RenderMessageType::ClearPatch, 0);
 }
 
-// ─────────────────────────────────────
-/**
- * Main Loop function called repeatedly by Emscripten.
- *
- * Handles processing and rendering tasks using the provided user data.
- *
- * @param userData  Pointer to user-defined data (Pd4WebUserData).
- */
+extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
+    if (!objectId || !layer) return 0;
+    ObjectId id = 0;
+    int layerIndex = -1;
+    if (!GetRenderTransport().takeRecovery(id, layerIndex)) return 0;
+    *objectId = id;
+    *layer = layerIndex;
+    return 1;
+}
+
 void Loop(void *userData) {
-    Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
-
+    auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 
-    GetGLContext(ud);
-    if (ud->vg == nullptr) {
-        emscripten_log(EM_LOG_ERROR, "NanoVG context invalid");
-        return;
-    }
     if (!ud->soundInit) {
-        // Before audio initialization, the internal tick of Pd is driven by the main loop.
-        // After audio is initialized, control of the tick is handed over to the audio processing
-        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
-        // the graphical interface becomes static and unresponsive due to the absence of tick
-        // updates.
-
-        float sampleRate = ud->pd4web->GetSampleRate();
-        float blockSize = 64.0f;
-        double now = emscripten_get_now();
-        double elapsed = now - ud->lastFrame;
+        const double now = emscripten_get_now();
+        const double elapsed = now - ud->lastFrame;
         ud->lastFrame = now;
-        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
-        libpd_process_float(ticks, nullptr, nullptr);
+        const int ticks = static_cast<int>((elapsed / 1000.0) *
+                                           (ud->pd4web->GetSampleRate() / 64.0f));
+        if (ticks > 0) libpd_process_float(ticks, nullptr, nullptr);
     }
 
-    float zoom = ud->pd4web->GetPatchZoom();
-    float pxRatio = ud->devicePixelRatio;
-
-    PdLuaObjsGui &pdlua_objs = GetLibPDInstanceCommands();
-    std::vector<PdLuaObjLayers> objs_to_redraw;
-
-    int dirtySceneMinX = std::numeric_limits<int>::max();
-    int dirtySceneMinY = std::numeric_limits<int>::max();
-    int dirtySceneMaxX = std::numeric_limits<int>::min();
-    int dirtySceneMaxY = std::numeric_limits<int>::min();
-
-    bool needs_redraw = false;
-
-    for (auto &obj_pair : pdlua_objs) {
-        PdLuaObjLayers &obj_layers = obj_pair.second;
-        bool object_dirty = false;
-
-        for (auto &layer_pair : obj_layers) {
-            PdLuaObjGuiLayer &layer = layer_pair.second;
-
-            if (layer.objw < 1 || layer.objh < 1 || !layer.dirty || layer.drawing) {
-                continue;
-            }
-
-            object_dirty = true;
-            needs_redraw = true;
-
-            int fbw = static_cast<int>(layer.objw * zoom * pxRatio);
-            int fbh = static_cast<int>(layer.objh * zoom * pxRatio);
-
-            if (!layer.fb) {
-                layer.fb = nvgluCreateFramebuffer(ud->vg, fbw, fbh,
-                                                  NVG_IMAGE_PREMULTIPLIED | NVG_IMAGE_NEAREST);
-            }
-
-            nvgluBindFramebuffer(layer.fb);
-            glViewport(0, 0, fbw, fbh);
-
-            nvgBeginFrame(ud->vg, fbw, fbh, 1);
-            nvgScissor(ud->vg, 0, 0, fbw, fbh);
-            glClearColor(0, 0, 0, 0);
-            glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-
-            nvgSave(ud->vg);
-            nvgScale(ud->vg, zoom * pxRatio, zoom * pxRatio);
-
-            for (GuiCommand &cmd : layer.gui_commands) {
-                Pd4WebDraw(ud, &cmd);
-            }
-            nvgRestore(ud->vg);
-            nvgResetScissor(ud->vg);
-            nvgEndFrame(ud->vg);
-            nvgluBindFramebuffer(nullptr);
-
-            layer.dirty = false;
-
-            int lx = layer.objx - ud->canvas_marginx;
-            int ly = layer.objy - ud->canvas_marginy;
-            int lw = layer.objw;
-            int lh = layer.objh;
-
-            dirtySceneMinX = std::min(dirtySceneMinX, lx);
-            dirtySceneMinY = std::min(dirtySceneMinY, ly);
-            dirtySceneMaxX = std::max(dirtySceneMaxX, lx + lw);
-            dirtySceneMaxY = std::max(dirtySceneMaxY, ly + lh);
-        }
-
-        if (object_dirty) {
-            objs_to_redraw.push_back(obj_layers);
-        }
+    if (ud->renderer) {
+        ud->renderer->setZoom(ud->pd4web->GetPatchZoom());
+        ud->renderer->poll();
     }
-
-    if (!needs_redraw || objs_to_redraw.empty()) {
-        return;
-    }
-
-    int dirtyW = dirtySceneMaxX - dirtySceneMinX;
-    int dirtyH = dirtySceneMaxY - dirtySceneMinY;
-
-    if (!ud->mainFBO) {
-        ud->mainFBO = nvgluCreateFramebuffer(ud->vg, ud->canvas_width, ud->canvas_height,
-                                             NVG_IMAGE_PREMULTIPLIED);
-    }
-
-    nvgluBindFramebuffer(ud->mainFBO);
-    glViewport(0, 0, ud->canvas_width, ud->canvas_height);
-
-    int scissorX = static_cast<int>(dirtySceneMinX * zoom * pxRatio);
-    int scissorY = static_cast<int>(dirtySceneMinY * zoom * pxRatio);
-    int scissorW = static_cast<int>(dirtyW * zoom * pxRatio);
-    int scissorH = static_cast<int>(dirtyH * zoom * pxRatio);
-
-    glEnable(GL_SCISSOR_TEST);
-    glScissor(scissorX, scissorY, scissorW, scissorH);
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
-    glDisable(GL_SCISSOR_TEST);
-
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
-    nvgSave(ud->vg);
-    nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
-               dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
-
-    for (const auto &obj_layers : objs_to_redraw) {
-        for (const auto &layer_pair : obj_layers) {
-            const PdLuaObjGuiLayer &layer = layer_pair.second;
-            if (!layer.fb) {
-                continue;
-            }
-
-            float dstX = (layer.objx - ud->canvas_marginx) * zoom * pxRatio;
-            float dstY = (layer.objy - ud->canvas_marginy) * zoom * pxRatio;
-            float dstW = layer.objw * zoom * pxRatio;
-            float dstH = layer.objh * zoom * pxRatio;
-
-            NVGpaint paint =
-                nvgImagePattern(ud->vg, dstX, dstY, dstW, dstH, 0, layer.fb->image, 1.0f);
-            nvgBeginPath(ud->vg);
-            nvgRect(ud->vg, dstX, dstY, dstW, dstH);
-            nvgFillPaint(ud->vg, paint);
-            nvgFill(ud->vg);
-        }
-    }
-
-    nvgResetScissor(ud->vg);
-    nvgRestore(ud->vg);
-    nvgEndFrame(ud->vg);
-    nvgluBindFramebuffer(nullptr);
-
-    // Final draw on screen
-    nvgBeginFrame(ud->vg, ud->canvas_width, ud->canvas_height, pxRatio);
-    nvgScissor(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
-               dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
-
-    NVGpaint screenPaint = nvgImagePattern(ud->vg, 0, 0, ud->canvas_width, ud->canvas_height, 0,
-                                           ud->mainFBO->image, 1.0f);
-    nvgBeginPath(ud->vg);
-    nvgRect(ud->vg, dirtySceneMinX * zoom * pxRatio, dirtySceneMinY * zoom * pxRatio,
-            dirtyW * zoom * pxRatio, dirtyH * zoom * pxRatio);
-    nvgFillPaint(ud->vg, screenPaint);
-    nvgFill(ud->vg);
-
-    nvgResetScissor(ud->vg);
-    nvgEndFrame(ud->vg);
 }
 
 // ╭─────────────────────────────────────╮
@@ -2718,6 +2041,7 @@ void Pd4Web::Init() {
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
     m_AudioContext = emscripten_create_audio_context(&attrs);
+    m_UserData->soundInit = true;
 
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;

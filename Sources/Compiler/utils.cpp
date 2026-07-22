@@ -537,7 +537,7 @@ void Pd4Web::print(std::string msg, enum Pd4WebLogLevel color, int level) {
 
 // ──────────────────────────────────────────
 void Pd4Web::createVersionFile(std::shared_ptr<Patch> &p) {
-    std::vector<std::string> internalRepos = {"emdsk", "pure-data", "pdlua", "pd.cmake", "nanovg"};
+    std::vector<std::string> internalRepos = {"emdsk", "pure-data", "pdlua", "pd.cmake", "thorvg"};
     YamlNode root = YamlNode::mapping(); // <-- FIX
 
     for (const auto &repo : internalRepos) {

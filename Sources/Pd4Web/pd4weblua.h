@@ -16,6 +16,7 @@
  **/
 
 #include "m_pd.h"
+#include <stdint.h>
 
 typedef enum { SCALE, TRANSLATE } transform_type;
 
@@ -28,6 +29,7 @@ typedef struct _pdlua_gfx {
     // Size variables
     int width, height;
     void *object;
+    uint64_t render_object_id;
 
 #if !PLUGDATA
     char object_tag[128]; // Tcl/tk tag that is attached to all drawings
@@ -37,7 +39,7 @@ typedef struct _pdlua_gfx {
     char **layer_tags;
     int num_layers;
     char *current_layer_tag;
-    gfx_transform *transforms;
+    gfx_transform transforms[32];
     int num_transforms;
     char current_color[10]; // Keep track of current color
 
@@ -74,3 +76,4 @@ typedef struct pdlua {
 } t_pdlua;
 
 lua_State *__L();
+void pdlua_gfx_process_recovery(void);

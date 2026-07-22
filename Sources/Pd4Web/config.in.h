@@ -1,6 +1,7 @@
 // This is automatically generated code from pd4web.py script
 #ifndef PD4WEB_CONFIG_H
 #define PD4WEB_CONFIG_H
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -108,6 +109,13 @@ extern "C" {
         FILL_ALL,
     };
 
+enum LuaPathVerb { LUA_PATH_MOVE_TO, LUA_PATH_LINE_TO, LUA_PATH_QUAD_TO,
+                   LUA_PATH_CUBIC_TO, LUA_PATH_CLOSE };
+typedef struct {
+    enum LuaPathVerb verb;
+    float values[6];
+} GuiPathElement;
+
 typedef struct {
     enum LuaGuiCommands command;
     int drawed;
@@ -130,18 +138,26 @@ typedef struct {
     float x2;
     float y2;
     char text[1024];
+    char *svg;
     float font_size;
     float stroke_width;
     float canvas_width;
     float canvas_height;
     float *path_coords;
-    char *svg;
     int path_size;
+    GuiPathElement *path_elements;
+    int path_element_count;
 } GuiCommand;
 
-extern void ClearLayerCommand(const char *obj_layer_id, int layer, int x, int y, int w, int h);
-extern void AddNewCommand(const char *obj_layer_id, int layer, GuiCommand *c);
-extern void EndPaintLayerCommand(const char *obj_layer_id, int layer);
+extern uint64_t AllocateRenderObjectIdC(void);
+extern void ClearLayerCommand(uint64_t object_id, int layer, int x, int y, int w, int h);
+extern void AddNewCommand(uint64_t object_id, int layer, GuiCommand *c);
+extern void EndPaintLayerCommand(uint64_t object_id, int layer);
+extern void RemoveRenderLayer(uint64_t object_id, int layer);
+extern void RemoveRenderObject(uint64_t object_id);
+extern void UpdateRenderObject(uint64_t object_id, int x, int y, int w, int h);
+extern void ClearRenderPatch(void);
+extern int TakeRenderRecovery(uint64_t *object_id, int *layer);
 
 #ifdef __cplusplus
 }

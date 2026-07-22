@@ -15,10 +15,10 @@ set(PDCMAKE_FILE
 include("${PDCMAKE_FILE}")
 
 # ╭──────────────────────────────────────╮
-# │                Nanovg                │
+# │                ThorVG                │
 # ╰──────────────────────────────────────╯
-FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg" "${CMAKE_CURRENT_BINARY_DIR}/nanovg-build")
+set(thorvg_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg.cmake")
 
 # ╭──────────────────────────────────────╮
 # │              Pd sources              │
@@ -50,8 +50,10 @@ endif()
 # ╭──────────────────────────────────────╮
 # │          Pd4Web executable           │
 # ╰──────────────────────────────────────╯
-add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
-target_include_directories(pd4web PUBLIC "${nanovg_SOURCE_DIR}/src")
+add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/RenderCommand.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/ThorVGRenderer.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/externals.cpp")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
@@ -61,7 +63,7 @@ endif()
 target_include_directories(pd4web PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 set_target_properties(pd4web PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/WebPatch")
 
-target_link_libraries(pd4web PRIVATE embind libpd nanovg pdlua)
+target_link_libraries(pd4web PRIVATE embind libpd thorvg pdlua)
 target_link_options(
     pd4web
     PRIVATE
@@ -77,9 +79,7 @@ target_link_options(
     -sAUDIO_WORKLET=1
     -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
-    -sMIN_WEBGL_VERSION=2
-    -sOFFSCREENCANVAS_SUPPORT
-    -sOFFSCREEN_FRAMEBUFFER)
+    -sMIN_WEBGL_VERSION=2)
 
 # Externals includes
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua.cmake")

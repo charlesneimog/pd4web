@@ -14,11 +14,9 @@ set(PDCMAKE_FILE
     CACHE INTERNAL "pd cmake file path")
 include("${PDCMAKE_FILE}")
 
-# ╭──────────────────────────────────────╮
-# │                Nanovg                │
-# ╰──────────────────────────────────────╯
-FetchContent_Declare(nanovg SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/nanovg" "${CMAKE_CURRENT_BINARY_DIR}/nanovg-build")
+# ThorVG is installed by the pd4web compiler and copied into the generated project.
+set(thorvg_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg")
+include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg.cmake")
 
 # ╭──────────────────────────────────────╮
 # │              Pd sources              │
@@ -51,8 +49,9 @@ endif()
 # │          Pd4Web executable           │
 # ╰──────────────────────────────────────╯
 add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/RenderCommand.cpp"
+                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/ThorVGRenderer.cpp"
                       "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web_externals.cpp")
-target_include_directories(pd4web PUBLIC "${nanovg_SOURCE_DIR}/src")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
@@ -66,7 +65,7 @@ target_link_libraries(
     pd4web
     PRIVATE embind
             libpd
-            nanovg
+            thorvg
             pdlua)
 target_link_options(
     pd4web
@@ -85,8 +84,7 @@ target_link_options(
     -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
     -sMIN_WEBGL_VERSION=2
-    -sOFFSCREENCANVAS_SUPPORT
-    -sOFFSCREEN_FRAMEBUFFER)
+    )
 
 # Externals includes
 @LIBRARIES_SCRIPT_INCLUDE@

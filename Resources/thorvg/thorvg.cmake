@@ -9,7 +9,7 @@ include(${CPM_FILE})
 # ╭──────────────────────────────────────╮
 # │                Thorvg                │
 # ╰──────────────────────────────────────╯
-cpmaddpackage("gh:thorvg/thorvg@1.0.5")
+cpmaddpackage("gh:thorvg/thorvg@1.1.0")
 file(
     GLOB
     THORVG_SOURCES
@@ -22,7 +22,8 @@ file(
     # loaders
     "${thorvg_SOURCE_DIR}/src/loaders/*.cpp"
     "${thorvg_SOURCE_DIR}/src/loaders/raw/*.cpp"
-    "${thorvg_SOURCE_DIR}/src/loaders/sfnt/*.cpp")
+    "${thorvg_SOURCE_DIR}/src/loaders/sfnt/*.cpp"
+    "${thorvg_SOURCE_DIR}/src/loaders/svg/*.cpp")
 
 # common
 add_library(thorvg STATIC ${THORVG_SOURCES})
@@ -32,6 +33,7 @@ target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/common/")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/raw/")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/sfnt/")
+target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/loaders/svg/")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/")
 target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/gpu_engine/gl/")
 
@@ -39,12 +41,12 @@ target_include_directories(thorvg PUBLIC "${thorvg_SOURCE_DIR}/src/renderer/gpu_
 set(THORVG_THREADS ON)
 set(THORVG_ENGINES "gl;wg")
 set(THORVG_EXTRA "opengl_es")
-set(THORVG_LOADERS "ttf")
+set(THORVG_LOADERS "ttf;otf")
 set(THORVG_GL_TARGET_GLES ON)
 set(THORVG_GL_RASTER_SUPPORT ON)
 set(THORVG_FILE_IO_SUPPORT ON)
 set(THORVG_TTF_LOADER_SUPPORT ON)
-add_definitions(-DTHORVG_GL_ENGINE_SUPPORT=1)
+set(THORVG_SVG_LOADER_SUPPORT ON)
 add_definitions(-DTHORVG_GL_ENGINE_SUPPORT=1)
 
 # ────────────────────────────────
@@ -80,7 +82,7 @@ set(CONFIG_H "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 file(WRITE "${CONFIG_H}" "// Automatically generated config.h\n#pragma once\n\n")
 
 # Version
-file(APPEND "${CONFIG_H}" "#define THORVG_VERSION_STRING \"1.0.0\"\n")
+file(APPEND "${CONFIG_H}" "#define THORVG_VERSION_STRING \"1.1.0\"\n")
 
 # Apply options individually
 if(THORVG_THREADS)
