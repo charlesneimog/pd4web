@@ -153,6 +153,7 @@ target_compile_definitions(
     PRIVATE -DPD=1
             -DUSEAPI_DUMMY=1
             -DHAVE_UNISTD_H=1
+            -DHAVE_ENDIAN_H=1
             -DHAVE_LIBDL
             -DPD_INTERNAL)
 

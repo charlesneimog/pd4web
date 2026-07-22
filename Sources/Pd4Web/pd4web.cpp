@@ -204,7 +204,7 @@ EM_JS(void, JS_RenderCommentCanvas,
                   return [line];
               }
 
-              const words = line.split(/(\s+)/);
+              const words = line.split(/(\\s+)/);
               const lines = [];
               let current = "";
 
@@ -227,7 +227,7 @@ EM_JS(void, JS_RenderCommentCanvas,
 
           const charWidth = Math.max(ctx.measureText("M").width * 0.75, 1);
           const wrapWidth = wrapChars > 0 ? charWidth * wrapChars : 0;
-          const sourceLines = commentText.split(/\r?\n/);
+          const sourceLines = commentText.split(/\\r?\\n/);
           const lines = [];
           for (const sourceLine of sourceLines) {
               lines.push(...wrapLine(sourceLine, wrapWidth));
