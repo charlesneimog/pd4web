@@ -153,6 +153,23 @@ std::string Pd4Web::getCertFile() {
 
 // ─────────────────────────────────────
 int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &args) {
+    // Do not propagate user or package-manager build flags to CMake/emcmake.
+    // Conda, for example, injects host-specific flags that are invalid for the
+    // Emscripten toolchain.
+    static constexpr std::array<const char *, 3> buildFlagVariables = {
+        "CFLAGS", "CXXFLAGS", "LDFLAGS"};
+#if defined(_WIN32)
+    for (const char *variable : buildFlagVariables) {
+        // Keep both the C runtime and Win32 environment blocks synchronized.
+        _putenv_s(variable, "");
+        SetEnvironmentVariableA(variable, nullptr);
+    }
+#else
+    for (const char *variable : buildFlagVariables) {
+        bp::environment::unset(variable);
+    }
+#endif
+
     std::ostringstream oss;
     for (const auto &a : args) {
         oss << a << ' ';
