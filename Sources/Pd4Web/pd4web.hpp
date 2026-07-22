@@ -187,7 +187,7 @@ struct Pd4WebUserData {
     int canvas_marginx;
     int canvas_marginy;
     float devicePixelRatio;
-    t_gobj *obj;
+    t_gobj *obj = nullptr; // Object captured by the current mouse gesture (audio thread only)
     t_canvas *canvas;
 
     // Keyboard input

@@ -155,155 +155,17 @@ EM_JS(void, JS_Alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
 
-// ─────────────────────────────────────
-EM_JS(void, JS_ClearPd4WebComments, (), {
-    document.querySelectorAll("canvas[data-pd4web-comment='1']").forEach((el) => el.remove());
+// Return a client coordinate relative to the patch canvas. Mouse-up is listened for on the
+// window, so Emscripten's targetX/targetY may refer to an element other than the canvas.
+EM_JS(double, JS_CanvasRelativeClientX, (const char *canvasSel, double clientX), {
+    const canvas = document.querySelector(UTF8ToString(canvasSel));
+    return canvas ? clientX - canvas.getBoundingClientRect().left : clientX;
 });
 
-// ─────────────────────────────────────
-EM_JS(void, JS_RenderCommentCanvas,
-      (const char *canvasSel, const char *commentId, const char *text, int patchX, int patchY,
-       int wrapChars, int fontSize, const char *color, int marginX, int marginY, float zoom,
-       float dpr),
-      {
-          const patchCanvas = document.querySelector(UTF8ToString(canvasSel));
-          if (!patchCanvas) {
-              return;
-          }
-
-          const id = "pd4web_comment_" + UTF8ToString(commentId);
-          const commentText = UTF8ToString(text);
-          const fg = UTF8ToString(color);
-          const scale = Math.max(zoom, 0.001);
-          const pxRatio = Math.max(dpr, window.devicePixelRatio || 1);
-          const cssFontSize = Math.max(fontSize * scale, 1);
-          const font = `${cssFontSize}px Inter, Arial, sans-serif`;
-          const lineHeight = Math.max(cssFontSize * 1.2, 1);
-
-          let el = document.getElementById(id);
-          if (!el) {
-              el = document.createElement("canvas");
-              el.id = id;
-              el.dataset.pd4webComment = "1";
-              el.style.position = "absolute";
-              el.style.pointerEvents = "none";
-              el.style.zIndex = "1";
-              document.body.appendChild(el);
-          }
-
-          const ctx = el.getContext("2d");
-          if (!ctx) {
-              return;
-          }
-
-          ctx.font = font;
-          ctx.textBaseline = "top";
-
-          function wrapLine(line, maxWidth) {
-              if (maxWidth <= 0 || ctx.measureText(line).width <= maxWidth) {
-                  return [line];
-              }
-
-              const words = line.split(/(\\s+)/);
-              const lines = [];
-              let current = "";
-
-              for (const word of words) {
-                  const next = current + word;
-                  if (current && ctx.measureText(next).width > maxWidth) {
-                      lines.push(current.trimEnd());
-                      current = word.trimStart();
-                  } else {
-                      current = next;
-                  }
-              }
-
-              if (current) {
-                  lines.push(current.trimEnd());
-              }
-
-              return lines.length ? lines : [line];
-          }
-
-          const charWidth = Math.max(ctx.measureText("M").width * 0.75, 1);
-          const wrapWidth = wrapChars > 0 ? charWidth * wrapChars : 0;
-          const sourceLines = commentText.split(/\\r?\\n/);
-          const lines = [];
-          for (const sourceLine of sourceLines) {
-              lines.push(...wrapLine(sourceLine, wrapWidth));
-          }
-
-          let contentWidth = wrapWidth;
-          if (contentWidth <= 0) {
-              contentWidth = lines.reduce((maxWidth, line) => {
-                  return Math.max(maxWidth, ctx.measureText(line).width);
-              }, 0);
-          }
-
-          const contentHeight = Math.max(lineHeight * Math.max(lines.length, 1), lineHeight);
-          const cssW = Math.max(Math.ceil(contentWidth), 1);
-          const cssH = Math.max(Math.ceil(contentHeight), 1);
-          const backingW = Math.max(Math.ceil(cssW * pxRatio), 1);
-          const backingH = Math.max(Math.ceil(cssH * pxRatio), 1);
-
-          if (el.width !== backingW) {
-              el.width = backingW;
-          }
-          if (el.height !== backingH) {
-              el.height = backingH;
-          }
-          el.style.width = `${cssW}px`;
-          el.style.height = `${cssH}px`;
-
-          function positionComment() {
-              const rect = patchCanvas.getBoundingClientRect();
-              const cssX = (patchX - marginX) * scale;
-              const cssY = (patchY - marginY) * scale;
-              el.style.left = `${window.scrollX + rect.left + cssX}px`;
-              el.style.top = `${window.scrollY + rect.top + cssY}px`;
-          }
-
-          positionComment();
-          ctx.setTransform(pxRatio, 0, 0, pxRatio, 0, 0);
-          ctx.clearRect(0, 0, cssW, cssH);
-          ctx.font = font;
-          ctx.textBaseline = "top";
-          ctx.fillStyle = fg;
-
-          for (let i = 0; i < lines.length; i++) {
-              ctx.fillText(lines[i], 0, i * lineHeight);
-          }
-
-          if (!window.__pd4webCommentPositionListener) {
-              window.__pd4webCommentPositionListener = () => {
-                  document.querySelectorAll("canvas[data-pd4web-comment='1']").forEach((comment) => {
-                      const canvas = document.querySelector(comment.dataset.patchCanvasSel);
-                      if (!canvas) {
-                          return;
-                      }
-                      const rect = canvas.getBoundingClientRect();
-                      const commentZoom = Number(comment.dataset.zoom) || 1;
-                      const commentX = Number(comment.dataset.patchX) || 0;
-                      const commentY = Number(comment.dataset.patchY) || 0;
-                      const commentMarginX = Number(comment.dataset.marginX) || 0;
-                      const commentMarginY = Number(comment.dataset.marginY) || 0;
-                      comment.style.left =
-                          `${window.scrollX + rect.left + (commentX - commentMarginX) * commentZoom}px`;
-                      comment.style.top =
-                          `${window.scrollY + rect.top + (commentY - commentMarginY) * commentZoom}px`;
-                  });
-              };
-              window.addEventListener("resize", window.__pd4webCommentPositionListener);
-              window.addEventListener("scroll", window.__pd4webCommentPositionListener, true);
-          }
-
-          el.dataset.patchCanvasSel = UTF8ToString(canvasSel);
-          el.dataset.patchX = String(patchX);
-          el.dataset.patchY = String(patchY);
-          el.dataset.marginX = String(marginX);
-          el.dataset.marginY = String(marginY);
-          el.dataset.zoom = String(scale);
-      });
+EM_JS(double, JS_CanvasRelativeClientY, (const char *canvasSel, double clientY), {
+    const canvas = document.querySelector(UTF8ToString(canvasSel));
+    return canvas ? clientY - canvas.getBoundingClientRect().top : clientY;
+});
     
 // ─────────────────────────────────────
 EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
@@ -507,30 +369,17 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
 bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     size_t length = jsArrayBuffer["byteLength"].as<size_t>();
     emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
-    PendingFile file;
-    file.filename = std::move(filename);
-    file.buffer.resize(length);
+    std::vector<uint8_t> buffer(length);
     for (size_t i = 0; i < length; i++) {
-        file.buffer[i] = uint8Array[i].as<uint8_t>();
+        buffer[i] = uint8Array[i].as<uint8_t>();
     }
-
-    if (!m_Pd4WebAudioWorkletInit) {
-        std::lock_guard<std::mutex> lock(m_UserData->pendingFilesMutex);
-        while (!m_UserData->pendingFiles.empty()) {
-            auto &file = m_UserData->pendingFiles.front();
-            std::ofstream out(file.filename, std::ios::binary);
-            if (!out) {
-                emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-            } else {
-                out.write(reinterpret_cast<const char *>(file.buffer.data()), file.buffer.size());
-            }
-            m_UserData->pendingFiles.pop();
-        }
-    } else {
-        std::lock_guard<std::mutex> lock(m_UserData->pendingFilesMutex);
-        m_UserData->pendingFiles.push(std::move(file));
+    std::ofstream out(filename, std::ios::binary);
+    if (!out) {
+        emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+        return false;
     }
-
+    out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
+    out.close();
     return true;
 }
 
@@ -923,21 +772,6 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
 
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
-
-    // TODO: How to do this?
-    {
-        std::lock_guard<std::mutex> lock(ud->pendingFilesMutex);
-        while (!ud->pendingFiles.empty()) {
-            auto &file = ud->pendingFiles.front();
-            std::ofstream out(file.filename, std::ios::binary);
-            if (!out) {
-                emscripten_log(EM_LOG_ERROR, "Failed to open output file");
-            } else {
-                out.write(reinterpret_cast<const char *>(file.buffer.data()), file.buffer.size());
-            }
-            ud->pendingFiles.pop();
-        }
-    }
 
     {
         std::lock_guard<std::mutex> lock(ud->pd4web->m_ToSendMutex);
@@ -1376,16 +1210,49 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
     ud->xpos = data.x;
     ud->ypos = data.y;
     ud->canvas = canvas;
-    ud->doit = (data.event_type == MouseEventData::MOUSE_DOWN ||
-                (data.event_type == MouseEventData::MOUSE_MOVE && ud->mousedown));
-
     if (data.event_type == MouseEventData::MOUSE_DOWN) {
+        // Recover from a missing browser mouse-up before starting a new capture.
+        if (ud->mousedown && ud->obj) {
+            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 0);
+        }
+
         ud->mousedown = true;
-    } else if (data.event_type == MouseEventData::MOUSE_UP) {
-        ud->mousedown = false;
+        ud->doit = true;
+        ud->obj = nullptr;
+
+        // Capture the first object which accepts the mouse-down. Later events in this gesture
+        // must be delivered to this object even when the pointer leaves its hitbox.
+        for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
+            int x1, y1, x2, y2;
+            if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0) &&
+                gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 1)) {
+                ud->obj = obj;
+                break;
+            }
+        }
+        return;
     }
 
-    // Process mouse click on canvas objects
+    if (data.event_type == MouseEventData::MOUSE_UP) {
+        ud->mousedown = false;
+        ud->doit = false;
+
+        if (ud->obj) {
+            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 0);
+            ud->obj = nullptr;
+        }
+        return;
+    }
+
+    ud->doit = ud->mousedown;
+
+    // While dragging, keep routing to the captured object. Otherwise dispatch hover movement
+    // through normal hit testing.
+    if (ud->mousedown && ud->obj) {
+        (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 1);
+        return;
+    }
+
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
@@ -1595,15 +1462,11 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
 EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
 
-    // Get canvas to calculate positions
-    t_canvas *canvas = pd_getcanvaslist();
-    if (!canvas) {
-        return EM_TRUE;
-    }
-
-    // Calculate position with zoom and margins
-    int xpos = round((e->targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
-    int ypos = round((e->targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
+    // Only capture browser data here. Pd state is exclusively accessed by the audio thread.
+    double canvasX = JS_CanvasRelativeClientX(ud->canvasSel.c_str(), e->clientX);
+    double canvasY = JS_CanvasRelativeClientY(ud->canvasSel.c_str(), e->clientY);
+    int xpos = round((canvasX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
+    int ypos = round((canvasY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
 
     // Create event data on main thread
     MouseEventData mouseData;
@@ -1625,6 +1488,8 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     case EMSCRIPTEN_EVENT_MOUSEMOVE:
         mouseData.event_type = MouseEventData::MOUSE_MOVE;
         break;
+    default:
+        return EM_FALSE;
     }
 
     // Queue event for processing on Audio Worklet thread
@@ -1707,8 +1572,9 @@ void setAsyncMainLoop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     int fps = ud->pd4web->GetFps();
     GetGLContext(ud);
+
     GetPatchComments(ud);
-    emscripten_set_main_loop_arg(Loop, userData, fps, 0);
+    emscripten_set_main_loop_arg(Loop, userData, fps, 20);
 }
 
 // ─────────────────────────────────────
@@ -1789,9 +1655,6 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
         if (options.hasOwnProperty("fgColor")) {
             m_FgColor = options["fgColor"].as<std::string>();
         }
-        if (options.hasOwnProperty("supressSoundIdWarning")) {
-            m_SoundIdWarning = options["supressSoundIdWarning"].as<bool>();
-        }
     }
 
     // Call internal OpenPatch
@@ -1868,10 +1731,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->soundToggleSel = soundToggleId;
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
-        if (m_SoundIdWarning) {
-            emscripten_log(EM_LOG_WARN, "You didn't assign a sound toggle ID. You need to run "
-                                        "Pd4Web.init() from a click event!");
-        }
+        emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
+                                    "Pd4Web.init() from a click event!");
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -1968,8 +1829,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         }
 
         m_UserData->mousedown = false;
+        m_UserData->obj = nullptr;
         emscripten_set_mousedown_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
-        emscripten_set_mouseup_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
+        emscripten_set_mouseup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, m_UserData.get(), EM_TRUE,
+                                        MouseListener);
         emscripten_set_mousemove_callback(sel, m_UserData.get(), EM_TRUE, MouseListener);
 
         // touchscreen
@@ -1999,10 +1862,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
     }
-
-    if (m_UseMidi) {
-        m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
-    }
+    m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
 }
 
 // ╭─────────────────────────────────────╮
@@ -2135,8 +1995,7 @@ static void HexToRgbNormalized(const char *hex, float *r, float *g, float *b) {
  * Otherwise, it configures WebGL2 attributes for high-performance rendering,
  * creates the context, and initializes NanoVG for vector graphics rendering.
  * It also loads a font ("InterRegular.ttf") named "inter" into NanoVG.
- * The background color is set to a default value, and the color and stencil buffers are
- * cleared.
+ * The background color is set to a default value, and the color and stencil buffers are cleared.
  *
  * If any step fails, appropriate cleanup is performed and alerts are shown.
  *
@@ -2673,7 +2532,19 @@ void Loop(void *userData) {
         return;
     }
     if (!ud->soundInit) {
-        libpd_poll_gui();
+        // Before audio initialization, the internal tick of Pd is driven by the main loop.
+        // After audio is initialized, control of the tick is handed over to the audio processing
+        // thread and cannot be reverted. As a result, if audio is initialized and later suspended,
+        // the graphical interface becomes static and unresponsive due to the absence of tick
+        // updates.
+
+        float sampleRate = ud->pd4web->GetSampleRate();
+        float blockSize = 64.0f;
+        double now = emscripten_get_now();
+        double elapsed = now - ud->lastFrame;
+        ud->lastFrame = now;
+        int ticks = static_cast<int>((elapsed / 1000.0) * (sampleRate / blockSize));
+        libpd_process_float(ticks, nullptr, nullptr);
     }
 
     float zoom = ud->pd4web->GetPatchZoom();
