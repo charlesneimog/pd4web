@@ -77,15 +77,14 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
              fs::copy_options::overwrite_existing);
     fs::copy(p->Pd4WebFiles / "pd4web.hpp", p->OutputFolder / "Pd4Web" / "pd4web.hpp",
              fs::copy_options::overwrite_existing);
-    for (const char *source : {"RenderCommand.hpp", "RenderCommand.cpp",
-                               "RenderTransactionQueue.hpp", "ThorVGRenderer.hpp",
-                               "ThorVGRenderer.cpp"}) {
+    for (const char *source :
+         {"RenderCommand.hpp", "RenderCommand.cpp", "RenderTransactionQueue.hpp",
+          "ThorVGRenderer.hpp", "ThorVGRenderer.cpp"}) {
         fs::copy(p->Pd4WebFiles / source, p->OutputFolder / "Pd4Web" / source,
                  fs::copy_options::overwrite_existing);
     }
     fs::copy(p->Pd4WebFiles / "Libraries" / "thorvg.cmake",
-             p->OutputFolder / "Pd4Web" / "thorvg.cmake",
-             fs::copy_options::overwrite_existing);
+             p->OutputFolder / "Pd4Web" / "thorvg.cmake", fs::copy_options::overwrite_existing);
 
     // Pd Lua
     if (p->PdLua) {
@@ -539,7 +538,7 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
     }
 
     // Step 2: Build
-    int cpuCount = std::max(1, static_cast<int>(std::thread::hardware_concurrency()) - 2);
+    int cpuCount = std::max(1, static_cast<int>(std::thread::hardware_concurrency()) / 2);
     std::vector<std::string> buildArgs = {"--build", buildDir.string(),
                                           "-j" + std::to_string(cpuCount), "--target", "pd4web"};
 
