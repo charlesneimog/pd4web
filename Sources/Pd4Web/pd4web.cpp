@@ -7,37 +7,12 @@
 // Then we don't need to pass the WebAudio Context as in version 1.0.
 // clang-format off
 EM_JS(void, JS_CreateNumberInput, (const char *canvasId), {
-    if (document.getElementById("_pd4web_number_input")) return;
-
     const canvasIdStr = UTF8ToString(canvasId);
     const canvas = document.getElementById(canvasIdStr);
     if (!canvas) {
         console.error("Canvas is undefined");
         return;
     }
-
-    const el = document.createElement("input");
-
-    el.id = "_pd4web_number_input";
-    el.type = "text";
-    el.inputMode = "decimal";
-    el.autocomplete = "off";
-    el.autocapitalize = "off";
-    el.spellcheck = false;
-    el.setAttribute("enterkeyhint", "done");
-    el.tabIndex = -1;
-
-    // Keep it effectively invisible while still focusable for mobile keyboards
-    el.style.position = "fixed";
-    el.style.top = "0";
-    el.style.left = "0";
-    el.style.width = "1px";        
-    el.style.height = "1px";      
-    el.style.opacity = "0.0001";      
-    el.style.pointerEvents = "auto"; 
-
-    el.style.zIndex = "0";
-    document.body.appendChild(el);
 
     function dispatchFakeKey(key, code, keyCode) {
         const ev = new KeyboardEvent("keydown", {
@@ -50,22 +25,81 @@ EM_JS(void, JS_CreateNumberInput, (const char *canvasId), {
         canvas.dispatchEvent(ev);
     }
 
-    // digits (value change)
-    el.addEventListener("input", () => {
-        const value = el.value;
-        if (!value) return;
-        const digit = value[value.length - 1];
-        el.value = "";
-        dispatchFakeKey(
-            digit,
-            "Numpad" + digit,
-            digit.charCodeAt(0)
-        );
-    });
+    globalThis._pd4webOpenNumberInput = (clientX, clientY) => {
+        const previous = document.getElementById("_pd4web_number_input");
+        if (previous) {
+            previous.blur();
+            previous.remove();
+        }
 
-    el.addEventListener("blur", (e) => {
-        dispatchFakeKey("Enter", "Enter", 13); 
-    });
+        const el = document.createElement("input");
+        el.id = "_pd4web_number_input";
+        el.type = "text";
+        el.inputMode = "decimal";
+        el.autocomplete = "off";
+        el.autocapitalize = "off";
+        el.spellcheck = false;
+        el.setAttribute("enterkeyhint", "done");
+
+        // Create the editable element inside the user gesture and place it at the
+        // touched control. It remains visually negligible but is not display:none,
+        // which mobile browsers refuse to focus for virtual-keyboard purposes.
+        el.style.position = "fixed";
+        el.style.left = clientX + "px";
+        el.style.top = clientY + "px";
+        el.style.width = "1px";
+        el.style.height = "1px";
+        el.style.fontSize = "16px";
+        el.style.opacity = "0.01";
+        el.style.pointerEvents = "none";
+        el.style.zIndex = "2147483647";
+
+        let finished = false;
+        function finish() {
+            if (finished) return;
+            finished = true;
+            dispatchFakeKey("Enter", "Enter", 13);
+            el.remove();
+        }
+
+        el.addEventListener("input", () => {
+            const value = el.value;
+            if (!value) return;
+            let key = value[value.length - 1];
+            el.value = "";
+            if (key === ",") key = ".";
+            if (!/[0-9.-]/.test(key)) return;
+            dispatchFakeKey(
+                key,
+                key >= "0" && key <= "9" ? "Numpad" + key :
+                    key === "." ? "NumpadDecimal" : "NumpadSubtract",
+                key.charCodeAt(0)
+            );
+        });
+
+        // Since the input is cleared after every character, mobile Backspace does
+        // not produce an input event. beforeinput still reports the deletion intent.
+        el.addEventListener("beforeinput", (e) => {
+            if (!e.inputType || !e.inputType.startsWith("delete")) return;
+            e.preventDefault();
+            dispatchFakeKey("Backspace", "Backspace", 8);
+        });
+
+        el.addEventListener("keydown", (e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            finish();
+        });
+        el.addEventListener("blur", finish);
+
+        document.body.appendChild(el);
+        el.focus({ preventScroll: true });
+        // Chromium-based mobile browsers expose an explicit request API. Focus is
+        // still required, and unsupported browsers keep the normal focus behavior.
+        if (navigator.virtualKeyboard && navigator.virtualKeyboard.show) {
+            navigator.virtualKeyboard.show();
+        }
+    };
 });
 
 // ─────────────────────────────────────
@@ -131,10 +165,9 @@ EM_JS(void, JS_CreateTextInput, (const char *canvasId), {
 });
 
 // ─────────────────────────────────────
-EM_JS(void, JS_Pd4WebFocusNumberInput, (), {
-    const el = document.getElementById("_pd4web_number_input");
-    if (!el) return;
-    el.focus({ preventScroll: true });
+EM_JS(void, JS_Pd4WebFocusNumberInput, (double clientX, double clientY), {
+    if (!globalThis._pd4webOpenNumberInput) return;
+    globalThis._pd4webOpenNumberInput(clientX, clientY);
 });
 
 // ─────────────────────────────────────
@@ -1420,6 +1453,24 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
     int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
 
+    // According to the browser user-activation model, touchend (not touchstart) is
+    // the activation-triggering event for touch pointers. Create and focus the input
+    // synchronously here. The rectangles were copied from Pd during setup, so this
+    // main-thread callback does not access Pd/AudioWorklet state.
+    if (eventType == EMSCRIPTEN_EVENT_TOUCHEND) {
+        for (const auto &region : ud->keyboardHitRegions) {
+            if (xpos >= region.x1 && xpos <= region.x2 && ypos >= region.y1 &&
+                ypos <= region.y2) {
+                if (region.type == KeyboardHitRegion::NUMBER) {
+                    JS_Pd4WebFocusNumberInput(e->touches[0].clientX, e->touches[0].clientY);
+                } else {
+                    JS_Pd4WebFocusTextInput();
+                }
+                break;
+            }
+        }
+    }
+
     // Create event data on main thread
     TouchEventData touchData;
     touchData.x = xpos;
@@ -1752,9 +1803,6 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     pdlua_setup();
     Pd4WebInitExternals();
 
-    // open patch
-    void *nKeyboard = libpd_bind("_pd4web_show_number_keyboard");
-
     if (!libpd_openfile(PatchPath.c_str(), "./")) {
         JS_Alert("Failed to open patch | Please Report!");
         return;
@@ -1823,6 +1871,39 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
             gobj_vis(obj, canvas, 1);
+
+            if (obj->g_pd && obj->g_pd->c_name) {
+                const char *objectName = obj->g_pd->c_name->s_name;
+                KeyboardHitRegion::Type keyboardType;
+                bool usesKeyboard = false;
+
+                for (int i = 0; i < PD4WEB_NUMBER_INPUT_SIZE; ++i) {
+                    const std::string gfxName = std::string(PD4WEB_NUMBER_INPUT[i]) + ":gfx";
+                    if (strcmp(objectName, gfxName.c_str()) == 0) {
+                        keyboardType = KeyboardHitRegion::NUMBER;
+                        usesKeyboard = true;
+                        break;
+                    }
+                }
+                if (!usesKeyboard) {
+                    for (int i = 0; i < PD4WEB_QWERTY_INPUT_SIZE; ++i) {
+                        const std::string gfxName = std::string(PD4WEB_QWERTY_INPUT[i]) + ":gfx";
+                        if (strcmp(objectName, gfxName.c_str()) == 0) {
+                            keyboardType = KeyboardHitRegion::TEXT;
+                            usesKeyboard = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (usesKeyboard) {
+                    KeyboardHitRegion region{};
+                    gobj_getrect(obj, canvas, &region.x1, &region.y1, &region.x2, &region.y2);
+                    region.type = keyboardType;
+                    m_UserData->keyboardHitRegions.push_back(region);
+                }
+            }
+
             // pd4web guarantees that there will be only one main canvas per patch
             if (strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
                 t_canvas *child_canvas = (t_canvas *)obj;
@@ -1852,8 +1933,6 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         // keydown (lua object must define obj::key_down)
         emscripten_set_keydown_callback(sel, m_UserData.get(), EM_FALSE, KeyListener);
-        emscripten_set_keydown_callback("#_pd4web_number_input", m_UserData.get(), EM_FALSE,
-                                        KeyListener);
         emscripten_set_keydown_callback("#_pd4web_text_input", m_UserData.get(), EM_FALSE,
                                         KeyListener);
 

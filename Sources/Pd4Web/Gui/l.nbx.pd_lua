@@ -85,6 +85,8 @@ function nbx:keydown(sel, atoms)
 		key = "Backspace"
 	elseif key_num == 46 or key_num == 110 or key_num == 190 or key_num == 44 or key_num == 188 then
 		key = "."
+	elseif key_num == 45 or key_num == 109 or key_num == 189 then
+		key = "-"
 	else
 		key = string.char(key_num)
 	end
@@ -106,6 +108,10 @@ function nbx:keydown(sel, atoms)
 	elseif key == "." then
 		if not self.number:find(".", 1, true) then
 			self.number = self.number .. key
+		end
+	elseif key == "-" then
+		if self.number == "" then
+			self.number = key
 		end
 	elseif tonumber(key) then
 		self.number = self.number .. tostring(key)

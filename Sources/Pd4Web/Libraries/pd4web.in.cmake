@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(FetchContent)
 
+message(STATUS "CPM PACKAGE INSTALLED ON ${CPM_SOURCE_CACHE}")
+
 # ╭──────────────────────────────────────╮
 # │       Always STATIC Libraries        │
 # ╰──────────────────────────────────────╯

@@ -48,6 +48,12 @@ function floatatom:keyreceiver(_, atoms)
 	local key
 	if key_num == 13 or key_num == 10 then
 		key = "Enter"
+	elseif key_num == 8 then
+		key = "Backspace"
+	elseif key_num == 46 or key_num == 110 or key_num == 190 or key_num == 44 or key_num == 188 then
+		key = "."
+	elseif key_num == 45 or key_num == 109 or key_num == 189 then
+		key = "-"
 	else
 		key = string.char(key_num)
 	end
@@ -67,7 +73,13 @@ function floatatom:keyreceiver(_, atoms)
 	elseif key == "Backspace" or key == "Delete" then
 		self.number = self.number:sub(1, -2)
 	elseif key == "." then
-		self.number = self.number .. key
+		if not self.number:find(".", 1, true) then
+			self.number = self.number .. key
+		end
+	elseif key == "-" then
+		if self.number == "" then
+			self.number = key
+		end
 	elseif tonumber(key) then
 		self.number = self.number .. tostring(key)
 	else

@@ -115,6 +115,15 @@ struct PendingFile {
     std::vector<uint8_t> buffer;
 };
 
+struct KeyboardHitRegion {
+    enum Type { NUMBER, TEXT };
+    int x1;
+    int y1;
+    int x2;
+    int y2;
+    Type type;
+};
+
 struct Pd4WebUserData {
     class Pd4Web *pd4web;
     t_pdinstance *libpd;
@@ -157,11 +166,11 @@ struct Pd4WebUserData {
 
     // Keyboard input
     std::string key;
+    // Immutable after GUI setup; read only by browser event callbacks.
+    std::vector<KeyboardHitRegion> keyboardHitRegions;
 
     // Main-runtime-thread-only renderer. The AudioWorklet only writes RenderTransport slots.
     std::unique_ptr<ThorVGRenderer> renderer;
-    bool openNumberKeyboard = false;
-
     // Files
     std::queue<PendingFile> pendingFiles;
     std::mutex pendingFilesMutex; // if threads can access simultaneously
