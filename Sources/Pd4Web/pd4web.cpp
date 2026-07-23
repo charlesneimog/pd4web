@@ -222,7 +222,7 @@ template <std::size_t N> void CopyBounded(char (&destination)[N], const std::str
     std::memcpy(destination, source.data(), count);
     destination[count] = '\0';
 }
-}
+} // namespace
 
 bool Pd4Web::EnqueueSender(const Pd4WebSender &sender) noexcept {
     auto *slot = m_ToSendQueue.beginPush();
@@ -316,12 +316,16 @@ bool Pd4Web::SendList(std::string s, emscripten::val a) {
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
-            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) {
+                return false;
+            }
             auto &atom = sender.list_data[sender.atomCount++];
             atom.type = Pd4WebAtom::FLOAT_TYPE;
             atom.f_value = v.as<float>();
         } else if (v.isString()) {
-            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) {
+                return false;
+            }
             auto &atom = sender.list_data[sender.atomCount++];
             atom.type = Pd4WebAtom::SYMBOL_TYPE;
             CopyBounded(atom.s_value, v.as<std::string>());
@@ -365,12 +369,16 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
     for (size_t i = 0; i < length; ++i) {
         emscripten::val v = a[i];
         if (v.isNumber()) {
-            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) {
+                return false;
+            }
             auto &atom = sender.list_data[sender.atomCount++];
             atom.type = Pd4WebAtom::FLOAT_TYPE;
             atom.f_value = v.as<float>();
         } else if (v.isString()) {
-            if (sender.atomCount >= Pd4WebSender::MaxAtoms) return false;
+            if (sender.atomCount >= Pd4WebSender::MaxAtoms) {
+                return false;
+            }
             auto &atom = sender.list_data[sender.atomCount++];
             atom.type = Pd4WebAtom::SYMBOL_TYPE;
             CopyBounded(atom.s_value, v.as<std::string>());
@@ -805,74 +813,74 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
     pdlua_gfx_process_recovery();
 
     while (const auto *sender = ud->pd4web->BeginSender()) {
-            switch (sender->type) {
-            case BANG:
+        switch (sender->type) {
+        case BANG:
+            libpd_bang(sender->receiver);
+            break;
+
+        case FLOAT:
+            libpd_float(sender->receiver, sender->f_value);
+            break;
+
+        case SYMBOL:
+            libpd_symbol(sender->receiver, sender->s_value);
+            break;
+
+        case LIST: {
+            size_t len = sender->atomCount;
+            if (len == 0) {
                 libpd_bang(sender->receiver);
-                break;
-
-            case FLOAT:
-                libpd_float(sender->receiver, sender->f_value);
-                break;
-
-            case SYMBOL:
-                libpd_symbol(sender->receiver, sender->s_value);
-                break;
-
-            case LIST: {
-                size_t len = sender->atomCount;
-                if (len == 0) {
-                    libpd_bang(sender->receiver);
-                } else {
-                    if (libpd_start_message(len) == 0) {
-                        for (size_t i = 0; i < len; ++i) {
-                            const auto &atom = sender->list_data[i];
-                            if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
-                                libpd_add_float(atom.f_value);
-                            } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
-                                libpd_add_symbol(atom.s_value);
-                            }
-                        }
-                        libpd_finish_list(sender->receiver);
-                    }
-                }
-                break;
-            }
-
-            case MESSAGE: {
-                size_t len = sender->atomCount;
-                if (len > 0) {
-                    t_atom atoms[Pd4WebSender::MaxAtoms];
-
+            } else {
+                if (libpd_start_message(len) == 0) {
                     for (size_t i = 0; i < len; ++i) {
                         const auto &atom = sender->list_data[i];
                         if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
-                            SETFLOAT(&atoms[i], atom.f_value);
+                            libpd_add_float(atom.f_value);
                         } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
-                            SETSYMBOL(&atoms[i], gensym(atom.s_value));
+                            libpd_add_symbol(atom.s_value);
                         }
                     }
-                    libpd_message(sender->receiver, sender->selector, len, atoms);
-                } else {
-                    libpd_message(sender->receiver, sender->selector, 0, nullptr);
+                    libpd_finish_list(sender->receiver);
                 }
-                break;
             }
+            break;
+        }
 
-            case MOUSE_EVENT:
-                ProcessMouseEvent(ud, sender->mouse_data);
-                break;
+        case MESSAGE: {
+            size_t len = sender->atomCount;
+            if (len > 0) {
+                t_atom atoms[Pd4WebSender::MaxAtoms];
 
-            case KEY_EVENT:
-                ProcessKeyEvent(ud, sender->key_data);
-                break;
-
-            case TOUCH_EVENT:
-                ProcessTouchEvent(ud, sender->touch_data);
-                break;
-
-            default:
-                break;
+                for (size_t i = 0; i < len; ++i) {
+                    const auto &atom = sender->list_data[i];
+                    if (atom.type == Pd4WebAtom::FLOAT_TYPE) {
+                        SETFLOAT(&atoms[i], atom.f_value);
+                    } else if (atom.type == Pd4WebAtom::SYMBOL_TYPE) {
+                        SETSYMBOL(&atoms[i], gensym(atom.s_value));
+                    }
+                }
+                libpd_message(sender->receiver, sender->selector, len, atoms);
+            } else {
+                libpd_message(sender->receiver, sender->selector, 0, nullptr);
             }
+            break;
+        }
+
+        case MOUSE_EVENT:
+            ProcessMouseEvent(ud, sender->mouse_data);
+            break;
+
+        case KEY_EVENT:
+            ProcessKeyEvent(ud, sender->key_data);
+            break;
+
+        case TOUCH_EVENT:
+            ProcessTouchEvent(ud, sender->touch_data);
+            break;
+
+        default:
+            break;
+        }
         ud->pd4web->EndSender();
     }
 
@@ -1557,8 +1565,7 @@ void setAsyncMainLoop(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     int fps = ud->pd4web->GetFps();
     ud->renderer = std::make_unique<ThorVGRenderer>();
-    if (!ud->renderer->initialize(ud->canvasSel, ud->pd4web->GetBGColor(),
-                                  ud->pd4web->GetFGColor(),
+    if (!ud->renderer->initialize(ud->canvasSel, ud->pd4web->GetBGColor(), ud->pd4web->GetFGColor(),
                                   ud->pd4web->GetPatchZoom(), ud->canvas_marginx,
                                   ud->canvas_marginy)) {
         emscripten_log(EM_LOG_ERROR, "ThorVG WebGL initialization failed");
@@ -1748,8 +1755,8 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         JS_CreateTextInput(PatchCanvaId.c_str());
 
         t_canvas *canvas = pd_getcanvaslist();
-        int canvasWidth = PD4WEB_PATCH_WIDTH;   // canvas->gl_pixwidth;
-        int canvasHeight = PD4WEB_PATCH_HEIGHT; // canvas->gl_pixheight;
+        int canvasWidth = PD4WEB_PATCH_WIDTH > 0 ? PD4WEB_PATCH_WIDTH : canvas->gl_pixwidth;
+        int canvasHeight = PD4WEB_PATCH_HEIGHT > 0 ? PD4WEB_PATCH_HEIGHT : canvas->gl_pixheight;
 
         std::string PatchCanvaSel = "#" + PatchCanvaId;
         const char *sel = PatchCanvaSel.c_str();
@@ -1906,10 +1913,13 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     cmd.h = 16;
     const float fontSize = PD4WEB_PATCH_FONTSIZE;
     const float estimatedCharWidth = fontSize * 0.6f;
-    if (txt->te_width == 0) cmd.w = std::max(estimatedCharWidth, copy_len * estimatedCharWidth);
-    else cmd.w = txt->te_width * estimatedCharWidth;
-    const int estimatedLines = std::max(1, static_cast<int>(std::ceil(
-        (copy_len * estimatedCharWidth) / std::max(1.0f, cmd.w))));
+    if (txt->te_width == 0) {
+        cmd.w = std::max(estimatedCharWidth, copy_len * estimatedCharWidth);
+    } else {
+        cmd.w = txt->te_width * estimatedCharWidth;
+    }
+    const int estimatedLines = std::max(
+        1, static_cast<int>(std::ceil((copy_len * estimatedCharWidth) / std::max(1.0f, cmd.w))));
     cmd.h = estimatedLines * fontSize * 1.2f;
     cmd.objw = cmd.w;
     cmd.objh = cmd.h;
@@ -1961,7 +1971,9 @@ extern "C" void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, in
 }
 
 extern "C" void AddNewCommand(uint64_t, int, GuiCommand *command) {
-    if (!command) return;
+    if (!command) {
+        return;
+    }
     GetRenderTransport().append(*command);
 }
 
@@ -1986,10 +1998,14 @@ extern "C" void ClearRenderPatch(void) {
 }
 
 extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
-    if (!objectId || !layer) return 0;
+    if (!objectId || !layer) {
+        return 0;
+    }
     ObjectId id = 0;
     int layerIndex = -1;
-    if (!GetRenderTransport().takeRecovery(id, layerIndex)) return 0;
+    if (!GetRenderTransport().takeRecovery(id, layerIndex)) {
+        return 0;
+    }
     *objectId = id;
     *layer = layerIndex;
     return 1;
@@ -2005,9 +2021,11 @@ void Loop(void *userData) {
         const double now = emscripten_get_now();
         const double elapsed = now - ud->lastFrame;
         ud->lastFrame = now;
-        const int ticks = static_cast<int>((elapsed / 1000.0) *
-                                           (ud->pd4web->GetSampleRate() / 64.0f));
-        if (ticks > 0) libpd_process_float(ticks, nullptr, nullptr);
+        const int ticks =
+            static_cast<int>((elapsed / 1000.0) * (ud->pd4web->GetSampleRate() / 64.0f));
+        if (ticks > 0) {
+            libpd_process_float(ticks, nullptr, nullptr);
+        }
     }
 
     if (ud->renderer) {
