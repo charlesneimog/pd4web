@@ -14,7 +14,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-xlab
-      Version: fa7e930d21c2591df5c29c3c8aca5fe9113f3d00
+      Version: e27a3f68568bf2bb8b525eb604e20e902d9ab9f2
       RunConfigure: true
 
     # ─────────────── pd-saf ───────────────
