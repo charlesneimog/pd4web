@@ -1,41 +1,61 @@
-local floatatom = pd.Class:new():register("floatatom")
+local floatatom = pd.Class:new():register("l.floatatom")
 
 -- ─────────────────────────────────────
 function floatatom:initialize(_, args)
 	self.inlets = 1
 	self.outlets = 1
-	self.args = args
+	self.args = args or {}
 	self.width = 5
-	self.labelpos = 4
-	self.idontknow = 0
+	self.draglo = 0
+	self.draghi = 0
+	self.wherelabel = 0
 	self.label = "-"
 	self.receive = "-"
 	self.send = "-"
 	self.fontsize = 12
+	self.padding = 2
 
 	self.select = false
-	self.needtoreset = false
 	self.needclear = false
 	self.number = "0"
+	self.keysreceiver = nil
+	self.receiver = nil
 
-	if #args > 0 then
-		self.width = args[1]
-		self.draglo = args[2]
-		self.draghi = args[3]
-		self.wherelabel = args[4]
-		self.label = args[5]
-		self.receive = args[6]
-		self.sende = args[7]
-		self.fontsize = args[8]
+	if args and #args > 0 then
+		self.width = tonumber(args[1]) or self.width
+		self.draglo = tonumber(args[2]) or self.draglo
+		self.draghi = tonumber(args[3]) or self.draghi
+		self.wherelabel = tonumber(args[4]) or self.wherelabel
+		self.label = args[5] or self.label
+		self.receive = args[6] or self.receive
+		self.send = args[7] or self.send
+		self.fontsize = tonumber(args[8]) or self.fontsize
 		if self.fontsize == 0 then
 			self.fontsize = 12
 		end
 	end
 
 	self.keysreceiver = pd.Receive:new():register(self, "#key", "keyreceiver")
-	self.padding = 2
-	self:set_size(self.width * self.fontsize * 0.65, self.fontsize + (2 * self.padding))
+	if self.receive ~= "-" and self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "receive_value")
+	end
+
+	local object_width = math.max(1, self.width) * self.fontsize * 0.65
+	local object_height = self.fontsize + (2 * self.padding)
+	self:set_size(object_width, object_height)
 	return true
+end
+
+-- ─────────────────────────────────────
+function floatatom:finalize()
+	if self.keysreceiver then
+		self.keysreceiver:destruct()
+		self.keysreceiver = nil
+	end
+	if self.receiver then
+		self.receiver:destruct()
+		self.receiver = nil
+	end
 end
 
 -- ─────────────────────────────────────
@@ -103,17 +123,17 @@ end
 -- ─────────────────────────────────────
 function floatatom:in_1_bang(_)
 	if self.send ~= "-" then
-		pd.send(self.send, "float", tonumber(self.number))
+		pd.send(self.send, "float", { tonumber(self.number) or 0 })
 	end
-	self:outlet(1, "float", { tonumber(self.number) })
+	self:outlet(1, "float", { tonumber(self.number) or 0 })
 end
 
 -- ─────────────────────────────────────
-function floatatom:in_1_float(args)
-	self.number = tostring(args)
-	self:outlet(1, "float", { args })
+function floatatom:in_1_float(value)
+	self.number = tostring(value)
+	self:outlet(1, "float", { value })
 	if self.send ~= "-" then
-		pd.send(self.send, "float", args[1])
+		pd.send(self.send, "float", { value })
 	end
 	self:repaint()
 end
@@ -122,7 +142,7 @@ end
 function floatatom:in_1_list(args)
 	self.number = tostring(args[1])
 	if self.send ~= "-" then
-		pd.send(self.send, "float", tonumber(self.number))
+		pd.send(self.send, "float", { tonumber(self.number) or 0 })
 	end
 	self:outlet(1, "float", { args[1] })
 	self:repaint()
@@ -133,28 +153,39 @@ function floatatom:in_1_symbol(_)
 	self.number = "0"
 	self:outlet(1, "float", { 0 })
 	if self.send ~= "-" then
-		pd.send(self.send, "float", 0)
+		pd.send(self.send, "float", { 0 })
 	end
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:receive_value(sel, atoms)
+	if sel ~= "float" or #atoms < 1 then
+		return
+	end
+	self.number = tostring(atoms[1])
 	self:repaint()
 end
 
 -- ─────────────────────────────────────
 function floatatom:paint(g)
 	local w, h = self:get_size()
-	g:set_color(0)
+	g:set_color(255, 255, 255)
 	g:fill_all()
 
-	g:set_color(1)
+	g:set_color(0, 0, 0)
 	g:stroke_rect(0, 0, w, h, 1)
 
 	if self.select then
 		g:set_color(255, 0, 0)
 	else
-		g:set_color(1)
+		g:set_color(0, 0, 0)
 	end
 
 	local number_str = tostring(self.number)
-	if number_str:find("%.") then
+	-- Preserve incomplete input such as "1." and trailing zeroes while editing.
+	-- Normalization is only appropriate after the value has been committed.
+	if not self.select and number_str:find("%.") then
 		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
 	end
 
@@ -177,12 +208,14 @@ function floatatom:paint(g)
 		end
 	end
 
-	g:draw_text(number_str, self.padding / 2, self.padding, self.fontsize * self.width, self.fontsize)
+	-- Inter's digit shapes sit slightly below the center of their em box.
+	local text_y = math.max(0, math.floor((h - self.fontsize) / 2) - 1)
+	g:draw_text(number_str, self.padding / 2, text_y, self.fontsize * self.width, self.fontsize)
 end
 
 -- ─────────────────────────────────────
 function floatatom:in_1_reload()
 	self:dofilex(self._scriptname)
-	self.keysreceiver:destruct()
-	self:initialize("floatatom", self.args)
+	self:finalize()
+	self:initialize("l.floatatom", self.args)
 end

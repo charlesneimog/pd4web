@@ -44,14 +44,14 @@ LayerTransaction *RenderTransport::beginLayer(ObjectId id, int layer, int x, int
 }
 
 bool RenderTransport::append(const GuiCommand &source) noexcept {
-    if (!m_Active || m_Active->commandCount >= LayerTransaction::MaxCommands) {
+    if (!m_Active) {
         m_ActiveValid = false;
         m_Dropped.fetch_add(1, std::memory_order_relaxed);
         return false;
     }
 
-    auto &command = m_Active->commands[m_Active->commandCount];
-    command = {};
+    m_Active->commands.emplace_back();
+    auto &command = m_Active->commands.back();
     command.command = source.command;
     std::strncpy(command.color, source.current_color, sizeof(command.color) - 1);
     command.x1 = source.x1;
@@ -70,17 +70,13 @@ bool RenderTransport::append(const GuiCommand &source) noexcept {
 
     if (source.path_elements && source.path_element_count > 0) {
         const auto count = static_cast<uint32_t>(source.path_element_count);
-        if (m_Active->pathElementCount + count > LayerTransaction::MaxPathElements) {
-            m_Dropped.fetch_add(1, std::memory_order_relaxed);
-            m_ActiveValid = false;
-            return false;
-        }
-        command.pathOffset = m_Active->pathElementCount;
-        command.pathCount = static_cast<uint16_t>(count);
+        command.pathOffset = static_cast<uint32_t>(m_Active->paths.size());
+        command.pathCount = count;
+        m_Active->paths.reserve(m_Active->paths.size() + count);
         for (uint32_t i = 0; i < count; ++i) {
             const auto &input = source.path_elements[i];
-            auto &element = m_Active->paths[m_Active->pathElementCount++];
-            element = {};
+            m_Active->paths.emplace_back();
+            auto &element = m_Active->paths.back();
             switch (input.verb) {
             case LUA_PATH_MOVE_TO: element.verb = RenderPathVerb::MoveTo; break;
             case LUA_PATH_LINE_TO: element.verb = RenderPathVerb::LineTo; break;
@@ -92,16 +88,12 @@ bool RenderTransport::append(const GuiCommand &source) noexcept {
         }
     } else if (source.path_coords && source.path_size > 0) {
         const auto count = static_cast<uint32_t>(source.path_size);
-        if (m_Active->pathElementCount + count > LayerTransaction::MaxPathElements) {
-            m_Dropped.fetch_add(1, std::memory_order_relaxed);
-            m_ActiveValid = false;
-            return false;
-        }
-        command.pathOffset = m_Active->pathElementCount;
-        command.pathCount = static_cast<uint16_t>(count);
+        command.pathOffset = static_cast<uint32_t>(m_Active->paths.size());
+        command.pathCount = count;
+        m_Active->paths.reserve(m_Active->paths.size() + count);
         for (uint32_t i = 0; i < count; ++i) {
-            auto &element = m_Active->paths[m_Active->pathElementCount++];
-            element = {};
+            m_Active->paths.emplace_back();
+            auto &element = m_Active->paths.back();
             element.verb = i == 0 ? RenderPathVerb::MoveTo : RenderPathVerb::LineTo;
             element.values[0] = source.path_coords[i * 2];
             element.values[1] = source.path_coords[i * 2 + 1];
@@ -109,19 +101,17 @@ bool RenderTransport::append(const GuiCommand &source) noexcept {
     }
 
     if (source.command == DRAW_SVG && source.svg) {
-        const auto length = strnlen(source.svg, LayerTransaction::MaxSvgBytes + 1);
-        if (length == 0 || length + 1 > LayerTransaction::MaxSvgBytes - m_Active->svgByteCount) {
-            m_Dropped.fetch_add(1, std::memory_order_relaxed);
+        const auto length = std::strlen(source.svg);
+        if (length == 0) {
             m_ActiveValid = false;
+            m_Dropped.fetch_add(1, std::memory_order_relaxed);
             return false;
         }
-        command.svgOffset = m_Active->svgByteCount;
+        command.svgOffset = static_cast<uint32_t>(m_Active->svgBytes.size());
         command.svgSize = static_cast<uint32_t>(length);
-        std::memcpy(m_Active->svgBytes.data() + m_Active->svgByteCount, source.svg, length + 1);
-        m_Active->svgByteCount += static_cast<uint32_t>(length + 1);
+        m_Active->svgBytes.insert(m_Active->svgBytes.end(), source.svg, source.svg + length + 1);
     }
 
-    ++m_Active->commandCount;
     return true;
 }
 
@@ -129,6 +119,7 @@ bool RenderTransport::publishLayer() noexcept {
     if (!m_Active) return false;
     if (!m_ActiveValid) {
         requestRecovery(m_Active->objectId, m_Active->layerIndex);
+        m_Queue.cancelPush();
         m_Active = nullptr;
         m_ActiveValid = false;
         return false;

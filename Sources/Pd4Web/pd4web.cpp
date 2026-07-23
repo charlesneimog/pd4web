@@ -94,6 +94,7 @@ EM_JS(void, JS_CreateNumberInput, (const char *canvasId), {
 
         document.body.appendChild(el);
         el.focus({ preventScroll: true });
+
         // Chromium-based mobile browsers expose an explicit request API. Focus is
         // still required, and unsupported browsers keep the normal focus behavior.
         if (navigator.virtualKeyboard && navigator.virtualKeyboard.show) {
@@ -1420,7 +1421,12 @@ void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data) {
  */
 EM_BOOL KeyListener(int eventType, const EmscriptenKeyboardEvent *e, void *userData) {
     Pd4WebUserData *ud = (Pd4WebUserData *)userData;
-    ud->pd4web->SendFloat("#key", e->keyCode);
+    // `keyCode` is deprecated and desktop browsers do not agree on the value
+    // for the minus key. `key` is stable across the main keyboard and numpad.
+    // Keep forwarding numeric key codes so the existing mobile input path and
+    // Lua receivers continue to work unchanged.
+    const int keyCode = strcmp(e->key, "-") == 0 ? 45 : e->keyCode;
+    ud->pd4web->SendFloat("#key", keyCode);
     return EM_TRUE;
 }
 
@@ -1722,6 +1728,49 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
 }
 
 // ─────────────────────────────────────
+static bool KeyboardTypeForObject(const char *objectName, KeyboardHitRegion::Type *type) {
+    if (!objectName || !type) {
+        return false;
+    }
+
+    for (int i = 0; i < PD4WEB_NUMBER_INPUT_SIZE; ++i) {
+        const char *configuredName = PD4WEB_NUMBER_INPUT[i];
+        const std::string gfxName = std::string(configuredName) + ":gfx";
+        if (strcmp(objectName, configuredName) == 0 || strcmp(objectName, gfxName.c_str()) == 0) {
+            *type = KeyboardHitRegion::NUMBER;
+            return true;
+        }
+    }
+
+    for (int i = 0; i < PD4WEB_QWERTY_INPUT_SIZE; ++i) {
+        const char *configuredName = PD4WEB_QWERTY_INPUT[i];
+        const std::string gfxName = std::string(configuredName) + ":gfx";
+        if (strcmp(objectName, configuredName) == 0 || strcmp(objectName, gfxName.c_str()) == 0) {
+            *type = KeyboardHitRegion::TEXT;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+// ─────────────────────────────────────
+static void CacheKeyboardHitRegion(Pd4WebUserData *ud, t_gobj *obj, t_canvas *canvas) {
+    if (!ud || !obj || !canvas || !obj->g_pd || !obj->g_pd->c_name) {
+        return;
+    }
+
+    const char *objectName = obj->g_pd->c_name->s_name;
+    KeyboardHitRegion region{};
+    if (!KeyboardTypeForObject(objectName, &region.type)) {
+        return;
+    }
+
+    gobj_getrect(obj, canvas, &region.x1, &region.y1, &region.x2, &region.y2);
+    ud->keyboardHitRegions.push_back(region);
+}
+
+// ─────────────────────────────────────
 /**
  * Opens a Pure Data patch with specified canvas and sound toggle elements.
  *
@@ -1871,49 +1920,16 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
             gobj_vis(obj, canvas, 1);
-
-            if (obj->g_pd && obj->g_pd->c_name) {
-                const char *objectName = obj->g_pd->c_name->s_name;
-                KeyboardHitRegion::Type keyboardType;
-                bool usesKeyboard = false;
-
-                for (int i = 0; i < PD4WEB_NUMBER_INPUT_SIZE; ++i) {
-                    const std::string gfxName = std::string(PD4WEB_NUMBER_INPUT[i]) + ":gfx";
-                    if (strcmp(objectName, gfxName.c_str()) == 0) {
-                        keyboardType = KeyboardHitRegion::NUMBER;
-                        usesKeyboard = true;
-                        break;
-                    }
-                }
-                if (!usesKeyboard) {
-                    for (int i = 0; i < PD4WEB_QWERTY_INPUT_SIZE; ++i) {
-                        const std::string gfxName = std::string(PD4WEB_QWERTY_INPUT[i]) + ":gfx";
-                        if (strcmp(objectName, gfxName.c_str()) == 0) {
-                            keyboardType = KeyboardHitRegion::TEXT;
-                            usesKeyboard = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (usesKeyboard) {
-                    KeyboardHitRegion region{};
-                    gobj_getrect(obj, canvas, &region.x1, &region.y1, &region.x2, &region.y2);
-                    region.type = keyboardType;
-                    m_UserData->keyboardHitRegions.push_back(region);
-                }
-            }
+            CacheKeyboardHitRegion(m_UserData.get(), obj, canvas);
 
             // pd4web guarantees that there will be only one main canvas per patch
-            if (strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
+            if (obj->g_pd && obj->g_pd->c_name &&
+                strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
                 t_canvas *child_canvas = (t_canvas *)obj;
                 for (t_gobj *childobj = child_canvas->gl_list; childobj;
                      childobj = childobj->g_next) {
-
-                    t_text *t = (t_text *)childobj;
-                    int x = t->te_xpix;
-                    int y = t->te_ypix;
                     gobj_vis(childobj, child_canvas, 1);
+                    CacheKeyboardHitRegion(m_UserData.get(), childobj, child_canvas);
                 }
             }
         }

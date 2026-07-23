@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cmath>
 #include <map>
+#include <thread>
 #include <unordered_map>
 
 namespace {
@@ -38,23 +39,19 @@ int main() {
     assert(transport.beginConsume() == nullptr);
     assert(transport.publishLayer());
     const auto *published = transport.beginConsume();
-    assert(published && published->objectId == 77 && published->commandCount == 1);
+    assert(published && published->objectId == 77 && published->commands.size() == 1);
     transport.endConsume();
     const auto droppedBefore = transport.dropped();
-    for (int i = 0; i < 16; ++i)
+    constexpr int transactionCount = 1024;
+    for (int i = 0; i < transactionCount; ++i)
         assert(transport.publishLifecycle(RenderMessageType::RemoveLayer, 77, i));
-    assert(transport.beginLayer(77, 3, 0, 0, 10, 10) == nullptr);
-    assert(!transport.publishLifecycle(RenderMessageType::RemoveLayer, 77, 16));
-    assert(transport.dropped() == droppedBefore + 2);
-    for (int i = 0; i < 16; ++i) {
+    assert(transport.dropped() == droppedBefore);
+    assert(transport.depth() == transactionCount);
+    for (int i = 0; i < transactionCount; ++i) {
         assert(transport.beginConsume()->layerIndex == i);
         transport.endConsume();
     }
-    transport.markRecoveryReady();
-    ObjectId recoveryObject = 0;
-    int recoveryLayer = -1;
-    assert(transport.takeRecovery(recoveryObject, recoveryLayer));
-    assert(recoveryObject == 77 && recoveryLayer == 3);
+    assert(!transport.hasPending());
 
     Model model;
     model.replace(1, 0, 1);                                      // one object/layer
@@ -78,6 +75,25 @@ int main() {
     *mouse.beginPush() = 3; mouse.commitPush();
     assert(mouse.beginPush() == nullptr);                        // explicit bounded overflow
     while (mouse.beginPop()) mouse.commitPop();
+
+    RenderUnboundedSpscQueue<int> renderQueue;
+    constexpr int concurrentTransactions = 100000;
+    std::thread producer([&] {
+        for (int i = 0; i < concurrentTransactions; ++i) {
+            auto *slot = renderQueue.beginPush();
+            assert(slot);
+            *slot = i;
+            renderQueue.commitPush();
+        }
+    });
+    for (int expectedValue = 0; expectedValue < concurrentTransactions;) {
+        if (const auto *value = renderQueue.beginPop()) {
+            assert(*value == expectedValue++);
+            renderQueue.commitPop();
+        }
+    }
+    producer.join();
+    assert(renderQueue.empty());
 
     model.framePending = true;                                  // arrival during render
     model.replace(1, 0, 6);

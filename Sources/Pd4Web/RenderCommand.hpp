@@ -11,6 +11,7 @@
 #include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <vector>
 
 using ObjectId = uint64_t;
 
@@ -55,18 +56,14 @@ struct RenderCommand {
     float fontSize = 0;
     float canvasWidth = 0;
     float canvasHeight = 0;
-    uint16_t pathOffset = 0;
-    uint16_t pathCount = 0;
+    uint32_t pathOffset = 0;
+    uint32_t pathCount = 0;
     uint32_t svgOffset = 0;
     uint32_t svgSize = 0;
     char text[1024]{};
 };
 
 struct LayerTransaction {
-    static constexpr uint16_t MaxCommands = 256;
-    static constexpr uint16_t MaxPathElements = 2048;
-    static constexpr uint32_t MaxSvgBytes = 64 * 1024;
-
     RenderMessageType type = RenderMessageType::ReplaceLayer;
     ObjectId objectId = 0;
     int32_t layerIndex = 0;
@@ -76,12 +73,9 @@ struct LayerTransaction {
     int32_t objectWidth = 0;
     int32_t objectHeight = 0;
     uint32_t objectOrder = 0;
-    uint16_t commandCount = 0;
-    uint16_t pathElementCount = 0;
-    uint32_t svgByteCount = 0;
-    std::array<RenderCommand, MaxCommands> commands{};
-    std::array<RenderPathElement, MaxPathElements> paths{};
-    std::array<char, MaxSvgBytes> svgBytes{};
+    std::vector<RenderCommand> commands;
+    std::vector<RenderPathElement> paths;
+    std::vector<char> svgBytes;
 
     void reset(RenderMessageType messageType, ObjectId id, int layer) noexcept {
         type = messageType;
@@ -90,8 +84,9 @@ struct LayerTransaction {
         revision = 0;
         objectX = objectY = objectWidth = objectHeight = 0;
         objectOrder = 0;
-        commandCount = pathElementCount = 0;
-        svgByteCount = 0;
+        commands.clear();
+        paths.clear();
+        svgBytes.clear();
     }
 };
 
@@ -114,7 +109,7 @@ class RenderTransport {
   private:
     void requestRecovery(ObjectId id, int layer) noexcept;
 
-    RenderSpscQueue<LayerTransaction, 17> m_Queue;
+    RenderUnboundedSpscQueue<LayerTransaction> m_Queue;
     LayerTransaction *m_Active = nullptr;
     bool m_ActiveValid = false;
     std::atomic<uint64_t> m_Dropped{0};

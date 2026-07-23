@@ -111,7 +111,7 @@ end
 -- ──────────────────────────────────────────
 function hradio:in_1_size(args)
 	self.size = args[1]
-	self:set_size(self.size, self.size * self.number)
+	self:set_size(self.size * self.number, self.size)
 	self:repaint()
 end
 
@@ -169,6 +169,7 @@ end
 
 -- ──────────────────────────────────────────
 function hradio:paint_layer_2(g)
+	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
 	g:fill_rect(4 + (self.selected * self.size), 4, self.size - 8, self.size - 8, 1)
 end
 

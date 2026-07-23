@@ -198,10 +198,12 @@ function nbx:paint(g)
 	g:set_color(0, 0, 0)
 	g:stroke_rect(0, 0, width, height, 1)
 
-	-- triangle
-	local p = Path(0, 0)
+	-- Keep the path inside the contour. A stroke is centered on its coordinates,
+	-- so drawing at x=0 made the triangle extend half a pixel to the left.
+	local inset = 0.5
+	local p = Path(inset, inset)
 	p:line_to(8, height / 2)
-	p:line_to(0, height)
+	p:line_to(inset, height - inset)
 	g:stroke_path(p, 1)
 
 	-- text
@@ -221,7 +223,8 @@ function nbx:paint(g)
 		end
 	end
 
-	g:draw_text(number_str, 10, height / 12, self.digs_len * self.fontsize, self.fontsize)
+	local text_y = math.max(0, math.floor((height - self.fontsize) / 2))
+	g:draw_text(number_str, 10, text_y - 1, self.digs_len * self.fontsize, self.fontsize)
 end
 
 -- ──────────────────────────────────────────

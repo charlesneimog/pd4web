@@ -356,8 +356,8 @@ bool ThorVGRenderer::replaceLayer(const LayerTransaction &transaction) {
 tvg::Scene *ThorVGRenderer::buildLayer(const LayerTransaction &transaction) {
     auto *layer = tvg::Scene::gen();
     if (!layer) return nullptr;
-    for (uint16_t i = 0; i < transaction.commandCount; ++i) {
-        auto *paint = createPaint(transaction.commands[i], transaction);
+    for (const auto &command : transaction.commands) {
+        auto *paint = createPaint(command, transaction);
         if (!paint || !success(layer->add(paint))) {
             if (paint && !paint->parent()) tvg::Paint::rel(paint);
             tvg::Paint::rel(layer);
@@ -442,10 +442,10 @@ tvg::Paint *ThorVGRenderer::createPaint(const RenderCommand &command,
     case FILL_PATH:
     case STROKE_PATH: {
         auto paint = makeShape();
-        if (!paint || command.pathOffset + command.pathCount > transaction.pathElementCount)
+        if (!paint || command.pathOffset + command.pathCount > transaction.paths.size())
             return nullptr;
         float currentX = 0, currentY = 0;
-        for (uint16_t i = 0; i < command.pathCount; ++i) {
+        for (uint32_t i = 0; i < command.pathCount; ++i) {
             const auto &path = transaction.paths[command.pathOffset + i];
             tvg::Result result = tvg::Result::Unknown;
             switch (path.verb) {
@@ -497,7 +497,8 @@ tvg::Paint *ThorVGRenderer::createPaint(const RenderCommand &command,
         return text.release();
     }
     case DRAW_SVG: {
-        if (!command.svgSize || command.svgOffset + command.svgSize > transaction.svgByteCount)
+        if (!command.svgSize ||
+            command.svgOffset + command.svgSize > transaction.svgBytes.size())
             return nullptr;
         PendingPaint<tvg::Picture> picture{tvg::Picture::gen(), releasePaint};
         if (!picture || !success(picture->load(transaction.svgBytes.data() + command.svgOffset,

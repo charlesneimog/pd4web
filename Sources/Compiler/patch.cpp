@@ -49,6 +49,8 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
 
     if (Line[0] == "#X") {
         m_inArray = false;
+        const bool insideGraph =
+            !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
             if (!p->CanvasGraphStack.empty()) {
@@ -59,7 +61,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
             pl.Type = PatchLine::DECLARE;
             processDeclareClass(p, pl);
         } else if (Line[1] == "obj") {
-            pl.InsideGraph = !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
+            pl.InsideGraph = insideGraph;
             processObjClass(p, pl);
             pl.Type = PatchLine::OBJ;
         } else if (Line[1] == "msg") {
@@ -74,12 +76,15 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
             pl.Type = PatchLine::COORDS;
         } else if (Line[1] == "floatatom") {
             pl.Type = PatchLine::FLOATATOM;
+            pl.InsideGraph = insideGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "symbolatom") {
             pl.Type = PatchLine::SYMBOLATOM;
+            pl.InsideGraph = insideGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "listbox") {
             pl.Type = PatchLine::LISTATOM;
+            pl.InsideGraph = insideGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "f") {
             pl.Type = PatchLine::FLOAT;
@@ -613,13 +618,14 @@ std::string Pd4Web::getObjName(std::string &objToken) {
 
 // ─────────────────────────────────────
 bool Pd4Web::processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl) {
-    if (p->CanvasLevel == 1 && !p->IsSubpatch && p->RenderGui) {
+    const bool topLevelAtom = p->CanvasLevel == 1 && !p->IsSubpatch;
+    if (p->RenderGui && (topLevelAtom || pl.InsideGraph)) {
         std::string xpix = pl.Tokens[2];
         std::string ypix = pl.Tokens[3];
         std::vector<std::string> updatedTokens = {"#X", "obj", xpix, ypix};
         switch (pl.Type) {
         case PatchLine::FLOATATOM:
-            updatedTokens.push_back("floatatom");
+            updatedTokens.push_back("l.floatatom");
             break;
         case PatchLine::SYMBOLATOM:
             updatedTokens.push_back("symbolatom");
@@ -633,7 +639,7 @@ bool Pd4Web::processCanvasAtoms(std::shared_ptr<Patch> &p, PatchLine &pl) {
 
         p->PdLua = true;
         p->LuaGuiObjects = true;
-        print("Replacing " + updatedTokens[4] + " by pdlua " + updatedTokens[4],
+        print("Replacing " + pl.Tokens[1] + " by pdlua " + updatedTokens[4],
               Pd4WebLogLevel::PD4WEB_LOG2);
         for (int i = 4; i < pl.Tokens.size(); i++) {
             updatedTokens.push_back(pl.Tokens[i]);

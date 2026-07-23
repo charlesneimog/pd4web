@@ -306,7 +306,7 @@ class Pd4Web {
     Libraries m_Libraries;
 
     // Gui Objects
-    std::vector<std::string> m_NumberInput = {"floatatom", "l.nbx"};
+    std::vector<std::string> m_NumberInput = {"l.floatatom", "l.nbx"};
     std::vector<std::string> m_QwertyInput = {"symbolatom", "listatom"};
 
     // print callback
