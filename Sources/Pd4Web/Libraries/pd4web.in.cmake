@@ -7,6 +7,30 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 include(FetchContent)
 
 # ╭──────────────────────────────────────╮
+# │       Always STATIC Libraries        │
+# ╰──────────────────────────────────────╯
+function(add_library target)
+    set(args ${ARGN})
+
+    if(EMSCRIPTEN)
+        list(
+            FIND
+            args
+            SHARED
+            shared_index)
+        if(NOT
+           shared_index
+           EQUAL
+           -1)
+            list(REMOVE_ITEM args SHARED)
+            list(PREPEND args STATIC)
+        endif()
+    endif()
+
+    _add_library(${target} ${args})
+endfunction()
+
+# ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
 set(PDCMAKE_FILE
@@ -48,10 +72,12 @@ endif()
 # ╭──────────────────────────────────────╮
 # │          Pd4Web executable           │
 # ╰──────────────────────────────────────╯
-add_executable(pd4web "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
-                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/RenderCommand.cpp"
-                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/ThorVGRenderer.cpp"
-                      "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web_externals.cpp")
+add_executable(
+    pd4web
+    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/RenderCommand.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/ThorVGRenderer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pd4web_externals.cpp")
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
     include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/pdlua")
@@ -83,8 +109,7 @@ target_link_options(
     -sAUDIO_WORKLET=1
     -sUSE_WEBGL2=1
     -sMAX_WEBGL_VERSION=2
-    -sMIN_WEBGL_VERSION=2
-    )
+    -sMIN_WEBGL_VERSION=2)
 
 # Externals includes
 @LIBRARIES_SCRIPT_INCLUDE@
