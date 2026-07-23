@@ -525,6 +525,8 @@ void Pd4Web::buildPatch(std::shared_ptr<Patch> &p) {
                                         "Ninja",
                                         "-DCMAKE_BUILD_TYPE=" + buildType,
                                         "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
+                                        "-DCPM_SOURCE_CACHE=" +
+                                            (p->Pd4WebRoot / "Dependencies").string(),
                                         "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
                                         "-Wno-dev"};
 
