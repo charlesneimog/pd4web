@@ -1229,10 +1229,36 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
     ud->xpos = data.x;
     ud->ypos = data.y;
     ud->canvas = canvas;
+
+    // pdlua GUI objects call glist_grab() from their click handler.  For a GOP,
+    // Pd promotes that grab to the root canvas, so the editor contains the actual
+    // child control even though the hit object below is the outer graph.  Mirror
+    // Pd's canvas_motion()/canvas_mouseup() handling here instead of repeatedly
+    // calling the graph's click handler: the latter never reaches mouse_drag and
+    // can lose mouse_up as soon as the pointer leaves the child's hit box.
+    auto dispatchGrab = [&](bool up) {
+        t_editor *editor = canvas->gl_editor;
+        if (!editor || editor->e_onmotion != MA_PASSOUT || !editor->e_grab || !editor->e_motionfn) {
+            return false;
+        }
+
+        editor->e_motionfn(&editor->e_grab->g_pd, data.x - editor->e_xwas, data.y - editor->e_ywas,
+                           up ? 1 : 0);
+        if (up) {
+            editor->e_onmotion = MA_NONE;
+        } else {
+            editor->e_xwas = data.x;
+            editor->e_ywas = data.y;
+        }
+        return true;
+    };
+
     if (data.event_type == MouseEventData::MOUSE_DOWN) {
         // Recover from a missing browser mouse-up before starting a new capture.
-        if (ud->mousedown && ud->obj) {
-            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 0);
+        if (ud->mousedown) {
+            if (!dispatchGrab(true) && ud->obj) {
+                (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 0);
+            }
         }
 
         ud->mousedown = true;
@@ -1244,7 +1270,7 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
         for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
             int x1, y1, x2, y2;
             if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0) &&
-                gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 1)) {
+                gobj_click(obj, canvas, data.x, data.y, data.shift, data.alt, 0, 1)) {
                 ud->obj = obj;
                 break;
             }
@@ -1257,7 +1283,9 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
         ud->doit = false;
 
         if (ud->obj) {
-            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 0);
+            if (!dispatchGrab(true)) {
+                (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 0);
+            }
             ud->obj = nullptr;
         }
         return;
@@ -1268,15 +1296,16 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
     // While dragging, keep routing to the captured object. Otherwise dispatch hover movement
     // through normal hit testing.
     if (ud->mousedown && ud->obj) {
-        (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt, 1);
+        if (!dispatchGrab(false)) {
+            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 1);
+        }
         return;
     }
 
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
         int x1, y1, x2, y2;
         if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
-            (void)gobj_click(obj, canvas, data.x, data.y, data.shift, data.ctrl, data.alt,
-                             ud->doit);
+            (void)gobj_click(obj, canvas, data.x, data.y, data.shift, data.alt, 0, ud->doit);
         }
     }
 }
@@ -1328,39 +1357,22 @@ void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data) {
  * @param data Touch event data.
  */
 void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data) {
-    libpd_set_instance(ud->libpd);
-
-    t_canvas *canvas = pd_getcanvaslist();
-    if (!canvas) {
-        return;
-    }
-
-    ud->xpos = data.x;
-    ud->ypos = data.y;
-    ud->canvas = canvas;
-
+    MouseEventData mouseData{};
+    mouseData.x = data.x;
+    mouseData.y = data.y;
     switch (data.event_type) {
     case TouchEventData::TOUCH_START:
-        ud->mousedown = true;
-        ud->doit = true;
+        mouseData.event_type = MouseEventData::MOUSE_DOWN;
         break;
     case TouchEventData::TOUCH_END:
     case TouchEventData::TOUCH_CANCEL:
-        ud->mousedown = false;
-        ud->doit = false;
+        mouseData.event_type = MouseEventData::MOUSE_UP;
         break;
     case TouchEventData::TOUCH_MOVE:
-        ud->doit = ud->mousedown;
+        mouseData.event_type = MouseEventData::MOUSE_MOVE;
         break;
     }
-
-    // Process touch as mouse click on canvas objects
-    for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {
-        int x1, y1, x2, y2;
-        if (canvas_hitbox(canvas, obj, data.x, data.y, &x1, &y1, &x2, &y2, 0)) {
-            (void)gobj_click(obj, canvas, data.x, data.y, 0, 0, 0, ud->doit);
-        }
-    }
+    ProcessMouseEvent(ud, mouseData);
 }
 
 // ─────────────────────────────────────

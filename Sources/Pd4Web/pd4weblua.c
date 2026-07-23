@@ -798,8 +798,21 @@ static void pdlua_motion(t_gobj *z, t_floatarg dx, t_floatarg dy,
 {
 #ifndef PLUGDATA
 #ifndef PURR_DATA
-    if (!up)
-#endif
+    {
+        t_pdlua *x = (t_pdlua *)z;
+        x->gfx.mouse_drag_x = x->gfx.mouse_drag_x + dx;
+        x->gfx.mouse_drag_y = x->gfx.mouse_drag_y + dy;
+        int zoom = glist_getzoom(glist_getcanvas(x->canvas));
+        int xpos = (x->gfx.mouse_drag_x - text_xpix(&x->pd, x->canvas)) / zoom;
+        int ypos = (x->gfx.mouse_drag_y - text_ypix(&x->pd, x->canvas)) / zoom;
+        if (up) {
+            pdlua_gfx_mouse_up(x, xpos, ypos);
+            x->gfx.mouse_down = 0;
+        } else {
+            pdlua_gfx_mouse_drag(x, xpos, ypos);
+        }
+    }
+#else
     {
         t_pdlua *x = (t_pdlua *)z;
         x->gfx.mouse_drag_x = x->gfx.mouse_drag_x + dx;
@@ -809,6 +822,7 @@ static void pdlua_motion(t_gobj *z, t_floatarg dx, t_floatarg dy,
         int ypos = (x->gfx.mouse_drag_y - text_ypix(&x->pd, x->canvas)) / zoom;
         pdlua_gfx_mouse_drag(x, xpos, ypos);
     }
+#endif
 #endif
 }
 
