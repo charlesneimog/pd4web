@@ -1210,6 +1210,24 @@ std::string Pd4Web::GetFGColor() {
 // ╭─────────────────────────────────────╮
 // │             USER EVENTS             │
 // ╰─────────────────────────────────────╯
+static bool DispatchMouseGrab(t_canvas *canvas, const MouseEventData &data, bool up) {
+    t_editor *editor = canvas->gl_editor;
+    if (!editor || editor->e_onmotion != MA_PASSOUT || !editor->e_grab ||
+        !editor->e_motionfn) {
+        return false;
+    }
+
+    editor->e_motionfn(&editor->e_grab->g_pd, data.x - editor->e_xwas,
+                       data.y - editor->e_ywas, up ? 1 : 0);
+    if (up) {
+        editor->e_onmotion = MA_NONE;
+    } else {
+        editor->e_xwas = data.x;
+        editor->e_ywas = data.y;
+    }
+    return true;
+}
+
 /**
  * Process mouse click event on the Audio Worklet thread.
  * This is called from the Process() function, not from pd_queue_mess.
@@ -1230,33 +1248,10 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
     ud->ypos = data.y;
     ud->canvas = canvas;
 
-    // pdlua GUI objects call glist_grab() from their click handler.  For a GOP,
-    // Pd promotes that grab to the root canvas, so the editor contains the actual
-    // child control even though the hit object below is the outer graph.  Mirror
-    // Pd's canvas_motion()/canvas_mouseup() handling here instead of repeatedly
-    // calling the graph's click handler: the latter never reaches mouse_drag and
-    // can lose mouse_up as soon as the pointer leaves the child's hit box.
-    auto dispatchGrab = [&](bool up) {
-        t_editor *editor = canvas->gl_editor;
-        if (!editor || editor->e_onmotion != MA_PASSOUT || !editor->e_grab || !editor->e_motionfn) {
-            return false;
-        }
-
-        editor->e_motionfn(&editor->e_grab->g_pd, data.x - editor->e_xwas, data.y - editor->e_ywas,
-                           up ? 1 : 0);
-        if (up) {
-            editor->e_onmotion = MA_NONE;
-        } else {
-            editor->e_xwas = data.x;
-            editor->e_ywas = data.y;
-        }
-        return true;
-    };
-
     if (data.event_type == MouseEventData::MOUSE_DOWN) {
         // Recover from a missing browser mouse-up before starting a new capture.
         if (ud->mousedown) {
-            if (!dispatchGrab(true) && ud->obj) {
+            if (!DispatchMouseGrab(canvas, data, true) && ud->obj) {
                 (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 0);
             }
         }
@@ -1282,12 +1277,13 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
         ud->mousedown = false;
         ud->doit = false;
 
-        if (ud->obj) {
-            if (!dispatchGrab(true)) {
-                (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 0);
-            }
-            ud->obj = nullptr;
+        // The child control owns Pd's grab, while ud->obj normally holds the outer GOP.
+        // Always release an active grab even if graph_click() did not retain that wrapper.
+        const bool dispatchedGrab = DispatchMouseGrab(canvas, data, true);
+        if (ud->obj && !dispatchedGrab) {
+            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 0);
         }
+        ud->obj = nullptr;
         return;
     }
 
@@ -1295,11 +1291,14 @@ void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data) {
 
     // While dragging, keep routing to the captured object. Otherwise dispatch hover movement
     // through normal hit testing.
-    if (ud->mousedown && ud->obj) {
-        if (!dispatchGrab(false)) {
-            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 1);
+    if (ud->mousedown) {
+        if (DispatchMouseGrab(canvas, data, false)) {
+            return;
         }
-        return;
+        if (ud->obj) {
+            (void)gobj_click(ud->obj, canvas, data.x, data.y, data.shift, data.alt, 0, 1);
+            return;
+        }
     }
 
     for (t_gobj *obj = canvas->gl_list; obj != NULL; obj = obj->g_next) {

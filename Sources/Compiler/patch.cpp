@@ -137,8 +137,21 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                     break;
                 }
                 if (nestedCanvasDepth == 0 && L.Tokens[0] == "#X" && L.Tokens[1] == "coords" &&
-                    p->CanvasLevel == 1) {
+                    p->CanvasLevel <= 1) {
                     if (L.Tokens.size() > 7) {
+                        bool isVisibleGraph = true;
+                        if (p->CanvasLevel == 0) {
+                            try {
+                                isVisibleGraph =
+                                    L.Tokens.size() > 8 && std::stoi(L.Tokens[8]) != 0;
+                            } catch (const std::exception &) {
+                                isVisibleGraph = false;
+                            }
+                        }
+                        if (!isVisibleGraph) {
+                            j++;
+                            continue;
+                        }
                         p->GraphCount++;
                         canvasIsGraph = true;
                         try {
