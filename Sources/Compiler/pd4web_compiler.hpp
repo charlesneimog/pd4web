@@ -156,7 +156,7 @@ struct Patch {
 
     // Graphs
     int CanvasLevel = 0;
-    bool ObjInsideGraph = false;
+    std::vector<bool> CanvasGraphStack;
     int GraphCount = 0;
     std::vector<std::string> SubPatchNames;
     int Width = 0;

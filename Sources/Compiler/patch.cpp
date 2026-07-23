@@ -51,13 +51,15 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
         m_inArray = false;
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
-            p->ObjInsideGraph = false;
+            if (!p->CanvasGraphStack.empty()) {
+                p->CanvasGraphStack.pop_back();
+            }
             p->CanvasLevel--;
         } else if (Line[1] == "declare") {
             pl.Type = PatchLine::DECLARE;
             processDeclareClass(p, pl);
         } else if (Line[1] == "obj") {
-            pl.InsideGraph = p->ObjInsideGraph;
+            pl.InsideGraph = !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
             processObjClass(p, pl);
             pl.Type = PatchLine::OBJ;
         } else if (Line[1] == "msg") {
@@ -100,14 +102,45 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                 print("Invalid font size token: '" + token + "'", Pd4WebLogLevel::PD4WEB_WARNING);
             }
         }
+        bool canvasIsGraph = false;
+        int nestedCanvasDepth = 0;
         size_t j = lineIndex + 1;
         while (j < p->PatchLines.size()) {
             const auto &L = p->PatchLines[j];
             if (L.Tokens.size() > 1) {
-                if (L.Tokens[1] == "coords" && p->CanvasLevel == 1) {
+                if (L.Tokens[0] == "#N" && L.Tokens[1] == "canvas") {
+                    nestedCanvasDepth++;
+                    j++;
+                    continue;
+                }
+                if (L.Tokens[0] == "#X" && L.Tokens[1] == "restore") {
+                    if (nestedCanvasDepth > 0) {
+                        nestedCanvasDepth--;
+                        j++;
+                        continue;
+                    }
+
+                    if (canvasIsGraph) {
+                        if (L.Tokens.size() > 3) {
+                            try {
+                                p->MarginX = std::stoi(L.Tokens[2]);
+                                p->MarginY = std::stoi(L.Tokens[3]);
+                            } catch (const std::exception &) {
+                                print("Invalid restore coordinates in line: " + L.Line,
+                                      Pd4WebLogLevel::PD4WEB_WARNING);
+                            }
+                        } else {
+                            print("Malformed restore line: " + L.Line,
+                                  Pd4WebLogLevel::PD4WEB_WARNING);
+                        }
+                    }
+                    break;
+                }
+                if (nestedCanvasDepth == 0 && L.Tokens[0] == "#X" && L.Tokens[1] == "coords" &&
+                    p->CanvasLevel == 1) {
                     if (L.Tokens.size() > 7) {
                         p->GraphCount++;
-                        p->ObjInsideGraph = true;
+                        canvasIsGraph = true;
                         try {
                             p->Width = std::stoi(L.Tokens[6]);
                             p->Height = std::stoi(L.Tokens[7]);
@@ -119,20 +152,6 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                         print("Malformed coords line: " + L.Line, Pd4WebLogLevel::PD4WEB_WARNING);
                     }
                 }
-                if (L.Tokens[1] == "restore") {
-                    if (L.Tokens.size() > 3) {
-                        try {
-                            p->MarginX = std::stoi(L.Tokens[2]);
-                            p->MarginY = std::stoi(L.Tokens[3]);
-                        } catch (const std::exception &) {
-                            print("Invalid restore coordinates in line: " + L.Line,
-                                  Pd4WebLogLevel::PD4WEB_WARNING);
-                        }
-                    } else {
-                        print("Malformed restore line: " + L.Line, Pd4WebLogLevel::PD4WEB_WARNING);
-                    }
-                    break;
-                }
             }
             j++;
         }
@@ -143,6 +162,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
         }
 
         p->CanvasLevel++;
+        p->CanvasGraphStack.push_back(canvasIsGraph);
         if (p->CanvasLevel > 1) {
             if (Line.size() > 6) {
                 p->SubPatchNames.push_back(Line[6]);
@@ -734,7 +754,7 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
     std::string Obj = getObjName(pl.Tokens[4]);
     std::string Lib = getObjLib(pl.Tokens[4]);
-    if (p->ObjInsideGraph) {
+    if (!p->CanvasGraphStack.empty() && p->CanvasGraphStack.back()) {
         print("Processing object '" + Obj + "'. Inside Graph!", Pd4WebLogLevel::PD4WEB_LOG2);
     } else {
         print("Processing object '" + Obj + "'", Pd4WebLogLevel::PD4WEB_LOG2);
