@@ -81,6 +81,10 @@ function nbx:keydown(sel, atoms)
 	local key
 	if key_num == 13 or key_num == 10 then
 		key = "Enter"
+	elseif key_num == 8 then
+		key = "Backspace"
+	elseif key_num == 46 or key_num == 110 or key_num == 190 or key_num == 44 or key_num == 188 then
+		key = "."
 	else
 		key = string.char(key_num)
 	end
@@ -100,7 +104,9 @@ function nbx:keydown(sel, atoms)
 	elseif key == "Backspace" or key == "Delete" then
 		self.number = self.number:sub(1, -2)
 	elseif key == "." then
-		self.number = self.number .. key
+		if not self.number:find(".", 1, true) then
+			self.number = self.number .. key
+		end
 	elseif tonumber(key) then
 		self.number = self.number .. tostring(key)
 	else
@@ -202,7 +208,6 @@ function nbx:paint(g)
 	local number_str = tostring(self.number)
 
 	if number_str:find("%.") then
-		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
 		number_str = string.sub(number_str, 1, self.digs_len)
 	else
 		if #number_str > self.digs_len then
