@@ -206,14 +206,14 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PY_PD4WEB_BUILD)
-    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
-    python3_add_library(
+    find_package(Python 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
+    python_add_library(
         pypd4web
         MODULE
         pypd4web.cpp
+        WITH_SOABI
         USE_SABI
         3.11)
-    target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x030B0000)
     target_link_libraries(pypd4web PRIVATE pd4web_compiler)
 
     if(WIN32)

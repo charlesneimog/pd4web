@@ -17,7 +17,7 @@ env:
     BUILD_TYPE: Release
     SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
-    LIBVERSION: "3.3.0a2"
+    LIBVERSION: "3.3.0a1"
 
 jobs:
     pd4web-compiler:
@@ -123,18 +123,23 @@ jobs:
               shell: pwsh
               run: |
                   if ($env:RUNNER_OS -eq 'Windows') {
-                    $pythonExecutable = (Get-Command python).Source.Replace('\', '/')
-                    $pythonRoot = (python -c "import sys; print(sys.base_prefix)").Replace('\', '/')
+                    $pythonExecutable = (python -c "import sys; print(sys.executable)").Trim().Replace('\', '/')
+                    $pythonRoot = (python -c "import sys; print(sys.base_prefix)").Trim().Replace('\', '/')
+                    $pythonInclude = (python -c "import sysconfig; print(sysconfig.get_path('include'))").Trim().Replace('\', '/')
                     $pythonSabiLibrary = "$pythonRoot/libs/python3.lib"
+                    if (-not (Test-Path "$pythonInclude/Python.h")) {
+                      throw "Python development headers not found: $pythonInclude"
+                    }
                     if (-not (Test-Path $pythonSabiLibrary)) {
                       throw "Python Stable-ABI import library not found: $pythonSabiLibrary"
                     }
                     $cmakeArgs = @(
                       "-DCMAKE_C_COMPILER_LAUNCHER=sccache"
                       "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
-                      "-DPython3_EXECUTABLE=$pythonExecutable"
-                      "-DPython3_ROOT_DIR=$pythonRoot"
-                      "-DPython3_SABI_LIBRARY=$pythonSabiLibrary"
+                      "-DPython_EXECUTABLE=$pythonExecutable"
+                      "-DPython_ROOT_DIR=$pythonRoot"
+                      "-DPython_INCLUDE_DIR=$pythonInclude"
+                      "-DPython_SABI_LIBRARY=$pythonSabiLibrary"
                     ) -join " "
                     "CMAKE_ARGS=$cmakeArgs" | Out-File -FilePath $env:GITHUB_ENV -Append
                   } else {
