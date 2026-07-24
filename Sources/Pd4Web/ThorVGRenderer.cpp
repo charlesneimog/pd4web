@@ -144,15 +144,16 @@ void ThorVGRenderer::shutdown() {
 
 void ThorVGRenderer::poll() {
     assertMainThread();
-    if (GetRenderTransport().hasPending()) scheduleFrame();
+    if (RenderTransport::instance().hasPending()) scheduleFrame();
 }
 
 void ThorVGRenderer::scheduleFrame() {
     assertMainThread();
     if (!m_Initialized || m_FramePending) return;
     m_FramePending = true;
-    RENDER_LOG("ThorVG frame scheduled: queue=%zu dropped=%llu", GetRenderTransport().depth(),
-               static_cast<unsigned long long>(GetRenderTransport().dropped()));
+    auto &transport = RenderTransport::instance();
+    RENDER_LOG("ThorVG frame scheduled: queue=%zu dropped=%llu", transport.depth(),
+               static_cast<unsigned long long>(transport.dropped()));
     emscripten_request_animation_frame(renderFrame, this);
 }
 
@@ -204,7 +205,7 @@ EM_BOOL ThorVGRenderer::renderFrame(double, void *userData) {
     renderer.m_FramePending = false;
     renderer.resize();
 
-    auto &transport = GetRenderTransport();
+    auto &transport = RenderTransport::instance();
     while (const auto *transaction = transport.beginConsume()) {
         renderer.m_VisibleDirty |= renderer.apply(*transaction);
         transport.endConsume();

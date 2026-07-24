@@ -92,6 +92,9 @@ struct LayerTransaction {
 
 class RenderTransport {
   public:
+    static RenderTransport &instance() noexcept;
+    ObjectId allocateObjectId() noexcept;
+
     LayerTransaction *beginLayer(ObjectId id, int layer, int x, int y, int w, int h) noexcept;
     bool append(const GuiCommand &command) noexcept;
     bool publishLayer() noexcept;
@@ -107,9 +110,11 @@ class RenderTransport {
     bool takeRecovery(ObjectId &id, int &layer) noexcept;
 
   private:
+    RenderTransport() = default;
     void requestRecovery(ObjectId id, int layer) noexcept;
 
     RenderUnboundedSpscQueue<LayerTransaction> m_Queue;
+    std::atomic<ObjectId> m_NextObjectId{1};
     LayerTransaction *m_Active = nullptr;
     bool m_ActiveValid = false;
     std::atomic<uint64_t> m_Dropped{0};
@@ -119,6 +124,3 @@ class RenderTransport {
     // 0 = idle, 1 = requested by the audio producer, 2 = acknowledged by main.
     std::atomic<uint8_t> m_RecoveryState{0};
 };
-
-RenderTransport &GetRenderTransport() noexcept;
-ObjectId AllocateRenderObjectId() noexcept;

@@ -2,17 +2,34 @@
 
 #include <algorithm>
 
-namespace {
-std::atomic<ObjectId> NextObjectId{1};
-RenderTransport Transport;
+// ─────────────────────────────────────
+/**
+ * Return the shared render transport.
+ *
+ * @return The process-wide RenderTransport instance.
+ */
+RenderTransport &RenderTransport::instance() noexcept {
+    static RenderTransport transport;
+    return transport;
 }
 
-RenderTransport &GetRenderTransport() noexcept { return Transport; }
-
-ObjectId AllocateRenderObjectId() noexcept {
-    return NextObjectId.fetch_add(1, std::memory_order_relaxed);
+// ─────────────────────────────────────
+/**
+ * Allocate a unique identifier for a render object.
+ *
+ * @return A new object identifier.
+ */
+ObjectId RenderTransport::allocateObjectId() noexcept {
+    return m_NextObjectId.fetch_add(1, std::memory_order_relaxed);
 }
 
+// ─────────────────────────────────────
+/**
+ * Request that a dropped layer be painted again.
+ *
+ * @param id Render object that needs recovery.
+ * @param layer Layer that needs recovery.
+ */
 void RenderTransport::requestRecovery(ObjectId id, int layer) noexcept {
     if (m_RecoveryState.load(std::memory_order_acquire) != 0) return;
     m_RecoveryObject.store(id, std::memory_order_relaxed);
@@ -22,6 +39,18 @@ void RenderTransport::requestRecovery(ObjectId id, int layer) noexcept {
                                             std::memory_order_relaxed);
 }
 
+// ─────────────────────────────────────
+/**
+ * Start building a replacement transaction for one object layer.
+ *
+ * @param id Render object identifier.
+ * @param layer Layer index.
+ * @param x Object x position.
+ * @param y Object y position.
+ * @param w Object width.
+ * @param h Object height.
+ * @return The active transaction, or nullptr when it cannot be created.
+ */
 LayerTransaction *RenderTransport::beginLayer(ObjectId id, int layer, int x, int y, int w,
                                                int h) noexcept {
     if (m_Active) {
@@ -43,6 +72,13 @@ LayerTransaction *RenderTransport::beginLayer(ObjectId id, int layer, int x, int
     return m_Active;
 }
 
+// ─────────────────────────────────────
+/**
+ * Copy one GUI command into the active layer transaction.
+ *
+ * @param source GUI command produced by Pd-Lua.
+ * @return True when the command was copied successfully.
+ */
 bool RenderTransport::append(const GuiCommand &source) noexcept {
     if (!m_Active) {
         m_ActiveValid = false;
@@ -115,6 +151,12 @@ bool RenderTransport::append(const GuiCommand &source) noexcept {
     return true;
 }
 
+// ─────────────────────────────────────
+/**
+ * Publish the active layer transaction for the renderer.
+ *
+ * @return True when the transaction was committed to the queue.
+ */
 bool RenderTransport::publishLayer() noexcept {
     if (!m_Active) return false;
     if (!m_ActiveValid) {
@@ -131,12 +173,24 @@ bool RenderTransport::publishLayer() noexcept {
     return true;
 }
 
+// ─────────────────────────────────────
+/**
+ * Acknowledge that the renderer can accept a recovery repaint.
+ */
 void RenderTransport::markRecoveryReady() noexcept {
     uint8_t requested = 1;
     m_RecoveryState.compare_exchange_strong(requested, 2, std::memory_order_release,
                                             std::memory_order_relaxed);
 }
 
+// ─────────────────────────────────────
+/**
+ * Consume a pending recovery request.
+ *
+ * @param id Receives the render object identifier.
+ * @param layer Receives the layer index.
+ * @return True when a valid recovery request was consumed.
+ */
 bool RenderTransport::takeRecovery(ObjectId &id, int &layer) noexcept {
     uint8_t ready = 2;
     if (!m_RecoveryState.compare_exchange_strong(ready, 0, std::memory_order_acq_rel,
@@ -147,6 +201,15 @@ bool RenderTransport::takeRecovery(ObjectId &id, int &layer) noexcept {
     return id != 0;
 }
 
+// ─────────────────────────────────────
+/**
+ * Publish a layer, object, or patch lifecycle message.
+ *
+ * @param type Lifecycle operation to perform.
+ * @param id Render object identifier.
+ * @param layer Optional layer index.
+ * @return True when the message was committed to the queue.
+ */
 bool RenderTransport::publishLifecycle(RenderMessageType type, ObjectId id, int layer) noexcept {
     if (m_Active) {
         m_Dropped.fetch_add(1, std::memory_order_relaxed);
@@ -163,6 +226,17 @@ bool RenderTransport::publishLifecycle(RenderMessageType type, ObjectId id, int 
     return true;
 }
 
+// ─────────────────────────────────────
+/**
+ * Publish new bounds for an existing render object.
+ *
+ * @param id Render object identifier.
+ * @param x New object x position.
+ * @param y New object y position.
+ * @param w New object width.
+ * @param h New object height.
+ * @return True when the update was committed to the queue.
+ */
 bool RenderTransport::publishObjectUpdate(ObjectId id, int x, int y, int w, int h) noexcept {
     if (m_Active) {
         m_Dropped.fetch_add(1, std::memory_order_relaxed);

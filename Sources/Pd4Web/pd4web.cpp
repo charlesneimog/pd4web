@@ -2034,7 +2034,7 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     cmd.objx = txt->te_xpix - x;
     cmd.objy = txt->te_ypix - y;
 
-    const ObjectId objectId = AllocateRenderObjectId();
+    const ObjectId objectId = RenderTransport::instance().allocateObjectId();
     ClearLayerCommand(objectId, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
     AddNewCommand(objectId, 0, &cmd);
     EndPaintLayerCommand(objectId, 0);
@@ -2069,38 +2069,38 @@ void GetPatchComments(Pd4WebUserData *ud) {
 // ─────────────────────────────────────
 
 extern "C" uint64_t AllocateRenderObjectIdC(void) {
-    return AllocateRenderObjectId();
+    return RenderTransport::instance().allocateObjectId();
 }
 
 extern "C" void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, int w, int h) {
-    GetRenderTransport().beginLayer(objectId, layer, x, y, w, h);
+    RenderTransport::instance().beginLayer(objectId, layer, x, y, w, h);
 }
 
 extern "C" void AddNewCommand(uint64_t, int, GuiCommand *command) {
     if (!command) {
         return;
     }
-    GetRenderTransport().append(*command);
+    RenderTransport::instance().append(*command);
 }
 
 extern "C" void EndPaintLayerCommand(uint64_t, int) {
-    GetRenderTransport().publishLayer();
+    RenderTransport::instance().publishLayer();
 }
 
 extern "C" void RemoveRenderLayer(uint64_t objectId, int layer) {
-    GetRenderTransport().publishLifecycle(RenderMessageType::RemoveLayer, objectId, layer);
+    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveLayer, objectId, layer);
 }
 
 extern "C" void RemoveRenderObject(uint64_t objectId) {
-    GetRenderTransport().publishLifecycle(RenderMessageType::RemoveObject, objectId);
+    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveObject, objectId);
 }
 
 extern "C" void UpdateRenderObject(uint64_t objectId, int x, int y, int w, int h) {
-    GetRenderTransport().publishObjectUpdate(objectId, x, y, w, h);
+    RenderTransport::instance().publishObjectUpdate(objectId, x, y, w, h);
 }
 
 extern "C" void ClearRenderPatch(void) {
-    GetRenderTransport().publishLifecycle(RenderMessageType::ClearPatch, 0);
+    RenderTransport::instance().publishLifecycle(RenderMessageType::ClearPatch, 0);
 }
 
 extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
@@ -2109,7 +2109,7 @@ extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
     }
     ObjectId id = 0;
     int layerIndex = -1;
-    if (!GetRenderTransport().takeRecovery(id, layerIndex)) {
+    if (!RenderTransport::instance().takeRecovery(id, layerIndex)) {
         return 0;
     }
     *objectId = id;
