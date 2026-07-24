@@ -13,6 +13,10 @@ on:
                 default: false
                 type: boolean
 
+concurrency:
+    group: pd4web-compiler-${{ github.ref }}
+    cancel-in-progress: true
+
 env:
     BUILD_TYPE: Release
     LIBNAME: pd4web
@@ -21,6 +25,7 @@ env:
 jobs:
     pd4web-compiler:
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 60
         strategy:
             fail-fast: false
             matrix:
@@ -43,41 +48,67 @@ jobs:
                       build/CMakeCache.txt
                       build/CMakeFiles
                       ~/.ccache
-                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv33-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
+                      build-cv33-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv33-${{ matrix.os }}-${{ runner.arch }}-
             - uses: actions/setup-python@v5
+              if: runner.os != 'Windows'
               with:
                   python-version: "3.11"
 
             - name: Install MinGW-w64 (Windows)
               if: runner.os == 'Windows'
+              id: msys2
               uses: msys2/setup-msys2@v2
               with:
                   msystem: MINGW64
                   update: true
+                  install: >-
+                      make
+                      perl
+                      perl-Pod-Usage
                   pacboy: >-
                       toolchain:p
+                      clang:p
                       ccache:p
                       cmake:p
+                      nasm:p
                       ninja:p
+                      python:p
+                      python-pip:p
+                      tree-sitter:p
 
-            - name: Add MinGW-w64 to PATH (Windows)
+            - name: Configure MinGW-w64 paths (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
-                  "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+                  $msys2Root = '${{ steps.msys2.outputs.msys2-location }}'
+                  $mingwBin = Join-Path $msys2Root 'mingw64\bin'
+                  $msysBin = Join-Path $msys2Root 'usr\bin'
+                  $cygpath = Join-Path $msysBin 'cygpath.exe'
+                  $msys2RootPosix = (& $cygpath -u $msys2Root).Trim()
+                  $perlLib = "$msys2RootPosix/usr/share/perl5/core_perl"
+                  $mingwBinNormalized = $mingwBin.Replace('\', '/')
+                  $msysBinNormalized = $msysBin.Replace('\', '/')
 
-            - name: Install NASM (Windows)
-              if: runner.os == 'Windows'
-              uses: ilammy/setup-nasm@v1
+                  $mingwBin | Out-File -FilePath $env:GITHUB_PATH -Append
+                  "MINGW_BIN=$mingwBinNormalized" | Out-File -FilePath $env:GITHUB_ENV -Append
+                  "MSYS_BIN=$msysBinNormalized" | Out-File -FilePath $env:GITHUB_ENV -Append
+                  "PERL5LIB=$perlLib" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-            - name: Install Perl (Windows)
-              if: runner.os == 'Windows'
-              shell: pwsh
-              run: |
-                  choco install strawberryperl -y
+                  $env:PATH = "$mingwBin;$msysBin;$env:PATH"
+                  $env:PERL5LIB = $perlLib
+                  & (Join-Path $msysBin 'perl.exe') -MPod::Usage -e 'print "Pod::Usage available at ", $INC{"Pod/Usage.pm"}, "\n"'
+                  if ($LASTEXITCODE -ne 0) {
+                      throw "MSYS2 Perl cannot load Pod::Usage from native Windows"
+                  }
+                  & (Join-Path $mingwBin 'clang.exe') --version
+                  & (Join-Path $mingwBin 'clang++.exe') --version
+                  & (Join-Path $mingwBin 'mingw32-make.exe') --version
+                  & (Join-Path $msysBin 'make.exe') --version
+                  & (Join-Path $mingwBin 'nasm.exe') -v
+
             - name: Install PureData for Windows
               if: runner.os == 'Windows'
               shell: pwsh
@@ -117,16 +148,16 @@ jobs:
               shell: pwsh
               run: |
                   if ($env:RUNNER_OS -eq 'Windows') {
-                    "CC=C:/msys64/mingw64/bin/gcc.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
-                    "CXX=C:/msys64/mingw64/bin/g++.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CC=$env:MINGW_BIN/clang.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CXX=$env:MINGW_BIN/clang++.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
                     "CMAKE_GENERATOR=Ninja" | Out-File -FilePath $env:GITHUB_ENV -Append
-                    "CMAKE_ARGS=-DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe -DCMAKE_C_COMPILER_LAUNCHER=C:/msys64/mingw64/bin/ccache.exe -DCMAKE_CXX_COMPILER_LAUNCHER=C:/msys64/mingw64/bin/ccache.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CMAKE_ARGS=-DCMAKE_C_COMPILER=$env:MINGW_BIN/clang.exe -DCMAKE_CXX_COMPILER=$env:MINGW_BIN/clang++.exe -DCMAKE_C_COMPILER_LAUNCHER=$env:MINGW_BIN/ccache.exe -DCMAKE_CXX_COMPILER_LAUNCHER=$env:MINGW_BIN/ccache.exe -DBUILD_SHARED_LIBS=OFF -DOPENSSL_USE_STATIC_LIBS=ON -DOPENSSL_USE_CCACHE=OFF -DOPENSSL_BUILD_VERBOSE=ON -DOPENSSL_ENABLE_PARALLEL=ON -DOPENSSL_CONFIGURE_TOOL=$env:MSYS_BIN/perl.exe -DTREE_SITTER_CLI=$env:MINGW_BIN/tree-sitter.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
                   } else {
                     "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   }
             - name: Install Python Packages
               run: |
-                  pip install build --break-system-packages
+                  python -m pip install build --break-system-packages
             - name: Set macOS deployment target
               if: startsWith(matrix.os, 'macos')
               run: |
@@ -138,10 +169,19 @@ jobs:
                       echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
                   fi
             - name: Build wheels
+              if: runner.os != 'Windows'
               run: |
                   python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
                   python -m pip install build --break-system-packages
                   python -m build --wheel
+            - name: Build wheels (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  $env:PATH = "$env:MINGW_BIN;$env:MSYS_BIN;$env:PATH"
+                  python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
+                  python -m pip install build --break-system-packages
+                  python -m build --wheel --config-setting=wheel.py-api=
             - name: Show ccache stats (macOS/Linux)
               if: runner.os != 'Windows'
               run: ccache -s

@@ -18,7 +18,9 @@ set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF)
 set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF)
 
-set(TREE_SITTER_CLI "")
+if(NOT DEFINED TREE_SITTER_CLI)
+    set(TREE_SITTER_CLI "")
+endif()
 # ╭──────────────────────────────────────╮
 # │             CPM Package              │
 # ╰──────────────────────────────────────╯
@@ -209,19 +211,23 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PY_PD4WEB_BUILD)
-    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
-    python3_add_library(
-        pypd4web
-        MODULE
-        pypd4web.cpp
-        USE_SABI
-        3.11)
-    target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x030B0000)
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.Module ${SKBUILD_SABI_COMPONENT})
+    if(SKBUILD_SABI_COMPONENT)
+        python3_add_library(
+            pypd4web
+            MODULE
+            pypd4web.cpp
+            USE_SABI
+            3.11)
+        target_compile_definitions(pypd4web PRIVATE Py_LIMITED_API=0x030B0000)
+    else()
+        python3_add_library(pypd4web MODULE pypd4web.cpp)
+    endif()
     target_link_libraries(pypd4web PRIVATE pd4web_compiler)
 
-    if(WIN32)
+    if(MSVC)
         execute_process(
-            COMMAND ${Python_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
+            COMMAND ${Python3_EXECUTABLE} -c "import sys; print(sys.base_prefix)"
             OUTPUT_VARIABLE PYTHON_BASE_PREFIX
             OUTPUT_STRIP_TRAILING_WHITESPACE)
         target_link_directories(pypd4web PRIVATE "${PYTHON_BASE_PREFIX}/libs")
