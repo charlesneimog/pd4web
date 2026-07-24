@@ -41,13 +41,14 @@ jobs:
               with:
                   path: |
                       build/_deps
+                      build/CMakeCache.txt
+                      build/CMakeFiles
                       ~/.ccache
                       ~/.cache/sccache
-                  key: build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
-                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-
-
+                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
             - uses: actions/setup-python@v5
               with:
                   python-version: "3.11"
@@ -62,7 +63,6 @@ jobs:
               run: |
                   choco install strawberryperl -y
                   choco install ninja -y
-
             - name: Install sccache (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
@@ -80,14 +80,12 @@ jobs:
                   if (-not $exe) { throw "sccache.exe not found after install" }
                   Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
                   Write-Host "sccache installed at $($exe.FullName)"
-
             - name: Install PureData for Windows
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
                   winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
                   # Remove-Item -Path build/pd.cmake -Force
-
             - name: Install PureData for macOS
               if: runner.os == 'macOS'
               run: |
@@ -96,7 +94,6 @@ jobs:
                   brew install ccache
                   brew install git
                   brew install perl
-
             - name: Install PureData for Linux
               if: runner.os == 'Linux'
               run: |
@@ -105,51 +102,28 @@ jobs:
                   sudo add-apt-repository ppa:pure-data/pure-data -y || true
                   sudo apt-get update
                   sudo apt-get install -y puredata
-
             - name: Configure ccache
               if: runner.os != 'Windows'
               run: |
                   ccache --set-config=max_size=500M
                   ccache --set-config=compression=true
                   ccache -z
-
             - name: Start sccache server (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
                   sccache --start-server
-
             - name: Configure compiler launcher
               shell: pwsh
               run: |
                   if ($env:RUNNER_OS -eq 'Windows') {
-                    $pythonExecutable = (python -c "import sys; print(sys.executable)").Trim().Replace('\', '/')
-                    $pythonRoot = (python -c "import sys; print(sys.base_prefix)").Trim().Replace('\', '/')
-                    $pythonInclude = (python -c "import sysconfig; print(sysconfig.get_path('include'))").Trim().Replace('\', '/')
-                    $pythonSabiLibrary = "$pythonRoot/libs/python3.lib"
-                    if (-not (Test-Path "$pythonInclude/Python.h")) {
-                      throw "Python development headers not found: $pythonInclude"
-                    }
-                    if (-not (Test-Path $pythonSabiLibrary)) {
-                      throw "Python Stable-ABI import library not found: $pythonSabiLibrary"
-                    }
-                    $cmakeArgs = @(
-                      "-DCMAKE_C_COMPILER_LAUNCHER=sccache"
-                      "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
-                      "-DPython_EXECUTABLE=$pythonExecutable"
-                      "-DPython_ROOT_DIR=$pythonRoot"
-                      "-DPython_INCLUDE_DIR=$pythonInclude"
-                      "-DPython_SABI_LIBRARY=$pythonSabiLibrary"
-                    ) -join " "
-                    "CMAKE_ARGS=$cmakeArgs" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   } else {
                     "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   }
-
             - name: Install Python Packages
               run: |
                   pip install build --break-system-packages
-
             - name: Set macOS deployment target
               if: startsWith(matrix.os, 'macos')
               run: |
@@ -160,13 +134,11 @@ jobs:
                       echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
                       echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
                   fi
-
             - name: Build wheels
               run: |
                   python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
                   python -m pip install build --break-system-packages
                   python -m build --wheel
-
             - name: Show ccache stats (macOS/Linux)
               if: runner.os != 'Windows'
               run: ccache -s
@@ -182,7 +154,6 @@ jobs:
                   python -m pip install auditwheel
                   auditwheel repair dist/*.whl -w dist/
                   rm dist/*-linux_*.whl
-
             - name: Upload PureData Object
               uses: actions/upload-artifact@v4
               with:
@@ -227,14 +198,12 @@ jobs:
                     --volume $(pwd):/deken \
                     registry.git.iem.at/pd/deken \
                     deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
-
                   docker run --rm \
                     --user $(id -u) \
                     --volume $(pwd):/deken \
                     -e DEKEN_USERNAME -e DEKEN_PASSWORD \
                     registry.git.iem.at/pd/deken \
                     deken upload -v ${{ env.LIBVERSION }} *.dek
-
             - name: Publish to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
@@ -246,7 +215,6 @@ jobs:
             - name: Create zip
               run: |
                   zip -r pd4web-${{ env.LIBVERSION }}.zip ${{ env.LIBNAME }}
-
             - name: Create / Update GitHub Release
               uses: softprops/action-gh-release@v2
               with:
