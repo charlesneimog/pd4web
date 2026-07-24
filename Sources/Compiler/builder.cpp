@@ -116,7 +116,7 @@ void Pd4Web::copySources(std::shared_ptr<Patch> &p) {
     // Lua Gui Objects
     if (p->LuaGuiObjects) {
         fs::copy(p->Pd4WebFiles / "Gui", p->OutputFolder / "Pd4Web" / "Gui",
-                 fs::copy_options::recursive | fs::copy_options::skip_existing);
+                 fs::copy_options::recursive | fs::copy_options::overwrite_existing);
     }
 
     // JavaScript

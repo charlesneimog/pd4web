@@ -28,6 +28,8 @@ typedef struct _gfx_transform {
 typedef struct _pdlua_gfx {
     // Size variables
     int width, height;
+    // Pd's selectable bounds can differ from the visual bounds (notably for cnv).
+    int hit_width, hit_height;
     void *object;
     uint64_t render_object_id;
 

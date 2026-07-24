@@ -1,0 +1,17 @@
+#N canvas 0 0 640 420 10;
+#X declare -lib pdlua;
+#X declare -path ./../../Sources/Pd4Web/Gui;
+#X obj 8 8 declare -lib pdlua;
+#X obj 8 31 declare -path ./../../Sources/Pd4Web/Gui;
+#X obj 48 102 l.cnv 15 240 80 empty l-cnv l.cnv 20 12 0 18 #c6ffc7 #404040 0;
+#X msg 48 222 vis_size 320 100;
+#X msg 196 222 color #ffe3c6 #000000;
+#X msg 48 252 label Pd4Web;
+#X msg 196 252 label_pos 12 16;
+#X msg 48 282 label_font 0 14;
+#X obj 48 321 s l-cnv;
+#X connect 5 0 10 0;
+#X connect 6 0 10 0;
+#X connect 7 0 10 0;
+#X connect 8 0 10 0;
+#X connect 9 0 10 0;

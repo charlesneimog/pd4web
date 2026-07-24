@@ -939,8 +939,8 @@ static void pdlua_getrect(t_gobj *z, t_glist *glist, int *xp1, int *yp1, int *xp
         float x1 = text_xpix((t_text *)x, glist), y1 = text_ypix((t_text *)x, glist);
         *xp1 = x1;
         *yp1 = y1;
-        *xp2 = x1 + x->gfx.width * zoom;
-        *yp2 = y1 + x->gfx.height * zoom;
+        *xp2 = x1 + x->gfx.hit_width * zoom;
+        *yp2 = y1 + x->gfx.hit_height * zoom;
     }
     else {
         // Bypass to text widgetbehaviour if we're not a GUI
@@ -1469,6 +1469,8 @@ static int pdlua_object_new(lua_State *L)
 
                 o->gfx.width = 80;
                 o->gfx.height = 80;
+                o->gfx.hit_width = 80;
+                o->gfx.hit_height = 80;
                
 #ifndef PLUGDATA
                 // Init graphics state for pd

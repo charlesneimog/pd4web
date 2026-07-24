@@ -348,9 +348,12 @@ static int set_size(lua_State *L) {
     }
 
     t_pdlua *obj = (t_pdlua *)lua_touserdata(L, 1);
-    t_object *pdobj = (t_object *)obj;
     obj->gfx.width = luaL_checknumber(L, 2);
     obj->gfx.height = luaL_checknumber(L, 3);
+    obj->gfx.hit_width =
+        lua_gettop(L) >= 4 && !lua_isnil(L, 4) ? luaL_checknumber(L, 4) : obj->gfx.width;
+    obj->gfx.hit_height =
+        lua_gettop(L) >= 5 && !lua_isnil(L, 5) ? luaL_checknumber(L, 5) : obj->gfx.height;
     int x = obj->pd.te_xpix;
     int y = obj->pd.te_ypix;
     UpdateRenderObject(obj->gfx.render_object_id, x, y, obj->gfx.width, obj->gfx.height);

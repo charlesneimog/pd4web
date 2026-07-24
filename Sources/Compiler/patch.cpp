@@ -49,8 +49,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
 
     if (Line[0] == "#X") {
         m_inArray = false;
-        const bool insideGraph =
-            !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
+        const bool insideGraph = !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
             if (!p->CanvasGraphStack.empty()) {
@@ -147,8 +146,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                         bool isVisibleGraph = true;
                         if (p->CanvasLevel == 0) {
                             try {
-                                isVisibleGraph =
-                                    L.Tokens.size() > 8 && std::stoi(L.Tokens[8]) != 0;
+                                isVisibleGraph = L.Tokens.size() > 8 && std::stoi(L.Tokens[8]) != 0;
                             } catch (const std::exception &) {
                                 isVisibleGraph = false;
                             }
@@ -967,7 +965,7 @@ void Pd4Web::updatePatchFile(std::shared_ptr<Patch> &p, bool mainPatch) {
 
         if (pl.Type == PatchLine::OBJ && pl.Tokens.size() > 4 && p->RenderGui) {
             static const std::unordered_set<std::string> guiObjs{
-                "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
+                "cnv", "vsl", "hsl", "vradio", "hradio", "tgl", "nbx", "bng", "keyboard", "vu"};
             std::string baseName = strip_lib(pl.Name);
             if (guiObjs.count(baseName) && pl.InsideGraph) {
                 const auto &oldTok = pl.Tokens[4];
