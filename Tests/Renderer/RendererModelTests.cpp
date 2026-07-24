@@ -28,7 +28,7 @@ struct Model {
 }
 
 int main() {
-    auto &transport = GetRenderTransport();
+    auto &transport = RenderTransport::instance();
     GuiCommand source{};
     source.command = FILL_RECT;
     source.w = 20;
