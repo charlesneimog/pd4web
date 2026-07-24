@@ -117,13 +117,16 @@ cpmaddpackage(
 # ╭──────────────────────────────────────╮
 # │                Boost                 │
 # ╰──────────────────────────────────────╯
-if(MSVC)
+if(WIN32)
     set(Boost_USE_STATIC_LIBS
         ON
         CACHE BOOL "" FORCE)
     set(BOOST_BUILD_FLAGS
         "runtime-link=static;link=static"
         CACHE STRING "" FORCE)
+endif()
+
+if(MSVC)
     set(CMAKE_MSVC_RUNTIME_LIBRARY
         "MultiThreaded"
         CACHE STRING "" FORCE)
@@ -206,7 +209,7 @@ endif()
 # │               pybind11               │
 # ╰──────────────────────────────────────╯
 if(PY_PD4WEB_BUILD)
-    find_package(Python3 COMPONENTS Interpreter Development.SABIModule)
+    find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter Development.SABIModule)
     python3_add_library(
         pypd4web
         MODULE
@@ -277,5 +280,8 @@ if(PY_PD4WEB_BUILD)
             PRIVATE
             /OPT:REF
             /OPT:ICF)
+    elseif(MINGW)
+        target_compile_options(pypd4web PRIVATE -ffunction-sections -fdata-sections)
+        target_link_options(pypd4web PRIVATE -Wl,--gc-sections)
     endif()
 endif()

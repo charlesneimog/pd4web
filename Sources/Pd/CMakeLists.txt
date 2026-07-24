@@ -73,4 +73,7 @@ elseif(MSVC)
         PRIVATE
         /OPT:REF
         /OPT:ICF)
+elseif(MINGW)
+    target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
+    target_link_options(pd4web.compiler PRIVATE -Wl,--gc-sections)
 endif()

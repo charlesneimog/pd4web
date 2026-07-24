@@ -15,7 +15,6 @@ on:
 
 env:
     BUILD_TYPE: Release
-    SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
     LIBVERSION: "3.3.0a1"
 
@@ -44,7 +43,6 @@ jobs:
                       build/CMakeCache.txt
                       build/CMakeFiles
                       ~/.ccache
-                      ~/.cache/sccache
                   key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
                       build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
@@ -53,33 +51,33 @@ jobs:
               with:
                   python-version: "3.11"
 
+            - name: Install MinGW-w64 (Windows)
+              if: runner.os == 'Windows'
+              uses: msys2/setup-msys2@v2
+              with:
+                  msystem: MINGW64
+                  update: true
+                  pacboy: >-
+                      toolchain:p
+                      ccache:p
+                      cmake:p
+                      ninja:p
+
+            - name: Add MinGW-w64 to PATH (Windows)
+              if: runner.os == 'Windows'
+              shell: pwsh
+              run: |
+                  "C:\msys64\mingw64\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+
             - name: Install NASM (Windows)
               if: runner.os == 'Windows'
               uses: ilammy/setup-nasm@v1
 
-            - name: Install Perl and Ninja (Windows)
+            - name: Install Perl (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
                   choco install strawberryperl -y
-                  choco install ninja -y
-            - name: Install sccache (Windows)
-              if: runner.os == 'Windows'
-              shell: pwsh
-              run: |
-                  $ErrorActionPreference = "Stop"
-                  $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mozilla/sccache/releases/latest"
-                  $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
-                  if (-not $asset) { throw "sccache Windows asset not found" }
-                  $zipPath = Join-Path $env:TEMP "sccache.zip"
-                  Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath
-                  $dest = Join-Path $env:LocalAppData "sccache-bin"
-                  if (Test-Path $dest) { Remove-Item $dest -Recurse -Force }
-                  Expand-Archive -LiteralPath $zipPath -DestinationPath $dest
-                  $exe = Get-ChildItem $dest -Recurse -Filter "sccache.exe" | Select-Object -First 1
-                  if (-not $exe) { throw "sccache.exe not found after install" }
-                  Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
-                  Write-Host "sccache installed at $($exe.FullName)"
             - name: Install PureData for Windows
               if: runner.os == 'Windows'
               shell: pwsh
@@ -108,16 +106,21 @@ jobs:
                   ccache --set-config=max_size=500M
                   ccache --set-config=compression=true
                   ccache -z
-            - name: Start sccache server (Windows)
+            - name: Configure ccache (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
-                  sccache --start-server
+                  ccache --set-config=max_size=500M
+                  ccache --set-config=compression=true
+                  ccache -z
             - name: Configure compiler launcher
               shell: pwsh
               run: |
                   if ($env:RUNNER_OS -eq 'Windows') {
-                    "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CC=C:/msys64/mingw64/bin/gcc.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CXX=C:/msys64/mingw64/bin/g++.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CMAKE_GENERATOR=Ninja" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    "CMAKE_ARGS=-DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe -DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe -DCMAKE_C_COMPILER_LAUNCHER=C:/msys64/mingw64/bin/ccache.exe -DCMAKE_CXX_COMPILER_LAUNCHER=C:/msys64/mingw64/bin/ccache.exe" | Out-File -FilePath $env:GITHUB_ENV -Append
                   } else {
                     "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   }
@@ -143,10 +146,10 @@ jobs:
               if: runner.os != 'Windows'
               run: ccache -s
 
-            - name: Show sccache stats (Windows)
+            - name: Show ccache stats (Windows)
               if: runner.os == 'Windows'
               shell: pwsh
-              run: sccache --show-stats
+              run: ccache -s
 
             - name: Repair Linux wheels
               if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}

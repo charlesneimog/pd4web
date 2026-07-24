@@ -18,10 +18,15 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     find_program(CLANG_C NAMES clang)
     find_program(CLANG_CXX NAMES clang++)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libstdc++")
-elseif(MSVC)
-    set(CMAKE_MSVC_RUNTIME_LIBRARY
-        "MultiThreaded"
-        CACHE STRING "" FORCE)
+elseif(WIN32)
+    if(MSVC)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY
+            "MultiThreaded"
+            CACHE STRING "" FORCE)
+    elseif(MINGW)
+        add_compile_options(-static-libgcc)
+        add_link_options(-static-libgcc -static-libstdc++)
+    endif()
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15")
     find_program(GIT_EXECUTABLE git)
