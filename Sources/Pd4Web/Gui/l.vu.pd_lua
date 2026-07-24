@@ -3,6 +3,7 @@ local vu = pd.Class:new():register("l.vu")
 local VU_STEPS = 40
 local VU_MIN_DB = -100
 local VU_MAX_DB = 12
+local VU_BOTTOM_PADDING = 3
 
 -- First dB value displayed by each of Pd's 40 VU steps.  These are the
 -- transition points encoded by iemgui_vu_db2i in g_all_guis.c.
@@ -184,7 +185,7 @@ function vu:paint(g)
 end
 
 function vu:paint_layer_2(g)
-	local step_height = self.height / VU_STEPS
+	local step_height = (self.height - VU_BOTTOM_PADDING) / VU_STEPS
 	local led_width = math.max(1, step_height - 1)
 	local quarter = math.floor(self.width / 4)
 	local x1 = quarter + 1

@@ -188,7 +188,7 @@ function cnv:paint(g)
 	end
 
 	g:set_color(table.unpack(self:color_to_rgb(self.bg_color)))
-	g:fill_all()
+	g:fill_rect(0, 0, self.width, self.height)
 
 	-- Pd's selectable base is a square at the upper-left of the visible area.
 	-- Its outline normally has the same color as the canvas background.

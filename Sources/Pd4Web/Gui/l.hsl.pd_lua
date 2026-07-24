@@ -120,21 +120,21 @@ function hsl:value_to_pos(val)
 	local w, _ = self:get_size()
 	local range = self.top - self.bottom
 	local rel = (val - self.bottom) / range
-	return math.floor(rel * (w - 6)) -- inverted, top = max
+	return math.floor(rel * (w - 6)) + 3
 end
 
 -- ──────────────────────────────────────────
 function hsl:pos_to_value(pos)
 	local w, _ = self:get_size()
 	local range = self.top - self.bottom
-	local rel = 1 - (pos / (w - 6))
+	local rel = (pos - 3) / (w - 6)
 	return self.bottom + rel * range
 end
 
 -- ──────────────────────────────────────────
-function hsl:clamp_pos(y)
+function hsl:clamp_pos(x)
 	local w, _ = self:get_size()
-	return math.max(3, math.min(y, w - 6))
+	return math.max(3, math.min(x, w - 3))
 end
 
 -- ──────────────────────────────────────────
