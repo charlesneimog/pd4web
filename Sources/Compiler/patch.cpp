@@ -123,21 +123,6 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                         j++;
                         continue;
                     }
-
-                    if (canvasIsGraph) {
-                        if (L.Tokens.size() > 3) {
-                            try {
-                                p->MarginX = std::stoi(L.Tokens[2]);
-                                p->MarginY = std::stoi(L.Tokens[3]);
-                            } catch (const std::exception &) {
-                                print("Invalid restore coordinates in line: " + L.Line,
-                                      Pd4WebLogLevel::PD4WEB_WARNING);
-                            }
-                        } else {
-                            print("Malformed restore line: " + L.Line,
-                                  Pd4WebLogLevel::PD4WEB_WARNING);
-                        }
-                    }
                     break;
                 }
                 if (nestedCanvasDepth == 0 && L.Tokens[0] == "#X" && L.Tokens[1] == "coords" &&
@@ -160,6 +145,12 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                         try {
                             p->Width = std::stoi(L.Tokens[6]);
                             p->Height = std::stoi(L.Tokens[7]);
+                            // Graph-on-parent coordinates after the visibility flag are the
+                            // viewport origin inside the child canvas.  The following restore
+                            // coordinates place that graph on its parent and are not a crop
+                            // offset.
+                            p->MarginX = L.Tokens.size() > 9 ? std::stoi(L.Tokens[9]) : 0;
+                            p->MarginY = L.Tokens.size() > 10 ? std::stoi(L.Tokens[10]) : 0;
                         } catch (const std::exception &) {
                             print("Invalid coords values in line: " + L.Line,
                                   Pd4WebLogLevel::PD4WEB_WARNING);
