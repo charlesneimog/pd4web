@@ -1,178 +1,577 @@
-local floatatom = pd.Class:new():register("floatatom")
+local show = pd.Class:new():register("show~")
 
--- ─────────────────────────────────────
-function floatatom:initialize(_, args)
-	self.inlets = 1
-	self.outlets = 1
-	self.args = args
-	self.width = 5
-	self.labelpos = 4
-	self.idontknow = 0
-	self.label = "-"
-	self.receive = "-"
-	self.send = "-"
-	self.fontsize = 12
-
-	self.select = false
-	self.needtoreset = false
-	self.needclear = false
-	self.number = "0"
-
-	if #args > 0 then
-		self.width = args[1]
-		self.draglo = args[2]
-		self.draghi = args[3]
-		self.wherelabel = args[4]
-		self.label = args[5]
-		self.receive = args[6]
-		self.sende = args[7]
-		self.fontsize = args[8]
-		if self.fontsize == 0 then
-			self.fontsize = 12
-		end
-	end
-
-	self.keysreceiver = pd.Receive:new():register(self, "#key", "keyreceiver")
-	self.padding = 2
-	self:set_size(self.width * self.fontsize * 0.65, self.fontsize + (2 * self.padding))
-	return true
-end
-
--- ─────────────────────────────────────
-function floatatom:keyreceiver(_, atoms)
-    	if not self.select then
-		return
-	end
-
-	local key_num = atoms[1]
-	local key
-	if key_num == 13 or key_num == 10 then
-		key = "Enter"
-	else
-		key = string.char(key_num)
-	end
-
-	if self.needclear then
-		self.number = ""
-		self.needclear = false
-	end
-
-	if key == "Enter" then
-		self.select = false
-		local val = tonumber(self.number) or 0
-		if self.send ~= "-" then
-			pd.send(self.send, "float", { val })
-		end
-		self:outlet(1, "float", { val })
-	elseif key == "Backspace" or key == "Delete" then
-		self.number = self.number:sub(1, -2)
-	elseif key == "." then
-		self.number = self.number .. key
-	elseif tonumber(key) then
-		self.number = self.number .. tostring(key)
-	else
-		return
-	end
-
-	self:repaint()
-end
-
--- ─────────────────────────────────────
-function floatatom:mouse_down(_, _)
-	self.select = not self.select
-    if not self.select then
-        self:in_1_bang()
+function show:initialize(sel, args)
+  self.inlets = {SIGNAL}
+  self.outlets = {SIGNAL, DATA}
+  self.graphWidth = 152
+  self.graphHeight = 0
+  self.interval = 1
+  self.graphColors = {}
+  self.needsRepaintBackground = true
+  self.needsRepaintLegend = true
+  self.scale = nil
+  self.continuousInterval = 1
+  self.zoomMode = "normal"
+  self.paused = false
+  self.hoverResizeHandle = false
+  self.resizing = false
+  self.resizeStart = nil
+  for i, arg in ipairs(args) do
+    if arg == "-scale" then
+      self.scale = type(args[i+1]) == "number" and args[i+1] or 1
+    elseif arg == "-width" then
+      self.graphWidth = math.max(math.floor(args[i+1] or 152), 96)
+    elseif arg == "-height" then
+      self.graphHeight = math.max(math.floor(args[i+1] or 0), 140)
+    elseif arg == "-interval" then
+      self.interval = math.abs(args[i+1] or 1)
     end
-	self.needclear = true
-	self.needtoreset = true
-	self:repaint()
+  end
+  self:reset()
+  return true
 end
 
--- ─────────────────────────────────────
-function floatatom:in_1_bang(_)
-	if self.send ~= "-" then
-		pd.send(self.send, "float", tonumber(self.number))
-	end
-	self:outlet(1, "float", { tonumber(self.number) })
+function show:postinitialize()
+  self.clock = pd.Clock:new():register(self, "tick")
+  self.clock:delay(0)
 end
 
--- ─────────────────────────────────────
-function floatatom:in_1_float(args)
-	self.number = tostring(args)
-	self:outlet(1, "float", { args })
-	if self.send ~= "-" then
-		pd.send(self.send, "float", args[1])
-	end
-	self:repaint()
+function show:tick()
+  if self.needsRepaintBackground then
+    self:repaint(1)
+    self.needsRepaintBackground = false
+  end
+  self:repaint(2)  -- Always repaint the graphs (layer 2)
+  if self.needsRepaintLegend then
+    self:repaint(3)
+    self.needsRepaintLegend = false
+  end
+  self.clock:delay(self.frameDelay)
 end
 
--- ─────────────────────────────────────
-function floatatom:in_1_list(args)
-	self.number = tostring(args[1])
-	if self.send ~= "-" then
-		pd.send(self.send, "float", tonumber(self.number))
-	end
-	self:outlet(1, "float", { args[1] })
-	self:repaint()
+function show:reset()
+  self.sampleIndex = 1
+  self.sampleOffset = 0
+  self.bufferIndex = 1
+  self.colors = {
+    graphGradients = {
+      hue =        {-150, 14},
+      saturation = {92, 98},
+      brightness = {94, 97},
+    },
+    background = {248, 248, 248},
+    areaHover =  {200, 200, 200},
+    area =       {230, 230, 230},
+    valueHover = {148, 148, 148},
+    value =      {200, 200, 200},
+    text =       {  0,   0,   0},
+  }
+  self.sigs = {}
+  self.avgs = {}
+  self.rms = {}
+  self.inchans = 0
+  self.frameDelay = 20
+  self.strokeWidth = 1
+  self.valWidth = 48
+  self.sigHeight = 16
+  self.hover = 0
+  self.max = 1
+  self.maxVal = 1
+  self.width = self.graphWidth + self.valWidth
+  self.height = self.graphHeight
+  self.dragStart = nil
+  self.dragStartInterval = nil
+  self.hoverGraph = false
+  self.visibleMax = 0
+  self.visibleMaxUpdated = false
+  self:update_layout()
 end
 
--- ─────────────────────────────────────
-function floatatom:in_1_symbol(_)
-	self.number = "0"
-	self:outlet(1, "float", { 0 })
-	if self.send ~= "-" then
-		pd.send(self.send, "float", 0)
-	end
-	self:repaint()
+function show:in_1_reset()
+  self.reset()
 end
 
--- ─────────────────────────────────────
-function floatatom:paint(g)
-	local w, h = self:get_size()
-	g:set_color(0)
-	g:fill_all()
-
-	g:set_color(1)
-	g:stroke_rect(0, 0, w, h, 1)
-
-	if self.select then
-		g:set_color(255, 0, 0)
-	else
-		g:set_color(1)
-	end
-
-	local number_str = tostring(self.number)
-	if number_str:find("%.") then
-		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
-	end
-
-	if number_str == "" then
-		number_str = "0"
-	end
-	local int_part, frac_part = number_str:match("^(%-?%d+)%.(%d+)$")
-	local is_float = frac_part ~= nil
-	local int_len = int_part and #int_part or #number_str
-
-	if int_len > self.width then
-		number_str = string.sub(int_part or number_str, 1, self.width - 1) .. ">"
-	else
-		if #number_str > self.width then
-			if is_float then
-				number_str = string.sub(number_str, 1, self.width)
-			else
-				number_str = string.sub(number_str, 1, self.width - 1) .. ">"
-			end
-		end
-	end
-
-	g:draw_text(number_str, self.padding / 2, self.padding, self.fontsize * self.width, self.fontsize)
+function show:get_channel_from_point(x, y)
+  if self:point_in_rect(x, y, self.channelRect) then
+    return math.floor(y / self.sigHeight) + 1
+  end
+  return 0
 end
 
--- ─────────────────────────────────────
-function floatatom:in_1_reload()
-	self:dofilex(self._scriptname)
-	self.keysreceiver:destruct()
-	self:initialize("floatatom", self.args)
+function show:update_layout()
+  -- Only use graphHeight if explicitly set (greater than 0), otherwise calculate based on channels
+  if self.graphHeight > 0 then
+    self.height = self.graphHeight
+  else
+    -- Ensure we have at least one channel worth of height
+    local effectiveChannels = math.max(1, self.inchans or 1)
+    self.height = effectiveChannels * self.sigHeight
+  end
+  -- Maintain minimum height requirement
+  self.height = math.max(140, self.height)
+  self.graphRect = {x = 0, y = 0, width = self.graphWidth, height = self.height}
+  self.channelRect = {x = self.graphWidth, y = 0, width = self.valWidth, height = self.height}
+  self:set_size(self.graphWidth + self.valWidth, self.height)
+end
+
+function show:update_args()
+  local args = {}
+  
+  if self.graphHeight > 0 then
+    table.insert(args, "-height")
+    table.insert(args, self.graphHeight)
+  end
+  if self.graphWidth > 0 then
+    table.insert(args, "-width")
+    table.insert(args, self.graphWidth)
+  end
+  if self.scale then
+    table.insert(args, "-scale")
+    table.insert(args, self.scale)
+  end
+  if self.interval ~= 1 then
+    table.insert(args, "-interval")
+    table.insert(args, self.interval)
+  end
+  self:set_args(args)
+end
+
+function show:in_1_width(x)
+  self.graphWidth = math.max(math.floor(x[1] or 152), 96)
+  self:update_args()
+  for i=1, self.inchans do
+    self.sigs[i] = {}
+  end
+  self.needsRepaintBackground = true
+  self.needsRepaintLegend = true
+  self:update_layout()
+end
+
+function show:in_1_height(x)
+  self.graphHeight = x[1] or 0
+  self:update_args()
+  self.needsRepaintBackground = true
+  self.needsRepaintLegend = true
+  self:update_layout()
+end
+
+function show:mouse_move(x, y)
+  local oldHover = self.hover
+  if self:point_in_rect(x, y, self.channelRect) then
+    self.hover = math.max(0, math.floor((y - self.channelRect.y) / self.sigHeight) + 1)
+    if self.hover > self.inchans then self.hover = 0 end
+  else
+    self.hover = 0
+  end
+
+  local oldHoverGraph = self.hoverGraph
+  self.hoverGraph = self:point_in_rect(x, y, self.graphRect)
+
+  if oldHover ~= self.hover or oldHoverGraph ~= self.hoverGraph then
+    self.needsRepaintLegend = true
+  end
+
+  -- Check for resize handle hover (bottom-right 12x12 area)
+  local handleSize = 12
+  local wasHover = self.hoverResizeHandle
+  self.hoverResizeHandle = (x >= self.graphWidth + self.valWidth - handleSize and y >= self.height - handleSize)
+  if wasHover ~= self.hoverResizeHandle then
+    self.needsRepaintLegend = true
+  end
+end
+
+function show:mouse_drag(x, y)
+  if self.resizing and self.resizeStart then
+    local dx = x - self.resizeStart.x
+    local dy = y - self.resizeStart.y
+    local newWidth = self.resizeStart.width + dx
+    local newHeight = self.resizeStart.height + dy
+    self:in_1_width({newWidth})
+    self:in_1_height({newHeight})
+    return
+  end
+  if self.dragStart then
+    local dy = y - self.dragStart.y
+    local scaleFactor = 0.01
+    local newInterval = self.dragStartInterval * math.exp(dy * scaleFactor)
+    
+    -- Apply constraints based on zoom mode
+    if self.zoomMode == "above" then
+      newInterval = math.max(1.0, newInterval)
+    elseif self.zoomMode == "below" then
+      newInterval = math.min(1.0, newInterval)
+    end
+    
+    self.interval = math.max(0.01, newInterval)
+    self.needsRepaintLegend = true
+  end
+end
+
+function show:mouse_down(x, y)
+  local handleSize = 12
+  if x >= self.graphWidth + self.valWidth - handleSize and y >= self.height - handleSize then
+    self.resizing = true
+    self.resizeStart = {x = x, y = y, width = self.graphWidth, height = self.height}
+    return
+  end
+  self.dragStart = {x = x, y = y}
+  self.dragStartInterval = self.interval
+  
+  -- Determine zoom mode when starting drag
+  if math.abs(self.interval - 1.0) < 0.001 then
+    self.zoomMode = "boundary"
+  else
+    self.zoomMode = self.interval > 1.0 and "above" or "below"
+  end
+end
+
+function show:mouse_up(x, y)
+  if self.resizing then
+    self.resizing = false
+    self.resizeStart = nil
+    return
+  end
+  self.dragStart = nil
+  self.dragStartInterval = nil
+  -- Don't reset zoomMode here, it persists until next mouse_down
+end
+
+function show:point_in_rect(x, y, rect)
+  return x >= rect.x and x <= rect.x + rect.width and
+         y >= rect.y and y <= rect.y + rect.height
+end
+
+function show:in_1_interval(x)
+  self.interval = math.max(0.01, x[1] or 1)
+  self:update_args()
+  self.needsRepaintLegend = true
+end
+
+function show:in_1_scale(x)
+  self.scale = x[1]
+  self:update_args()
+end
+
+function show:in_1_framedelay(x)
+  self.frameDelay = x[1] or 20
+end
+
+function show:in_1_reset()
+  self.reset()
+end
+
+function show:in_1_bang()
+  local output = {}
+  for i = 1, self.inchans do
+    output[i] = self.sigs[i][(self.bufferIndex - 2) % self.graphWidth + 1]
+  end
+  self:outlet(2, "list", output)
+end
+
+function show:getrange(maxValue)
+  local baseValues = {1, 2, 5, 10}
+  
+  -- Find the appropriate power of 10
+  local power = math.max(0, math.floor(math.log(maxValue, 10)))
+  local scale = 10^power
+  
+  -- Normalize the maxValue to between 0 and 10
+  local normalizedValue = maxValue / scale
+  
+  -- Find the first base value that's greater than or equal to the normalized value
+  for _, base in ipairs(baseValues) do
+    if base >= normalizedValue then
+      return base * scale
+    end
+  end
+  
+  -- If we get here, normalizedValue must be 10, so we return the next scale up
+  return baseValues[1] * (scale * 10)
+end
+
+function show:perform(in1)
+  -- Skip signal processing if paused
+  if self.paused then
+    return in1
+  end
+
+  for c=1,self.inchans do
+    for s=1,self.blocksize do
+      local sample = in1[s + self.blocksize * (c-1)] or 0
+      self.maxVal = math.max(math.abs(sample), self.maxVal)
+      self.avgs[c] = self.avgs[c] * 0.9996 + sample * 0.0004
+      self.rms[c] = self.rms[c] * 0.9996 + (sample * sample) * 0.0004
+    end
+  end
+  
+  while self.sampleIndex < self.blocksize do  -- Simplified condition
+    for i=1,self.inchans do
+      local baseIndex = self.blocksize * (i-1)
+      
+      if self.interval < 1 or math.abs(self.interval - 1) < 0.001 then
+        -- Write the sample directly, no interpolation for zoom in and exactly 1:1
+        self.sigs[i][self.bufferIndex] = in1[self.sampleIndex + baseIndex + 1] or 0
+      else
+        -- Keep interpolation for zoomed out mode only
+        local exactPos = self.sampleIndex + self.sampleOffset
+        local sampleIndex = math.floor(exactPos)
+        local fraction = math.min(1.0, exactPos - sampleIndex)
+        local sample1 = in1[sampleIndex + baseIndex + 1] or 0
+        local sample2 = in1[math.min(sampleIndex + 2, self.blocksize) + baseIndex] or sample1
+        self.sigs[i][self.bufferIndex] = sample1 * (1 - fraction) + sample2 * fraction
+      end
+    end
+    
+    self.bufferIndex = self.bufferIndex % self.graphWidth + 1
+    
+    if self.interval < 1 then
+      -- For zoomed in mode, just increment by 1
+      self.sampleIndex = self.sampleIndex + 1
+    else
+      -- For zoomed out mode, keep fractional stepping
+      self.sampleIndex = self.sampleIndex + math.floor(self.interval)
+      self.sampleOffset = self.sampleOffset + (self.interval % 1)
+      if self.sampleOffset >= 1 then
+        self.sampleIndex = self.sampleIndex + math.floor(self.sampleOffset)
+        self.sampleOffset = self.sampleOffset % 1
+      end
+    end
+  end
+    
+  -- Reset for next block
+  self.sampleIndex = self.sampleIndex - self.blocksize
+  
+  -- Gradual decay of maxVal
+  self.maxVal = self.maxVal * 0.99
+
+  -- Use manual scale if set, otherwise use the visibleMax calculated during drawing
+  local targetMax = self.scale or self:getrange(math.max(self.visibleMax, 0.000001))
+  
+  -- Smooth transition of max value
+  local transitionSpeed = 0.02
+  self.max = self.max + (targetMax - self.max) * transitionSpeed
+
+  if self.max ~= targetMax then
+    self.needsRepaintLegend = true
+  end
+
+  return in1
+end
+
+-- Background
+function show:paint(g)
+  g:set_color(table.unpack(self.colors.background))
+  g:fill_all()
+end
+
+-- Graphs
+function show:paint_layer_2(g)
+  -- Draw resize handle
+  local baseSize = 4
+  local handleSize = self.hoverResizeHandle and 12 or baseSize
+  local x0 = self.graphWidth + self.valWidth - handleSize
+  local y0 = self.height - handleSize
+  g:set_color(table.unpack(self.hoverResizeHandle and self.colors.valueHover or self.colors.value))
+  g:fill_rect(x0 - (self.hoverResizeHandle and 0 or 2), 
+              y0 - (self.hoverResizeHandle and 0 or 4), 
+              handleSize, handleSize)
+
+  -- Reset the visibleMaxUpdated flag at the start of each frame
+  self.visibleMaxUpdated = false
+  
+  g:set_color(table.unpack(self.colors.area))
+  g:draw_line(0, self.height/2, self.graphWidth - 1, self.height/2, 1)
+  -- Graphs, RMS charts, and avg values
+
+  if self.hover == 0 then
+    -- No channel highlighted: draw in reverse order
+    for idx = #self.sigs, 1, -1 do
+      self:draw_channel(g, idx, false)
+    end
+  else
+    -- Channel highlighted: draw non-highlighted channels first, then the highlighted one
+    for idx = 1, #self.sigs do
+      if idx ~= self.hover then
+        self:draw_channel(g, idx, false)
+      end
+    end
+    if self.hover <= #self.sigs then
+      self:draw_channel(g, self.hover, true)
+    end
+  end
+end
+
+-- Foreground elements (typo and hover)
+function show:paint_layer_3(g)
+  -- Legend: channel if hovered, and scale
+  g:set_color(table.unpack(self.colors.text))
+  g:draw_text(string.format("1px = %.2fsp", self.interval), 3, self.height-13, 100, 10)
+  g:draw_text(string.format("% 8.2f", self.max), self.graphWidth-50, 3, 50, 10)
+  g:draw_text(string.format("% 8.2f", -self.max), self.graphWidth-50, self.height-13, 50, 10)
+
+  -- Draw hovered channel number
+  if self.hover > 0 and self.hover <= #self.sigs then
+    g:set_color(table.unpack(self.graphColors[self.hover] or {0, 0, 0}))
+    g:draw_text(string.format("ch %d", self.hover), 3, 3, 64, 10)
+  end
+end
+
+function show:draw_channel(g, idx, isHovered)
+  local sig = self.sigs[idx]
+  if not sig then return end
+
+  local color = self.graphColors[idx] or {255, 255, 255}  -- Default to white if color is not set
+  local graphColor = (self.hover == 0 or isHovered) and color or self.colors.area
+  
+  -- Calculate actual RMS value and scale it according to self.max
+  local rmsValue = math.sqrt(self.rms[idx] or 0)
+  local scaledRMS = rmsValue / self.max
+  
+  -- RMS bar
+  g:set_color(table.unpack(isHovered and self.colors.valueHover or self.colors.value))
+  g:fill_rect(self.graphWidth, self.sigHeight * (idx-1) + 1, 
+              self.valWidth * math.min(1, scaledRMS), 
+              self.sigHeight-1)
+  
+  -- Graph line
+  g:set_color(table.unpack(graphColor))
+  
+  -- Reset visibleMax at the start of new frame
+  if not self.visibleMaxUpdated and not self.scale then
+    self.visibleMax = 0
+    self.visibleMaxUpdated = true
+  end
+  
+  local function scaleY(value)
+    -- Track maximum value while scaling (only if not using manual scale)
+    if not self.scale then
+      self.visibleMax = math.max(self.visibleMax, math.abs(value))
+    end
+    return (value / self.max * -0.5 + 0.5) * (self.height - 2) + 1
+  end
+
+  local x0 = (self.bufferIndex - 1) % self.graphWidth
+
+  if self.interval >= 1 or math.abs(self.interval - 1) < 0.001 then
+    -- Draw one sample per pixel, left to right (handles both 1:1 and zoomed out)
+    local y0 = scaleY(sig[x0 + 1] or 0)
+    p = Path(0, y0)
+    for x = 1, self.graphWidth - 1 do
+      local bufferX = (x0 + x) % self.graphWidth + 1
+      local y = scaleY(sig[bufferX] or 0)
+      p:line_to(x, y)
+    end
+  else
+    -- Zoomed-in drawing: work backwards from most recent sample
+    local lastX = self.graphWidth - 1
+    local lastY = scaleY(sig[x0] or 0)
+    p = Path(lastX, lastY)
+    
+    -- Calculate how many points we can draw within graphWidth
+    local maxPoints = math.ceil(self.graphWidth * self.interval)
+    
+    -- Draw lines between actual samples at their exact x positions, working backwards
+    for i = 1, maxPoints do
+      local bufferX = (x0 - i + self.graphWidth - 1) % self.graphWidth + 1
+      local sampleX = lastX - (i * (1/self.interval))
+      if sampleX < 0 then break end
+      
+      local y = scaleY(sig[bufferX] or 0)
+      p:line_to(sampleX, y)
+    end
+  end
+  
+  g:stroke_path(p, self.strokeWidth)
+  
+  -- Display just the average value
+  g:set_color(table.unpack((self.hover == 0 or isHovered) and color or self.colors.text))
+  g:draw_text(string.format("% 7.2f", self.avgs[idx] or 0), self.graphWidth + 4, idx * self.sigHeight - 13, self.valWidth, 10)
+end
+
+function show:dsp(samplerate, blocksize, inchans)
+  -- Store old channel count to detect changes
+  local oldChannels = self.inchans
+  
+  -- Update basic parameters
+  self.blocksize = blocksize
+  self.inchans = inchans[1]
+  self:signal_setmultiout(1, self.inchans)
+
+  -- Reset signal buffers
+  self.sigs = {}
+  self.rms = {}
+  self.avgs = {}
+  
+  -- Generate new colors for channels
+  self.graphColors = self:generate_colors(self.inchans)
+ 
+  -- Initialize buffers for each channel
+  for c = 1, self.inchans do
+    self.rms[c] = 0
+    self.avgs[c] = 0
+    self.sigs[c] = {}
+  end
+  
+  -- Reset hover state when channel count changes
+  if oldChannels ~= self.inchans then
+    self.hover = 0
+    -- Force layout update when channel count changes
+    self.needsRepaintBackground = true
+    self.needsRepaintLegend = true
+    self:update_layout()
+  end
+end
+
+function show:hsv_to_rgb(h, s, v)
+  h = h % 360  -- Ensure h is in the range 0-359
+  s = s / 100  -- Convert s to 0-1 range
+  v = v / 100  -- Convert v to 0-1 range
+
+  local c = v * s
+  local x = c * (1 - math.abs((h / 60) % 2 - 1))
+  local m = v - c
+
+  local r, g, b
+  if h < 60 then
+    r, g, b = c, x, 0
+  elseif h < 120 then
+    r, g, b = x, c, 0
+  elseif h < 180 then
+    r, g, b = 0, c, x
+  elseif h < 240 then
+    r, g, b = 0, x, c
+  elseif h < 300 then
+    r, g, b = x, 0, c
+  else
+    r, g, b = c, 0, x
+  end
+
+  -- Scale to 0-255 range and round to nearest integer
+  return math.floor((r + m) * 255 + 0.5), 
+         math.floor((g + m) * 255 + 0.5), 
+         math.floor((b + m) * 255 + 0.5)
+end
+
+function show:generate_colors(count)
+  local colors = {}
+  local hue_start, hue_end = table.unpack(self.colors.graphGradients.hue)
+  local sat_start, sat_end = table.unpack(self.colors.graphGradients.saturation)
+  local bright_start, bright_end = table.unpack(self.colors.graphGradients.brightness)
+
+  for i = 1, count do
+    local hue = hue_start + (hue_end - hue_start) * ((i - 1) / math.max(1, count - 1))
+    local saturation = sat_start + (sat_end - sat_start) * ((i - 1) / math.max(1, count - 1))
+    local brightness = bright_start + (bright_end - bright_start) * ((i - 1) / math.max(1, count - 1))
+    local r, g, b = self:hsv_to_rgb(hue, saturation, brightness)
+    table.insert(colors, {r, g, b})
+  end
+
+  return colors
+end
+
+function show:in_1_pause(x)
+  local wasPaused = self.paused
+  self.paused = (x[1] or 0) > 0
 end
 local bng = pd.Class:new():register("l.bng")
 
@@ -276,12 +675,18 @@ end
 
 -- ──────────────────────────────────────────
 function bng:in_1(_)
-    self.value = not self.value
+	self.value = not self.value
 	self.filled = true
 	self:repaint()
 	self.clock:delay(1)
 	self.blink_delay = 0
-	self:outlet(1, "bang", {"bang"})
+	self:outlet(1, "bang", { "bang" })
+end
+
+-- ──────────────────────────────────────────
+function bng:in_1_size(args)
+	local size = args[1]
+	self:set_size(size, size)
 end
 
 -- ──────────────────────────────────────────
@@ -311,6 +716,440 @@ end
 function bng:in_1_reload()
 	self:dofilex(self._scriptname)
 	self:initialize()
+end
+local cnv = pd.Class:new():register("l.cnv")
+
+local IEM_COLORS = {
+	0xfcfcfc, 0xa0a0a0, 0x404040, 0xfce0e0, 0xfce0c0,
+	0xfcfcc8, 0xd8fcd8, 0xd8fcfc, 0xdce4fc, 0xf8d8fc,
+	0xe0e0e0, 0x7c7c7c, 0x202020, 0xfc2828, 0xfcac44,
+	0xe8e828, 0x14e814, 0x28f4f4, 0x3c50fc, 0xf430f0,
+	0xbcbcbc, 0x606060, 0x000000, 0x8c0808, 0x583000,
+	0x782814, 0x285014, 0x004450, 0x001488, 0x580050,
+}
+
+function cnv:initialize(_, args)
+	self.inlets = 0
+	self.outlets = 0
+	self.need_update_args = false
+
+	if args ~= nil and #args > 0 then
+		self.size = args[1]
+		self.width = args[2]
+		self.height = args[3]
+		self.send = args[4]
+		self.receive = args[5]
+		self.label = args[6]
+		self.x_off = args[7]
+		self.y_off = args[8]
+		self.font_style = args[9]
+		self.font_size = args[10]
+		self.bg_color = args[11]
+		self.label_color = args[12]
+		self.isa = args[13] or 0
+	else
+		self.size = 15
+		self.width = 100
+		self.height = 60
+		self.send = "empty"
+		self.receive = "empty"
+		self.label = "empty"
+		self.x_off = 20
+		self.y_off = 12
+		self.font_style = 0
+		self.font_size = 10
+		self.bg_color = "#e0e0e0"
+		self.label_color = "#404040"
+		self.isa = 0
+		self.need_update_args = true
+	end
+
+	self:clip_sizes()
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
+	end
+	self:apply_size()
+	return true
+end
+
+function cnv:clip_sizes()
+	self.size = math.max(1, math.floor(tonumber(self.size) or 1))
+	self.width = math.max(1, math.floor(tonumber(self.width) or 1))
+	self.height = math.max(1, math.floor(tonumber(self.height) or 1))
+	self.font_size = math.max(4, math.floor(tonumber(self.font_size) or 10))
+end
+
+function cnv:apply_size()
+	-- pd.Class:set_size only forwards the visual width and height.  cnv also
+	-- needs its smaller Pd selection bounds, so call Pd4Web's extended bridge.
+	_gfx_internal.set_size(self._object, self.width, self.height, self.size, self.size)
+end
+
+function cnv:update_args()
+	self:set_args({
+		self.size,
+		self.width,
+		self.height,
+		self.send,
+		self.receive,
+		self.label,
+		self.x_off,
+		self.y_off,
+		self.font_style,
+		self.font_size,
+		self.bg_color,
+		self.label_color,
+		self.isa,
+	})
+end
+
+function cnv:color_to_rgb(color)
+	local value
+	if type(color) == "number" then
+		if color >= 0 then
+			value = IEM_COLORS[(math.floor(color) % #IEM_COLORS) + 1]
+		else
+			value = (-1 - math.floor(color)) % 0x1000000
+		end
+	else
+		local hex = tostring(color):gsub("#", "")
+		value = tonumber(hex, 16) or 0
+	end
+
+	return {
+		math.floor(value / 0x10000) % 0x100,
+		math.floor(value / 0x100) % 0x100,
+		value % 0x100,
+	}
+end
+
+function cnv:replace_receiver(name)
+	if self.receiver ~= nil then
+		self.receiver:destruct()
+		self.receiver = nil
+	end
+	self.receive = name or "empty"
+	if self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
+	end
+end
+
+function cnv:_receiver(sel, atoms)
+	local handler = self["in_1_" .. sel]
+	if handler ~= nil then
+		handler(self, atoms)
+	end
+end
+
+function cnv:in_1_size(atoms)
+	self.size = atoms[1] or self.size
+	self:clip_sizes()
+	self:apply_size()
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:in_1_vis_size(atoms)
+	self.width = atoms[1] or self.width
+	self.height = atoms[2] or self.width
+	self:clip_sizes()
+	self:apply_size()
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:in_1_color(atoms)
+	if atoms[1] ~= nil then
+		self.bg_color = atoms[1]
+	end
+	if atoms[2] ~= nil then
+		self.label_color = atoms[2]
+	end
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:in_1_send(atoms)
+	self.send = atoms[1] or "empty"
+	self:update_args()
+end
+
+function cnv:in_1_receive(atoms)
+	self:replace_receiver(atoms[1])
+	self:update_args()
+end
+
+function cnv:in_1_label(atoms)
+	self.label = atoms[1] or "empty"
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:in_1_label_pos(atoms)
+	self.x_off = atoms[1] or self.x_off
+	self.y_off = atoms[2] or self.y_off
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:in_1_label_font(atoms)
+	self.font_style = atoms[1] or self.font_style
+	self.font_size = atoms[2] or self.font_size
+	self:clip_sizes()
+	self:update_args()
+	self:repaint()
+end
+
+function cnv:paint(g)
+	if self.need_update_args then
+		self.need_update_args = false
+		self:update_args()
+	end
+
+	g:set_color(table.unpack(self:color_to_rgb(self.bg_color)))
+	g:fill_all()
+
+	-- Pd's selectable base is a square at the upper-left of the visible area.
+	-- Its outline normally has the same color as the canvas background.
+	g:stroke_rect(0, 0, math.min(self.size, self.width), math.min(self.size, self.height), 1)
+
+	if self.label ~= nil and self.label ~= "empty" then
+		g:set_color(table.unpack(self:color_to_rgb(self.label_color)))
+		local text_y = self.y_off - math.floor(self.font_size / 2)
+		g:draw_text(
+			tostring(self.label),
+			self.x_off,
+			text_y,
+			math.max(1, self.width - self.x_off),
+			self.font_size
+		)
+	end
+end
+
+function cnv:in_1_reload()
+	self:dofilex(self._scriptname)
+	self:initialize()
+end
+local floatatom = pd.Class:new():register("l.floatatom")
+
+-- ─────────────────────────────────────
+function floatatom:initialize(_, args)
+	self.inlets = 1
+	self.outlets = 1
+	self.args = args or {}
+	self.width = 5
+	self.draglo = 0
+	self.draghi = 0
+	self.wherelabel = 0
+	self.label = "-"
+	self.receive = "-"
+	self.send = "-"
+	self.fontsize = 12
+	self.padding = 2
+
+	self.select = false
+	self.needclear = false
+	self.number = "0"
+	self.keysreceiver = nil
+	self.receiver = nil
+
+	if args and #args > 0 then
+		self.width = tonumber(args[1]) or self.width
+		self.draglo = tonumber(args[2]) or self.draglo
+		self.draghi = tonumber(args[3]) or self.draghi
+		self.wherelabel = tonumber(args[4]) or self.wherelabel
+		self.label = args[5] or self.label
+		self.receive = args[6] or self.receive
+		self.send = args[7] or self.send
+		self.fontsize = tonumber(args[8]) or self.fontsize
+		if self.fontsize == 0 then
+			self.fontsize = 12
+		end
+	end
+
+	self.keysreceiver = pd.Receive:new():register(self, "#key", "keyreceiver")
+	if self.receive ~= "-" and self.receive ~= "empty" then
+		self.receiver = pd.Receive:new():register(self, self.receive, "receive_value")
+	end
+
+	local object_width = math.max(1, self.width) * self.fontsize * 0.65
+	local object_height = self.fontsize + (2 * self.padding)
+	self:set_size(object_width, object_height)
+	return true
+end
+
+-- ─────────────────────────────────────
+function floatatom:finalize()
+	if self.keysreceiver then
+		self.keysreceiver:destruct()
+		self.keysreceiver = nil
+	end
+	if self.receiver then
+		self.receiver:destruct()
+		self.receiver = nil
+	end
+end
+
+-- ─────────────────────────────────────
+function floatatom:keyreceiver(_, atoms)
+    	if not self.select then
+		return
+	end
+
+	local key_num = atoms[1]
+	local key
+	if key_num == 13 or key_num == 10 then
+		key = "Enter"
+	elseif key_num == 8 then
+		key = "Backspace"
+	elseif key_num == 46 or key_num == 110 or key_num == 190 or key_num == 44 or key_num == 188 then
+		key = "."
+	elseif key_num == 45 or key_num == 109 or key_num == 189 then
+		key = "-"
+	else
+		key = string.char(key_num)
+	end
+
+	if self.needclear then
+		self.number = ""
+		self.needclear = false
+	end
+
+	if key == "Enter" then
+		self.select = false
+		local val = tonumber(self.number) or 0
+		if self.send ~= "-" then
+			pd.send(self.send, "float", { val })
+		end
+		self:outlet(1, "float", { val })
+	elseif key == "Backspace" or key == "Delete" then
+		self.number = self.number:sub(1, -2)
+	elseif key == "." then
+		if not self.number:find(".", 1, true) then
+			self.number = self.number .. key
+		end
+	elseif key == "-" then
+		if self.number == "" then
+			self.number = key
+		end
+	elseif tonumber(key) then
+		self.number = self.number .. tostring(key)
+	else
+		return
+	end
+
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:mouse_down(_, _)
+	self.select = not self.select
+    if not self.select then
+        self:in_1_bang()
+    end
+	self.needclear = true
+	self.needtoreset = true
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:in_1_bang(_)
+	if self.send ~= "-" then
+		pd.send(self.send, "float", { tonumber(self.number) or 0 })
+	end
+	self:outlet(1, "float", { tonumber(self.number) or 0 })
+end
+
+-- ─────────────────────────────────────
+function floatatom:in_1_float(value)
+	self.number = tostring(value)
+	self:outlet(1, "float", { value })
+	if self.send ~= "-" then
+		pd.send(self.send, "float", { value })
+	end
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:in_1_list(args)
+	self.number = tostring(args[1])
+	if self.send ~= "-" then
+		pd.send(self.send, "float", { tonumber(self.number) or 0 })
+	end
+	self:outlet(1, "float", { args[1] })
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:in_1_symbol(_)
+	self.number = "0"
+	self:outlet(1, "float", { 0 })
+	if self.send ~= "-" then
+		pd.send(self.send, "float", { 0 })
+	end
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:receive_value(sel, atoms)
+	if sel ~= "float" or #atoms < 1 then
+		return
+	end
+	self.number = tostring(atoms[1])
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
+function floatatom:paint(g)
+	local w, h = self:get_size()
+	g:set_color(255, 255, 255)
+	g:fill_all()
+
+	g:set_color(0, 0, 0)
+	g:stroke_rect(0, 0, w, h, 1)
+
+	if self.select then
+		g:set_color(255, 0, 0)
+	else
+		g:set_color(0, 0, 0)
+	end
+
+	local number_str = tostring(self.number)
+	-- Preserve incomplete input such as "1." and trailing zeroes while editing.
+	-- Normalization is only appropriate after the value has been committed.
+	if not self.select and number_str:find("%.") then
+		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
+	end
+
+	if number_str == "" then
+		number_str = "0"
+	end
+	local int_part, frac_part = number_str:match("^(%-?%d+)%.(%d+)$")
+	local is_float = frac_part ~= nil
+	local int_len = int_part and #int_part or #number_str
+
+	if int_len > self.width then
+		number_str = string.sub(int_part or number_str, 1, self.width - 1) .. ">"
+	else
+		if #number_str > self.width then
+			if is_float then
+				number_str = string.sub(number_str, 1, self.width)
+			else
+				number_str = string.sub(number_str, 1, self.width - 1) .. ">"
+			end
+		end
+	end
+
+	-- Inter's digit shapes sit slightly below the center of their em box.
+	local text_y = math.max(0, math.floor((h - self.fontsize) / 2) - 1)
+	g:draw_text(number_str, self.padding / 2, text_y, self.fontsize * self.width, self.fontsize)
+end
+
+-- ─────────────────────────────────────
+function floatatom:in_1_reload()
+	self:dofilex(self._scriptname)
+	self:finalize()
+	self:initialize("l.floatatom", self.args)
 end
 local hradio = pd.Class:new():register("l.hradio")
 
@@ -425,7 +1264,7 @@ end
 -- ──────────────────────────────────────────
 function hradio:in_1_size(args)
 	self.size = args[1]
-	self:set_size(self.size, self.size * self.number)
+	self:set_size(self.size * self.number, self.size)
 	self:repaint()
 end
 
@@ -483,6 +1322,7 @@ end
 
 -- ──────────────────────────────────────────
 function hradio:paint_layer_2(g)
+	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
 	g:fill_rect(4 + (self.selected * self.size), 4, self.size - 8, self.size - 8, 1)
 end
 
@@ -987,6 +1827,12 @@ function nbx:keydown(sel, atoms)
 	local key
 	if key_num == 13 or key_num == 10 then
 		key = "Enter"
+	elseif key_num == 8 then
+		key = "Backspace"
+	elseif key_num == 46 or key_num == 110 or key_num == 190 or key_num == 44 or key_num == 188 then
+		key = "."
+	elseif key_num == 45 or key_num == 109 or key_num == 189 then
+		key = "-"
 	else
 		key = string.char(key_num)
 	end
@@ -1006,7 +1852,13 @@ function nbx:keydown(sel, atoms)
 	elseif key == "Backspace" or key == "Delete" then
 		self.number = self.number:sub(1, -2)
 	elseif key == "." then
-		self.number = self.number .. key
+		if not self.number:find(".", 1, true) then
+			self.number = self.number .. key
+		end
+	elseif key == "-" then
+		if self.number == "" then
+			self.number = key
+		end
 	elseif tonumber(key) then
 		self.number = self.number .. tostring(key)
 	else
@@ -1092,10 +1944,12 @@ function nbx:paint(g)
 	g:set_color(0, 0, 0)
 	g:stroke_rect(0, 0, width, height, 1)
 
-	-- triangle
-	local p = Path(0, 0)
+	-- Keep the path inside the contour. A stroke is centered on its coordinates,
+	-- so drawing at x=0 made the triangle extend half a pixel to the left.
+	local inset = 0.5
+	local p = Path(inset, inset)
 	p:line_to(8, height / 2)
-	p:line_to(0, height)
+	p:line_to(inset, height - inset)
 	g:stroke_path(p, 1)
 
 	-- text
@@ -1108,7 +1962,6 @@ function nbx:paint(g)
 	local number_str = tostring(self.number)
 
 	if number_str:find("%.") then
-		number_str = number_str:gsub("0+$", ""):gsub("%.$", "")
 		number_str = string.sub(number_str, 1, self.digs_len)
 	else
 		if #number_str > self.digs_len then
@@ -1116,7 +1969,8 @@ function nbx:paint(g)
 		end
 	end
 
-	g:draw_text(number_str, 10, height / 12, self.digs_len * self.fontsize, self.fontsize)
+	local text_y = math.max(0, math.floor((height - self.fontsize) / 2))
+	g:draw_text(number_str, 10, text_y - 1, self.digs_len * self.fontsize, self.fontsize)
 end
 
 -- ──────────────────────────────────────────
@@ -1771,33 +2625,44 @@ function vsl:in_1_reload()
 end
 local vu = pd.Class:new():register("l.vu")
 
--- ──────────────────────────────────────────
+local VU_STEPS = 40
+local VU_MIN_DB = -100
+local VU_MAX_DB = 12
+
+-- First dB value displayed by each of Pd's 40 VU steps.  These are the
+-- transition points encoded by iemgui_vu_db2i in g_all_guis.c.
+local VU_THRESHOLDS = {
+	-100, -80, -60, -55, -50, -45, -40, -35, -30, -27.5,
+	-25, -22.5, -20, -18, -16, -14, -12, -10.5, -9, -7.5,
+	-6, -5, -4, -3, -2, -1.5, -1, -0.5, 0, 0.5,
+	1, 1.5, 2, 3, 4, 5, 6, 7.5, 9, 12,
+}
+
 function vu:initialize(_, args)
 	self.inlets = 2
 	self.outlets = 2
-	self.blink_delay = 0
-	self.filled = false
 	self.need_update_args = false
+
 	if args ~= nil and #args > 0 then
-		self.width = args[1] -- 18
-		self.height = args[2] -- 160
-		self.receive = args[3] -- "empty"
-		self.label = args[4] -- "empty"
-		self.x_off = args[5] -- -1
-		self.y_off = args[6] -- -9
-		self.font_style = args[7] -- 0     ← estilo da fonte
-		self.font_size = args[8] -- 10    ← tamanho da fonte
-		self.bg_color = args[9] -- "#404040"
-		self.fg_color = args[10] -- "#000000"
-		self.scale = args[11] -- 1
-		self.isa = args[12] -- 0
+		self.width = args[1]
+		self.height = args[2]
+		self.receive = args[3]
+		self.label = args[4]
+		self.x_off = args[5]
+		self.y_off = args[6]
+		self.font_style = args[7]
+		self.font_size = args[8]
+		self.bg_color = args[9]
+		self.fg_color = args[10]
+		self.scale = args[11]
+		self.isa = args[12] or 0
 	else
 		self.width = 18
 		self.height = 160
 		self.receive = "empty"
 		self.label = "empty"
 		self.x_off = -1
-		self.y_off = -9
+		self.y_off = -8
 		self.font_style = 0
 		self.font_size = 10
 		self.bg_color = "#404040"
@@ -1807,160 +2672,164 @@ function vu:initialize(_, args)
 		self.need_update_args = true
 	end
 
-	self.clock = pd.Clock:new():register(self, "tick")
-	self.clock:delay(0)
+	self.width = math.max(8, math.floor(self.width))
+	local step_height = math.max(2, math.floor(self.height / VU_STEPS))
+	self.height = VU_STEPS * step_height
+	self.rms = -101
+	self.peak = -101
 
 	if self.receive ~= "empty" then
 		self.receiver = pd.Receive:new():register(self, self.receive, "_receiver")
 	end
 
-	self.rms = -101
 	self:set_size(self.width, self.height)
 	return true
 end
 
--- ──────────────────────────────────────────
-function vu:_receiver(sel, atoms)
-	if sel == "float" then
-		self.rms = atoms[1]
-		self:outlet(1, "float", atoms)
-	end
-end
-
--- ──────────────────────────────────────────
 function vu:update_args()
-	local args = {}
-
-	table.insert(args, self.width)
-	table.insert(args, self.height)
-	table.insert(args, self.receive)
-	table.insert(args, self.label)
-	table.insert(args, self.x_off)
-	table.insert(args, self.y_off)
-	table.insert(args, self.font_style)
-	table.insert(args, self.font_size)
-	table.insert(args, self.bg_color)
-	table.insert(args, self.fg_color)
-	table.insert(args, self.scale)
-	table.insert(args, self.isa)
-
-	self:set_args(args)
+	self:set_args({
+		self.width,
+		self.height,
+		self.receive,
+		self.label,
+		self.x_off,
+		self.y_off,
+		self.font_style,
+		self.font_size,
+		self.bg_color,
+		self.fg_color,
+		self.scale,
+		self.isa,
+	})
 end
 
--- ──────────────────────────────────────────
-function vu:tick()
-	self:repaint(2)
-	self:repaint(3)
-	self.clock:delay(30)
-end
-
--- ──────────────────────────────────────────
-function vu:in_1_bang(_)
-	self:outlet(1, "float", { self.rms })
-end
-
--- ──────────────────────────────────────────
-function vu:in_1_float(args)
-	self.rms = args
-	self:outlet(1, "float", { args })
-end
-
--- ──────────────────────────────────────────
-function vu:in_1_list(args)
-	self.rms = args[1]
-	self:outlet(1, "float", { args[1] })
-end
-
--- ──────────────────────────────────────────
 function vu:hex_to_rgb(hex)
-	hex = hex:gsub("#", "")
+	hex = tostring(hex):gsub("#", "")
 	return {
-		tonumber(hex:sub(1, 2), 16),
-		tonumber(hex:sub(3, 4), 16),
-		tonumber(hex:sub(5, 6), 16),
+		tonumber(hex:sub(1, 2), 16) or 0,
+		tonumber(hex:sub(3, 4), 16) or 0,
+		tonumber(hex:sub(5, 6), 16) or 0,
 	}
 end
 
--- ──────────────────────────────────────────
-function vu:rms_to_linear(rms_db)
-	local min_db, max_db = -100, 12
-	if rms_db < min_db then
-		rms_db = min_db
+function vu:db_to_step(db)
+	if type(db) ~= "number" or db ~= db or db <= VU_MIN_DB then
+		return 0
 	end
-	if rms_db > max_db then
-		rms_db = max_db
+	if db >= VU_MAX_DB then
+		return VU_STEPS
 	end
-	return (rms_db - min_db) / (max_db - min_db)
+
+	for step = VU_STEPS, 2, -1 do
+		if db >= VU_THRESHOLDS[step] then
+			return step
+		end
+	end
+	return 1
 end
 
--- ──────────────────────────────────────────
+function vu:set_rms(value, output)
+	if type(value) ~= "number" or value ~= value then
+		return
+	end
+	self.rms = math.floor(value * 100 + 0.5) / 100
+	if output then
+		self:outlet(1, "float", { self.rms })
+	end
+	self:repaint(2)
+end
+
+function vu:set_peak(value, output)
+	if type(value) ~= "number" or value ~= value then
+		return
+	end
+	self.peak = math.floor(value * 100 + 0.5) / 100
+	if output then
+		self:outlet(2, "float", { self.peak })
+	end
+	self:repaint(2)
+end
+
+function vu:_receiver(sel, atoms)
+	if sel == "float" then
+		self:set_rms(atoms[1], true)
+	end
+end
+
+function vu:in_1_bang()
+	-- Pd sends the peak first, then the RMS value.
+	self:outlet(2, "float", { self.peak })
+	self:outlet(1, "float", { self.rms })
+	self:repaint(2)
+end
+
+function vu:in_1_float(value)
+	self:set_rms(value, true)
+end
+
+function vu:in_1_list(atoms)
+	self:set_rms(atoms[1], true)
+end
+
+function vu:in_2_float(value)
+	self:set_peak(value, true)
+end
+
+function vu:in_2_list(atoms)
+	self:set_peak(atoms[1], true)
+end
+
+function vu:in_1_size(atoms)
+	self.width = math.max(8, math.floor(atoms[1] or self.width))
+	if atoms[2] ~= nil then
+		local step_height = math.max(2, math.floor(atoms[2] / VU_STEPS))
+		self.height = VU_STEPS * step_height
+	end
+	self:set_size(self.width, self.height)
+	self:update_args()
+	self:repaint()
+end
+
+function vu:in_1_scale(atoms)
+	self.scale = (atoms[1] or 0) == 0 and 0 or 1
+	self:update_args()
+	self:repaint()
+end
+
 function vu:paint(g)
 	if self.need_update_args then
 		self.need_update_args = false
 		self:update_args()
 	end
-	g:set_color(244, 244, 244)
+
+	g:set_color(table.unpack(self:hex_to_rgb(self.bg_color)))
 	g:fill_all()
-	g:stroke_rect(0, 0, self.width, self.height, 2)
-	self:repaint(2)
-end
-
--- ──────────────────────────────────────────
-function vu:paint_layer_2(g)
-	g:set_color(0, 0, 0)
+	g:set_color(table.unpack(self:hex_to_rgb(self.fg_color)))
 	g:stroke_rect(0, 0, self.width, self.height, 1)
-	local green_base_y = self.height - 3
-	g:set_color(80, 235, 80)
-	g:fill_rect(1, green_base_y + 1, self.width - 2, 1)
 end
 
--- ──────────────────────────────────────────
-function vu:paint_layer_3(g)
-	local rms_db = self.rms or -100
-	local min_db = -100
-	local max_db = 6
-	if rms_db <= min_db then
-		return
-	end
+function vu:paint_layer_2(g)
+	local step_height = self.height / VU_STEPS
+	local led_width = math.max(1, step_height - 1)
+	local quarter = math.floor(self.width / 4)
+	local x1 = quarter + 1
+	local x2 = self.width - quarter
+	local rms_step = self:db_to_step(self.rms)
 
-	-- log scale normalization
-	local lin_min = 10 ^ (min_db / 20)
-	local lin_max = 10 ^ (max_db / 20)
-	local lin_val = 10 ^ (rms_db / 20)
-	local norm = (lin_val - lin_min) / (lin_max - lin_min)
-	norm = math.max(0, math.min(1, norm)) -- clamp [0,1]
-
-	-- visual parameters
-	local sq_size = 2
-	local spacing = 1
-	local total_height = self.height - 4
-	local block_unit = sq_size + spacing
-	local max_squares = math.floor(total_height / block_unit)
-	local squares_to_draw = math.floor(max_squares * norm + 0.5)
-
-	-- color based on normalized value
-	local r = math.min(2 * norm, 1)
-	local g_val = math.min(2 * (1 - norm), 1)
-	g:set_color(80 + r * 155, 80 + g_val * 155, 80)
-
-	local x_pos = 1
-	local y_base = self.height - 3
-
-	-- draw blocks from bottom up
-	for i = 0, squares_to_draw - 1 do
-		local y = y_base - block_unit * i - sq_size
-		if y < 1 then
-			break
-		end
-		g:fill_rect(x_pos + 1, y, self.width - 4, sq_size)
-	end
-
-	-- green base line
+	-- Pd draws these as horizontal LED lines, from the bottom upwards.
 	g:set_color(80, 235, 80)
-	g:fill_rect(1, self.height - 3, self.width - 2, 2)
+	for step = 1, rms_step do
+		local y = -step_height / 2 + step_height * (VU_STEPS + 1 - step)
+		g:draw_line(x1, y, x2, y, led_width)
+	end
+
+	local peak_step = self:db_to_step(self.peak)
+	if peak_step > 0 then
+		local y = step_height * (VU_STEPS + 1 - peak_step) - step_height / 2
+		g:draw_line(0, y, self.width, y, led_width + 1)
+	end
 end
 
--- ──────────────────────────────────────────
 function vu:in_1_reload()
 	self:dofilex(self._scriptname)
 	self:initialize()
@@ -2325,17 +3194,21 @@ end
 #X connect 2 0 0 0;
 #X connect 4 0 2 0;
 #X connect 4 0 1 0;
-#X restore 54 93 pd tgl;
-#N canvas 0 0 925 1132 bng 0;
-#X obj 30 89 l.bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
-#X obj 55 89 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
-#X obj 55 112 print bng;
-#X obj 30 149 print lua;
+#X restore 74 93 pd tgl;
+#N canvas 0 0 925 1132 bng 1;
+#X obj 22 207 l.bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 171 90 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 171 113 print bng;
+#X obj 22 331 print lua;
 #X msg 22 27 bang \, float 123 \, symbol 2389 \, list 2839 \, notvalid;
+#X msg 95 146 reload;
+#X msg 64 90 size 80;
 #X connect 0 0 3 0;
 #X connect 1 0 2 0;
-#X connect 4 0 0 0;
 #X connect 4 0 1 0;
+#X connect 4 0 0 0;
+#X connect 5 0 0 0;
+#X connect 6 0 0 0;
 #X restore 11 93 pd bng;
 #N canvas 0 0 925 1132 nbx 0;
 #X obj 30 138 nbx 5 16 -1e+37 1e+37 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 256;
@@ -2352,7 +3225,7 @@ end
 #X connect 5 0 0 0;
 #X connect 6 0 0 0;
 #X connect 6 0 1 0;
-#X restore 102 93 pd nbx;
+#X restore 122 93 pd nbx;
 #N canvas 0 0 925 1132 vradio 0;
 #X obj 31 86 l.vradio;
 #X obj 30 263 print lua;
@@ -2367,7 +3240,7 @@ end
 #X connect 5 0 0 0;
 #X connect 5 0 3 0;
 #X restore 9 188 pd vradio;
-#X obj -8 407 l.keyboard;
+#X obj 129 289 l.keyboard;
 #N canvas 0 0 925 1132 hsl 0;
 #X obj 127 273 print bng;
 #X obj 43 273 print lua;
@@ -2391,9 +3264,11 @@ end
 #X msg 22 27 bang \, float 123 \, symbol 2389 \, list 50 \, notvalid;
 #X msg 88 49 reload;
 #X obj 130 119 hsl 153 18 0 127 0 0 empty empty empty -2 -9 0 10 #fcfcfc #000000 #000000 0 1;
-#X obj 22 146 l.hsl 153 18 0 127 0 0 empty empty empty -2 -9 0 10 #fcfcfc #000000 #000000 0 1;
+#X obj 334 229 l.hsl 153 18 0 127 0 0 empty empty empty -2 -9 0 10 #fcfcfc #000000 #000000 0 1;
 #X msg 188 73 list 48 38;
-#X obj 284 63 bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 453 73 bng 96 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000;
+#X obj 650 293 vsl 17 128 0 127 0 0 empty empty empty 0 -9 0 10 #ffffff #000000 #373737 0 1;
+#X msg 672 191 symbol oi;
 #X connect 2 0 5 0;
 #X connect 2 0 6 0;
 #X connect 3 0 5 0;
@@ -2405,6 +3280,7 @@ end
 #X connect 7 0 6 0;
 #X connect 8 0 5 0;
 #X connect 8 0 6 0;
+#X connect 10 0 9 0;
 #X restore 56 133 pd vsl;
 #N canvas 0 0 925 1132 vu 0;
 #X obj 54 160 vu 18 160 empty empty -1 -9 0 10 #404040 #000000 1 0;
@@ -2487,6 +3363,8 @@ end
 #X connect 6 0 4 0;
 #X connect 7 0 4 0;
 #X restore 174 249 pd lisatom;
+#X obj 36 405 print;
+#X connect 6 0 13 0;
        GDEF�m�v    GPOS,ta�    9�GSUB�ĈB >�  ]@OS/2�g �   `cmapL��� �p  d�cvt H؇H %�  &fpgmb/	� '  gasp    %�   glyf�L X A�head0��j C    6hhea�] C8   $hmtx���� C\  -�loca�X q  -�maxpt� ��    name	�V ��  npost}e�V �`  xprepldhL 5   �         �  �  �  � � �� �� �� �I K� �� �� �� �� �� ��  J LZ ]f iw z| ~ �� �� ��   
    ( *, /0 25 8; =N PP RV Xq ss uv xy {� �� �� �� �� �� �� �� �� �        )) .. 03 55 :: <? AC KK MM QQ ST [[ ]] jk pq �� �� %% )D GI UV Zb du xz �� �� �� �� �� �� �� �� �� �� �� �� �� �  PP i� �� �� �� �� �� �� �� �� �� �` c� �� �� �� �� �	 				 		 		 		 		! 	#	# 	-	- 	0	1 	6	6 	9	9 	;	< 	>	> 	B	B 	F	F 	H	H 	J	J 	L	L 	T	T 	h	h 	s	w 	y	} 		 	�	� 	�	� 	�	� 	�	� 	�	� 	�	� 	�	� 	�	� 
 G
@@ -5394,37 +6272,105 @@ C .G#G#a `� `f�b � PX�@`Yf�c#  <�8-�@,# .F�%F�CXPRYX <Y.�0+-�A,# .F�%F�
 *� B@�}m_SF7(
 *� BA
 !�����  �  *� BA
- @ @ @ @ @ @ @ @  *�   D�$�QX�@�X�   D�(�QX� �X�   DY�'�QX�� @�cTX�   DYYYYY@�wg[OA1#*������ D�d DD  #N canvas 0 0 925 1132 8; 
-#X obj 3 4 l.tgl 35 0 s-tgl1 r-tgl1 empty 0 -8 0 8 #fcfcfc #000000 #000000 0 1; 
-#X obj 40 4 l.bng 35 250 50 0 s-bng1 r-bng1 empty 0 -8 0 8 #fcfcfc #000000 #000000; 
-#X obj 91 10 l.vsl 15 110 0 127 0 0 s-vsl1 r-vsl1 empty 0 -9 0 8 #fcfcfc #000000 #000000 0 1; 
-#X obj 112 8 l.hsl 128 15 0 127 0 0 s-hsl1 r-hsl1 empty -2 -8 0 8 #fcfcfc #000000 #000000 0 1; 
-#X obj 3 42 l.vradio 15 1 0 4 s-r1 r-r1 empty 0 -8 0 8 #fcfcfc #000000 #000000 0; 
-#X obj 457 137 dac~ 1; 
-#X obj 457 58 r s-key1; 
-#X obj 457 117 plaits~ -model 11 -midi; 
-#X msg 513 76 tr_active 1; 
-#X obj 513 57 loadbang; 
-#X obj 408 714 s r-cnv1; 
-#X msg 408 683 color \$1; 
-#X obj 5 131 l.hradio 15 1 0 8 s-hr1 r-hr1 empty 0 -8 0 8 #fcfcfc #000000 #000000 0; 
-#X obj 473 225 vu~; 
-#X obj 473 269 s r-vu1; 
-#X obj 473 245 l.nbx 5 14 -1e+37 1e+37 0 0 empty empty empty 0 -8 0 8 #fcfcfc #000000 #000000 0 256; 
-#X obj 146 64 l.vu 10 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0; 
-#X obj 132 64 l.vu 10 80 r-vu1 empty -1 -8 0 8 #404040 #000000 0 0; 
-#X obj 5 155 l.keyboard 17 80 2 4 0 0 s-key1 r-key1; 
-#X text 108 42 All things pd4web can render!; 
-#X obj 111 26 floatatom 5 0 0 0 - - - 0; 
-#X connect 6 0 7 0; 
-#X connect 7 0 5 0; 
-#X connect 7 0 13 0; 
-#X connect 8 0 7 0; 
-#X connect 9 0 8 0; 
-#X connect 11 0 10 0; 
-#X connect 13 0 15 0; 
-#X connect 15 0 14 0; 
-#X coords 0 -1 1 1 270 250 1 1 1; 
+ @ @ @ @ @ @ @ @  *�   D�$�QX�@�X�   D�(�QX� �X�   DY�'�QX�� @�cTX�   DYYYYY@�wg[OA1#*������ D�d DD  #N canvas 0 0 925 1131 10; 
+#X declare -lib pdlua; 
+#N canvas 0 0 925 1131 (subpatch) 0; 
+#X obj 42 43 l.tgl 25 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1; 
+#X obj 482 129 osc~ 300; 
+#X obj 542 129 osc~ 400; 
+#X obj 602 129 osc~ 500; 
+#X obj 497 108 osc~ 0.3; 
+#X obj 557 108 osc~ 0.4; 
+#X obj 617 108 osc~ 0.5; 
+#X obj 482 150 *~; 
+#X obj 542 150 *~; 
+#X obj 602 150 *~; 
+#X obj 316 57 osc~ 100; 
+#X obj 376 57 osc~ 200; 
+#X obj 436 57 osc~ 300; 
+#X obj 496 57 osc~ 400; 
+#X obj 556 57 osc~ 500; 
+#X obj 331 36 osc~ 0.1; 
+#X obj 391 36 osc~ 0.2; 
+#X obj 451 36 osc~ 0.3; 
+#X obj 511 36 osc~ 0.4; 
+#X obj 571 36 osc~ 0.5; 
+#X obj 316 138 snake~ in 5; 
+#X obj 316 78 *~; 
+#X obj 376 78 *~; 
+#X obj 436 78 *~; 
+#X obj 496 78 *~; 
+#X obj 556 78 *~; 
+#X obj 46 292 show~; 
+#X obj 70 43 l.bng 25 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000; 
+#X obj 43 121 l.vradio 18 1 0 5 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0; 
+#X obj 98 43 l.nbx 5 16 -1e+37 1e+37 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 256; 
+#X obj 43 220 l.hradio 18 1 0 8 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0; 
+#X obj 165 72 l.vsl 18 90 0 127 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1; 
+#X obj 156 43 l.floatatom 5 0 0 0 - - - 0; 
+#X obj 188 147 l.hsl 90 18 0 127 0 0 empty empty empty -2 -9 0 10 #fcfcfc #000000 #000000 0 1; 
+#X obj 269 46 l.vu 18 80 empty empty -1 -9 0 10 #404040 #000000 0 0; 
+#X obj 497 291 int; 
+#X obj 497 313 + 1; 
+#X obj 468 194 loadbang; 
+#X obj 523 194 l.bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000; 
+#X obj 497 357 - 100; 
+#X obj 497 335 % 100; 
+#X obj 469 232 metro 20; 
+#X obj 43 92 listatom 17 0 0 0 - - - 0; 
+#X obj 345 481 send mycnv; 
+#X obj 323 206 l.vsl 18 153 0 127 0 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000 0 1; 
+#X msg 345 444 color \$1 \$1 \$1; 
+#X obj 438 291 int; 
+#X obj 438 313 + 1; 
+#X obj 438 335 % 127; 
+#X obj 388 198 loadbang; 
+#X obj 443 198 l.bng 18 250 50 0 empty empty empty 0 -9 0 10 #fcfcfc #000000 #000000; 
+#X obj 389 236 metro 150; 
+#X obj 63 120 l.cnv 18 90 90 empty mycnv empty 20 12 0 10 #e0e0e0 #e0e0e0 0; 
+#X connect 1 0 7 0; 
+#X connect 2 0 8 0; 
+#X connect 3 0 9 0; 
+#X connect 4 0 7 1; 
+#X connect 5 0 8 1; 
+#X connect 6 0 9 1; 
+#X connect 10 0 21 0; 
+#X connect 11 0 22 0; 
+#X connect 12 0 23 0; 
+#X connect 13 0 24 0; 
+#X connect 14 0 25 0; 
+#X connect 15 0 21 1; 
+#X connect 16 0 22 1; 
+#X connect 17 0 23 1; 
+#X connect 18 0 24 1; 
+#X connect 19 0 25 1; 
+#X connect 20 0 26 0; 
+#X connect 21 0 20 0; 
+#X connect 22 0 20 1; 
+#X connect 23 0 20 2; 
+#X connect 24 0 20 3; 
+#X connect 25 0 20 4; 
+#X connect 35 0 36 0; 
+#X connect 36 0 35 1; 
+#X connect 36 0 40 0; 
+#X connect 37 0 41 0; 
+#X connect 38 0 41 0; 
+#X connect 39 0 34 0; 
+#X connect 40 0 39 0; 
+#X connect 41 0 35 0; 
+#X connect 44 0 45 0; 
+#X connect 45 0 43 0; 
+#X connect 46 0 47 0; 
+#X connect 47 0 46 1; 
+#X connect 47 0 48 0; 
+#X connect 48 0 44 0; 
+#X connect 49 0 51 0; 
+#X connect 50 0 51 0; 
+#X connect 51 0 46 0; 
+#X coords 0 -1 1 1 250 400 2 40 40; 
+#X restore 42 48 pd; 
+#X obj 318 5 declare -lib pdlua; 
+#X coords 0 565.5 1 564.5 200 200 0; 
 --[[
 pdlua -- a Lua embedding for Pd
 Copyright (C) 2007,2008 Claude Heiland-Allen <claude@mathr.co.uk>
@@ -5518,6 +6464,28 @@ pd._perform_dsp = function (object, ...)
   end
 end
 
+-- draw properties
+pd._properties = function (object, p)
+  local obj = pd._objects[object]
+  if nil ~= obj and type(obj.properties) == "function" then
+        obj:properties(p)
+        return true
+  else
+        return false
+  end
+end
+
+-- set properties
+pd._set_properties = function (object, method, args)
+  local obj = pd._objects[object]
+  if obj ~= nil and type(obj[method]) == "function" then
+        local propertiesmethod = obj[method]
+        propertiesmethod(obj, args) -- Passa `obj` explicitamente como `self`
+  else
+        pd._error(obj._object, "method ".. method .. " does not exist")
+  end
+end
+
 -- repaint method dispatcher
 pd._repaint = function (object)
   local obj = pd._objects[object]
@@ -5541,6 +6509,12 @@ pd._mouseevent = function (object, x, y, event_type)
     end
     if event_type == 3 and type(obj.mouse_drag) == "function" then
       obj:mouse_drag(x, y)
+    end
+    if event_type == 4 and type(obj.mouse_enter) == "function" then
+      obj:mouse_enter(x, y)
+    end
+    if event_type == 5 and type(obj.mouse_exit) == "function" then
+      obj:mouse_exit(x, y)
     end
   end
 end
@@ -5768,11 +6742,12 @@ function pd.Class:register(name)
   self._class, self._class_gfx = pd._register(name)  -- register new class
   self._name = name
   self._loadpath = fullpath
+  local suffix = jit and ".pd_luajit" or ".pd_lua"
   if name == "pdlua" then
     self._scriptname = "pd.lua"
   else
-    self._scriptname = name .. ".pd_lua"
-  end -- mrpeach 20111027
+    self._scriptname = name .. suffix
+  end-- mrpeach 20111027
   return self                       -- return new
 end
 
@@ -5789,6 +6764,9 @@ function pd.Class:construct(sel, atoms)
     pd._createoutlets(self._object, self.outlets)
     if type(self.paint) == "function" then
         pd._creategui(self._object)
+    end
+    if(type(self.properties) == "function") then
+        pd._set_propertiesfn(self._object)
     end
     self:postinitialize()
     return self
@@ -5980,10 +6958,6 @@ function pd.Class:error(msg)
   pd._error(self._object, msg)
 end
 
-function pd.Class:logpost(loglevel, msg)
-  pd._logpost(self._object, loglevel, msg)
-end
-
 function pd.Class:whoami()
   return self._scriptname or self._name
 end
@@ -5995,49 +6969,7 @@ function pd.Class:get_class() -- accessor for t_class*
   return pd._get_class(self) or nil
 end
 
-local lua = pd.Class:new():register("pdlua")  -- global controls (the [pdlua] object only)
-
-function lua:initialize(sel, atoms)
-  self.inlets = 1
-  self.outlets = 0    -- FIXME: might be nice to have errors go here?
-  return true
-end
-
-function lua:in_1_load(atoms)  -- execute a script
-  self:dofile(atoms[1])
-end
-
-
-local luax = pd.Class:new():register("pdluax")  -- classless lua externals (like [pdluax foo])
-
-function luax:initialize(sel, atoms)          -- motivation: pd-list 2007-09-23
-  if not atoms[1] then
-    -- create a dummy object, which can still be clicked for help
-    self.inlets = 0
-    self.outlets = 0
-    self._scriptname = ""
-    return true
-  end
-  local f, pathname = self:dofile(atoms[1] .. ".pd_luax")
-  if f and pathname then
-    local function basename(str)
-      return string.gsub(str, "(.*/)(.*)", "%2")
-    end
-    self._scriptname = pathname .. '/' .. basename(atoms[1]) .. ".pd_luax" -- mrpeach 20120201
-    local atomstail = { }          -- munge for better lua<->luax compatibility
-    for i,_ in ipairs(atoms) do
-      if i > 1 then
-        atomstail[i-1] = atoms[i]
-      end
-    end
-    return f(self, atoms[1], atomstail)
-  else
-    return false   -- error message already output by dofile()
-  end
-end
-
 -- convenience creation functions for classes, arrays, clocks, receivers
-
 function pd.class(...)
    return pd.Class:new():register(...)
 end
@@ -6057,7 +6989,17 @@ end
 -- constants used in the signal and graphics API
 DATA = 0
 SIGNAL = 1
-Colors = {background = 0, foreground = 1, outline = 2}
+
+-- Text alignment constants
+TOP_LEFT = 0
+TOP_CENTER = 1
+TOP_RIGHT = 2
+CENTER_LEFT = 3
+CENTER = 4
+CENTER_RIGHT = 5
+BOTTOM_LEFT = 6
+BOTTOM_CENTER = 7
+BOTTOM_RIGHT = 8
 
 -- pre-load pdx.lua (advanced live coding support); if you don't want this,
 -- just comment out the line below
@@ -6235,8 +7177,8 @@ function pdx.unreload(self)
 	 for obj, data in pairs(reloadables[self._name]) do
 	    if type(obj) == "table" and obj ~= self then
 	       -- install the receiver
-	       data.recv = pd.Receive:new():register(obj, "pdluax", "_pdluax")
-	       obj._pdluax = pdluax
+	       data.recv = pd.Receive:new():register(obj, jit and "pdluaxjit" or "pdluax", jit and "_pdluaxjit" or "_pdluax")
+	       obj[jit and "_pdluaxjit" or "_pdluax"] = pdluax
 	       -- record that we have a new receiver and bail out
 	       current = obj
 	       break
@@ -6245,7 +7187,7 @@ function pdx.unreload(self)
 	 reloadables[self._name].current = current
 	 -- get rid of the old receiver
 	 reloadables[self._name][self].recv:destruct()
-	 self._pdluax = nil
+	 self[jit and "_pdluaxjit" or "_pdluax"] = nil;
       end
       -- restore the object's finalize method
       self.finalize = reloadables[self._name][self].finalize
@@ -6281,8 +7223,8 @@ function pdx.reload(self)
       self.finalize = finalize
       -- add the receiver
       reloadables[self._name][self].recv =
-	 pd.Receive:new():register(self, "pdluax", "_pdluax")
-      self._pdluax = pdluax
+      pd.Receive:new():register(self, jit and "pdluaxjit" or "pdluax", jit and "_pdluaxjit" or "_pdluax")
+      self[jit and "_pdluaxjit" or "_pdluax"] = pdluax
    end
 end
 
