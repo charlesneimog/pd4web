@@ -41,14 +41,12 @@ jobs:
               with:
                   path: |
                       build/_deps
-                      build/CMakeCache.txt
-                      build/CMakeFiles
                       ~/.ccache
                       ~/.cache/sccache
-                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('**/CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
+                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-
 
             - uses: actions/setup-python@v5
               with:
@@ -125,7 +123,20 @@ jobs:
               shell: pwsh
               run: |
                   if ($env:RUNNER_OS -eq 'Windows') {
-                    "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=sccache -DCMAKE_CXX_COMPILER_LAUNCHER=sccache" | Out-File -FilePath $env:GITHUB_ENV -Append
+                    $pythonExecutable = (Get-Command python).Source.Replace('\', '/')
+                    $pythonRoot = (python -c "import sys; print(sys.base_prefix)").Replace('\', '/')
+                    $pythonSabiLibrary = "$pythonRoot/libs/python3.lib"
+                    if (-not (Test-Path $pythonSabiLibrary)) {
+                      throw "Python Stable-ABI import library not found: $pythonSabiLibrary"
+                    }
+                    $cmakeArgs = @(
+                      "-DCMAKE_C_COMPILER_LAUNCHER=sccache"
+                      "-DCMAKE_CXX_COMPILER_LAUNCHER=sccache"
+                      "-DPython3_EXECUTABLE=$pythonExecutable"
+                      "-DPython3_ROOT_DIR=$pythonRoot"
+                      "-DPython3_SABI_LIBRARY=$pythonSabiLibrary"
+                    ) -join " "
+                    "CMAKE_ARGS=$cmakeArgs" | Out-File -FilePath $env:GITHUB_ENV -Append
                   } else {
                     "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   }
