@@ -330,7 +330,8 @@ void Pd4Web::isAbstraction(std::shared_ptr<Patch> &p, PatchLine &pl) {
     for (auto lib : p->DeclaredLibs) {
         if (p->ExternalObjectsJson[lib].contains("abstractions")) {
             if (p->ExternalObjectsJson[lib]["abstractions"].contains(pl.Name)) {
-                AbsPath = fs::path(p->ExternalObjectsJson[lib]["abstractions"][pl.Name][1]);
+                AbsPath = fs::path(
+                    p->ExternalObjectsJson[lib]["abstractions"][pl.Name][1].get<std::string>());
                 if (fs::exists(AbsPath)) {
                     auto Abstraction = std::make_shared<Patch>();
                     Abstraction->PatchFile = AbsPath;
