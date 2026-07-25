@@ -2244,7 +2244,11 @@ void MidiTick(void *userData) {
 // ╭─────────────────────────────────────╮
 // │            Gui Interface            │
 // ╰─────────────────────────────────────╯
-void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
+void RenderComments(Pd4WebUserData *ud, t_gobj *obj, t_glist *glist) {
+    if (!ud || !obj || !glist) {
+        return;
+    }
+
     t_text *txt = (t_text *)obj;
     t_binbuf *bb = txt->te_binbuf;
     if (!bb) {
@@ -2256,6 +2260,9 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     binbuf_gettext(bb, &textbuf, &textsize);
 
     if (!textbuf || textsize <= 0) {
+        if (textbuf) {
+            freebytes(textbuf, textsize);
+        }
         return;
     }
 
@@ -2263,6 +2270,7 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     int copy_len = (textsize < 1024) ? textsize : 1024;
     memcpy(safe_buf, textbuf, copy_len);
     safe_buf[copy_len] = '\0';
+    freebytes(textbuf, textsize);
 
     GuiCommand cmd{};
     cmd.command = DRAW_TEXT;
@@ -2274,30 +2282,45 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, int x, int y) {
     strncpy(cmd.layer_id, "default_layer_0", sizeof(cmd.layer_id) - 1);
     cmd.layer_id[sizeof(cmd.layer_id) - 1] = '\0';
     snprintf(cmd.text, sizeof(cmd.text), "%s", safe_buf);
-    cmd.x1 = 0;
-    cmd.y1 = 0;
 
-    cmd.w = txt->te_width;
-    cmd.h = 16;
-    const float fontSize = PD4WEB_PATCH_FONTSIZE;
-    const float estimatedCharWidth = fontSize * 0.6f;
-    if (txt->te_width == 0) {
-        cmd.w = std::max(estimatedCharWidth, copy_len * estimatedCharWidth);
-    } else {
-        cmd.w = txt->te_width * estimatedCharWidth;
+    const int fontSize = glist_getfont(glist);
+    const int fontWidth = glist_fontwidth(glist);
+    const int fontHeight = glist_fontheight(glist);
+    const int canvasZoom = glist_getzoom(glist);
+    constexpr int TextLeftMargin = 2;
+    constexpr int TextRightMargin = 2;
+    constexpr int TextTopMargin = 3;
+    constexpr int TextBottomMargin = 2;
+    cmd.x1 = TextLeftMargin * canvasZoom;
+    cmd.y1 = TextTopMargin * canvasZoom;
+    const int wrapColumns = txt->te_width > 0 ? txt->te_width : 60;
+    int lineColumns = 0;
+    int maxColumns = 0;
+    int estimatedLines = 0;
+    for (int i = 0; i <= copy_len; ++i) {
+        if (i == copy_len || safe_buf[i] == '\n') {
+            maxColumns = std::max(maxColumns, lineColumns);
+            estimatedLines += std::max(1, (lineColumns + wrapColumns - 1) / wrapColumns);
+            lineColumns = 0;
+        } else if ((static_cast<unsigned char>(safe_buf[i]) & 0xc0) != 0x80) {
+            ++lineColumns;
+        }
     }
-    const int estimatedLines = std::max(
-        1, static_cast<int>(std::ceil((copy_len * estimatedCharWidth) / std::max(1.0f, cmd.w))));
-    cmd.h = estimatedLines * fontSize * 1.2f;
-    cmd.objw = cmd.w;
-    cmd.objh = cmd.h;
+    if (txt->te_width == 0) {
+        cmd.w = std::max(fontWidth, std::min(maxColumns, wrapColumns) * fontWidth);
+    } else {
+        cmd.w = txt->te_width * fontWidth;
+    }
+    cmd.h = estimatedLines * fontHeight;
+    cmd.objw = cmd.w + (TextLeftMargin + TextRightMargin) * canvasZoom;
+    cmd.objh = cmd.h + (TextTopMargin + TextBottomMargin) * canvasZoom;
 
-    cmd.font_size = PD4WEB_PATCH_FONTSIZE;
-    cmd.objx = txt->te_xpix - x;
-    cmd.objy = txt->te_ypix - y;
+    cmd.font_size = fontSize;
+    cmd.objx = text_xpix(txt, glist);
+    cmd.objy = text_ypix(txt, glist);
 
     const ObjectId objectId = RenderTransport::instance().allocateObjectId();
-    ClearLayerCommand(objectId, 0, cmd.objx, cmd.objy, cmd.w, cmd.h);
+    ClearLayerCommand(objectId, 0, cmd.objx, cmd.objy, cmd.objw, cmd.objh);
     AddNewCommand(objectId, 0, &cmd);
     EndPaintLayerCommand(objectId, 0);
 }
@@ -2311,17 +2334,14 @@ void GetPatchComments(Pd4WebUserData *ud) {
 
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
         if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
-            RenderComments(ud, obj, 0, 0);
+            RenderComments(ud, obj, canvas);
         }
-        if (strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
+        if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
             t_canvas *child_canvas = (t_canvas *)obj;
-            int x = child_canvas->gl_xmargin;
-            int y = child_canvas->gl_ymargin;
             for (t_gobj *childobj = child_canvas->gl_list; childobj; childobj = childobj->g_next) {
-                t_text *t = (t_text *)childobj;
                 if (childobj->g_pd && childobj->g_pd->c_name &&
                     strcmp(childobj->g_pd->c_name->s_name, "text") == 0) {
-                    RenderComments(ud, childobj, x, y);
+                    RenderComments(ud, childobj, child_canvas);
                 }
             }
         }
@@ -2379,6 +2399,56 @@ extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
     return 1;
 }
 
+extern "C" {
+int sys_pollgui(void);
+void messqueue_dispatch(void);
+}
+
+namespace {
+using Pd4WebClockMethod = void (*)(void *);
+
+// t_clock is intentionally opaque outside Pd's scheduler. These are the first
+// fields of the pinned Pd version's _clock structure, which are needed to
+// invoke a due callback without running dsp_tick().
+struct Pd4WebClockView {
+    double setTime;
+    void *owner;
+    Pd4WebClockMethod function;
+};
+}
+
+static void sched_advance_clocks(double next_sys_time) {
+    t_pdinstance *instance = libpd_this_instance();
+    if (!instance) {
+        return;
+    }
+
+    int countdown = 5000;
+    while (instance->pd_clock_setlist) {
+        t_clock *clock = instance->pd_clock_setlist;
+        auto *view = reinterpret_cast<Pd4WebClockView *>(clock);
+        if (view->setTime >= next_sys_time) {
+            break;
+        }
+
+        instance->pd_systime = view->setTime;
+        void *owner = view->owner;
+        Pd4WebClockMethod function = view->function;
+        clock_unset(clock);
+
+        outlet_setstacklim();
+        function(owner);
+
+        if (!countdown--) {
+            countdown = 5000;
+            (void)sys_pollgui();
+        }
+    }
+
+    instance->pd_systime = next_sys_time;
+    messqueue_dispatch();
+}
+
 void Loop(void *userData) {
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
@@ -2388,11 +2458,17 @@ void Loop(void *userData) {
         ud->soundInit &&
         (!ud->soundSuspended || !JS_IsAudioWorkletSuspended(ud->pd4web->GetWebAudioContext()));
     const bool processOnMainThread = !audioThreadOwnsPd;
+    const double now = emscripten_get_now();
 
     if (processOnMainThread) {
         pdlua_gfx_process_recovery();
         ProcessSenders(ud);
+        const double elapsedMs = std::max(0.0, now - ud->lastFrame);
+        sys_lock();
+        sched_advance_clocks(clock_getsystimeafter(elapsedMs));
+        sys_unlock();
     }
+    ud->lastFrame = now;
 
     if (ud->renderer) {
         ud->renderer->setZoom(ud->pd4web->GetPatchZoom());
