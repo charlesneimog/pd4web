@@ -66,3 +66,50 @@ document.getElementById("someAudioInput").addEventListener("change", async (e) =
 ```
 
 This is how you can use upload files in your PureData Patch.
+
+## Pure Data arrays
+
+The array must already exist in the open Pure Data patch, for example as
+`[array define samples]`.
+
+### `Pd4Web.readArray`
+
+Read every value from a named Pure Data array. The returned value is a
+`Float32Array`, so it can be used directly as audio sample data.
+
+```javascript
+const samples = Pd4Web.readArray("samples");
+
+if (samples) {
+    console.log(samples);
+}
+```
+
+If no patch is open or the named array does not exist, `readArray` logs an
+error and returns `undefined`.
+
+### `Pd4Web.writeArray`
+
+Write an array of numbers or a `Float32Array` into a named Pure Data array.
+The Pure Data array is automatically resized to match the number of supplied
+samples.
+
+```javascript
+const samples = new Float32Array([0, 0.25, 0.5, 0.25, 0]);
+const written = Pd4Web.writeArray("samples", samples);
+
+if (!written) {
+    console.error("Could not write the samples");
+}
+```
+
+Audio decoded with the Web Audio API can be written directly:
+
+```javascript
+const samples = audioBuffer.getChannelData(0);
+Pd4Web.writeArray("samples", samples);
+```
+
+`writeArray` returns `true` on success. If no patch is open or the named array
+does not exist, it logs an error and returns `false`. Pure Data clips a resize
+of zero samples to an array size of one.

@@ -189,6 +189,7 @@ EM_JS(void, JS_Alert, (const char *msg), {
     alert(UTF8ToString(msg));
 });
 
+// ─────────────────────────────────────
 // Return a client coordinate relative to the patch canvas. Mouse-up is listened for on the
 // window, so Emscripten's targetX/targetY may refer to an element other than the canvas.
 EM_JS(double, JS_CanvasRelativeClientX, (const char *canvasSel, double clientX), {
@@ -196,6 +197,7 @@ EM_JS(double, JS_CanvasRelativeClientX, (const char *canvasSel, double clientX),
     return canvas ? clientX - canvas.getBoundingClientRect().left : clientX;
 });
 
+// ─────────────────────────────────────
 EM_JS(double, JS_CanvasRelativeClientY, (const char *canvasSel, double clientY), {
     const canvas = document.querySelector(UTF8ToString(canvasSel));
     return canvas ? clientY - canvas.getBoundingClientRect().top : clientY;
@@ -239,6 +241,98 @@ EM_JS(void, JS_SuspendAudioWorklet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
     Pd4WebAudioContext.suspend();
 });
 
+// ─────────────────────────────────────
+EM_JS(bool, JS_IsAudioWorkletSuspended, (EMSCRIPTEN_WEBAUDIO_T audioContext), {
+    const context = emscriptenGetAudioObject(audioContext);
+    return context && context.state === "suspended";
+});
+
+// ─────────────────────────────────────
+EM_JS(void, JS_SendMIDIMessage, (int port, int byte1, int byte2, int byte3, int length), {
+    const outputs = globalThis._pd4webMidiOutputs || [];
+    const output = outputs[port];
+    if (!output || output.state !== "connected") return;
+    const bytes = [byte1, byte2, byte3].slice(0, length);
+    try {
+        output.send(bytes);
+    } catch (error) {
+        console.error("Pd4Web MIDI output failed:", error);
+    }
+});
+
+// ─────────────────────────────────────
+EM_JS(void, JS_SendMIDIByte, (int port, int byte), {
+    const outputs = globalThis._pd4webMidiOutputs || [];
+    const output = outputs[port];
+    if (!output || output.state !== "connected") return;
+
+    const states = globalThis._pd4webMidiOutputStates ||= [];
+    const state = states[port] ||= {
+        runningStatus: 0,
+        pending: [],
+        expected: 0,
+        sysex: [],
+    };
+    byte &= 0xff;
+
+    const send = (bytes) => {
+        try {
+            output.send(bytes);
+        } catch (error) {
+            console.error("Pd4Web raw MIDI output failed:", error);
+        }
+    };
+    const messageLength = (status) => {
+        if (status >= 0x80 && status <= 0xef) {
+            const type = status & 0xf0;
+            return type === 0xc0 || type === 0xd0 ? 2 : 3;
+        }
+        if (status === 0xf1 || status === 0xf3) return 2;
+        if (status === 0xf2) return 3;
+        if (status === 0xf6) return 1;
+        return 0;
+    };
+
+    if (byte >= 0xf8) {
+        send([byte]);
+        return;
+    }
+    if (state.sysex.length) {
+        state.sysex.push(byte);
+        if (byte === 0xf7) {
+            send(state.sysex);
+            state.sysex = [];
+        }
+        return;
+    }
+    if (byte === 0xf0) {
+        state.runningStatus = 0;
+        state.pending = [];
+        state.sysex = [byte];
+        return;
+    }
+    if (byte & 0x80) {
+        state.runningStatus = byte < 0xf0 ? byte : 0;
+        state.expected = messageLength(byte);
+        state.pending = state.expected ? [byte] : [];
+        if (state.expected === 1) {
+            send(state.pending);
+            state.pending = [];
+        }
+        return;
+    }
+    if (!state.pending.length && state.runningStatus) {
+        state.expected = messageLength(state.runningStatus);
+        state.pending = [state.runningStatus];
+    }
+    if (!state.pending.length) return;
+    state.pending.push(byte);
+    if (state.pending.length === state.expected) {
+        send(state.pending);
+        state.pending = [];
+    }
+});
+
 // clang-format on
 // ╭─────────────────────────────────────╮
 // │            Senders Hooks            │
@@ -250,14 +344,14 @@ void SenderCallback(t_pd *obj, void *data) {
     return;
 }
 
-namespace {
+// ─────────────────────────────────────
 template <std::size_t N> void CopyBounded(char (&destination)[N], const std::string &source) {
     const auto count = std::min(source.size(), N - 1);
     std::memcpy(destination, source.data(), count);
     destination[count] = '\0';
 }
-} // namespace
 
+// ─────────────────────────────────────
 bool Pd4Web::EnqueueSender(const Pd4WebSender &sender) noexcept {
     auto *slot = m_ToSendQueue.beginPush();
     if (!slot) {
@@ -452,6 +546,75 @@ bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
     }
     out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
     out.close();
+    return true;
+}
+
+// ╭─────────────────────────────────────╮
+// │          Pure Data Arrays           │
+// ╰─────────────────────────────────────╯
+emscripten::val Pd4Web::ReadArray(const std::string &name) {
+    if (!m_PdInstance) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.readArray: no patch is open");
+        return emscripten::val::undefined();
+    }
+
+    libpd_set_instance(m_PdInstance);
+    const int size = libpd_arraysize(name.c_str());
+    if (size < 0) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.readArray: Pure Data array \"%s\" does not exist",
+                       name.c_str());
+        return emscripten::val::undefined();
+    }
+
+    std::vector<float> samples(static_cast<std::size_t>(size));
+    if (libpd_read_array(samples.data(), name.c_str(), 0, size) != 0) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.readArray: failed to read Pure Data array \"%s\"",
+                       name.c_str());
+        return emscripten::val::undefined();
+    }
+
+    emscripten::val view{emscripten::typed_memory_view(samples.size(), samples.data())};
+    return emscripten::val::global("Float32Array").new_(view);
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::WriteArray(const std::string &name, emscripten::val samples) {
+    if (!m_PdInstance) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: no patch is open");
+        return false;
+    }
+    if (samples.isUndefined() || samples.isNull() ||
+        samples["length"].typeOf().as<std::string>() != "number") {
+        emscripten_log(EM_LOG_ERROR,
+                       "Pd4Web.writeArray: samples must be an array or typed array");
+        return false;
+    }
+
+    const std::size_t size = samples["length"].as<std::size_t>();
+    if (size > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: samples are too large");
+        return false;
+    }
+
+    libpd_set_instance(m_PdInstance);
+    if (libpd_arraysize(name.c_str()) < 0) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: Pure Data array \"%s\" does not exist",
+                       name.c_str());
+        return false;
+    }
+
+    // Convert before resizing so an invalid JavaScript value cannot mutate the Pd array.
+    std::vector<float> values = emscripten::convertJSArrayToNumberVector<float>(samples);
+    if (libpd_resize_array(name.c_str(), static_cast<long>(size)) != 0) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: failed to resize Pure Data array \"%s\"",
+                       name.c_str());
+        return false;
+    }
+    if (libpd_write_array(name.c_str(), 0, values.data(), static_cast<int>(size)) != 0) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: failed to write Pure Data array \"%s\"",
+                       name.c_str());
+        return false;
+    }
     return true;
 }
 
@@ -780,72 +943,60 @@ void ReceivedMessage(const char *r, const char *s, int argc, t_atom *argv) {
 }
 
 // ─────────────────────────────────────
-void ReceivedNoteON(int channel, int pitch, int velocity) {
-    // typedef void (*t_libpd_noteonhook)(int channel, int pitch, int velocity)
+void ReceivedNoteOn(int channel, int pitch, int velocity) {
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    JS_SendMIDIMessage(port, 0x90 | midiChannel, pitch, velocity, 3);
 }
 
 // ─────────────────────────────────────
-void ReceivedControlChannel(int channel, int controller, int value) {
-    // typedef void (*t_libpd_controlchangehook)(int channel, int controller, int value)
+void ReceivedControlChange(int channel, int controller, int value) {
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    JS_SendMIDIMessage(port, 0xB0 | midiChannel, controller, value, 3);
 }
 
 // ─────────────────────────────────────
 void ReceivedProgramChange(int channel, int program) {
-    // typedef void (*t_libpd_programchangehook)(int channel, int program)
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    JS_SendMIDIMessage(port, 0xC0 | midiChannel, program, 0, 2);
 }
 
 // ─────────────────────────────────────
 void ReceivedPitchBend(int channel, int value) {
-    // typedef void (*t_libpd_pitchbendhook)(int channel, int value)
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    const int bend = std::clamp(value + 8192, 0, 16383);
+    JS_SendMIDIMessage(port, 0xE0 | midiChannel, bend & 0x7F, (bend >> 7) & 0x7F, 3);
 }
 
 // ─────────────────────────────────────
 void ReceivedAfterTouch(int channel, int value) {
-    // typedef void (*t_libpd_aftertouchhook)(int channel, int value)
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    JS_SendMIDIMessage(port, 0xD0 | midiChannel, value, 0, 2);
 }
 
 // ─────────────────────────────────────
 void ReceivedPolyAfterTouch(int channel, int pitch, int value) {
-    // typedef void (*t_libpd_polyaftertouchhook)(int channel, int pitch, int value)
+    const int port = channel >> 4;
+    const int midiChannel = channel & 0x0F;
+    JS_SendMIDIMessage(port, 0xA0 | midiChannel, pitch, value, 3);
 }
 
 // ─────────────────────────────────────
 void ReceivedMIDIByte(int port, int byte) {
-    // typedef void (*t_libpd_midibytehook)(int port, int byte)
+    JS_SendMIDIByte(port, byte);
 }
 
 // ╭─────────────────────────────────────╮
 // │            WebAudioPatch            │
 // ╰─────────────────────────────────────╯
 /**
- * Process the audio block.
- *
- * This function runs on the Audio Worklet thread and is called for each audio block.
- * It processes all queued messages from the main thread BEFORE processing audio,
- * ensuring thread-safe communication with libpd.
- *
- * Thread Safety:
- * - Messages are queued on the main thread in bounded slots with owned data
- * - The SPSC queue is wait-free and preserves event order
- * - All libpd calls happen on this Audio Worklet thread only
- * - emscripten::val objects are converted to POD types on the main thread
- *
- * @param numInputs Number of input buffers.
- * @param In Array of input audio frames.
- * @param numOutputs Number of output buffers.
- * @param Out Array of output audio frames.
- * @param numParams Number of audio parameters.
- * @param params Array of audio parameters.
- * @param userData Pointer to Pd4WebUserData.
- * @return true if processing succeeded, false otherwise.
+ * Dispatch queued messages and input events to libpd on the current Pd-owning thread.
  */
-EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
-                int numParams, const AudioParamFrame *params, void *userData) {
-
-    auto *ud = static_cast<Pd4WebUserData *>(userData);
-    libpd_set_instance(ud->libpd);
-    pdlua_gfx_process_recovery();
-
+static void ProcessSenders(Pd4WebUserData *ud) {
     while (const auto *sender = ud->pd4web->BeginSender()) {
         switch (sender->type) {
         case BANG:
@@ -912,11 +1063,47 @@ EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, Audio
             ProcessTouchEvent(ud, sender->touch_data);
             break;
 
+        case MIDI_EVENT:
+            ProcessMIDIEvent(ud, sender->midi_data);
+            break;
+
         default:
             break;
         }
         ud->pd4web->EndSender();
     }
+}
+
+/**
+ * Process the audio block.
+ *
+ * This function runs on the Audio Worklet thread and is called for each audio block.
+ * It processes all queued messages from the main thread BEFORE processing audio,
+ * ensuring thread-safe communication with libpd.
+ *
+ * Thread Safety:
+ * - Messages are queued on the main thread in bounded slots with owned data
+ * - The SPSC queue is wait-free and preserves event order
+ * - The Audio Worklet is the sole consumer while the audio context is running
+ * - The main thread consumes only before audio initialization or after suspension
+ * - emscripten::val objects are converted to POD types on the main thread
+ *
+ * @param numInputs Number of input buffers.
+ * @param In Array of input audio frames.
+ * @param numOutputs Number of output buffers.
+ * @param Out Array of output audio frames.
+ * @param numParams Number of audio parameters.
+ * @param params Array of audio parameters.
+ * @param userData Pointer to Pd4WebUserData.
+ * @return true if processing succeeded, false otherwise.
+ */
+EM_BOOL Process(int numInputs, const AudioSampleFrame *In, int numOutputs, AudioSampleFrame *Out,
+                int numParams, const AudioParamFrame *params, void *userData) {
+
+    auto *ud = static_cast<Pd4WebUserData *>(userData);
+    libpd_set_instance(ud->libpd);
+    pdlua_gfx_process_recovery();
+    ProcessSenders(ud);
 
     // Process audio
     constexpr int MaxAudioChannels = 64;
@@ -1014,17 +1201,18 @@ void AudioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void 
  */
 void Pd4Web::ToggleAudio() {
     if (!m_Pd4WebAudioWorkletInit) {
-        if (m_UseMidi) {
-            SetupMIDI();
-        }
         Init();
         m_Pd4WebAudioWorkletInit = true;
         m_AudioSuspended = false;
     } else {
         if (m_AudioSuspended) {
+            m_UserData->soundSuspended = false;
             emscripten_resume_audio_context_sync(GetWebAudioContext());
+            m_AudioSuspended = false;
         } else {
+            m_UserData->soundSuspended = true;
             JS_SuspendAudioWorklet(GetWebAudioContext());
+            m_AudioSuspended = true;
         }
     }
 }
@@ -1032,86 +1220,151 @@ void Pd4Web::ToggleAudio() {
 // ╭─────────────────────────────────────╮
 // │          Midi Input/Output          │
 // ╰─────────────────────────────────────╯
-void OnMIDIInMessage(emscripten::val message) {
-    emscripten::val data = message["data"];
-    int byte1 = data[0].as<int>();
-    int byte2 = data[1].as<int>();
-    int byte3 = data[2].as<int>();
+static Pd4Web *MidiTarget = nullptr;
+static bool MidiRequestStarted = false;
 
-    int channel = byte1 & 0x0F;
-    uint8_t status = byte1 & 0xF0;
+Pd4Web::~Pd4Web() {
+    if (MidiTarget == this) {
+        MidiTarget = nullptr;
+    }
+    if (m_MidiTickID) {
+        emscripten_clear_interval(m_MidiTickID);
+    }
+    if (m_UserData && m_UserData->renderer) {
+        m_UserData->renderer.reset();
+    }
+    for (auto symbol : m_BindSymbols) {
+        libpd_unbind(symbol);
+    }
+    if (m_PdInstance) {
+        libpd_free_instance(m_PdInstance);
+    }
+}
+
+void ProcessMIDIEvent(Pd4WebUserData *ud, const MidiEventData &data) {
+    if (data.length == 0) {
+        return;
+    }
+
+    const int port = data.port;
+    for (uint16_t i = 0; i < data.length; ++i) {
+        libpd_midibyte(port, data.bytes[i]);
+    }
+
+    if (data.sysex) {
+        for (uint16_t i = 0; i < data.length; ++i) {
+            libpd_sysex(port, data.bytes[i]);
+        }
+        return;
+    }
+
+    const uint8_t statusByte = data.bytes[0];
+    if (statusByte >= 0xF8) {
+        libpd_sysrealtime(port, statusByte);
+        return;
+    }
+    if (statusByte < 0x80 || statusByte >= 0xF0) {
+        return;
+    }
+
+    const int channel = (port << 4) | (statusByte & 0x0F);
+    const uint8_t status = statusByte & 0xF0;
+    const int byte2 = data.length > 1 ? data.bytes[1] : 0;
+    const int byte3 = data.length > 2 ? data.bytes[2] : 0;
 
     switch (status) {
-    case 0x80:                           // Note Off
-        libpd_noteon(channel, byte2, 0); // velocity 0 means note off in Pd
+    case 0x80:
+        if (data.length >= 3) {
+            libpd_noteon(channel, byte2, 0);
+        }
         break;
-
-    case 0x90: // Note On
-        libpd_noteon(channel, byte2, byte3);
+    case 0x90:
+        if (data.length >= 3) {
+            libpd_noteon(channel, byte2, byte3);
+        }
         break;
-
-    case 0xA0: // Polyphonic Aftertouch
-        libpd_polyaftertouch(channel, byte2, byte3);
+    case 0xA0:
+        if (data.length >= 3) {
+            libpd_polyaftertouch(channel, byte2, byte3);
+        }
         break;
-
-    case 0xB0: // Control Change
-        libpd_controlchange(channel, byte2, byte3);
+    case 0xB0:
+        if (data.length >= 3) {
+            libpd_controlchange(channel, byte2, byte3);
+        }
         break;
-
-    case 0xC0: // Program Change
-        libpd_programchange(channel, byte2);
+    case 0xC0:
+        if (data.length >= 2) {
+            libpd_programchange(channel, byte2);
+        }
         break;
-
-    case 0xD0: // Channel Aftertouch
-        libpd_aftertouch(channel, byte2);
+    case 0xD0:
+        if (data.length >= 2) {
+            libpd_aftertouch(channel, byte2);
+        }
         break;
-
-    case 0xE0: // Pitch Bend
-    {
-        int value = (byte3 << 7) | byte2; // 14-bit value, MSB byte3, LSB byte2
-        libpd_pitchbend(channel, value);
-    } break;
-
-    default:
-        // System messages, SysEx, or unsupported status
-        if (byte1 >= 0xF8) {
-            libpd_sysrealtime(0, byte1);
-        } else if (byte1 == 0xF0) {
-            // You likely need to handle SysEx as a stream of bytes,
-            // so this function may not fit SysEx processing properly.
-            libpd_sysex(0, byte1);
-            libpd_sysex(0, byte2);
-            libpd_sysex(0, byte3);
-        } else {
-            libpd_midibyte(0, byte1);
-            libpd_midibyte(0, byte2);
-            libpd_midibyte(0, byte3);
+    case 0xE0:
+        if (data.length >= 3) {
+            libpd_pitchbend(channel, ((byte3 << 7) | byte2) - 8192);
         }
         break;
     }
 }
 
-// ─────────────────────────────────────
-void OnMIDIOutMessage(emscripten::val message) {
-    JS_Alert("MIDI not implemented yet");
+void OnMIDIInMessage(emscripten::val message) {
+    if (!MidiTarget) {
+        return;
+    }
+
+    emscripten::val data = message["data"];
+    const std::size_t length = data["length"].as<std::size_t>();
+    if (length == 0) {
+        return;
+    }
+
+    int port = 0;
+    emscripten::val target = message["target"];
+    if (!target.isUndefined() && !target["_pd4webPort"].isUndefined()) {
+        port = target["_pd4webPort"].as<int>();
+    }
+    const bool sysex = data[0].as<int>() == 0xF0;
+
+    for (std::size_t offset = 0; offset < length; offset += MidiEventData::MaxBytes) {
+        Pd4WebSender sender{};
+        sender.type = MIDI_EVENT;
+        sender.midi_data.port = static_cast<uint16_t>(port);
+        sender.midi_data.sysex = sysex;
+        sender.midi_data.length =
+            static_cast<uint16_t>(std::min<std::size_t>(MidiEventData::MaxBytes, length - offset));
+        for (uint16_t i = 0; i < sender.midi_data.length; ++i) {
+            sender.midi_data.bytes[i] = data[offset + i].as<uint8_t>();
+        }
+        MidiTarget->EnqueueSender(sender);
+    }
 }
 
 // ─────────────────────────────────────
 void OnMIDISuccess(emscripten::val midiAccess) {
+    emscripten::val global = emscripten::val::global();
+    emscripten::val inputCallback = emscripten::val::module_property("_onMIDIInMessage");
+
     emscripten::val inputs = midiAccess["inputs"];
     emscripten::val iter = inputs.call<emscripten::val>("values");
+    int port = 0;
     while (true) {
         emscripten::val next = iter.call<emscripten::val>("next");
         if (next["done"].as<bool>()) {
             break;
         }
         emscripten::val input = next["value"];
-        input.set("onmidimessage", emscripten::val::module_property("_onMIDIMessage"));
+        input.set("_pd4webPort", port++);
+        input.set("onmidimessage", inputCallback);
     }
 
     emscripten::val outputs = midiAccess["outputs"];
     iter = outputs.call<emscripten::val>("values");
-
+    emscripten::val outputArray = emscripten::val::array();
+    unsigned outputIndex = 0;
     while (true) {
         emscripten::val next = iter.call<emscripten::val>("next");
         if (next["done"].as<bool>()) {
@@ -1119,28 +1372,39 @@ void OnMIDISuccess(emscripten::val midiAccess) {
         }
 
         emscripten::val output = next["value"];
+        outputArray.set(outputIndex++, output);
+    }
+    global.set("_pd4webMidiOutputs", outputArray);
+    midiAccess.set("onstatechange", emscripten::val::module_property("_onMIDIStateChange"));
+}
 
-        std::string name = output["name"].as<std::string>();
-        std::string manufacturer = output["manufacturer"].as<std::string>();
-        std::string id = output["id"].as<std::string>();
-
-        std::cout << "MIDI Output: " << name << " | Manufacturer: " << manufacturer
-                  << " | ID: " << id << std::endl;
+// ─────────────────────────────────────
+void OnMIDIStateChange(emscripten::val event) {
+    emscripten::val midiAccess = event["target"];
+    if (!midiAccess.isUndefined() && !midiAccess.isNull()) {
+        OnMIDISuccess(midiAccess);
     }
 }
 
 // ─────────────────────────────────────
 void OnMIDIFailed(emscripten::val error) {
+    MidiRequestStarted = false;
     JS_Alert("Access to MIDI devices failed.");
 }
 
 // ─────────────────────────────────────
-void SetupMIDI() {
+void SetupMIDI(Pd4Web *pd4web) {
+    MidiTarget = pd4web;
+    if (MidiRequestStarted) {
+        return;
+    }
+
     emscripten::val navigator = emscripten::val::global("navigator");
     if (navigator["requestMIDIAccess"].typeOf().as<std::string>() != "function") {
         JS_Alert("Web MIDI API is not supported.");
         return;
     }
+    MidiRequestStarted = true;
     emscripten::val promise = navigator.call<emscripten::val>("requestMIDIAccess");
     promise.call<emscripten::val>("then", // execute promise
                                   emscripten::val::module_property("_onMIDISuccess"),
@@ -1246,13 +1510,12 @@ std::string Pd4Web::GetFGColor() {
 // ╰─────────────────────────────────────╯
 static bool DispatchMouseGrab(t_canvas *canvas, const MouseEventData &data, bool up) {
     t_editor *editor = canvas->gl_editor;
-    if (!editor || editor->e_onmotion != MA_PASSOUT || !editor->e_grab ||
-        !editor->e_motionfn) {
+    if (!editor || editor->e_onmotion != MA_PASSOUT || !editor->e_grab || !editor->e_motionfn) {
         return false;
     }
 
-    editor->e_motionfn(&editor->e_grab->g_pd, data.x - editor->e_xwas,
-                       data.y - editor->e_ywas, up ? 1 : 0);
+    editor->e_motionfn(&editor->e_grab->g_pd, data.x - editor->e_xwas, data.y - editor->e_ywas,
+                       up ? 1 : 0);
     if (up) {
         editor->e_onmotion = MA_NONE;
     } else {
@@ -1465,8 +1728,7 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     // main-thread callback does not access Pd/AudioWorklet state.
     if (eventType == EMSCRIPTEN_EVENT_TOUCHEND) {
         for (const auto &region : ud->keyboardHitRegions) {
-            if (xpos >= region.x1 && xpos <= region.x2 && ypos >= region.y1 &&
-                ypos <= region.y2) {
+            if (xpos >= region.x1 && xpos <= region.x2 && ypos >= region.y1 && ypos <= region.y2) {
                 if (region.type == KeyboardHitRegion::NUMBER) {
                     JS_Pd4WebFocusNumberInput(e->touches[0].clientX, e->touches[0].clientY);
                 } else {
@@ -1579,9 +1841,6 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
     }
 
     if (!ud->soundInit) {
-        if (ud->pd4web->UseMidi()) {
-            SetupMIDI();
-        }
         ud->pd4web->Init();
         ud->soundInit = true;
         ud->soundSuspended = false;
@@ -1810,16 +2069,15 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
     libpd_set_queued_listhook(ReceivedList);
     libpd_set_queued_messagehook(ReceivedMessage);
 
-    // TODO: Midi messages
-    /*
-    libpd_set_queued_noteonhook(ReceivedNoteOn);
-    libpd_set_queued_controlchangehook(ReceivedControlChange);
-    libpd_set_queued_programchangehook(ReceivedProgramChange);
-    libpd_set_queued_pitchbendhook(ReceivedPitchBend);
-    libpd_set_queued_aftertouchhook(ReceivedAfterTouch);
-    libpd_set_queued_polyaftertouchhook(ReceivedPolyAfterTouch);
-    libpd_set_queued_midibytehook(ReceivedMIDIByte);
-    */
+    if (m_UseMidi) {
+        libpd_set_queued_noteonhook(ReceivedNoteOn);
+        libpd_set_queued_controlchangehook(ReceivedControlChange);
+        libpd_set_queued_programchangehook(ReceivedProgramChange);
+        libpd_set_queued_pitchbendhook(ReceivedPitchBend);
+        libpd_set_queued_aftertouchhook(ReceivedAfterTouch);
+        libpd_set_queued_polyaftertouchhook(ReceivedPolyAfterTouch);
+        libpd_set_queued_midibytehook(ReceivedMIDIByte);
+    }
 
     // Set Audio on/off listener
     if (soundToggleId != "") {
@@ -1966,7 +2224,9 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
     }
-    m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+    if (m_UseMidi) {
+        m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
+    }
 }
 
 // ╭─────────────────────────────────────╮
@@ -1974,8 +2234,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 // ╰─────────────────────────────────────╯
 void MidiTick(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
+    if (!ud || !ud->libpd) {
+        return;
+    }
     libpd_set_instance(ud->libpd);
-    libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 }
 
@@ -2121,17 +2383,15 @@ void Loop(void *userData) {
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
-    libpd_queued_receive_midi_messages();
 
-    if (!ud->soundInit) {
-        const double now = emscripten_get_now();
-        const double elapsed = now - ud->lastFrame;
-        ud->lastFrame = now;
-        const int ticks =
-            static_cast<int>((elapsed / 1000.0) * (ud->pd4web->GetSampleRate() / 64.0f));
-        if (ticks > 0) {
-            libpd_process_float(ticks, nullptr, nullptr);
-        }
+    const bool audioThreadOwnsPd =
+        ud->soundInit &&
+        (!ud->soundSuspended || !JS_IsAudioWorkletSuspended(ud->pd4web->GetWebAudioContext()));
+    const bool processOnMainThread = !audioThreadOwnsPd;
+
+    if (processOnMainThread) {
+        pdlua_gfx_process_recovery();
+        ProcessSenders(ud);
     }
 
     if (ud->renderer) {
@@ -2151,16 +2411,13 @@ void Loop(void *userData) {
  */
 void Pd4Web::Init() {
     if (UseMidi()) {
-        SetupMIDI();
+        SetupMIDI(this);
     }
 
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
         .sampleRate = static_cast<uint32_t>(m_SampleRate),
     };
-
-    // Midi tick
-    int MidiTickId = emscripten_set_interval(MidiTick, 13, nullptr);
 
     // Start the audio context
     static uint8_t WasmAudioWorkletStack[1024 * 1024];

@@ -14,6 +14,7 @@
 #include <tuple>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <queue>
 
@@ -72,7 +73,8 @@ enum Pd4WebSenderType {
     MESSAGE,
     MOUSE_EVENT,
     KEY_EVENT,
-    TOUCH_EVENT
+    TOUCH_EVENT,
+    MIDI_EVENT
 };
 
 // Thread-safe atom structure for passing list/message data
@@ -108,6 +110,14 @@ struct TouchEventData {
     int y;
     int identifier;
     enum EventType { TOUCH_START, TOUCH_END, TOUCH_MOVE, TOUCH_CANCEL } event_type;
+};
+
+struct MidiEventData {
+    static constexpr std::size_t MaxBytes = 256;
+    std::array<uint8_t, MaxBytes> bytes{};
+    uint16_t length = 0;
+    uint16_t port = 0;
+    bool sysex = false;
 };
 
 struct PendingFile {
@@ -192,6 +202,7 @@ struct Pd4WebSender {
     MouseEventData mouse_data;
     KeyEventData key_data;
     TouchEventData touch_data;
+    MidiEventData midi_data;
 
 };
 
@@ -212,13 +223,7 @@ static Pd4WebReceiverListeners MessageReceiverListeners;
 // ╰─────────────────────────────────────╯
 class Pd4Web {
   public:
-    ~Pd4Web() {
-        if (m_UserData && m_UserData->renderer) m_UserData->renderer.reset();
-        for (auto symbol : m_BindSymbols) {
-            libpd_unbind(symbol);
-        }
-        libpd_free_instance(m_PdInstance);
-    }
+    ~Pd4Web();
 
     // Main
     void Init();
@@ -231,6 +236,10 @@ class Pd4Web {
     bool SendBang(std::string receiver);
     bool SendList(std::string receiver, emscripten::val list);
     bool SendMessage(std::string receiver, std::string msg, emscripten::val list);
+
+    // Pure Data arrays
+    emscripten::val ReadArray(const std::string &name);
+    bool WriteArray(const std::string &name, emscripten::val samples);
 
     // Bind callbacks
     void OnBangReceived(std::string receiver, emscripten::val callback);
@@ -280,7 +289,7 @@ class Pd4Web {
     std::atomic<uint64_t> m_DroppedSenders{0};
 
     // Ticks
-    int m_MidiTickID;
+    int m_MidiTickID = 0;
 
     // Theme
     std::string m_BgColor;
@@ -322,22 +331,23 @@ void GetPatchComments(Pd4WebUserData *ud);
 void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data);
 void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data);
 void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data);
+void ProcessMIDIEvent(Pd4WebUserData *ud, const MidiEventData &data);
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
 // ╰─────────────────────────────────────╯
-void SetupMIDI();
+void SetupMIDI(Pd4Web *pd4web);
 void OnMIDISuccess(emscripten::val midiAccess);
 void OnMIDIFailed(emscripten::val error);
 void OnMIDIInMessage(emscripten::val event);
-void OnMIDIOutMessage(emscripten::val event);
+void OnMIDIStateChange(emscripten::val event);
 void MidiTick(void *userData);
 
 EMSCRIPTEN_BINDINGS(Pd4WebModule) {
     function("_onMIDISuccess", &OnMIDISuccess);
     function("_onMIDIFailed", &OnMIDIFailed);
     function("_onMIDIInMessage", &OnMIDIInMessage);
-    function("_onMIDIOutMessage", &OnMIDIOutMessage);
+    function("_onMIDIStateChange", &OnMIDIStateChange);
 
     emscripten::class_<Pd4Web>("Pd4Web")
         .constructor<>() // Default constructor
@@ -354,6 +364,10 @@ EMSCRIPTEN_BINDINGS(Pd4WebModule) {
         .function("sendSymbol", &Pd4Web::SendSymbol)
         .function("sendList", &Pd4Web::SendList)
         .function("sendMessage", &Pd4Web::SendMessage)
+
+        // Pure Data arrays
+        .function("readArray", &Pd4Web::ReadArray)
+        .function("writeArray", &Pd4Web::WriteArray)
 
         // bind and unbind receivers
         .function("onBangReceived", &Pd4Web::OnBangReceived)

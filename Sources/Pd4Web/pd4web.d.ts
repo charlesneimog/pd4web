@@ -71,6 +71,25 @@ declare namespace pd4web {
     sendMessage: (name: string, selector: string, list: Array<string | number>) => boolean;
 
     /**
+     * Read every sample from a named Pure Data array.
+     *
+     * Returns `undefined` and logs an error if no patch is open or the array
+     * does not exist.
+     */
+    readArray: (name: string) => Float32Array | undefined;
+
+    /**
+     * Replace a named Pure Data array with the supplied samples.
+     *
+     * The Pure Data array is automatically resized to the number of supplied
+     * samples. Pure Data clips an empty array's size to one.
+     *
+     * Returns `false` and logs an error if no patch is open or the array does
+     * not exist.
+     */
+    writeArray: (name: string, samples: readonly number[] | Float32Array) => boolean;
+
+    /**
      * Send a file’s binary data to Pure Data.
      *
      * _Pd4Web_ uses an internal file system within an
