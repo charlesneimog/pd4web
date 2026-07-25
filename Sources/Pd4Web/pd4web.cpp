@@ -2401,6 +2401,9 @@ void GetPatchComments(Pd4WebUserData *ud) {
     }
 }
 
+// ╭─────────────────────────────────────╮
+// │       This is a hack for now        │
+// ╰─────────────────────────────────────╯
 using Pd4WebClockMethod = void (*)(void *);
 
 // t_clock is intentionally opaque outside Pd's scheduler. These are the first

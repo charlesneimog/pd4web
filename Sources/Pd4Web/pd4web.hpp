@@ -298,6 +298,10 @@ class Pd4Web {
         return m_DroppedSenders.load();
     }
 
+    bool AudioIsSuspended() {
+        return m_AudioSuspended;
+    };
+
   private:
     void OpenPatch(std::string patchPath, std::string patchCanvasId, std::string soundToggleId);
     void StartMidi();
