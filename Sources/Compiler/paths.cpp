@@ -19,10 +19,10 @@ bool Pd4Web::initPaths() {
     }
 
 #if defined(_WIN32)
-    m_Emcmake = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emcmake.bat";
-    m_Emcc = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emcc.bat";
-    m_Emconfigure = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emconfigure.bat";
-    m_Emmake = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emmake.bat";
+    m_Emcmake = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emcmake.exe";
+    m_Emcc = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emcc.exe";
+    m_Emconfigure = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emconfigure.exe";
+    m_Emmake = m_Pd4WebRoot / "emsdk" / "upstream" / "emscripten" / "emmake.exe";
     m_Ninja = m_Pd4WebRoot / "emsdk" / "ninja" / "git-release_64bit" / "bin" / "ninja.exe";
     m_Clang = m_Pd4WebRoot / "emsdk" / "upstream" / "bin" / "clang.exe";
 #else
