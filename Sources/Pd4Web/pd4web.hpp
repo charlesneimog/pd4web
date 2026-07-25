@@ -33,6 +33,7 @@
 #include <g_canvas.h>
 extern "C" {
 #include <m_imp.h>
+#include <s_stuff.h>
 }
 
 // Local project headers
@@ -59,6 +60,16 @@ extern "C" {
 extern lua_State *__L();
 extern void pdlua_setup();
 extern void pdlua_gfx_process_recovery(void);
+
+extern uint64_t AllocateRenderObjectIdC(void);
+extern void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, int w, int h);
+extern void AddNewCommand(uint64_t, int, GuiCommand *command);
+extern void EndPaintLayerCommand(uint64_t, int);
+extern void RemoveRenderLayer(uint64_t objectId, int layer);
+extern void RemoveRenderObject(uint64_t objectId);
+extern void UpdateRenderObject(uint64_t objectId, int x, int y, int w, int h);
+extern void ClearRenderPatch(void);
+extern int TakeRenderRecovery(uint64_t *objectId, int *layer);
 }
 
 // ╭─────────────────────────────────────╮
@@ -205,7 +216,6 @@ struct Pd4WebSender {
     KeyEventData key_data;
     TouchEventData touch_data;
     MidiEventData midi_data;
-
 };
 
 static std::unordered_map<t_pdinstance *, std::unordered_map<std::string, emscripten::val>>
@@ -278,9 +288,15 @@ class Pd4Web {
     bool RenderGui();
     bool UseMidi();
     bool EnqueueSender(const Pd4WebSender &sender) noexcept;
-    const Pd4WebSender *BeginSender() const noexcept { return m_ToSendQueue.beginPop(); }
-    void EndSender() noexcept { m_ToSendQueue.commitPop(); }
-    uint64_t DroppedSenders() const noexcept { return m_DroppedSenders.load(); }
+    const Pd4WebSender *BeginSender() const noexcept {
+        return m_ToSendQueue.beginPop();
+    }
+    void EndSender() noexcept {
+        m_ToSendQueue.commitPop();
+    }
+    uint64_t DroppedSenders() const noexcept {
+        return m_DroppedSenders.load();
+    }
 
   private:
     void OpenPatch(std::string patchPath, std::string patchCanvasId, std::string soundToggleId);
@@ -291,7 +307,7 @@ class Pd4Web {
     std::atomic<uint64_t> m_DroppedSenders{0};
 
     // Ticks
-    int m_MidiTickID = 0;
+    int m_MsgsTickID = 0;
 
     // Theme
     std::string m_BgColor;
@@ -328,12 +344,12 @@ class Pd4Web {
 // ╭─────────────────────────────────────╮
 // │           Function Prototypes       │
 // ╰─────────────────────────────────────╯
-void Loop(void *userData);
-void GetPatchComments(Pd4WebUserData *ud);
-void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data);
-void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data);
-void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data);
-void ProcessMIDIEvent(Pd4WebUserData *ud, const MidiEventData &data);
+static void Loop(void *userData);
+static void GetPatchComments(Pd4WebUserData *ud);
+static void ProcessMouseEvent(Pd4WebUserData *ud, const MouseEventData &data);
+static void ProcessTouchEvent(Pd4WebUserData *ud, const TouchEventData &data);
+static void ProcessKeyEvent(Pd4WebUserData *ud, const KeyEventData &data);
+static void ProcessMIDIEvent(Pd4WebUserData *ud, const MidiEventData &data);
 
 // ╭─────────────────────────────────────╮
 // │  Bind C++ functions to JavaScript   │
@@ -343,7 +359,7 @@ void OnMIDISuccess(emscripten::val midiAccess);
 void OnMIDIFailed(emscripten::val error);
 void OnMIDIInMessage(emscripten::val event);
 void OnMIDIStateChange(emscripten::val event);
-void MidiTick(void *userData);
+void MessagesTick(void *userData);
 
 EMSCRIPTEN_BINDINGS(Pd4WebModule) {
     function("_onMIDISuccess", &OnMIDISuccess);

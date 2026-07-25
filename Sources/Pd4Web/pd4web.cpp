@@ -1,6 +1,66 @@
 #include "pd4web.hpp"
 
 // ╭─────────────────────────────────────╮
+// │       Gui Functions / THORVG        │
+// ╰─────────────────────────────────────╯
+uint64_t AllocateRenderObjectIdC(void) {
+    return RenderTransport::instance().allocateObjectId();
+}
+
+//  ─────────────────────────────────────
+void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, int w, int h) {
+    RenderTransport::instance().beginLayer(objectId, layer, x, y, w, h);
+}
+
+//  ─────────────────────────────────────
+void AddNewCommand(uint64_t, int, GuiCommand *command) {
+    if (!command) {
+        return;
+    }
+    RenderTransport::instance().append(*command);
+}
+
+//  ─────────────────────────────────────
+void EndPaintLayerCommand(uint64_t, int) {
+    RenderTransport::instance().publishLayer();
+}
+
+//  ─────────────────────────────────────
+void RemoveRenderLayer(uint64_t objectId, int layer) {
+    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveLayer, objectId, layer);
+}
+
+//  ─────────────────────────────────────
+void RemoveRenderObject(uint64_t objectId) {
+    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveObject, objectId);
+}
+
+//  ─────────────────────────────────────
+void UpdateRenderObject(uint64_t objectId, int x, int y, int w, int h) {
+    RenderTransport::instance().publishObjectUpdate(objectId, x, y, w, h);
+}
+
+//  ─────────────────────────────────────
+void ClearRenderPatch(void) {
+    RenderTransport::instance().publishLifecycle(RenderMessageType::ClearPatch, 0);
+}
+
+//  ─────────────────────────────────────
+int TakeRenderRecovery(uint64_t *objectId, int *layer) {
+    if (!objectId || !layer) {
+        return 0;
+    }
+    ObjectId id = 0;
+    int layerIndex = -1;
+    if (!RenderTransport::instance().takeRecovery(id, layerIndex)) {
+        return 0;
+    }
+    *objectId = id;
+    *layer = layerIndex;
+    return 1;
+}
+
+// ╭─────────────────────────────────────╮
 // │        JavaScript Functions         │
 // ╰─────────────────────────────────────╯
 // Functions written in JavaScript Language, this are used for the WebAudio API.
@@ -1220,8 +1280,8 @@ Pd4Web::~Pd4Web() {
     if (MidiTarget == this) {
         MidiTarget = nullptr;
     }
-    if (m_MidiTickID) {
-        emscripten_clear_interval(m_MidiTickID);
+    if (m_MsgsTickID) {
+        emscripten_clear_interval(m_MsgsTickID);
     }
     if (m_UserData && m_UserData->renderer) {
         m_UserData->renderer.reset();
@@ -2217,20 +2277,20 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->libpd = m_PdInstance;
         m_UserData->pd4web = this;
     }
-    if (m_UseMidi) {
-        m_MidiTickID = emscripten_set_interval(MidiTick, 1, m_UserData.get());
-    }
+    m_MsgsTickID = emscripten_set_interval(MessagesTick, 1, m_UserData.get());
 }
 
 // ╭─────────────────────────────────────╮
 // │                MIDI                 │
 // ╰─────────────────────────────────────╯
-void MidiTick(void *userData) {
+void MessagesTick(void *userData) {
     Pd4WebUserData *ud = static_cast<Pd4WebUserData *>(userData);
     if (!ud || !ud->libpd) {
         return;
     }
     libpd_set_instance(ud->libpd);
+
+    libpd_queued_receive_pd_messages();
     libpd_queued_receive_midi_messages();
 }
 
@@ -2341,63 +2401,6 @@ void GetPatchComments(Pd4WebUserData *ud) {
     }
 }
 
-// ─────────────────────────────────────
-
-extern "C" uint64_t AllocateRenderObjectIdC(void) {
-    return RenderTransport::instance().allocateObjectId();
-}
-
-extern "C" void ClearLayerCommand(uint64_t objectId, int layer, int x, int y, int w, int h) {
-    RenderTransport::instance().beginLayer(objectId, layer, x, y, w, h);
-}
-
-extern "C" void AddNewCommand(uint64_t, int, GuiCommand *command) {
-    if (!command) {
-        return;
-    }
-    RenderTransport::instance().append(*command);
-}
-
-extern "C" void EndPaintLayerCommand(uint64_t, int) {
-    RenderTransport::instance().publishLayer();
-}
-
-extern "C" void RemoveRenderLayer(uint64_t objectId, int layer) {
-    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveLayer, objectId, layer);
-}
-
-extern "C" void RemoveRenderObject(uint64_t objectId) {
-    RenderTransport::instance().publishLifecycle(RenderMessageType::RemoveObject, objectId);
-}
-
-extern "C" void UpdateRenderObject(uint64_t objectId, int x, int y, int w, int h) {
-    RenderTransport::instance().publishObjectUpdate(objectId, x, y, w, h);
-}
-
-extern "C" void ClearRenderPatch(void) {
-    RenderTransport::instance().publishLifecycle(RenderMessageType::ClearPatch, 0);
-}
-
-extern "C" int TakeRenderRecovery(uint64_t *objectId, int *layer) {
-    if (!objectId || !layer) {
-        return 0;
-    }
-    ObjectId id = 0;
-    int layerIndex = -1;
-    if (!RenderTransport::instance().takeRecovery(id, layerIndex)) {
-        return 0;
-    }
-    *objectId = id;
-    *layer = layerIndex;
-    return 1;
-}
-
-extern "C" {
-int sys_pollgui(void);
-void messqueue_dispatch(void);
-}
-
-namespace {
 using Pd4WebClockMethod = void (*)(void *);
 
 // t_clock is intentionally opaque outside Pd's scheduler. These are the first
@@ -2408,8 +2411,8 @@ struct Pd4WebClockView {
     void *owner;
     Pd4WebClockMethod function;
 };
-} // namespace
 
+// ─────────────────────────────────────
 static void sched_advance_clocks(double next_sys_time) {
     t_pdinstance *instance = libpd_this_instance();
     if (!instance) {
@@ -2439,13 +2442,13 @@ static void sched_advance_clocks(double next_sys_time) {
     }
 
     instance->pd_systime = next_sys_time;
-    messqueue_dispatch();
 }
 
+// ─────────────────────────────────────
+// Main Gui Loop
 void Loop(void *userData) {
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
-    libpd_queued_receive_pd_messages();
 
     const bool audioContextSuspended =
         ud->soundInit && emscripten_audio_context_state(ud->pd4web->GetWebAudioContext()) ==
@@ -2454,6 +2457,7 @@ void Loop(void *userData) {
     const bool processOnMainThread = !audioThreadOwnsPd;
     const double now = emscripten_get_now();
 
+    // Keep GUI running even if audio is off
     if (processOnMainThread) {
         pdlua_gfx_process_recovery();
         ProcessSenders(ud);
@@ -2462,6 +2466,7 @@ void Loop(void *userData) {
         sched_advance_clocks(clock_getsystimeafter(elapsedMs));
         sys_unlock();
     }
+
     ud->lastFrame = now;
 
     if (ud->renderer) {
@@ -2487,6 +2492,7 @@ void Pd4Web::Init() {
     EmscriptenWebAudioCreateAttributes attrs = {
         .latencyHint = "interactive",
         .sampleRate = static_cast<uint32_t>(m_SampleRate),
+        .renderSizeHint = 128,
     };
 
     // Start the audio context
