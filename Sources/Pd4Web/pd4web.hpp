@@ -31,7 +31,9 @@
 #include <z_queued.h>
 
 #include <g_canvas.h>
+extern "C" {
 #include <m_imp.h>
+}
 
 // Local project headers
 #if __has_include("pd4web_config.h")

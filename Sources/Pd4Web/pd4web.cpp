@@ -204,7 +204,7 @@ EM_JS(double, JS_CanvasRelativeClientY, (const char *canvasSel, double clientY),
 });
     
 // ─────────────────────────────────────
-EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUDIO_WORKLET_NODE_T audioWorkletNode, int nInCh), {
+EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_WEBAUDIO_T audioWorkletNode, int nInCh), {
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioWorkletNode = emscriptenGetAudioObject(audioWorkletNode);
 
@@ -239,12 +239,6 @@ EM_JS(void, JS_GetMicAccess, (EMSCRIPTEN_WEBAUDIO_T audioContext, EMSCRIPTEN_AUD
 EM_JS(void, JS_SuspendAudioWorklet, (EMSCRIPTEN_WEBAUDIO_T audioContext),{
     Pd4WebAudioContext = emscriptenGetAudioObject(audioContext);
     Pd4WebAudioContext.suspend();
-});
-
-// ─────────────────────────────────────
-EM_JS(bool, JS_IsAudioWorkletSuspended, (EMSCRIPTEN_WEBAUDIO_T audioContext), {
-    const context = emscriptenGetAudioObject(audioContext);
-    return context && context.state === "suspended";
 });
 
 // ─────────────────────────────────────
@@ -585,8 +579,7 @@ bool Pd4Web::WriteArray(const std::string &name, emscripten::val samples) {
     }
     if (samples.isUndefined() || samples.isNull() ||
         samples["length"].typeOf().as<std::string>() != "number") {
-        emscripten_log(EM_LOG_ERROR,
-                       "Pd4Web.writeArray: samples must be an array or typed array");
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.writeArray: samples must be an array or typed array");
         return false;
     }
 
@@ -1161,7 +1154,7 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
     libpd_init_audio(NInCh, NOutCh, SR);
 
     std::string id = "pd4web_" + std::to_string(libpd_num_instances());
-    EMSCRIPTEN_AUDIO_WORKLET_NODE_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
+    EMSCRIPTEN_WEBAUDIO_T AudioWorkletNode = emscripten_create_wasm_audio_worklet_node(
         audioContext, id.c_str(), &options, Process, userData);
 
     JS_GetMicAccess(audioContext, AudioWorkletNode, NInCh);
@@ -2415,7 +2408,7 @@ struct Pd4WebClockView {
     void *owner;
     Pd4WebClockMethod function;
 };
-}
+} // namespace
 
 static void sched_advance_clocks(double next_sys_time) {
     t_pdinstance *instance = libpd_this_instance();
@@ -2454,9 +2447,10 @@ void Loop(void *userData) {
     libpd_set_instance(ud->libpd);
     libpd_queued_receive_pd_messages();
 
-    const bool audioThreadOwnsPd =
-        ud->soundInit &&
-        (!ud->soundSuspended || !JS_IsAudioWorkletSuspended(ud->pd4web->GetWebAudioContext()));
+    const bool audioContextSuspended =
+        ud->soundInit && emscripten_audio_context_state(ud->pd4web->GetWebAudioContext()) ==
+                             AUDIO_CONTEXT_STATE_SUSPENDED;
+    const bool audioThreadOwnsPd = ud->soundInit && (!ud->soundSuspended || !audioContextSuspended);
     const bool processOnMainThread = !audioThreadOwnsPd;
     const double now = emscripten_get_now();
 
