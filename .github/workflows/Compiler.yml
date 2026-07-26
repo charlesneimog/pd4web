@@ -188,22 +188,24 @@ jobs:
                   path: ${{ env.LIBNAME }}
 
             - name: Upload using docker deken
+              continue-on-error: true
               if: ${{ github.event.inputs.publish_pdobject == 'true' }}
               env:
                   DEKEN_USERNAME: charlesneimog
                   DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
               run: |
-                  docker run --rm \
-                    --user $(id -u) \
-                    --volume $(pwd):/deken \
-                    registry.git.iem.at/pd/deken \
-                    deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
-                  docker run --rm \
-                    --user $(id -u) \
-                    --volume $(pwd):/deken \
-                    -e DEKEN_USERNAME -e DEKEN_PASSWORD \
-                    registry.git.iem.at/pd/deken \
-                    deken upload -v ${{ env.LIBVERSION }} *.dek
+                  pip install deken
+                  deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
+                  deken upload -v ${{ env.LIBVERSION }} *.dek
+
+            - name: Upload using docker deken
+              if: ${{ github.event.inputs.publish_pdobject == 'true' }}
+              env:
+                  DEKEN_USERNAME: charlesneimog
+                  DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
+              run: |
+                  deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
+                  deken upload -v ${{ env.LIBVERSION }} *.dek
             - name: Publish to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
