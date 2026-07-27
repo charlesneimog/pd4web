@@ -160,9 +160,15 @@ struct Pd4WebUserData {
     bool soundInit;
     bool soundSuspended;
     std::string soundToggleSel;
+    bool mainThreadOwnsPd = true;
+    bool audioWorkletReady = false;
+    bool audioResumePending = false;
+    bool pdDspSuspended = false;
+    int dspStateBeforeSuspend = 0;
 
-    // last frame
+    // Main-thread scheduler state
     double lastFrame;
+    double tickAccumulatorMs = 0.0;
 
     // Canvas selection
     std::string canvasSel;
@@ -240,6 +246,8 @@ class Pd4Web {
     // Main
     void Init();
     void ToggleAudio();
+    void SuspendAudio();
+    void ResumeAudio();
     void OpenPatchJS(const std::string &patchPath, emscripten::val options);
 
     // Send messages

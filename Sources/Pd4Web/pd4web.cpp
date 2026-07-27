@@ -1190,6 +1190,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
 
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     if (!success) {
+        ud->audioResumePending = false;
+        ud->mainThreadOwnsPd = true;
         JS_Alert("Failed to create AudioWorkletProcessor, please report!\n");
         return;
     }
@@ -1218,6 +1220,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
         audioContext, id.c_str(), &options, Process, userData);
 
     JS_GetMicAccess(audioContext, AudioWorkletNode, NInCh);
+    ud->audioWorkletReady = true;
+    ud->audioResumePending = false;
 }
 
 // ─────────────────────────────────────
@@ -1234,6 +1238,8 @@ void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL su
 void AudioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void *userData) {
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     if (!success) {
+        ud->audioResumePending = false;
+        ud->mainThreadOwnsPd = true;
         JS_Alert("WebAudio worklet thread initialization failed!\n");
         return;
     }
@@ -1255,19 +1261,42 @@ void AudioWorkletInit(EMSCRIPTEN_WEBAUDIO_T audioContext, EM_BOOL success, void 
 void Pd4Web::ToggleAudio() {
     if (!m_Pd4WebAudioWorkletInit) {
         Init();
-        m_Pd4WebAudioWorkletInit = true;
-        m_AudioSuspended = false;
+    } else if (m_AudioSuspended) {
+        ResumeAudio();
     } else {
-        if (m_AudioSuspended) {
-            m_UserData->soundSuspended = false;
-            emscripten_resume_audio_context_sync(GetWebAudioContext());
-            m_AudioSuspended = false;
-        } else {
-            m_UserData->soundSuspended = true;
-            JS_SuspendAudioWorklet(GetWebAudioContext());
-            m_AudioSuspended = true;
-        }
+        SuspendAudio();
     }
+}
+
+void Pd4Web::SuspendAudio() {
+    if (!m_UserData || !m_UserData->soundInit || m_AudioSuspended) {
+        return;
+    }
+    m_UserData->soundSuspended = true;
+    m_UserData->audioResumePending = false;
+    m_AudioSuspended = true;
+    JS_SuspendAudioWorklet(GetWebAudioContext());
+}
+
+void Pd4Web::ResumeAudio() {
+    if (!m_UserData || !m_UserData->soundInit || !m_AudioSuspended) {
+        return;
+    }
+    libpd_set_instance(m_UserData->libpd);
+    if (m_UserData->mainThreadOwnsPd) {
+        if (m_UserData->pdDspSuspended) {
+            canvas_resume_dsp(m_UserData->dspStateBeforeSuspend);
+            m_UserData->pdDspSuspended = false;
+            m_UserData->dspStateBeforeSuspend = 0;
+        }
+        m_UserData->mainThreadOwnsPd = false;
+        m_UserData->tickAccumulatorMs = 0.0;
+        m_UserData->lastFrame = emscripten_get_now();
+    }
+    m_UserData->soundSuspended = false;
+    m_UserData->audioResumePending = true;
+    m_AudioSuspended = false;
+    emscripten_resume_audio_context_sync(GetWebAudioContext());
 }
 
 // ╭─────────────────────────────────────╮
@@ -1912,9 +1941,8 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
                     el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
                 },
                 ICON_SOUND_ON, ud->soundToggleSel.c_str());
-            ud->soundSuspended = false;
             if (ud->pd4web != nullptr) {
-                emscripten_resume_audio_context_sync(ud->pd4web->GetWebAudioContext());
+                ud->pd4web->ResumeAudio();
             }
         } else {
             EM_ASM(
@@ -1923,9 +1951,8 @@ EM_BOOL MouseSoundToggle(int eventType, const EmscriptenMouseEvent *e, void *use
                     el.style.backgroundImage = "url(" + UTF8ToString($0) + ")";
                 },
                 ICON_SOUND_OFF, ud->soundToggleSel.c_str());
-            ud->soundSuspended = true;
             if (ud->pd4web != nullptr) {
-                JS_SuspendAudioWorklet(ud->pd4web->GetWebAudioContext());
+                ud->pd4web->SuspendAudio();
             }
         }
     }
@@ -2402,72 +2429,72 @@ void GetPatchComments(Pd4WebUserData *ud) {
 }
 
 // ╭─────────────────────────────────────╮
-// │       This is a hack for now        │
+// │            Main Gui Loop            │
 // ╰─────────────────────────────────────╯
-using Pd4WebClockMethod = void (*)(void *);
-
-// t_clock is intentionally opaque outside Pd's scheduler. These are the first
-// fields of the pinned Pd version's _clock structure, which are needed to
-// invoke a due callback without running dsp_tick().
-struct Pd4WebClockView {
-    double setTime;
-    void *owner;
-    Pd4WebClockMethod function;
-};
-
-// ─────────────────────────────────────
-static void sched_advance_clocks(double next_sys_time) {
-    t_pdinstance *instance = libpd_this_instance();
-    if (!instance) {
-        return;
-    }
-
-    int countdown = 5000;
-    while (instance->pd_clock_setlist) {
-        t_clock *clock = instance->pd_clock_setlist;
-        auto *view = reinterpret_cast<Pd4WebClockView *>(clock);
-        if (view->setTime >= next_sys_time) {
-            break;
-        }
-
-        instance->pd_systime = view->setTime;
-        void *owner = view->owner;
-        Pd4WebClockMethod function = view->function;
-        clock_unset(clock);
-
-        outlet_setstacklim();
-        function(owner);
-
-        if (!countdown--) {
-            countdown = 5000;
-            (void)sys_pollgui();
-        }
-    }
-
-    instance->pd_systime = next_sys_time;
-}
-
-// ─────────────────────────────────────
-// Main Gui Loop
 void Loop(void *userData) {
     auto *ud = static_cast<Pd4WebUserData *>(userData);
     libpd_set_instance(ud->libpd);
 
-    const bool audioContextSuspended =
-        ud->soundInit && emscripten_audio_context_state(ud->pd4web->GetWebAudioContext()) ==
-                             AUDIO_CONTEXT_STATE_SUSPENDED;
-    const bool audioThreadOwnsPd = ud->soundInit && (!ud->soundSuspended || !audioContextSuspended);
-    const bool processOnMainThread = !audioThreadOwnsPd;
     const double now = emscripten_get_now();
+    bool ownershipChanged = false;
+    bool mainThreadOwnsPd = ud->mainThreadOwnsPd;
 
-    // Keep GUI running even if audio is off
-    if (processOnMainThread) {
+    if (ud->soundInit && ud->audioWorkletReady) {
+        const AUDIO_CONTEXT_STATE audioState =
+            emscripten_audio_context_state(ud->pd4web->GetWebAudioContext());
+
+        if (audioState == AUDIO_CONTEXT_STATE_RUNNING) {
+            ud->audioResumePending = false;
+            if (mainThreadOwnsPd && !ud->soundSuspended) {
+                if (ud->pdDspSuspended) {
+                    canvas_resume_dsp(ud->dspStateBeforeSuspend);
+                    ud->pdDspSuspended = false;
+                    ud->dspStateBeforeSuspend = 0;
+                }
+                ud->mainThreadOwnsPd = false;
+                mainThreadOwnsPd = false;
+                ownershipChanged = true;
+            }
+        } else if (!mainThreadOwnsPd && !ud->audioResumePending &&
+                   ((ud->soundSuspended && audioState == AUDIO_CONTEXT_STATE_SUSPENDED) ||
+                    audioState == AUDIO_CONTEXT_STATE_CLOSED)) {
+            // The context is fully suspended (or closed), so the main thread can safely
+            // take over the scheduler before removing the DSP graph.
+            ud->mainThreadOwnsPd = true;
+            mainThreadOwnsPd = true;
+            ud->dspStateBeforeSuspend = canvas_suspend_dsp();
+            ud->pdDspSuspended = true;
+            ownershipChanged = true;
+        }
+    }
+
+    if (ownershipChanged) {
+        ud->tickAccumulatorMs = 0.0;
+        ud->lastFrame = now;
+    }
+
+    constexpr double MaxCatchUpMs = 100.0;
+    const double elapsedMs =
+        ownershipChanged ? 0.0 : std::clamp(now - ud->lastFrame, 0.0, MaxCatchUpMs);
+
+    // Keep Pd messages, clocks, and GUI running while the AudioWorklet does not own Pd.
+    if (mainThreadOwnsPd) {
         pdlua_gfx_process_recovery();
         ProcessSenders(ud);
-        const double elapsedMs = std::max(0.0, now - ud->lastFrame);
-        sys_lock();
-        sched_advance_clocks(clock_getsystimeafter(elapsedMs));
-        sys_unlock();
+
+        const double sampleRate = sys_getsr();
+        const int schedulerBlockSize = *get_sys_schedblocksize();
+        if (sampleRate > 0.0 && schedulerBlockSize > 0) {
+            const double tickDurationMs = 1000.0 * schedulerBlockSize / sampleRate;
+            ud->tickAccumulatorMs += elapsedMs;
+            const int ticksToRun = static_cast<int>(ud->tickAccumulatorMs / tickDurationMs);
+            ud->tickAccumulatorMs -= static_cast<double>(ticksToRun) * tickDurationMs;
+            for (int i = 0; i < ticksToRun; ++i) {
+                sched_tick();
+            }
+        }
+    } else {
+        ud->tickAccumulatorMs = 0.0;
     }
 
     ud->lastFrame = now;
@@ -2488,6 +2515,10 @@ void Loop(void *userData) {
  * creates user data, and starts the audio worklet thread asynchronously.
  */
 void Pd4Web::Init() {
+    if (!m_UserData || m_UserData->soundInit) {
+        return;
+    }
+
     if (UseMidi()) {
         SetupMIDI(this);
     }
@@ -2502,6 +2533,14 @@ void Pd4Web::Init() {
     static uint8_t WasmAudioWorkletStack[1024 * 1024];
     m_AudioContext = emscripten_create_audio_context(&attrs);
     m_UserData->soundInit = true;
+    m_UserData->soundSuspended = false;
+    m_UserData->audioWorkletReady = false;
+    m_UserData->audioResumePending = true;
+    m_UserData->mainThreadOwnsPd = false;
+    m_UserData->pdDspSuspended = false;
+    m_UserData->dspStateBeforeSuspend = 0;
+    m_UserData->tickAccumulatorMs = 0.0;
+    m_UserData->lastFrame = emscripten_get_now();
 
     m_UserData->pd4web = this;
     m_UserData->libpd = m_PdInstance;
@@ -2511,6 +2550,7 @@ void Pd4Web::Init() {
     emscripten_start_wasm_audio_worklet_thread_async(m_AudioContext, WasmAudioWorkletStack,
                                                      sizeof(WasmAudioWorkletStack),
                                                      AudioWorkletInit, m_UserData.get());
+    m_Pd4WebAudioWorkletInit = true;
     m_AudioSuspended = false;
 }
 
