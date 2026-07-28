@@ -15,6 +15,64 @@ Pd4Web::Pd4Web(const fs::path &pathHome) {
 }
 
 // ─────────────────────────────────────
+void Pd4Web::checkVersion(std::string certPath) {
+    httplib::SSLClient cli("api.github.com", 443);
+
+    cli.set_follow_location(true);
+    cli.set_connection_timeout(10);
+    cli.set_read_timeout(10);
+
+    cli.set_ca_cert_path(certPath);
+
+    httplib::Headers headers{
+        {"User-Agent", "pd4web"},
+        {"Accept", "application/vnd.github+json"},
+        {"X-GitHub-Api-Version", "2026-03-10"},
+    };
+
+    auto res = cli.Get("/repos/charlesneimog/pd4web/releases/latest", headers);
+
+    if (!res) {
+        printf("Failed to connect to GitHub: %s\n", httplib::to_string(res.error()).c_str());
+        return;
+    }
+
+    if (res->status != httplib::StatusCode::OK_200) {
+        printf("GitHub returned HTTP %d\nBody: %s\n", res->status, res->body.c_str());
+        return;
+    }
+
+    try {
+        const auto json = nlohmann::json::parse(res->body);
+
+        if (!json.contains("tag_name") || !json["tag_name"].is_string()) {
+            printf("GitHub response has no valid tag_name\n");
+            return;
+        }
+
+        if (!json.contains("tag_name") || !json["tag_name"].is_string()) {
+            printf("GitHub response has no valid tag_name\n");
+            return;
+        }
+
+        const auto tag = json["tag_name"].get<std::string>();
+        const std::string currentVersion = "v" + std::to_string(PD4WEB_VERSION_MAJOR) + "." +
+                                           std::to_string(PD4WEB_VERSION_MINOR) + "." +
+                                           PD4WEB_VERSION_PATCH;
+
+        if (tag == currentVersion) {
+            print(std::string("Pd4Web is up to date (") + currentVersion.c_str() + ")");
+        } else {
+            print(std::format("Current: {}", currentVersion), Pd4WebLogLevel::PD4WEB_WARNING);
+            print(std::format("Latest : {}", tag), Pd4WebLogLevel::PD4WEB_WARNING);
+        }
+
+    } catch (const nlohmann::json::exception &error) {
+        printf("Failed to parse GitHub response: %s\n", error.what());
+    }
+}
+
+// ─────────────────────────────────────
 bool Pd4Web::init() {
     print("Initializing pd4web", Pd4WebLogLevel::PD4WEB_LOG1);
 
@@ -100,6 +158,8 @@ bool Pd4Web::init() {
     print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
 
 #endif
+    std::string certPath = getCertFile();
+    checkVersion(certPath);
 
     // TODO: in here, I must read the versions from the version.yaml
 
