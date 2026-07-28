@@ -24,6 +24,7 @@
 namespace bp = boost::process::v2;
 namespace asio = boost::asio;
 
+// ─────────────────────────────────────
 void Pd4Web::printVersion() {
     std::cout << "pd4web " << PD4WEB_VERSION_MAJOR << "." << PD4WEB_VERSION_MINOR << "."
               << PD4WEB_VERSION_PATCH << " | built " << __DATE__ << " " << __TIME__ << " | "
@@ -145,6 +146,7 @@ std::string Pd4Web::getCertFile() {
             return candidate;
         }
     }
+
     print("Certificate file not found", Pd4WebLogLevel::PD4WEB_WARNING);
 
     return {};
@@ -156,8 +158,8 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     // Do not propagate user or package-manager build flags to CMake/emcmake.
     // Conda, for example, injects host-specific flags that are invalid for the
     // Emscripten toolchain.
-    static constexpr std::array<const char *, 3> buildFlagVariables = {
-        "CFLAGS", "CXXFLAGS", "LDFLAGS"};
+    static constexpr std::array<const char *, 3> buildFlagVariables = {"CFLAGS", "CXXFLAGS",
+                                                                       "LDFLAGS"};
 #if defined(_WIN32)
     for (const char *variable : buildFlagVariables) {
         // Keep both the C runtime and Win32 environment blocks synchronized.
@@ -178,6 +180,7 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
 
 #if defined(__linux__) || defined(__APPLE__)
     std::string certPath = getCertFile();
+
     if (!m_PrintCallback) {
         asio::io_context ctx;
         bp::process proc(ctx, command, args); // inherit parent's stdio so output streams directly

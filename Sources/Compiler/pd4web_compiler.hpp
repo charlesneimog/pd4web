@@ -17,6 +17,7 @@
 #include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
 #include <fkYAML/node.hpp>
+#include <format>
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -33,7 +34,7 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 3
-#define PD4WEB_VERSION_PATCH "1.a1"
+#define PD4WEB_VERSION_PATCH "0a1"
 
 #define PUREDATA_VERSION "master"
 #define EMSDK_VERSION "6.0.0"
@@ -245,6 +246,7 @@ class Pd4Web {
     }
 
     void serverPatch(bool toggle, bool detached, fs::path folderToServer);
+    void checkVersion(std::string certPath);
 
     // Variables
   private:
