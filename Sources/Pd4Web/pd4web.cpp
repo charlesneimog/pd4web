@@ -587,19 +587,50 @@ bool Pd4Web::SendMessage(std::string r, std::string s, emscripten::val a) {
  * @param std::string Destination filename inside the pd4web filesystem
  */
 bool Pd4Web::SendFile(emscripten::val jsArrayBuffer, std::string filename) {
-    size_t length = jsArrayBuffer["byteLength"].as<size_t>();
-    emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
-    std::vector<uint8_t> buffer(length);
-    for (size_t i = 0; i < length; i++) {
-        buffer[i] = uint8Array[i].as<uint8_t>();
-    }
-    std::ofstream out(filename, std::ios::binary);
-    if (!out) {
-        emscripten_log(EM_LOG_ERROR, "Failed to open output file");
+    if (jsArrayBuffer.isUndefined() || jsArrayBuffer.isNull()) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: data must be an ArrayBuffer");
         return false;
     }
-    out.write(reinterpret_cast<const char *>(buffer.data()), buffer.size());
+    if (filename.empty() || filename.find('\0') != std::string::npos) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: filename must not be empty");
+        return false;
+    }
+
+    const emscripten::val arrayBuffer = emscripten::val::global("ArrayBuffer");
+    if (!jsArrayBuffer.instanceof(arrayBuffer)) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: data must be an ArrayBuffer");
+        return false;
+    }
+
+    const size_t length = jsArrayBuffer["byteLength"].as<size_t>();
+    if (length > static_cast<size_t>(std::numeric_limits<std::streamsize>::max())) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: file is too large");
+        return false;
+    }
+
+    const emscripten::val uint8Array = emscripten::val::global("Uint8Array").new_(jsArrayBuffer);
+    std::vector<uint8_t> buffer(length);
+    if (!buffer.empty()) {
+        emscripten::val destination{emscripten::typed_memory_view(buffer.size(), buffer.data())};
+        destination.call<void>("set", uint8Array);
+    }
+
+    std::ofstream out(filename, std::ios::binary | std::ios::trunc);
+    if (!out) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: failed to open \"%s\"", filename.c_str());
+        return false;
+    }
+
+    if (!buffer.empty()) {
+        out.write(reinterpret_cast<const char *>(buffer.data()),
+                  static_cast<std::streamsize>(buffer.size()));
+    }
     out.close();
+
+    if (!out) {
+        emscripten_log(EM_LOG_ERROR, "Pd4Web.sendFile: failed to write \"%s\"", filename.c_str());
+        return false;
+    }
     return true;
 }
 
