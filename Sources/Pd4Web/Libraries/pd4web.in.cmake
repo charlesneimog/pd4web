@@ -9,30 +9,6 @@ include(FetchContent)
 message(STATUS "CPM PACKAGE INSTALLED ON ${CPM_SOURCE_CACHE}")
 
 # ╭──────────────────────────────────────╮
-# │       Always STATIC Libraries        │
-# ╰──────────────────────────────────────╯
-function(add_library target)
-    set(args ${ARGN})
-
-    if(EMSCRIPTEN)
-        list(
-            FIND
-            args
-            SHARED
-            shared_index)
-        if(NOT
-           shared_index
-           EQUAL
-           -1)
-            list(REMOVE_ITEM args SHARED)
-            list(PREPEND args STATIC)
-        endif()
-    endif()
-
-    _add_library(${target} ${args})
-endfunction()
-
-# ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
 set(PDCMAKE_FILE
@@ -110,6 +86,7 @@ target_link_options(
     -sWASM_WORKERS=1
     -sAUDIO_WORKLET=1
     -sUSE_WEBGL2=1
+    -sFAKE_DYLIBS=1
     -sMAX_WEBGL_VERSION=2
     -sMIN_WEBGL_VERSION=2)
 
