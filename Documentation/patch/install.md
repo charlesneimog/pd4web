@@ -12,18 +12,11 @@ hide:
 
 `pd4web` can be installed as a Pure Data object or as a Python Package. 
 
-If you are a Pure Data user, use the __Pd Patch (Graphical Interface)__. If you know how to do Python code (write code), them use the Python Package.
-
-!!! warning "`pd4web` requires Python **3.14**"
-    Python is typically preinstalled on macOS and most Linux distributions. On Windows, `pd4web` installs it automatically if needed. In rare cases on macOS, Python may not be available by default - download it from [https://www.python.org/downloads/](https://www.python.org/downloads/).
-
-
 ---
 <a name="pd4web-pdpatch"></a>
 
 ## Pd Patch (Graphical Interface)
 
-!!! warning "For Windows, `winget` is required to install `python`, if you use a old version of Windows, you need to install Python 3.14 manually"
 
 On Pure Data, `pd4web`provides a simple GUI. To use the `pd4web` object in Pure Data, follow these steps:
 
@@ -38,6 +31,7 @@ On Pure Data, `pd4web`provides a simple GUI. To use the `pd4web` object in Pure 
   <img src="../../assets/pd-pd4web.png" alt="pd4web" width="40%" style="border-radius: 2px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);">
 </p>
 
+!!! warning "For Windows, `winget` is required to install `python`, if you use a old version of Windows, you need to install Python 3.14 manually"
 
 ---
 <a name="pd4web-pdpython"></a>
