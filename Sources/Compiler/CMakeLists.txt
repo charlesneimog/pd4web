@@ -35,7 +35,6 @@ include(${CPM_FILE})
 # │             Dependencies             │
 # ╰──────────────────────────────────────╯
 # download unpack cmake and ninja binaries
-cpmaddpackage("gh:yhirose/cpp-httplib#v0.26.0")
 cpmaddpackage(
     NAME
     tree-sitter
@@ -113,6 +112,11 @@ cpmaddpackage(
     "BUILD_TESTING OFF"
     "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
     "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+
+# cpp-httplib must be configured after OpenSSL::SSL and OpenSSL::Crypto are
+# available. Otherwise its optional OpenSSL probe silently disables SSLClient.
+set(HTTPLIB_REQUIRE_OPENSSL ON)
+cpmaddpackage("gh:yhirose/cpp-httplib#v0.26.0")
 
 # https://github.com/nabijaczleweli/whereami-cpp.git
 

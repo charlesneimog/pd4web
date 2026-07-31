@@ -50,11 +50,6 @@ void Pd4Web::checkVersion(std::string certPath) {
             return;
         }
 
-        if (!json.contains("tag_name") || !json["tag_name"].is_string()) {
-            printf("GitHub response has no valid tag_name\n");
-            return;
-        }
-
         const auto tag = json["tag_name"].get<std::string>();
         const std::string currentVersion = "v" + std::to_string(PD4WEB_VERSION_MAJOR) + "." +
                                            std::to_string(PD4WEB_VERSION_MINOR) + "." +
