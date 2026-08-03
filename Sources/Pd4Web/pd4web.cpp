@@ -2607,8 +2607,7 @@ int main() {
         abort();
     }
 
-    std::cout << std::format("pd4web version {}.{}.{}", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
-                             PD4WEB_VERSION_PATCH)
-              << std::endl;
+    std::cout << "pd4web version " << PD4WEB_VERSION_MAJOR << '.' << PD4WEB_VERSION_MINOR << '.'
+              << PD4WEB_VERSION_PATCH << std::endl;
     return 0;
 }

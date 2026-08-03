@@ -58,8 +58,8 @@ void Pd4Web::checkVersion(std::string certPath) {
         if (tag == currentVersion) {
             print(std::string("Pd4Web is up to date (") + currentVersion.c_str() + ")");
         } else {
-            print(std::format("Current: {}", currentVersion), Pd4WebLogLevel::PD4WEB_WARNING);
-            print(std::format("Latest : {}", tag), Pd4WebLogLevel::PD4WEB_WARNING);
+            print("Current: " + currentVersion, Pd4WebLogLevel::PD4WEB_WARNING);
+            print("Latest : " + tag, Pd4WebLogLevel::PD4WEB_WARNING);
         }
 
     } catch (const nlohmann::json::exception &error) {

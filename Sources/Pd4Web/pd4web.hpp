@@ -6,7 +6,6 @@
 
 // Standard C++ Libraries
 #include <algorithm>
-#include <format>
 #include <iostream>
 #include <sstream>
 #include <mutex>

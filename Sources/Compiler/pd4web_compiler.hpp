@@ -17,8 +17,6 @@
 #include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
 #include <fkYAML/node.hpp>
-#include <format>
-
 #if defined(_WIN32)
 #include <windows.h>
 #endif
