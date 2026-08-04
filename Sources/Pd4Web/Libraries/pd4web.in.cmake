@@ -1,6 +1,33 @@
 cmake_minimum_required(VERSION 3.25)
 project("@PROJECT_NAME@")
 
+# WebAssembly externals are linked into the final module. Disable shared libraries both for projects that honor
+# BUILD_SHARED_LIBS and for projects that explicitly pass SHARED to add_library().
+set(BUILD_SHARED_LIBS
+    OFF
+    CACHE BOOL "Build libraries as static archives" FORCE)
+
+function(add_library target)
+    set(args ${ARGN})
+
+    if(EMSCRIPTEN)
+        list(
+            FIND
+            args
+            SHARED
+            shared_index)
+        if(NOT
+           shared_index
+           EQUAL
+           -1)
+            list(REMOVE_ITEM args SHARED)
+            list(PREPEND args STATIC)
+        endif()
+    endif()
+
+    _add_library(${target} ${args})
+endfunction()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -79,16 +106,15 @@ target_link_options(
     -sEXPORTED_RUNTIME_METHODS=["FS"]
     -sINITIAL_MEMORY=@MEMORY_SIZE@MB
     -sEXPORT_ES6=${PD4WEB_AS_ES6}
-    -sUSE_PTHREADS=1
     -sPTHREAD_POOL_SIZE=4
     -sWASMFS=1
     -sWASM=1
     -sWASM_WORKERS=1
     -sAUDIO_WORKLET=1
     -sUSE_WEBGL2=1
-    -sFAKE_DYLIBS=1
     -sMAX_WEBGL_VERSION=2
-    -sMIN_WEBGL_VERSION=2)
+    -sMIN_WEBGL_VERSION=2
+    -pthread)
 
 # Externals includes
 @LIBRARIES_SCRIPT_INCLUDE@
