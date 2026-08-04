@@ -1831,9 +1831,13 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
         return EM_TRUE;
     }
 
-    // Calculate position with zoom and margins
-    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
-    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
+    // Convert the viewport-relative pointer to the coordinate space Pd uses for the
+    // rendered canvas. For a graph-on-parent this is the graph's position in its
+    // owner, not the graph's source viewport margin.
+    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) +
+                     ud->canvas_marginx);
+    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) +
+                     ud->canvas_marginy);
 
     // According to the browser user-activation model, touchend (not touchstart) is
     // the activation-triggering event for touch pointers. Create and focus the input
@@ -1900,8 +1904,8 @@ EM_BOOL MouseListener(int eventType, const EmscriptenMouseEvent *e, void *userDa
     // Only capture browser data here. Pd state is exclusively accessed by the audio thread.
     double canvasX = JS_CanvasRelativeClientX(ud->canvasSel.c_str(), e->clientX);
     double canvasY = JS_CanvasRelativeClientY(ud->canvasSel.c_str(), e->clientY);
-    int xpos = round((canvasX / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINX);
-    int ypos = round((canvasY / ud->pd4web->GetPatchZoom()) + PD4WEB_PATCH_MARGINY);
+    int xpos = round((canvasX / ud->pd4web->GetPatchZoom()) + ud->canvas_marginx);
+    int ypos = round((canvasY / ud->pd4web->GetPatchZoom()) + ud->canvas_marginy);
 
     // Create event data on main thread
     MouseEventData mouseData;
@@ -2283,6 +2287,11 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         m_UserData->canvas_width = backingW;
         m_UserData->canvas_height = backingH;
+        // Top-level GOP coordinates crop the main canvas directly, so their source
+        // margins are also the renderer origin. A GOP subpatch is different: Pd has
+        // already converted every child object's position into the owner's coordinate
+        // space. In that case the graph's restore position is the origin that must be
+        // removed for both drawing and pointer hit testing.
         m_UserData->canvas_marginx = PD4WEB_PATCH_MARGINX;
         m_UserData->canvas_marginy = PD4WEB_PATCH_MARGINY;
         m_UserData->devicePixelRatio = dpr;
@@ -2295,6 +2304,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
             if (obj->g_pd && obj->g_pd->c_name &&
                 strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
                 t_canvas *child_canvas = (t_canvas *)obj;
+                if (child_canvas->gl_isgraph) {
+                    m_UserData->canvas_marginx = text_xpix((t_text *)child_canvas, canvas);
+                    m_UserData->canvas_marginy = text_ypix((t_text *)child_canvas, canvas);
+                }
                 for (t_gobj *childobj = child_canvas->gl_list; childobj;
                      childobj = childobj->g_next) {
                     gobj_vis(childobj, child_canvas, 1);
