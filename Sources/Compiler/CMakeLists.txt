@@ -83,24 +83,13 @@ cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2")
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(OPENSSL_MSVC_STATIC_RT TRUE)
+set(USE_HTTPS
+    "OpenSSL"
+    CACHE STRING "" FORCE)
+set(USE_SHA1
+    "CollisionDetection"
+    CACHE STRING "" FORCE)
 set(BUILD_SHARED_LIBS OFF)
-
-cpmaddpackage(
-    NAME
-    libgit2
-    GITHUB_REPOSITORY
-    libgit2/libgit2
-    VERSION
-    1.9.2
-    OPTIONS
-    "OPENSSL_USE_STATIC_LIBS ON"
-    "BUILD_SHARED_LIBS OFF"
-    "BUILD_CLI OFF"
-    "BUILD_TESTS OFF"
-    "BUILD_EXAMPLES OFF"
-    "REGEX_BACKEND builtin"
-    "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
-    "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 
 cpmaddpackage(
     URI
@@ -113,8 +102,34 @@ cpmaddpackage(
     "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
     "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 
-# cpp-httplib must be configured after OpenSSL::SSL and OpenSSL::Crypto are
-# available. Otherwise its optional OpenSSL probe silently disables SSLClient.
+cpmaddpackage(
+    NAME
+    libgit2
+    GITHUB_REPOSITORY
+    libgit2/libgit2
+    VERSION
+    1.9.6
+    OPTIONS
+    "OPENSSL_USE_STATIC_LIBS ON"
+    "BUILD_SHARED_LIBS OFF"
+    "BUILD_CLI OFF"
+    "BUILD_TESTS OFF"
+    "BUILD_EXAMPLES OFF"
+    "REGEX_BACKEND builtin"
+    "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
+    "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
+
+# libgit2 consumes the OpenSSL include paths as plain variables instead of
+# linking its object targets to OpenSSL::Crypto. Ensure OpenSSL's generated
+# headers exist before any of those objects are compiled.
+foreach(libgit2_target libgit2 libgit2package util ntlmclient)
+    if(TARGET ${libgit2_target})
+        add_dependencies(${libgit2_target} openssl-build)
+    endif()
+endforeach()
+
+# cpp-httplib must be configured after OpenSSL::SSL and OpenSSL::Crypto are available. Otherwise its optional OpenSSL
+# probe silently disables SSLClient.
 set(HTTPLIB_REQUIRE_OPENSSL ON)
 cpmaddpackage("gh:yhirose/cpp-httplib#v0.26.0")
 
