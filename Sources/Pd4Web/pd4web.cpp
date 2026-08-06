@@ -2145,6 +2145,107 @@ static void CacheKeyboardHitRegion(Pd4WebUserData *ud, t_gobj *obj, t_canvas *ca
 }
 
 // ─────────────────────────────────────
+static bool IsCanvasObject(const t_gobj *obj) {
+    return obj && pd_class(const_cast<t_pd *>(&obj->g_pd)) == canvas_class;
+}
+
+// ─────────────────────────────────────
+static bool MatchesCompiledViewport(const t_canvas *canvas) {
+    return canvas && canvas->gl_isgraph && PD4WEB_PATCH_WIDTH > 0 &&
+           PD4WEB_PATCH_HEIGHT > 0 && canvas->gl_pixwidth == PD4WEB_PATCH_WIDTH &&
+           canvas->gl_pixheight == PD4WEB_PATCH_HEIGHT &&
+           canvas->gl_xmargin == PD4WEB_PATCH_MARGINX &&
+           canvas->gl_ymargin == PD4WEB_PATCH_MARGINY;
+}
+
+// ─────────────────────────────────────
+static void FindCompiledViewport(t_canvas *canvas, int depth, t_canvas **match, int *matchDepth) {
+    if (!canvas || !match || !matchDepth) {
+        return;
+    }
+
+    // Prefer the shallowest exact match. This makes an outer GOP authoritative even
+    // when one of its recursively nested GOPs happens to have identical dimensions.
+    if (MatchesCompiledViewport(canvas) && depth < *matchDepth) {
+        *match = canvas;
+        *matchDepth = depth;
+    }
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        if (IsCanvasObject(obj)) {
+            FindCompiledViewport(reinterpret_cast<t_canvas *>(obj), depth + 1, match,
+                                 matchDepth);
+        }
+    }
+}
+
+// ─────────────────────────────────────
+static void NormalizeGraphHierarchy(t_canvas *canvas) {
+    if (!canvas) {
+        return;
+    }
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        if (!IsCanvasObject(obj)) {
+            continue;
+        }
+        t_canvas *child = reinterpret_cast<t_canvas *>(obj);
+        if (child->gl_isgraph) {
+            // pd4web has one browser surface and never renders a child canvas in a
+            // separate window. Pd's loaded window flag changes text_[xy]pix semantics
+            // and makes graph_vis() draw only an empty GOP frame, so normalize every
+            // nested GOP to the same parent-view state used by Pd's main patch window.
+            child->gl_havewindow = 0;
+        }
+        NormalizeGraphHierarchy(child);
+    }
+}
+
+// ─────────────────────────────────────
+static void ResolveViewportOrigin(t_canvas *root, int *x, int *y) {
+    if (!x || !y) {
+        return;
+    }
+    *x = PD4WEB_PATCH_MARGINX;
+    *y = PD4WEB_PATCH_MARGINY;
+
+    t_canvas *viewport = nullptr;
+    int viewportDepth = std::numeric_limits<int>::max();
+    FindCompiledViewport(root, 0, &viewport, &viewportDepth);
+    if (!viewport) {
+        return;
+    }
+
+    if (viewport->gl_owner) {
+        // text_[xy]pix recursively composes every GOP ancestor, yielding the exact
+        // coordinate space used by graph_click(), canvas_hitbox(), and GUI painting.
+        *x = text_xpix(&viewport->gl_obj, viewport->gl_owner);
+        *y = text_ypix(&viewport->gl_obj, viewport->gl_owner);
+    } else {
+        // A root GOP has no restore position. Its source rectangle is the crop origin.
+        *x = viewport->gl_xmargin * viewport->gl_zoom;
+        *y = viewport->gl_ymargin * viewport->gl_zoom;
+    }
+}
+
+// ─────────────────────────────────────
+static void CacheKeyboardHitRegions(Pd4WebUserData *ud, t_canvas *canvas) {
+    if (!ud || !canvas) {
+        return;
+    }
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        if (!gobj_shouldvis(obj, canvas)) {
+            continue;
+        }
+        CacheKeyboardHitRegion(ud, obj, canvas);
+        if (IsCanvasObject(obj)) {
+            t_canvas *child = reinterpret_cast<t_canvas *>(obj);
+            if (child->gl_isgraph && !child->gl_havewindow) {
+                CacheKeyboardHitRegions(ud, child);
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────
 /**
  * Opens a Pure Data patch with specified canvas and sound toggle elements.
  *
@@ -2239,6 +2340,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         int canvasWidth = PD4WEB_PATCH_WIDTH > 0 ? PD4WEB_PATCH_WIDTH : canvas->gl_pixwidth;
         int canvasHeight = PD4WEB_PATCH_HEIGHT > 0 ? PD4WEB_PATCH_HEIGHT : canvas->gl_pixheight;
 
+        // Do this before resolving origins, painting, or caching hitboxes. Otherwise a
+        // saved/open child window silently switches Pd to raw child coordinates.
+        NormalizeGraphHierarchy(canvas);
+
         std::string PatchCanvaSel = "#" + PatchCanvaId;
         const char *sel = PatchCanvaSel.c_str();
         m_UserData->canvasSel = PatchCanvaSel;
@@ -2287,34 +2392,21 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
 
         m_UserData->canvas_width = backingW;
         m_UserData->canvas_height = backingH;
-        // Top-level GOP coordinates crop the main canvas directly, so their source
-        // margins are also the renderer origin. A GOP subpatch is different: Pd has
-        // already converted every child object's position into the owner's coordinate
-        // space. In that case the graph's restore position is the origin that must be
-        // removed for both drawing and pointer hit testing.
-        m_UserData->canvas_marginx = PD4WEB_PATCH_MARGINX;
-        m_UserData->canvas_marginy = PD4WEB_PATCH_MARGINY;
+        // Use one origin for painting, mouse, touch, and virtual-keyboard hit testing.
+        // This is a source margin for a root GOP and an absolute, recursively composed
+        // restore position for a GOP subpatch.
+        ResolveViewportOrigin(canvas, &m_UserData->canvas_marginx,
+                              &m_UserData->canvas_marginy);
         m_UserData->devicePixelRatio = dpr;
+        m_UserData->keyboardHitRegions.clear();
 
         for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
             gobj_vis(obj, canvas, 1);
-            CacheKeyboardHitRegion(m_UserData.get(), obj, canvas);
-
-            // pd4web guarantees that there will be only one main canvas per patch
-            if (obj->g_pd && obj->g_pd->c_name &&
-                strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
-                t_canvas *child_canvas = (t_canvas *)obj;
-                if (child_canvas->gl_isgraph) {
-                    m_UserData->canvas_marginx = text_xpix((t_text *)child_canvas, canvas);
-                    m_UserData->canvas_marginy = text_ypix((t_text *)child_canvas, canvas);
-                }
-                for (t_gobj *childobj = child_canvas->gl_list; childobj;
-                     childobj = childobj->g_next) {
-                    gobj_vis(childobj, child_canvas, 1);
-                    CacheKeyboardHitRegion(m_UserData.get(), childobj, child_canvas);
-                }
-            }
         }
+        // graph_vis() already paints GOP descendants recursively. Walk that same visible
+        // hierarchy only for immutable browser-side hit regions; repainting children here
+        // would duplicate layers and still stop after one level.
+        CacheKeyboardHitRegions(m_UserData.get(), canvas);
 
         m_UserData->mousedown = false;
         m_UserData->obj = nullptr;
@@ -2450,26 +2542,33 @@ void RenderComments(Pd4WebUserData *ud, t_gobj *obj, t_glist *glist) {
 }
 
 // ─────────────────────────────────────
+static void RenderCanvasComments(Pd4WebUserData *ud, t_canvas *canvas) {
+    if (!ud || !canvas) {
+        return;
+    }
+    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
+        if (!gobj_shouldvis(obj, canvas)) {
+            continue;
+        }
+        if (obj->g_pd && obj->g_pd->c_name &&
+            strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
+            RenderComments(ud, obj, canvas);
+        } else if (IsCanvasObject(obj)) {
+            t_canvas *child = reinterpret_cast<t_canvas *>(obj);
+            if (child->gl_isgraph && !child->gl_havewindow) {
+                RenderCanvasComments(ud, child);
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────
 void GetPatchComments(Pd4WebUserData *ud) {
     t_canvas *canvas = pd_getcanvaslist();
     if (!canvas) {
         return;
     }
-
-    for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
-        if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
-            RenderComments(ud, obj, canvas);
-        }
-        if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "canvas") == 0) {
-            t_canvas *child_canvas = (t_canvas *)obj;
-            for (t_gobj *childobj = child_canvas->gl_list; childobj; childobj = childobj->g_next) {
-                if (childobj->g_pd && childobj->g_pd->c_name &&
-                    strcmp(childobj->g_pd->c_name->s_name, "text") == 0) {
-                    RenderComments(ud, childobj, child_canvas);
-                }
-            }
-        }
-    }
+    RenderCanvasComments(ud, canvas);
 }
 
 // ╭─────────────────────────────────────╮

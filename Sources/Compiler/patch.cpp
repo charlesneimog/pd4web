@@ -47,9 +47,20 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
         return true;
     }
 
+    // Keep viewport ancestry separate from GUI replacement eligibility. Any GOP
+    // ancestor prevents an inner GOP from becoming the main viewport, but only GUI
+    // objects directly owned by the first (outermost) GOP may be rewritten to l.*.
+    bool insideGraph = false;
+    int graphDepth = 0;
+    for (const bool ancestorIsGraph : p->CanvasGraphStack) {
+        insideGraph = insideGraph || ancestorIsGraph;
+        graphDepth += ancestorIsGraph ? 1 : 0;
+    }
+    const bool directlyInsideMainGraph = !p->CanvasGraphStack.empty() &&
+                                         p->CanvasGraphStack.back() && graphDepth == 1;
+
     if (Line[0] == "#X") {
         m_inArray = false;
-        const bool insideGraph = !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back();
         if (Line[1] == "restore") {
             pl.Type = PatchLine::RESTORE;
             if (!p->CanvasGraphStack.empty()) {
@@ -60,7 +71,7 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
             pl.Type = PatchLine::DECLARE;
             processDeclareClass(p, pl);
         } else if (Line[1] == "obj") {
-            pl.InsideGraph = insideGraph;
+            pl.InsideGraph = directlyInsideMainGraph;
             processObjClass(p, pl);
             pl.Type = PatchLine::OBJ;
         } else if (Line[1] == "msg") {
@@ -75,15 +86,15 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
             pl.Type = PatchLine::COORDS;
         } else if (Line[1] == "floatatom") {
             pl.Type = PatchLine::FLOATATOM;
-            pl.InsideGraph = insideGraph;
+            pl.InsideGraph = directlyInsideMainGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "symbolatom") {
             pl.Type = PatchLine::SYMBOLATOM;
-            pl.InsideGraph = insideGraph;
+            pl.InsideGraph = directlyInsideMainGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "listbox") {
             pl.Type = PatchLine::LISTATOM;
-            pl.InsideGraph = insideGraph;
+            pl.InsideGraph = directlyInsideMainGraph;
             processCanvasAtoms(p, pl);
         } else if (Line[1] == "f") {
             pl.Type = PatchLine::FLOAT;
@@ -125,35 +136,35 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
                     }
                     break;
                 }
-                if (nestedCanvasDepth == 0 && L.Tokens[0] == "#X" && L.Tokens[1] == "coords" &&
-                    p->CanvasLevel <= 1) {
+                if (nestedCanvasDepth == 0 && L.Tokens[0] == "#X" && L.Tokens[1] == "coords") {
                     if (L.Tokens.size() > 7) {
-                        bool isVisibleGraph = true;
-                        if (p->CanvasLevel == 0) {
-                            try {
-                                isVisibleGraph = L.Tokens.size() > 8 && std::stoi(L.Tokens[8]) != 0;
-                            } catch (const std::exception &) {
-                                isVisibleGraph = false;
-                            }
+                        bool isVisibleGraph = false;
+                        try {
+                            isVisibleGraph = L.Tokens.size() > 8 && std::stoi(L.Tokens[8]) != 0;
+                        } catch (const std::exception &) {
+                            isVisibleGraph = false;
                         }
                         if (!isVisibleGraph) {
                             j++;
                             continue;
                         }
-                        p->GraphCount++;
                         canvasIsGraph = true;
-                        try {
-                            p->Width = std::stoi(L.Tokens[6]);
-                            p->Height = std::stoi(L.Tokens[7]);
-                            // Graph-on-parent coordinates after the visibility flag are the
-                            // viewport origin inside the child canvas.  The following restore
-                            // coordinates place that graph on its parent and are not a crop
-                            // offset.
-                            p->MarginX = L.Tokens.size() > 9 ? std::stoi(L.Tokens[9]) : 0;
-                            p->MarginY = L.Tokens.size() > 10 ? std::stoi(L.Tokens[10]) : 0;
-                        } catch (const std::exception &) {
-                            print("Invalid coords values in line: " + L.Line,
-                                  Pd4WebLogLevel::PD4WEB_WARNING);
+
+                        // The web viewport is either the root GOP or one direct GOP child of
+                        // the root. Deeper GOPs are contents of that viewport, not competing
+                        // viewport definitions. Likewise, an inner GOP must not replace an
+                        // already selected root GOP.
+                        if (!insideGraph && p->CanvasLevel <= 1) {
+                            p->GraphCount++;
+                            try {
+                                p->Width = std::stoi(L.Tokens[6]);
+                                p->Height = std::stoi(L.Tokens[7]);
+                                p->MarginX = L.Tokens.size() > 9 ? std::stoi(L.Tokens[9]) : 0;
+                                p->MarginY = L.Tokens.size() > 10 ? std::stoi(L.Tokens[10]) : 0;
+                            } catch (const std::exception &) {
+                                print("Invalid coords values in line: " + L.Line,
+                                      Pd4WebLogLevel::PD4WEB_WARNING);
+                            }
                         }
                     } else {
                         print("Malformed coords line: " + L.Line, Pd4WebLogLevel::PD4WEB_WARNING);
@@ -763,7 +774,13 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     PD4WEB_LOGGER();
     std::string Obj = getObjName(pl.Tokens[4]);
     std::string Lib = getObjLib(pl.Tokens[4]);
-    if (!p->CanvasGraphStack.empty() && p->CanvasGraphStack.back()) {
+    int graphDepth = 0;
+    for (const bool ancestorIsGraph : p->CanvasGraphStack) {
+        graphDepth += ancestorIsGraph ? 1 : 0;
+    }
+    const bool directlyInsideMainGraph = !p->CanvasGraphStack.empty() &&
+                                         p->CanvasGraphStack.back() && graphDepth == 1;
+    if (directlyInsideMainGraph) {
         print("Processing object '" + Obj + "'. Inside Graph!", Pd4WebLogLevel::PD4WEB_LOG2);
     } else {
         print("Processing object '" + Obj + "'", Pd4WebLogLevel::PD4WEB_LOG2);
