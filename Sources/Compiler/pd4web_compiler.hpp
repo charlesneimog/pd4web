@@ -245,6 +245,7 @@ class Pd4Web {
 
     void serverPatch(bool toggle, bool detached, fs::path folderToServer);
     void checkVersion(std::string certPath);
+    bool checkPythonVersion();
 
     // Variables
   private:

@@ -153,6 +153,10 @@ bool Pd4Web::init() {
     print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
 
 #endif
+    if (!checkPythonVersion()) {
+        return false;
+    }
+
     std::string certPath = getCertFile();
     checkVersion(certPath);
 

@@ -15,6 +15,8 @@
 #include <system_error>
 #include <vector>
 
+#define MIN_PYTHON_VERSION 12
+
 #if defined(_WIN32)
 #include <Windows.h>
 #include <wincrypt.h>
@@ -23,6 +25,43 @@
 
 namespace bp = boost::process::v2;
 namespace asio = boost::asio;
+
+// ─────────────────────────────────────
+bool Pd4Web::checkPythonVersion() {
+#if defined(_WIN32)
+    const std::string python = m_PythonWindows.string();
+#else
+    const std::string python = "python3";
+#endif
+
+    if (python.empty()) {
+        print("Python interpreter was not found. Python 3." +
+                  std::to_string(MIN_PYTHON_VERSION) + " or newer is required.",
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    const std::string versionCheck =
+        "import sys; raise SystemExit(0 if sys.version_info.major > 2 and "
+        "(sys.version_info.major > 3 or sys.version_info.minor >= " +
+        std::to_string(MIN_PYTHON_VERSION) + ") else 1)";
+    std::vector<std::string> args = {"-c", versionCheck};
+
+    try {
+        if (execProcess(python, args) == 0) {
+            return true;
+        }
+    } catch (const std::exception &error) {
+        print("Failed to run Python interpreter: " + std::string(error.what()),
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    print("Python 3." + std::to_string(MIN_PYTHON_VERSION) +
+              " or newer is required.",
+          Pd4WebLogLevel::PD4WEB_ERROR);
+    return false;
+}
 
 // ─────────────────────────────────────
 void Pd4Web::printVersion() {
