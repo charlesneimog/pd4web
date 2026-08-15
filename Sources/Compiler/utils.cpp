@@ -15,8 +15,6 @@
 #include <system_error>
 #include <vector>
 
-#define MIN_PYTHON_VERSION 12
-
 #if defined(_WIN32)
 #include <Windows.h>
 #include <wincrypt.h>
@@ -28,15 +26,26 @@ namespace asio = boost::asio;
 
 // ─────────────────────────────────────
 bool Pd4Web::checkPythonVersion() {
+    std::vector<std::string> pythonInterpreters;
+
 #if defined(_WIN32)
-    const std::string python = m_PythonWindows.string();
-#else
-    const std::string python = "python3";
+    if (!m_PythonWindows.empty()) {
+        pythonInterpreters.push_back(m_PythonWindows.string());
+    }
 #endif
 
-    if (python.empty()) {
-        print("Python interpreter was not found. Python 3." +
-                  std::to_string(MIN_PYTHON_VERSION) + " or newer is required.",
+    static constexpr std::array<const char *, 5> pythonNames = {
+        "python3", "python3.12", "python3.13", "python3.14", "python3.15"};
+    for (const char *pythonName : pythonNames) {
+        const auto pythonPath = bp::environment::find_executable(pythonName);
+        if (!pythonPath.empty()) {
+            pythonInterpreters.push_back(pythonPath.string());
+        }
+    }
+
+    if (pythonInterpreters.empty()) {
+        print("Python interpreter was not found. Python 3." + std::to_string(MIN_PYTHON_VERSION) +
+                  " or newer is required.",
               Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
@@ -45,20 +54,19 @@ bool Pd4Web::checkPythonVersion() {
         "import sys; raise SystemExit(0 if sys.version_info.major > 2 and "
         "(sys.version_info.major > 3 or sys.version_info.minor >= " +
         std::to_string(MIN_PYTHON_VERSION) + ") else 1)";
-    std::vector<std::string> args = {"-c", versionCheck};
 
-    try {
-        if (execProcess(python, args) == 0) {
-            return true;
+    for (const auto &python : pythonInterpreters) {
+        std::vector<std::string> args = {"-c", versionCheck};
+        try {
+            if (execProcess(python, args) == 0) {
+                return true;
+            }
+        } catch (const std::exception &) {
+            // Try the next installed Python interpreter.
         }
-    } catch (const std::exception &error) {
-        print("Failed to run Python interpreter: " + std::string(error.what()),
-              Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
     }
 
-    print("Python 3." + std::to_string(MIN_PYTHON_VERSION) +
-              " or newer is required.",
+    print("Python 3." + std::to_string(MIN_PYTHON_VERSION) + " or newer is required.",
           Pd4WebLogLevel::PD4WEB_ERROR);
     return false;
 }

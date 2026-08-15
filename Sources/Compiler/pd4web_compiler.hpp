@@ -34,6 +34,9 @@ const TSLanguage *tree_sitter_c(void);
 #define PD4WEB_VERSION_MINOR 3
 #define PD4WEB_VERSION_PATCH "0r3"
 
+// use minimal version 3.12 of python
+#define MIN_PYTHON_VERSION 12
+
 #define PUREDATA_VERSION "0.56-5"
 #define EMSDK_VERSION "6.0.4"
 #define PYTHON_WINGET_VERSION "Python.Python.3.14"
