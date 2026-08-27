@@ -60,12 +60,19 @@ pd_add_datafile(
     DESTINATION
     "Pd4Web/bin")
 
+set_target_properties(
+    pd4web.compiler
+    PROPERTIES C_VISIBILITY_PRESET hidden
+               CXX_VISIBILITY_PRESET hidden
+               VISIBILITY_INLINES_HIDDEN YES)
+
 if(UNIX AND NOT APPLE)
     target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
     target_link_options(pd4web.compiler PRIVATE -Wl,--gc-sections)
 elseif(APPLE)
     target_compile_options(pd4web.compiler PRIVATE -ffunction-sections -fdata-sections)
     target_link_options(pd4web.compiler PRIVATE -Wl,-dead_strip)
+
 elseif(MSVC)
     target_compile_options(pd4web.compiler PRIVATE /Gy)
     target_link_options(
