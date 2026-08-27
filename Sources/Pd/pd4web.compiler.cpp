@@ -6,6 +6,14 @@
 #define PDOBJECT 1
 #include <pd4web_compiler.hpp>
 
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define PD4WEB_EXPORT extern "C" __declspec(dllexport)
+#elif defined(__GNUC__) || defined(__clang__)
+#define PD4WEB_EXPORT extern "C" __attribute__((visibility("default")))
+#else
+#define PD4WEB_EXPORT extern "C"
+#endif
+
 static t_class *pd4web_class;
 
 // ─────────────────────────────────────
@@ -240,7 +248,7 @@ static void pd4web_free(Pd4WebObj *x) {
 }
 
 // ─────────────────────────────────────
-extern "C" void setup_pd4web0x2ecompiler(void) {
+PD4WEB_EXPORT void setup_pd4web0x2ecompiler(void) {
 
     post("[pd4web] by Charles K. Neimog, v%d.%d.%s", PD4WEB_VERSION_MAJOR, PD4WEB_VERSION_MINOR,
          PD4WEB_VERSION_PATCH);
