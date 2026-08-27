@@ -3,10 +3,9 @@ project(pd4web)
 
 # ──────────────────────────────────────
 set(PDCMAKE_FILE ${CMAKE_BINARY_DIR}/pd.cmake)
-set(PDCMAKE_VERSION "v0.2.13")
+set(PDCMAKE_VERSION "v0.2.18")
 if(NOT EXISTS "${PDCMAKE_FILE}")
-    file(DOWNLOAD "https://raw.githubusercontent.com/charlesneimog/pd.cmake/refs/heads/flags-test/pd.cmake"
-         ${PDCMAKE_FILE})
+    file(DOWNLOAD "https://raw.githubusercontent.com/pure-data/pd.cmake/refs/tags/v2.0.18/pd.cmake" ${PDCMAKE_FILE})
 endif()
 
 include("${PDCMAKE_FILE}")

@@ -25,11 +25,21 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, macos-26-intel, macos-latest, windows-latest]
+                include:
+                    - os: ubuntu-latest
+                    - os: macos-26-intel
+                      macos_architecture: x86_64
+                      pd_cpu: amd64
+                      macos_deployment_target: "10.15"
+                    - os: macos-latest
+                      macos_architecture: arm64
+                      pd_cpu: arm64
+                      macos_deployment_target: "11.0"
+                    - os: windows-latest
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
               with:
                   submodules: recursive
                   fetch-depth: 0
@@ -37,19 +47,17 @@ jobs:
             # Cache build deps and compiler caches
             - name: Cache CMake and dependencies
               id: build-cache
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: |
                       build/_deps
-                      build/CMakeCache.txt
-                      build/CMakeFiles
                       ~/.ccache
                       ~/.cache/sccache
-                  key: build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
                   restore-keys: |
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv21-${{ matrix.os }}-${{ runner.arch }}-
-            - uses: actions/setup-python@v5
+                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-
+            - uses: actions/setup-python@v6
               with:
                   python-version: "3.11"
 
@@ -127,18 +135,38 @@ jobs:
             - name: Set macOS deployment target
               if: startsWith(matrix.os, 'macos')
               run: |
-                  if [[ "${{ matrix.os }}" == "macos-26-intel" ]]; then
-                      echo "MACOSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
-                      echo "CMAKE_OSX_DEPLOYMENT_TARGET=10.15" >> $GITHUB_ENV
-                  else
-                      echo "MACOSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
-                      echo "CMAKE_OSX_DEPLOYMENT_TARGET=11.0" >> $GITHUB_ENV
-                  fi
+                  echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "$GITHUB_ENV"
+                  echo "CMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "$GITHUB_ENV"
+                  echo "CMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "$GITHUB_ENV"
+                  echo "CMAKE_ARGS=$CMAKE_ARGS -DCMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "$GITHUB_ENV"
             - name: Build wheels
               run: |
-                  python -c "import os; os.remove('./build/pd.cmake') if os.path.exists('./build/pd.cmake') else None"
+                  python -c "import pathlib, shutil; pathlib.Path('build/CMakeCache.txt').unlink(missing_ok=True); pathlib.Path('build/pd.cmake').unlink(missing_ok=True); shutil.rmtree('build/CMakeFiles', ignore_errors=True)"
                   python -m pip install build --break-system-packages
                   python -m build --wheel
+            - name: Verify macOS PureData object architecture
+              if: startsWith(matrix.os, 'macos')
+              shell: bash
+              run: |
+                  object="build/Sources/Pd/pd4web.compiler.darwin-${{ matrix.pd_cpu }}-32.so"
+                  if [[ ! -f "$object" ]]; then
+                      echo "Expected PureData object was not built: $object" >&2
+                      find build/Sources/Pd -maxdepth 1 -type f -name 'pd4web.compiler.darwin-*.so' -print
+                      exit 1
+                  fi
+
+                  unexpected="$(find build/Sources/Pd -maxdepth 1 -type f -name 'pd4web.compiler.darwin-*.so' ! -name "$(basename "$object")" -print)"
+                  if [[ -n "$unexpected" ]]; then
+                      echo "Unexpected PureData object(s) were built:" >&2
+                      echo "$unexpected" >&2
+                      exit 1
+                  fi
+
+                  object_architectures="$(lipo -archs "$object")"
+                  if [[ "$object_architectures" != "${{ matrix.macos_architecture }}" ]]; then
+                      echo "Expected $object to contain only ${{ matrix.macos_architecture }}, got: $object_architectures" >&2
+                      exit 1
+                  fi
             - name: Show ccache stats (macOS/Linux)
               if: runner.os != 'Windows'
               run: ccache -s
@@ -155,16 +183,18 @@ jobs:
                   auditwheel repair dist/*.whl -w dist/
                   rm dist/*-linux_*.whl
             - name: Upload PureData Object
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: pd4web-object-${{ matrix.os }}
-                  path: pd4web
+                  path: GetNinjaBinary
+                  if-no-files-found: error
 
             - name: Upload Python Module
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v7
               with:
                   name: pypd4web-${{ matrix.os }}
                   path: dist/*.whl
+                  if-no-files-found: error
 
     publish-pypi:
         if: ${{ github.event.inputs.publish_pypi == 'true' }}
@@ -174,14 +204,14 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Download wheels
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v7
               with:
                   pattern: pypd4web-*
                   merge-multiple: true
                   path: dist
 
             - name: Download puredata
-              uses: actions/download-artifact@v4
+              uses: actions/download-artifact@v7
               with:
                   pattern: pd4web-object-*
                   merge-multiple: true
