@@ -26,20 +26,53 @@ namespace asio = boost::asio;
 
 // ─────────────────────────────────────
 bool Pd4Web::checkPythonVersion() {
-    std::vector<std::string> pythonInterpreters;
+    std::vector<std::filesystem::path> pythonInterpreters;
+    auto addPython = [&](const std::filesystem::path &path) {
+        if (path.empty()) {
+            return;
+        }
+
+        std::error_code ec;
+        if (!std::filesystem::exists(path, ec) || ec) {
+            return;
+        }
+
+        // Resolve symlinks / relative components when possible.
+        std::filesystem::path resolved = std::filesystem::canonical(path, ec);
+        if (ec) {
+            ec.clear();
+            resolved = std::filesystem::absolute(path, ec);
+
+            if (ec) {
+                resolved = path;
+            }
+        }
+
+        // Avoid duplicate entries.
+        if (std::find(pythonInterpreters.begin(), pythonInterpreters.end(), resolved) ==
+            pythonInterpreters.end()) {
+            pythonInterpreters.push_back(resolved);
+        }
+    };
 
 #if defined(_WIN32)
     if (!m_PythonWindows.empty()) {
-        pythonInterpreters.push_back(m_PythonWindows.string());
+        addPython(m_PythonWindows);
     }
 #endif
 
     static constexpr std::array<const char *, 5> pythonNames = {
         "python3", "python3.12", "python3.13", "python3.14", "python3.15"};
+
     for (const char *pythonName : pythonNames) {
-        const auto pythonPath = bp::environment::find_executable(pythonName);
-        if (!pythonPath.empty()) {
-            pythonInterpreters.push_back(pythonPath.string());
+        try {
+            const auto pythonPath = bp::environment::find_executable(pythonName);
+
+            if (!pythonPath.empty()) {
+                addPython(std::filesystem::path(pythonPath.string()));
+            }
+        } catch (const std::exception &) {
+            // Ignore lookup failure and try the next name.
         }
     }
 
@@ -47,27 +80,35 @@ bool Pd4Web::checkPythonVersion() {
         print("Python interpreter was not found. Python 3." + std::to_string(MIN_PYTHON_VERSION) +
                   " or newer is required.",
               Pd4WebLogLevel::PD4WEB_ERROR);
+
         return false;
     }
 
-    const std::string versionCheck =
-        "import sys; raise SystemExit(0 if sys.version_info.major > 2 and "
-        "(sys.version_info.major > 3 or sys.version_info.minor >= " +
-        std::to_string(MIN_PYTHON_VERSION) + ") else 1)";
+    const std::string versionCheck = "import sys; "
+                                     "raise SystemExit("
+                                     "0 if sys.version_info >= (3, " +
+                                     std::to_string(MIN_PYTHON_VERSION) +
+                                     ") else 1"
+                                     ")";
 
-    for (const auto &python : pythonInterpreters) {
+    for (const auto &pythonPath : pythonInterpreters) {
+        const std::string python = pythonPath.string();
+
         std::vector<std::string> args = {"-c", versionCheck};
+
         try {
             if (execProcess(python, args) == 0) {
                 return true;
             }
-        } catch (const std::exception &) {
-            // Try the next installed Python interpreter.
+        } catch (const std::exception &e) {
+            print("Failed to execute Python interpreter '" + python + "': " + e.what(),
+                  Pd4WebLogLevel::PD4WEB_WARNING);
         }
     }
 
     print("Python 3." + std::to_string(MIN_PYTHON_VERSION) + " or newer is required.",
           Pd4WebLogLevel::PD4WEB_ERROR);
+
     return false;
 }
 
