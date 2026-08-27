@@ -198,7 +198,7 @@ bool Pd4Web::init() {
     }
 
     // ThorVG (the renderer API is pinned to 1.1.0).
-    ok = gitClone("https://github.com/thorvg/thorvg.git", "thorvg", "v1.1.0");
+    ok = gitClone("https://github.com/thorvg/thorvg.git", "thorvg", "v1.1.1");
 
     if (!ok) {
         print("Failed to clone ThorVG", Pd4WebLogLevel::PD4WEB_ERROR);
