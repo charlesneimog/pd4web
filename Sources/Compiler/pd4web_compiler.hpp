@@ -32,13 +32,17 @@ const TSLanguage *tree_sitter_c(void);
 
 #define PD4WEB_VERSION_MAJOR 3
 #define PD4WEB_VERSION_MINOR 3
-#define PD4WEB_VERSION_PATCH "0r3"
+#define PD4WEB_VERSION_PATCH "2"
 
 // use minimal version 3.12 of python
 #define MIN_PYTHON_VERSION 12
 
+#define PDLUA_VERSION "fb1268c43ac59bf65c716ef79c205a38fa6b93fb"
+#define PDCMAKE_VERSION "v2.0.18"
+#define THORVG_VERSION "v1.1.1"
 #define PUREDATA_VERSION "0.56-5"
-#define EMSDK_VERSION "6.0.4"
+#define EMSDK_VERSION "6.0.8"
+
 #define PYTHON_WINGET_VERSION "Python.Python.3.14"
 
 using json = nlohmann::json;

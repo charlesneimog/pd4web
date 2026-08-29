@@ -184,22 +184,21 @@ bool Pd4Web::init() {
     }
 
     // clone pd-lua
-    ok = gitClone("https://github.com/EL-LOCUS-SOLUS/pd-lua.git", "pdlua",
-                  "fb1268c43ac59bf65c716ef79c205a38fa6b93fb");
+    ok = gitClone("https://github.com/EL-LOCUS-SOLUS/pd-lua.git", "pdlua", PDLUA_VERSION);
     if (!ok) {
         print("Failed to clone pd-lua", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     // clone pd.cmake
-    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", "v2.0.16");
+    ok = gitClone("https://github.com/pure-data/pd.cmake.git", "pd.cmake", PDCMAKE_VERSION);
     if (!ok) {
         print("Failed to clone pd.cmake", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
     // ThorVG (the renderer API is pinned to 1.1.0).
-    ok = gitClone("https://github.com/thorvg/thorvg.git", "thorvg", "v1.1.1");
+    ok = gitClone("https://github.com/thorvg/thorvg.git", "thorvg", THORVG_VERSION);
 
     if (!ok) {
         print("Failed to clone ThorVG", Pd4WebLogLevel::PD4WEB_ERROR);
