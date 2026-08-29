@@ -1,6 +1,6 @@
 [project]
 name = "pd4web"
-version = "3.3.1"
+version = "3.3.2"
 description = "pd4web is a tool that compiles PureData patches with external objects for Wasm."
 authors = [{ name = "Charles K. Neimog", email = "charlesneimog@outlook.com" }]
 readme = "README.md"
@@ -19,7 +19,6 @@ cmake.args = [
   "-DPY_PD4WEB_BUILD=ON",
   "-DCMAKE_OSX_DEPLOYMENT_TARGET=10.15",
   "-DPD_OUTPUT_PATH=./pd4web",
-  "-DUSE_HTTPS=OpenSSL",
   "-DPD_LIB_DIR=./",
 ]
 

@@ -83,9 +83,21 @@ cpmaddpackage("gh:fktn-k/fkYAML#v0.4.2")
 set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 set(OPENSSL_MSVC_STATIC_RT TRUE)
+
+# SecureTransport reads certificates from the macOS system trust store. Keep
+# OpenSSL on Linux and Windows, where it is already used by released builds.
+if(APPLE)
+    set(PD4WEB_LIBGIT2_HTTPS_BACKEND "SecureTransport")
+elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(PD4WEB_LIBGIT2_HTTPS_BACKEND "OpenSSL")
+else()
+    message(FATAL_ERROR "Unsupported platform for the libgit2 HTTPS backend")
+endif()
+
 set(USE_HTTPS
-    "OpenSSL"
+    "${PD4WEB_LIBGIT2_HTTPS_BACKEND}"
     CACHE STRING "" FORCE)
+message(STATUS "pd4web libgit2 HTTPS backend: ${USE_HTTPS}")
 set(USE_SHA1
     "CollisionDetection"
     CACHE STRING "" FORCE)
@@ -119,14 +131,16 @@ cpmaddpackage(
     "CMAKE_OSX_DEPLOYMENT_TARGET=10.15"
     "CMAKE_OSX_ARCHITECTURES=x86_64;arm64")
 
-# libgit2 consumes the OpenSSL include paths as plain variables instead of
-# linking its object targets to OpenSSL::Crypto. Ensure OpenSSL's generated
-# headers exist before any of those objects are compiled.
-foreach(libgit2_target libgit2 libgit2package util ntlmclient)
-    if(TARGET ${libgit2_target})
-        add_dependencies(${libgit2_target} openssl-build)
-    endif()
-endforeach()
+# With the OpenSSL backend, libgit2 consumes the include paths as plain
+# variables instead of linking its object targets to OpenSSL::Crypto. Ensure
+# OpenSSL's generated headers exist before any of those objects are compiled.
+if(PD4WEB_LIBGIT2_HTTPS_BACKEND STREQUAL "OpenSSL")
+    foreach(libgit2_target libgit2 libgit2package util ntlmclient)
+        if(TARGET ${libgit2_target})
+            add_dependencies(${libgit2_target} openssl-build)
+        endif()
+    endforeach()
+endif()
 
 # cpp-httplib must be configured after OpenSSL::SSL and OpenSSL::Crypto are available. Otherwise its optional OpenSSL
 # probe silently disables SSLClient.
