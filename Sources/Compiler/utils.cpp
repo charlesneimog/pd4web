@@ -1,6 +1,7 @@
 #include "pd4web_compiler.hpp"
 
 #define BOOST_PROCESS_VERSION 2
+#include <algorithm>
 #include <array>
 #include <boost/asio.hpp>
 #include <boost/process.hpp>
@@ -27,6 +28,7 @@ namespace asio = boost::asio;
 // ─────────────────────────────────────
 bool Pd4Web::checkPythonVersion() {
     std::vector<std::filesystem::path> pythonInterpreters;
+    std::vector<std::filesystem::path> resolvedPythonInterpreters;
     auto addPython = [&](const std::filesystem::path &path) {
         if (path.empty()) {
             return;
@@ -48,23 +50,23 @@ bool Pd4Web::checkPythonVersion() {
             }
         }
 
-        // Avoid duplicate entries.
-        if (std::find(pythonInterpreters.begin(), pythonInterpreters.end(), resolved) ==
-            pythonInterpreters.end()) {
-            pythonInterpreters.push_back(resolved);
+        // Deduplicate by the real file while preserving the original path. Keeping a path such as
+        // /opt/homebrew/bin/python3 is important because its directory also contains the python3
+        // command used by Emscripten script shebangs.
+        if (std::find(resolvedPythonInterpreters.begin(), resolvedPythonInterpreters.end(),
+                      resolved) == resolvedPythonInterpreters.end()) {
+            resolvedPythonInterpreters.push_back(resolved);
+            pythonInterpreters.push_back(path);
         }
     };
 
 #if defined(_WIN32)
-    if (!m_PythonWindows.empty()) {
-        addPython(m_PythonWindows);
+    if (!m_PythonInterpreter.empty()) {
+        addPython(m_PythonInterpreter);
     }
 #endif
 
-    static constexpr std::array<const char *, 5> pythonNames = {
-        "python3", "python3.12", "python3.13", "python3.14", "python3.15"};
-
-    for (const char *pythonName : pythonNames) {
+    auto addPythonFromPath = [&](const std::string &pythonName) {
         try {
             const auto pythonPath = bp::environment::find_executable(pythonName);
 
@@ -72,9 +74,48 @@ bool Pd4Web::checkPythonVersion() {
                 addPython(std::filesystem::path(pythonPath.string()));
             }
         } catch (const std::exception &) {
-            // Ignore lookup failure and try the next name.
+            // Ignore lookup failure and continue searching.
+        }
+    };
+
+    addPythonFromPath("python3");
+
+    std::vector<std::string> versionedPythonNames;
+    for (int minor = 30; minor >= MIN_PYTHON_VERSION; --minor) {
+        versionedPythonNames.push_back("python3." + std::to_string(minor));
+    }
+
+#if defined(__APPLE__)
+    // GUI applications on macOS often do not inherit the user's shell PATH. Search the standard
+    // python.org, Homebrew, and MacPorts install locations as well.
+    static constexpr std::array<const char *, 3> pythonBinDirectories = {
+        "/opt/homebrew/bin", "/usr/local/bin", "/opt/local/bin"};
+    for (const char *directory : pythonBinDirectories) {
+        addPython(std::filesystem::path(directory) / "python3");
+    }
+
+    for (int minor = 30; minor >= MIN_PYTHON_VERSION; --minor) {
+        const std::string version = "3." + std::to_string(minor);
+        addPython(std::filesystem::path("/opt/homebrew/opt") / ("python@" + version) / "libexec" /
+                  "bin" / "python3");
+        addPython(std::filesystem::path("/usr/local/opt") / ("python@" + version) / "libexec" /
+                  "bin" / "python3");
+        addPython(std::filesystem::path("/Library/Frameworks/Python.framework/Versions") / version /
+                  "bin" / "python3");
+    }
+#endif
+
+    for (const auto &pythonName : versionedPythonNames) {
+        addPythonFromPath(pythonName);
+    }
+
+#if defined(__APPLE__)
+    for (const char *directory : pythonBinDirectories) {
+        for (const auto &pythonName : versionedPythonNames) {
+            addPython(std::filesystem::path(directory) / pythonName);
         }
     }
+#endif
 
     if (pythonInterpreters.empty()) {
         print("Python interpreter was not found. Python 3." + std::to_string(MIN_PYTHON_VERSION) +
@@ -84,12 +125,8 @@ bool Pd4Web::checkPythonVersion() {
         return false;
     }
 
-    const std::string versionCheck = "import sys; "
-                                     "raise SystemExit("
-                                     "0 if sys.version_info >= (3, " +
-                                     std::to_string(MIN_PYTHON_VERSION) +
-                                     ") else 1"
-                                     ")";
+    const std::string versionCheck = "import sys; raise SystemExit(0 if sys.version_info >= (3, " +
+                                     std::to_string(MIN_PYTHON_VERSION) + ") else 78)";
 
     for (const auto &pythonPath : pythonInterpreters) {
         const std::string python = pythonPath.string();
@@ -97,8 +134,16 @@ bool Pd4Web::checkPythonVersion() {
         std::vector<std::string> args = {"-c", versionCheck};
 
         try {
-            if (execProcess(python, args) == 0) {
+            const int result = execProcess(python, args);
+            if (result == 0) {
+                m_PythonInterpreter = pythonPath;
+                print("Using Python interpreter: " + python, Pd4WebLogLevel::PD4WEB_LOG2);
                 return true;
+            }
+            if (result == 78) {
+                print("Ignoring Python interpreter '" + python + "': Python 3." +
+                          std::to_string(MIN_PYTHON_VERSION) + " or newer is required.",
+                      Pd4WebLogLevel::PD4WEB_WARNING);
             }
         } catch (const std::exception &e) {
             print("Failed to execute Python interpreter '" + python + "': " + e.what(),
@@ -177,8 +222,8 @@ std::string Pd4Web::getCertFile() {
             }
         }
         if (certPath.empty()) {
-            // Check if m_PythonWindows is set before attempting installation
-            if (m_PythonWindows.empty()) {
+            // Check if the interpreter is set before attempting installation.
+            if (m_PythonInterpreter.empty()) {
                 print("Certificate not found, but Python path not initialized. "
                       "Skipping certifi installation. Please run pd4web init first.",
                       Pd4WebLogLevel::PD4WEB_WARNING);
@@ -193,7 +238,7 @@ std::string Pd4Web::getCertFile() {
             print("Certificate not found, installing certifi package for SSL certificates...",
                   Pd4WebLogLevel::PD4WEB_LOG2);
             std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
-            int pipResult = execProcess(m_PythonWindows.string(), pipInstallCmd);
+            int pipResult = execProcess(m_PythonInterpreter.string(), pipInstallCmd);
             if (pipResult != 0) {
                 print("Failed to install certifi package via pip. SSL connections may fail.",
                       Pd4WebLogLevel::PD4WEB_WARNING);
@@ -267,6 +312,21 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
     print(command + " " + oss.str());
 
 #if defined(__linux__) || defined(__APPLE__)
+    if (!m_PythonInterpreter.empty() && fs::exists(m_PythonInterpreter)) {
+        const std::string pythonExe = m_PythonInterpreter.string();
+        const std::string pythonDir = m_PythonInterpreter.parent_path().string();
+        const std::string oldPath = std::getenv("PATH") ? std::getenv("PATH") : "";
+        const std::string pathPrefix = pythonDir + ":";
+        const std::string pathEnv = oldPath == pythonDir || oldPath.starts_with(pathPrefix)
+                                        ? oldPath
+                                        : pythonDir + (oldPath.empty() ? "" : ":" + oldPath);
+
+        bp::environment::set("PATH", pathEnv);
+        bp::environment::set("PYTHON", pythonExe);
+        bp::environment::set("EMSDK_PY", pythonExe);
+        bp::environment::set("EMSDK_PYTHON", pythonExe);
+    }
+
     std::string certPath = getCertFile();
 
     if (!m_PrintCallback) {
@@ -342,8 +402,8 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
         resolvingCertPath = false;
     }
 
-    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows)) {
-        const fs::path pythonDir = m_PythonWindows.parent_path();
+    if (!m_PythonInterpreter.empty() && fs::exists(m_PythonInterpreter)) {
+        const fs::path pythonDir = m_PythonInterpreter.parent_path();
         const fs::path pythonScripts = pythonDir / "Scripts";
 
         const std::string oldPath = std::getenv("PATH") ? std::getenv("PATH") : "";
@@ -355,15 +415,17 @@ int Pd4Web::execProcess(const std::string &command, std::vector<std::string> &ar
             pathEnv += ";" + oldPath;
         }
 
-        const std::string pythonExe = m_PythonWindows.string();
+        const std::string pythonExe = m_PythonInterpreter.string();
         _putenv_s("PATH", pathEnv.c_str());
         _putenv_s("PYTHON", pythonExe.c_str());
         _putenv_s("EMSDK_PY", pythonExe.c_str());
+        _putenv_s("EMSDK_PYTHON", pythonExe.c_str());
 
         // Ensure the Win32 process environment used by CreateProcessA is updated too.
         SetEnvironmentVariableA("PATH", pathEnv.c_str());
         SetEnvironmentVariableA("PYTHON", pythonExe.c_str());
         SetEnvironmentVariableA("EMSDK_PY", pythonExe.c_str());
+        SetEnvironmentVariableA("EMSDK_PYTHON", pythonExe.c_str());
     }
 
     if (!certPath.empty()) {

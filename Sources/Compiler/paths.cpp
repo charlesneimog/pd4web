@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <system_error>
 #if defined(__APPLE__)
 #include <cerrno>
@@ -92,41 +93,50 @@ bool Pd4Web::checkAllPaths() {
         out << "LLVM_ROOT = r'" << (m_Pd4WebRoot / "emsdk" / "upstream" / "bin").string() << "'\n";
         out << "NODE_JS = r'" << m_NodeJs.string() << "'\n";
         out << "BINARYEN_ROOT = r'" << (m_Pd4WebRoot / "emsdk" / "upstream").string() << "'\n";
-#if defined(_WIN32)
-        out << "EMSDK_PY = r'" << m_PythonWindows.string() << "'\n";
-#endif
-
-#if defined(__APPLE__)
-        fs::path envemscripten = m_Pd4WebRoot / "emsdk" / "python";
-        // list all files inside envemscripten, them inside each folder, check if there is a
-        // bin/python3 or bin/python3.13, and if there is create a symlink to m_PythonWindows
-        fs::path emscriptenPython;
-        for (const auto &entry : fs::directory_iterator(envemscripten)) {
-            if (fs::is_directory(entry.path())) {
-                fs::path test1 = entry.path() / "bin" / "python3";
-                if (fs::exists(test1)) {
-                    emscriptenPython = entry.path() / "bin" / "python3.14";
-                }
-                fs::path test2 = entry.path() / "bin" / "python3.14";
-                if (fs::exists(test2)) {
-                    emscriptenPython = test2;
-                }
-            }
-        }
-
-        // if emscriptenPython is not empty, save it on EMSDK_PY
-        if (!emscriptenPython.empty()) {
-            out << "EMSDK_PY = r'" << emscriptenPython.string() << "'\n";
-        } else {
-            print("Failed to find Python for Emscripten, if you have it installed you can set it "
-                  "manually on " +
-                      envemscripten.string(),
-                  Pd4WebLogLevel::PD4WEB_WARNING);
-        }
-#endif
-
         out.close();
     }
+
+    // Keep existing Emscripten installations in sync as well. Older pd4web versions wrote the
+    // unsupported EMSDK_PY setting here, so replace either spelling with Emscripten's PYTHON key.
+    std::ifstream configInput(envemscripten);
+    if (!configInput) {
+        print("Failed to read Emscripten config: " + envemscripten.string(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    std::ostringstream updatedConfig;
+    const std::string pythonSetting = "PYTHON = r'" + m_PythonInterpreter.string() + "'";
+    bool wrotePythonSetting = false;
+    std::string configLine;
+    while (std::getline(configInput, configLine)) {
+        const size_t firstCharacter = configLine.find_first_not_of(" \t");
+        const bool isPythonSetting = firstCharacter != std::string::npos &&
+                                     (configLine.compare(firstCharacter, 8, "PYTHON =") == 0 ||
+                                      configLine.compare(firstCharacter, 10, "EMSDK_PY =") == 0);
+        if (isPythonSetting) {
+            if (!wrotePythonSetting) {
+                updatedConfig << pythonSetting << '\n';
+                wrotePythonSetting = true;
+            }
+            continue;
+        }
+        updatedConfig << configLine << '\n';
+    }
+    configInput.close();
+
+    if (!wrotePythonSetting) {
+        updatedConfig << pythonSetting << '\n';
+    }
+
+    std::ofstream configOutput(envemscripten, std::ios::trunc);
+    if (!configOutput) {
+        print("Failed to update Emscripten config: " + envemscripten.string(),
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+    configOutput << updatedConfig.str();
+    configOutput.close();
 
     return true;
 }
@@ -135,45 +145,29 @@ bool Pd4Web::checkAllPaths() {
 bool Pd4Web::cmdInstallEmsdk() {
     PD4WEB_LOGGER();
 
-#if defined(_WIN32)
     print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
     fs::path emsdkPy = m_Pd4WebRoot / "emsdk" / "emsdk.py";
-    std::vector<std::string> cmd;
-    int result = -1;
-
-    // Use explicit Python to avoid Windows Store/App Execution Alias resolution issues.
-    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows) && fs::exists(emsdkPy)) {
-        cmd = {emsdkPy.string(), "install", EMSDK_VERSION};
-        result = execProcess(m_PythonWindows.string(), cmd);
-    } else {
-        cmd = {"install", EMSDK_VERSION};
-        result = execProcess(m_EmsdkInstaller.string(), cmd);
+    if (m_PythonInterpreter.empty() || !fs::exists(m_PythonInterpreter) || !fs::exists(emsdkPy)) {
+        print("Cannot install emsdk without the validated Python interpreter and emsdk.py.",
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
     }
+
+    std::vector<std::string> cmd = {emsdkPy.string(), "install", EMSDK_VERSION};
+    int result = execProcess(m_PythonInterpreter.string(), cmd);
 
     if (result != 0) {
         print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
+#if defined(_WIN32)
     print("Installing Node.js, this take some time", Pd4WebLogLevel::PD4WEB_LOG2);
-    if (!m_PythonWindows.empty() && fs::exists(m_PythonWindows) && fs::exists(emsdkPy)) {
-        cmd = {emsdkPy.string(), "install", "node-22.16.0-64bit"};
-        result = execProcess(m_PythonWindows.string(), cmd);
-    } else {
-        cmd = {"install", "node-22.16.0-64bit"};
-        result = execProcess(m_EmsdkInstaller.string(), cmd);
-    }
+    cmd = {emsdkPy.string(), "install", "node-22.16.0-64bit"};
+    result = execProcess(m_PythonInterpreter.string(), cmd);
 
     if (result != 0) {
         print("Failed to install Node.js", Pd4WebLogLevel::PD4WEB_ERROR);
-        return false;
-    }
-#else
-    print("Installing emsdk, this can take a LONG some time.", Pd4WebLogLevel::PD4WEB_LOG2);
-    std::vector<std::string> cmd = {"install", EMSDK_VERSION};
-    int result = execProcess(m_EmsdkInstaller, cmd);
-    if (result != 0) {
-        print("Failed to install emsdk", Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 #endif

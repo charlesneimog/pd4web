@@ -98,9 +98,9 @@ bool Pd4Web::init() {
     fs::path pythonFsPath =
         fs::path(localAppData) / "Programs" / "Python" / pythonfolder / "python.exe";
 
-    m_PythonWindows = pythonFsPath;
+    m_PythonInterpreter = pythonFsPath;
 
-    if (!fs::exists(m_PythonWindows)) {
+    if (!fs::exists(m_PythonInterpreter)) {
         m_PythonWindowsNeedInstall = true;
         print("Installing Python First", Pd4WebLogLevel::PD4WEB_LOG2);
         char wingetPath[MAX_PATH];
@@ -126,9 +126,9 @@ bool Pd4Web::init() {
             return false;
         }
         print("Python installed successfully via winget.", Pd4WebLogLevel::PD4WEB_LOG2);
-        if (fs::exists(m_PythonWindows)) {
+        if (fs::exists(m_PythonInterpreter)) {
             std::vector<std::string> pipInstallCmd = {"-m", "pip", "install", "certifi"};
-            int pipResult = execProcess(m_PythonWindows.string(), pipInstallCmd);
+            int pipResult = execProcess(m_PythonInterpreter.string(), pipInstallCmd);
             if (pipResult != 0) {
                 print("Failed to install certifi package via pip. SSL connections may fail.",
                       Pd4WebLogLevel::PD4WEB_WARNING);
@@ -143,14 +143,15 @@ bool Pd4Web::init() {
         print("Python installation appears valid.", Pd4WebLogLevel::PD4WEB_LOG2);
     }
 
-    if (m_PythonWindows.empty()) {
+    if (m_PythonInterpreter.empty()) {
         print("Python interpreter path is empty after detection. Please install Python manually. "
               "Go to https://www.python.org/downloads/",
               Pd4WebLogLevel::PD4WEB_ERROR);
         return false;
     }
 
-    print("Python interpreter found at: " + m_PythonWindows.string(), Pd4WebLogLevel::PD4WEB_LOG2);
+    print("Python interpreter found at: " + m_PythonInterpreter.string(),
+          Pd4WebLogLevel::PD4WEB_LOG2);
 
 #endif
     if (!checkPythonVersion()) {
