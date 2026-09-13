@@ -22,7 +22,7 @@ Libraries:
       Source: GITHUB
       Developer: EL-LOCUS-SOLUS
       Repository: pd-saf
-      Version: b3649c0eb98042907a74502c52c91ec163d6fbf6
+      Version: 0fc3c8b7395159dc740fc5b1a0e81867ba3743b1
 
     # ─────────────── audience ───────────────
     - Name: audience
