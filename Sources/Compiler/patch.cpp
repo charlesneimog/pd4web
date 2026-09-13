@@ -7,12 +7,68 @@
 #include <string>
 #include <fstream>
 
+#include <lexbor/html/html.h>
+#include <lexbor/html/serialize.h>
+
+// ─────────────────────────────────────
+static lxb_status_t write_html(const lxb_char_t *data, size_t len, void *ctx) {
+    auto *out = static_cast<std::ofstream *>(ctx);
+    out->write(reinterpret_cast<const char *>(data), len);
+    return *out ? LXB_STATUS_OK : LXB_STATUS_ERROR;
+}
+
+// ─────────────────────────────────────
+bool Pd4Web::setHtmlTitle(const fs::path &path, const std::string &title) {
+    // Read file
+    std::ifstream input(path, std::ios::binary);
+    if (!input) {
+        return false;
+    }
+
+    std::string html((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
+    input.close();
+
+    // Parse
+    lxb_html_document_t *document = lxb_html_document_create();
+    if (!document) {
+        return false;
+    }
+
+    lxb_status_t status = lxb_html_document_parse(
+        document, reinterpret_cast<const lxb_char_t *>(html.data()), html.size());
+
+    if (status != LXB_STATUS_OK) {
+        lxb_html_document_destroy(document);
+        return false;
+    }
+
+    // Change <title>
+    status = lxb_html_document_title_set(
+        document, reinterpret_cast<const lxb_char_t *>(title.data()), title.size());
+
+    if (status != LXB_STATUS_OK) {
+        lxb_html_document_destroy(document);
+        return false;
+    }
+
+    // Write modified HTML
+    std::ofstream output(path, std::ios::binary | std::ios::trunc);
+    if (!output) {
+        lxb_html_document_destroy(document);
+        return false;
+    }
+
+    status = lxb_html_serialize_tree_cb(lxb_dom_interface_node(document), write_html, &output);
+    lxb_html_document_destroy(document);
+
+    return status == LXB_STATUS_OK;
+}
+
 // ─────────────────────────────────────
 bool Pd4Web::openPatch(std::shared_ptr<Patch> &p) {
     PD4WEB_LOGGER();
     std::ifstream file(p->PatchFile);
     if (!file) {
-        std::cerr << "Erro ao abrir o arquivo: " << p->PatchFile << std::endl;
         return false;
     }
 
@@ -56,8 +112,8 @@ bool Pd4Web::processLine(std::shared_ptr<Patch> &p, PatchLine &pl, int lineIndex
         insideGraph = insideGraph || ancestorIsGraph;
         graphDepth += ancestorIsGraph ? 1 : 0;
     }
-    const bool directlyInsideMainGraph = !p->CanvasGraphStack.empty() &&
-                                         p->CanvasGraphStack.back() && graphDepth == 1;
+    const bool directlyInsideMainGraph =
+        !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back() && graphDepth == 1;
 
     if (Line[0] == "#X") {
         m_inArray = false;
@@ -778,8 +834,8 @@ bool Pd4Web::processObjClass(std::shared_ptr<Patch> &p, PatchLine &pl) {
     for (const bool ancestorIsGraph : p->CanvasGraphStack) {
         graphDepth += ancestorIsGraph ? 1 : 0;
     }
-    const bool directlyInsideMainGraph = !p->CanvasGraphStack.empty() &&
-                                         p->CanvasGraphStack.back() && graphDepth == 1;
+    const bool directlyInsideMainGraph =
+        !p->CanvasGraphStack.empty() && p->CanvasGraphStack.back() && graphDepth == 1;
     if (directlyInsideMainGraph) {
         print("Processing object '" + Obj + "'. Inside Graph!", Pd4WebLogLevel::PD4WEB_LOG2);
     } else {
@@ -1161,8 +1217,9 @@ void Pd4Web::updateTemplate(std::shared_ptr<Patch> &p) {
             return;
         }
     } else {
-        fs::copy(p->Pd4WebFiles / "index.html", p->OutputFolder / "WebPatch" / "index.html",
-                 fs::copy_options::skip_existing);
+        const fs::path indexPath = p->OutputFolder / "WebPatch" / "index.html";
+        fs::copy(p->Pd4WebFiles / "index.html", indexPath, fs::copy_options::skip_existing);
+        setHtmlTitle(indexPath, p->ProjectName);
     }
 }
 

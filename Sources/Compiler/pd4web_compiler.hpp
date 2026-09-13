@@ -402,6 +402,9 @@ class Pd4Web {
     void copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir);
     void updateTemplate(std::shared_ptr<Patch> &p);
 
+    // html
+    bool setHtmlTitle(const fs::path &path, const std::string &title);
+
     // Utils
     bool cmdInstallEmsdk();
     fs::path getHomeDir();

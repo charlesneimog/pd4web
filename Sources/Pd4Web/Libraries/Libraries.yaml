@@ -14,15 +14,15 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-xlab
-      Version: 6c38f8602d9df02d6520287a830f9df9b45cbb6f
+      Version: 1ac80d0c77624992bb5903c0d32f54785e99213d
       RunConfigure: true
 
     # ─────────────── pd-saf ───────────────
     - Name: saf
       Source: GITHUB
-      Developer: charlesneimog
+      Developer: EL-LOCUS-SOLUS
       Repository: pd-saf
-      Version: 10f6ce5ed3476f732e2a47b5f911192acc7f774b
+      Version: b3649c0eb98042907a74502c52c91ec163d6fbf6
 
     # ─────────────── audience ───────────────
     - Name: audience
