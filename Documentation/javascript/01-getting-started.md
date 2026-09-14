@@ -34,6 +34,7 @@ Pd4Web.openPatch("index.pd", {
     renderGui: true,
     requestMidi: false,
     fps: 0,
+    hideInitError: false,
 });
 ```
 
@@ -47,3 +48,5 @@ Pd4Web.openPatch("index.pd", {
 * `renderGui` - Should `Pd4Web` render the GUI?
 * `requestMidi` - Should `Pd4Web` request MIDI access?
 * `fps` - The FPS of the patch. On `0` the browser will decide this.
+* `hideInitError` - When `soundToggleId` is not provided, pd4web warns that you must initialize `Pd4Web` using `Pd4Web.init()` from a click event. When set to `true`, this warning is hidden.
+

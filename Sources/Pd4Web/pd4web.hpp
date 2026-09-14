@@ -346,6 +346,7 @@ class Pd4Web {
     int m_ChannelCountOut = 0;
     float m_SampleRate = 48000.0f;
     bool m_UseMidi;
+    bool m_HideInitError = false;
 
     float m_PatchZoom = 1;
     bool m_RenderGui = true;

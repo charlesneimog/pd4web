@@ -63,3 +63,4 @@ Tests/Basic/internal/.build
 /site
 /pd4web
 /.build
+/GetNinjaBinary

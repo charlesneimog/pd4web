@@ -1834,10 +1834,8 @@ EM_BOOL TouchListener(int eventType, const EmscriptenTouchEvent *e, void *userDa
     // Convert the viewport-relative pointer to the coordinate space Pd uses for the
     // rendered canvas. For a graph-on-parent this is the graph's position in its
     // owner, not the graph's source viewport margin.
-    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) +
-                     ud->canvas_marginx);
-    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) +
-                     ud->canvas_marginy);
+    int xpos = round((e->touches[0].targetX / ud->pd4web->GetPatchZoom()) + ud->canvas_marginx);
+    int ypos = round((e->touches[0].targetY / ud->pd4web->GetPatchZoom()) + ud->canvas_marginy);
 
     // According to the browser user-activation model, touchend (not touchstart) is
     // the activation-triggering event for touch pointers. Create and focus the input
@@ -2095,6 +2093,9 @@ void Pd4Web::OpenPatchJS(const std::string &patchPath, emscripten::val options) 
         if (options.hasOwnProperty("fgColor")) {
             m_FgColor = options["fgColor"].as<std::string>();
         }
+        if (options.hasOwnProperty("hideInitError")) {
+            m_HideInitError = options["hideInitError"].as<bool>();
+        }
     }
 
     // Call internal OpenPatch
@@ -2151,11 +2152,10 @@ static bool IsCanvasObject(const t_gobj *obj) {
 
 // ─────────────────────────────────────
 static bool MatchesCompiledViewport(const t_canvas *canvas) {
-    return canvas && canvas->gl_isgraph && PD4WEB_PATCH_WIDTH > 0 &&
-           PD4WEB_PATCH_HEIGHT > 0 && canvas->gl_pixwidth == PD4WEB_PATCH_WIDTH &&
+    return canvas && canvas->gl_isgraph && PD4WEB_PATCH_WIDTH > 0 && PD4WEB_PATCH_HEIGHT > 0 &&
+           canvas->gl_pixwidth == PD4WEB_PATCH_WIDTH &&
            canvas->gl_pixheight == PD4WEB_PATCH_HEIGHT &&
-           canvas->gl_xmargin == PD4WEB_PATCH_MARGINX &&
-           canvas->gl_ymargin == PD4WEB_PATCH_MARGINY;
+           canvas->gl_xmargin == PD4WEB_PATCH_MARGINX && canvas->gl_ymargin == PD4WEB_PATCH_MARGINY;
 }
 
 // ─────────────────────────────────────
@@ -2172,8 +2172,7 @@ static void FindCompiledViewport(t_canvas *canvas, int depth, t_canvas **match, 
     }
     for (t_gobj *obj = canvas->gl_list; obj; obj = obj->g_next) {
         if (IsCanvasObject(obj)) {
-            FindCompiledViewport(reinterpret_cast<t_canvas *>(obj), depth + 1, match,
-                                 matchDepth);
+            FindCompiledViewport(reinterpret_cast<t_canvas *>(obj), depth + 1, match, matchDepth);
         }
     }
 }
@@ -2314,8 +2313,10 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         m_UserData->soundToggleSel = soundToggleId;
         emscripten_set_mousedown_callback(sel.c_str(), m_UserData.get(), EM_TRUE, MouseSoundToggle);
     } else {
-        emscripten_log(EM_LOG_WARN, "You don't assigned any sound toggle id, you need to run "
-                                    "Pd4Web.init() from a click event!");
+        if (!m_HideInitError) {
+            emscripten_log(EM_LOG_WARN, "You haven't assigned a sound toggle ID. You need to run "
+                                        "Pd4Web.init() from a click event!");
+        }
     }
 
     libpd_add_to_search_path("./Libs/");
@@ -2395,8 +2396,7 @@ void Pd4Web::OpenPatch(std::string PatchPath, std::string PatchCanvaId, std::str
         // Use one origin for painting, mouse, touch, and virtual-keyboard hit testing.
         // This is a source margin for a root GOP and an absolute, recursively composed
         // restore position for a GOP subpatch.
-        ResolveViewportOrigin(canvas, &m_UserData->canvas_marginx,
-                              &m_UserData->canvas_marginy);
+        ResolveViewportOrigin(canvas, &m_UserData->canvas_marginx, &m_UserData->canvas_marginy);
         m_UserData->devicePixelRatio = dpr;
         m_UserData->keyboardHitRegions.clear();
 
@@ -2550,8 +2550,7 @@ static void RenderCanvasComments(Pd4WebUserData *ud, t_canvas *canvas) {
         if (!gobj_shouldvis(obj, canvas)) {
             continue;
         }
-        if (obj->g_pd && obj->g_pd->c_name &&
-            strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
+        if (obj->g_pd && obj->g_pd->c_name && strcmp(obj->g_pd->c_name->s_name, "text") == 0) {
             RenderComments(ud, obj, canvas);
         } else if (IsCanvasObject(obj)) {
             t_canvas *child = reinterpret_cast<t_canvas *>(obj);
