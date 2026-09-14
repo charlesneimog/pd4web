@@ -80,6 +80,9 @@ features = [
 logo_dark_mode = "assets/favicon.svg"
 logo_light_mode = "assets/favicon.svg"
 
+[project.plugins.minify]
+minify_html = true
+
 # Palette (converted)
 [[project.theme.palette]]
 media = "(prefers-color-scheme)"

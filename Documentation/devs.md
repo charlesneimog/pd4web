@@ -12,7 +12,7 @@
 </iframe>
 
 
-## <h2 align="center"> **pd4web**: Adding Support to Externals </h2>
+## **pd4web**: Adding Support to Externals
 
 `pd4web` consists of a set of tools accessible via a Python module named pd4web. Internally, pd4web utilizes `EMSCRIPTEN` to compile external components into dynamic static libraries.
 
