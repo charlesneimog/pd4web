@@ -38,7 +38,7 @@ const TSLanguage *tree_sitter_c(void);
 #define MIN_PYTHON_VERSION 12
 
 #define PDLUA_VERSION "fb1268c43ac59bf65c716ef79c205a38fa6b93fb"
-#define PDCMAKE_VERSION "v2.0.18"
+#define PDCMAKE_VERSION "v2.0.19"
 #define THORVG_VERSION "v1.1.1"
 #define PUREDATA_VERSION "0.56-5"
 #define EMSDK_VERSION "6.0.8"
