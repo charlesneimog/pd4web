@@ -7,57 +7,94 @@ set(BUILD_SHARED_LIBS
     OFF
     CACHE BOOL "Build libraries as static archives" FORCE)
 
-function(add_library target)
-    set(args ${ARGN})
-
-    if(EMSCRIPTEN)
-        list(
-            FIND
-            args
-            SHARED
-            shared_index)
-        if(NOT
-           shared_index
-           EQUAL
-           -1)
-            list(REMOVE_ITEM args SHARED)
-            list(PREPEND args STATIC)
-        endif()
-    endif()
-
-    _add_library(${target} ${args})
-endfunction()
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(thorvg_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg")
+set(PDCMAKE_FILE "${CMAKE_BINARY_DIR}/pd.cmake")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")
+set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/")
+
 include(FetchContent)
 
-message(STATUS "CPM PACKAGE INSTALLED ON ${CPM_SOURCE_CACHE}")
+# ╭──────────────────────────────────────╮
+# │       Override the add_library       │
+# ╰──────────────────────────────────────╯
+function(add_library target)
+    set(args ${ARGN})
+
+    list(
+        FIND
+        args
+        STATIC
+        static_index)
+    list(
+        FIND
+        args
+        SHARED
+        shared_index)
+
+    set(pd4web_archive_name "")
+
+    # Preserve the originally requested library type.
+    if(NOT
+       static_index
+       EQUAL
+       -1)
+        set(pd4web_archive_name "${target}_pd4web_static")
+    elseif(
+        NOT
+        shared_index
+        EQUAL
+        -1)
+        set(pd4web_archive_name "${target}_pd4web_shared")
+    endif()
+
+    # Emscripten cannot use the regular SHARED libraries here, so build them as static archives instead.
+    if(EMSCRIPTEN
+       AND NOT
+           shared_index
+           EQUAL
+           -1)
+        list(REMOVE_ITEM args SHARED)
+        list(PREPEND args STATIC)
+    endif()
+
+    _add_library(${target} ${args})
+
+    if(NOT TARGET ${target})
+        return()
+    endif()
+
+    get_target_property(aliased_target ${target} ALIASED_TARGET)
+    if(aliased_target)
+        return()
+    endif()
+
+    get_target_property(imported ${target} IMPORTED)
+    if(imported)
+        return()
+    endif()
+
+    if(EMSCRIPTEN AND pd4web_archive_name)
+        set_target_properties(${target} PROPERTIES ARCHIVE_OUTPUT_NAME "${pd4web_archive_name}")
+    endif()
+endfunction()
 
 # ╭──────────────────────────────────────╮
 # │               pd.cmake               │
 # ╰──────────────────────────────────────╯
-set(PDCMAKE_FILE
-    "${CMAKE_BINARY_DIR}/pd.cmake"
-    CACHE INTERNAL "pd cmake file path")
 include("${PDCMAKE_FILE}")
-
-# ThorVG is installed by the pd4web compiler and copied into the generated project.
-set(thorvg_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg")
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/thorvg.cmake")
 
 # ╭──────────────────────────────────────╮
 # │              Pd sources              │
 # ╰──────────────────────────────────────╯
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -matomics -mbulk-memory")
-set(PD4WEB_EXTERNAL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/Externals/")
-
 @PD_SOURCE_DIR@
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/libpd.cmake")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/pure-data/src")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/Pd4Web/")
-
 add_compile_definitions(PDTHREADS PDINSTANCE)
 
 @PD_CMAKE_EXTRADEFINITIONS@
