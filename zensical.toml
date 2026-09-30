@@ -81,7 +81,13 @@ logo_dark_mode = "assets/favicon.svg"
 logo_light_mode = "assets/favicon.svg"
 
 [project.plugins.minify]
+minify_js = true
 minify_html = true
+minify_css = true
+minify_inline_js = true
+minify_inline_css = true
+
+[project.plugins.social]
 
 # Palette (converted)
 [[project.theme.palette]]
@@ -93,7 +99,7 @@ toggle.name = "Switch to light mode"
 media = "(prefers-color-scheme: light)"
 scheme = "default"
 primary = "white"
-accent = "light blue"
+accent = "deep purple"
 toggle.icon = "material/lightbulb"
 toggle.name = "Switch to dark mode"
 
@@ -101,14 +107,13 @@ toggle.name = "Switch to dark mode"
 media = "(prefers-color-scheme: dark)"
 scheme = "slate"
 primary = "black"
-accent = "light blue"
+accent = "deep purple"
 toggle.icon = "material/lightbulb-outline"
 toggle.name = "Switch to light mode"
 
 # ─────────────────────────────
 # Markdown extensions
 # ─────────────────────────────
-
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
 
