@@ -666,16 +666,12 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
                     if (LibYaml.Name == Lib && LibYaml.ConfigureBeforeCheckObjects) {
                         std::vector<std::string> cfgArgs = {
                             m_Cmake.string(),
-                            p->OutputFolder.string(),
-                            (m_Pd4WebRoot / LibYaml.Name).string(),
-                            "-B",
-                            (m_Pd4WebRoot / LibYaml.Name / ".build").string(),
-                            "-G",
-                            "Ninja",
+                            // p->OutputFolder.string(),
+                            (m_Pd4WebRoot / LibYaml.Name).string(), "-B",
+                            (m_Pd4WebRoot / LibYaml.Name / ".build").string(), "-G", "Ninja",
                             "-DCMAKE_BUILD_TYPE=Release",
                             "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
-                            "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
-                            "-Wno-dev"};
+                            "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module), "-Wno-dev"};
                         int result = execProcess(m_Emcmake.string(), cfgArgs);
                         if (result != 0) {
                             print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
