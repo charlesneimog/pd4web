@@ -14,7 +14,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: pd-xlab
-      Version: main
+      Version: 7c58398c9bb88a2eeaa3cde0477c3812fb5af34f
       RunConfigure: true
 
     # ─────────────── pd-saf ───────────────
@@ -100,13 +100,6 @@ Libraries:
       Repository: pd-ambi
       Version: 62ce81e25c4fcc289cd1f627ef90cbf4d59f5c8b
 
-    # ─────────────── o.scofo~ ───────────────
-    - Name: o.scofo~
-      Source: GITHUB
-      Developer: charlesneimog
-      Repository: OScofo
-      Version: 7bfb86590ab3e53846c65341498313fd118d0949
-
     # ───────────── timbreIDLib ───────────
     - Name: timbreIDLib
       Source: GITHUB
@@ -119,7 +112,7 @@ Libraries:
       Source: GITHUB
       Developer: charlesneimog
       Repository: OpenScofo
-      Version: 5cd82889eb2f35b0f93124d5347c704fc083af76
+      Version: 2c4b976477eb2f6c3ca9f538c86788d2c8c29851
       CmakeOptions:
           - OPENSCOFO_BUILD_PY_MODULE: OFF
           - OPENSCOFO_BUILD_MAX_MODULE: OFF
