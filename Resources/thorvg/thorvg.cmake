@@ -9,7 +9,7 @@ include(${CPM_FILE})
 # ╭──────────────────────────────────────╮
 # │                Thorvg                │
 # ╰──────────────────────────────────────╯
-cpmaddpackage("gh:thorvg/thorvg@1.1.1")
+cpmaddpackage("gh:thorvg/thorvg@1.1.3")
 file(
     GLOB
     THORVG_SOURCES
