@@ -1,41 +1,59 @@
-name: pd4web-compiler
+name: pd4web release
+
 on:
-    workflow_dispatch:
-        inputs:
-            publish_pypi:
-                description: "Publish built wheels to PyPI"
-                required: false
-                default: false
-                type: boolean
-            publish_pdobject:
-                description: "Publish PureData Object"
-                required: false
-                default: false
-                type: boolean
+    push:
+        tags:
+            - "v*"
+
+permissions:
+    contents: read
+
+concurrency:
+    group: pd4web-release-${{ github.ref }}
+    cancel-in-progress: false
 
 env:
     BUILD_TYPE: Release
     SCCACHE_DIR: ~/.cache/sccache
     LIBNAME: pd4web
-    LIBVERSION: "3.3.2"
 
 jobs:
-    pd4web-compiler:
+    metadata:
+        name: Release metadata
+        runs-on: ubuntu-latest
+        outputs:
+            version: ${{ steps.version.outputs.version }}
+            tag: ${{ steps.version.outputs.tag }}
+        steps:
+            - name: Get version from tag
+              id: version
+              shell: bash
+              run: |
+                  echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+                  echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+    build:
+        name: Build (${{ matrix.artifact }})
+        needs: metadata
         runs-on: ${{ matrix.os }}
         strategy:
             fail-fast: false
             matrix:
                 include:
                     - os: ubuntu-latest
+                      artifact: linux-x86_64
                     - os: macos-26-intel
+                      artifact: macos-x86_64
                       macos_architecture: x86_64
                       pd_cpu: amd64
                       macos_deployment_target: "10.15"
                     - os: macos-latest
+                      artifact: macos-arm64
                       macos_architecture: arm64
                       pd_cpu: arm64
                       macos_deployment_target: "11.0"
                     - os: windows-latest
+                      artifact: windows-x86_64
 
         steps:
             - name: Checkout
@@ -44,37 +62,78 @@ jobs:
                   submodules: recursive
                   fetch-depth: 0
 
-            # Cache build deps and compiler caches
-            - name: Cache CMake and dependencies
-              id: build-cache
+            - name: Cache CMake dependencies and compiler caches
               uses: actions/cache@v5
               with:
                   path: |
                       build/_deps
                       ~/.ccache
                       ~/.cache/sccache
-                  key: build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', '**/pyproject.toml') }}
+                  key: build-cv23-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-${{ hashFiles('CMakeLists.txt', '**/*.cmake', 'pyproject.toml') }}
                   restore-keys: |
-                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
-                      build-cv22-${{ matrix.os }}-${{ runner.arch }}-
-            - uses: actions/setup-python@v6
+                      build-cv23-${{ matrix.os }}-${{ runner.arch }}-${{ env.BUILD_TYPE }}-
+                      build-cv23-${{ matrix.os }}-${{ runner.arch }}-
+
+            - name: Set up Python
+              uses: actions/setup-python@v6
               with:
                   python-version: "3.11"
 
-            - name: Install NASM (Windows)
+            - name: Set Python package version from tag
+              shell: bash
+              env:
+                  RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+              run: |
+                  python - <<'PYTHON'
+                  import os
+                  import pathlib
+                  import re
+
+                  path = pathlib.Path("pyproject.toml")
+                  text = path.read_text(encoding="utf-8")
+                  version = os.environ["RELEASE_VERSION"]
+                  text, count = re.subn(
+                      r'(?m)^version\s*=\s*"[^"]+"',
+                      lambda _: f'version = "{version}"',
+                      text,
+                      count=1,
+                  )
+                  if count != 1:
+                      raise RuntimeError("No project version found in pyproject.toml")
+                  path.write_text(text, encoding="utf-8")
+
+                  match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(.*)", version)
+                  if match is None:
+                      raise ValueError(f"Unsupported version tag: {version}")
+                  major, minor, patch, suffix = match.groups()
+                  header = pathlib.Path("Sources/Compiler/pd4web_compiler.hpp")
+                  source = header.read_text(encoding="utf-8")
+                  for part, value in (
+                      ("MAJOR", major),
+                      ("MINOR", minor),
+                      ("PATCH", f'"{patch}{suffix}"'),
+                  ):
+                      source, count = re.subn(
+                          rf"(?m)^#define PD4WEB_VERSION_{part} .+$",
+                          lambda _: f"#define PD4WEB_VERSION_{part} {value}",
+                          source,
+                          count=1,
+                      )
+                      if count != 1:
+                          raise RuntimeError(f"Missing PD4WEB_VERSION_{part}")
+                  header.write_text(source, encoding="utf-8")
+                  print(f"Building pd4web {version}")
+                  PYTHON
+
+            - name: Install NASM
               if: runner.os == 'Windows'
               uses: ilammy/setup-nasm@v1
 
-            - name: Install Perl and Ninja (Windows)
+            - name: Install Perl, Ninja, and sccache
               if: runner.os == 'Windows'
               shell: pwsh
               run: |
-                  choco install strawberryperl -y
-                  choco install ninja -y
-            - name: Install sccache (Windows)
-              if: runner.os == 'Windows'
-              shell: pwsh
-              run: |
+                  choco install strawberryperl ninja -y
                   $ErrorActionPreference = "Stop"
                   $release = Invoke-RestMethod -Uri "https://api.github.com/repos/mozilla/sccache/releases/latest"
                   $asset = $release.assets | Where-Object { $_.name -match 'x86_64-pc-windows-msvc\.zip$' } | Select-Object -First 1
@@ -87,22 +146,20 @@ jobs:
                   $exe = Get-ChildItem $dest -Recurse -Filter "sccache.exe" | Select-Object -First 1
                   if (-not $exe) { throw "sccache.exe not found after install" }
                   Add-Content -Path $env:GITHUB_PATH -Value $exe.DirectoryName
-                  Write-Host "sccache installed at $($exe.FullName)"
-            - name: Install PureData for Windows
+
+            - name: Install Pure Data
               if: runner.os == 'Windows'
               shell: pwsh
-              run: |
-                  winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
-                  # Remove-Item -Path build/pd.cmake -Force
-            - name: Install PureData for macOS
+              run: winget install -e --id MillerPuckette.PureData --accept-source-agreements --accept-package-agreements
+
+            - name: Install Pure Data and build tools
               if: runner.os == 'macOS'
               run: |
                   brew update
                   brew install --cask pd
-                  brew install ccache
-                  brew install git
-                  brew install perl
-            - name: Install PureData for Linux
+                  brew install ccache git perl
+
+            - name: Install Pure Data and build tools
               if: runner.os == 'Linux'
               run: |
                   sudo apt-get update
@@ -110,17 +167,19 @@ jobs:
                   sudo add-apt-repository ppa:pure-data/pure-data -y || true
                   sudo apt-get update
                   sudo apt-get install -y puredata
+
             - name: Configure ccache
               if: runner.os != 'Windows'
               run: |
                   ccache --set-config=max_size=500M
                   ccache --set-config=compression=true
                   ccache -z
-            - name: Start sccache server (Windows)
+
+            - name: Start sccache server
               if: runner.os == 'Windows'
               shell: pwsh
-              run: |
-                  sccache --start-server
+              run: sccache --start-server
+
             - name: Configure compiler launcher
               shell: pwsh
               run: |
@@ -129,114 +188,128 @@ jobs:
                   } else {
                     "CMAKE_ARGS=-DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache" | Out-File -FilePath $env:GITHUB_ENV -Append
                   }
-            - name: Install Python Packages
-              run: |
-                  pip install build --break-system-packages
+
             - name: Set macOS deployment target
-              if: startsWith(matrix.os, 'macos')
-              run: |
-                  echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "$GITHUB_ENV"
-                  echo "CMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "$GITHUB_ENV"
-                  echo "CMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "$GITHUB_ENV"
-                  echo "CMAKE_ARGS=$CMAKE_ARGS -DCMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "$GITHUB_ENV"
-            - name: Build wheels
-              run: |
-                  python -c "import pathlib, shutil; pathlib.Path('build/CMakeCache.txt').unlink(missing_ok=True); pathlib.Path('build/pd.cmake').unlink(missing_ok=True); shutil.rmtree('build/CMakeFiles', ignore_errors=True)"
-                  python -m pip install build --break-system-packages
-                  python -m build --wheel
-            - name: Verify macOS PureData object architecture
-              if: startsWith(matrix.os, 'macos')
+              if: runner.os == 'macOS'
               shell: bash
               run: |
-                  object="build/Sources/Pd/pd4web.compiler.darwin-${{ matrix.pd_cpu }}-32.so"
-                  if [[ ! -f "$object" ]]; then
-                      echo "Expected PureData object was not built: $object" >&2
-                      find build/Sources/Pd -maxdepth 1 -type f -name 'pd4web.compiler.darwin-*.so' -print
-                      exit 1
+                  echo "MACOSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "${GITHUB_ENV}"
+                  echo "CMAKE_OSX_DEPLOYMENT_TARGET=${{ matrix.macos_deployment_target }}" >> "${GITHUB_ENV}"
+                  echo "CMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "${GITHUB_ENV}"
+                  echo "CMAKE_ARGS=${CMAKE_ARGS} -DCMAKE_OSX_ARCHITECTURES=${{ matrix.macos_architecture }}" >> "${GITHUB_ENV}"
+
+            - name: Build Python wheel and Pure Data object
+              shell: bash
+              run: |
+                  if [[ "${RUNNER_OS}" == "Windows" ]]; then
+                      export PATH="/c/Strawberry/perl/bin:${PATH}"
+                      hash -r
+                      command -v perl
+                      perl -MLocale::Maketext::Simple -e 'print "Perl OK\n"'
                   fi
 
-                  unexpected="$(find build/Sources/Pd -maxdepth 1 -type f -name 'pd4web.compiler.darwin-*.so' ! -name "$(basename "$object")" -print)"
-                  if [[ -n "$unexpected" ]]; then
-                      echo "Unexpected PureData object(s) were built:" >&2
-                      echo "$unexpected" >&2
-                      exit 1
+                  python -m pip install --upgrade pip build
+                  python -c "import pathlib, shutil; pathlib.Path('build/CMakeCache.txt').unlink(missing_ok=True); pathlib.Path('build/pd.cmake').unlink(missing_ok=True); shutil.rmtree('build/CMakeFiles', ignore_errors=True)"
+                  python -m build --wheel
+
+            - name: Verify Pure Data package
+              shell: bash
+              run: |
+                  test -d build/Sources/Pd/pd4web
+                  compgen -G "build/Sources/Pd/pd4web/pd4web.compiler.*" > /dev/null
+
+            - name: Verify macOS Pure Data object architecture
+              if: runner.os == 'macOS'
+              shell: bash
+              run: |
+                  object="build/Sources/Pd/pd4web/pd4web.compiler.darwin-${{ matrix.pd_cpu }}-32.so"
+                  if [[ ! -f "${object}" ]]; then
+                    echo "Expected Pure Data object was not built: ${object}" >&2
+                    find build/Sources/Pd/pd4web -maxdepth 1 -type f -name 'pd4web.compiler.darwin-*.so' -print
+                    exit 1
+                  fi
+                  object_architectures="$(lipo -archs "${object}")"
+                  if [[ "${object_architectures}" != "${{ matrix.macos_architecture }}" ]]; then
+                    echo "Expected ${object} to contain only ${{ matrix.macos_architecture }}, got: ${object_architectures}" >&2
+                    exit 1
                   fi
 
-                  object_architectures="$(lipo -archs "$object")"
-                  if [[ "$object_architectures" != "${{ matrix.macos_architecture }}" ]]; then
-                      echo "Expected $object to contain only ${{ matrix.macos_architecture }}, got: $object_architectures" >&2
-                      exit 1
-                  fi
-            - name: Show ccache stats (macOS/Linux)
-              if: runner.os != 'Windows'
-              run: ccache -s
-
-            - name: Show sccache stats (Windows)
-              if: runner.os == 'Windows'
-              shell: pwsh
-              run: sccache --show-stats
-
-            - name: Repair Linux wheels
-              if: ${{ github.event.inputs.publish_pypi == 'true' && runner.os == 'Linux' }}
+            - name: Repair Linux wheel
+              if: runner.os == 'Linux'
+              shell: bash
               run: |
                   python -m pip install auditwheel
-                  auditwheel repair dist/*.whl -w dist/
+                  auditwheel repair dist/*.whl -w dist/repaired
                   rm dist/*-linux_*.whl
-            - name: Upload PureData Object
+                  mv dist/repaired/*.whl dist/
+                  rmdir dist/repaired
+
+            - name: Show compiler cache statistics
+              if: always()
+              shell: pwsh
+              run: |
+                  if ($env:RUNNER_OS -eq 'Windows') {
+                    sccache --show-stats
+                  } else {
+                    ccache -s
+                  }
+
+            - name: Upload Pure Data package
               uses: actions/upload-artifact@v7
               with:
-                  name: pd4web-object-${{ matrix.os }}
-                  path: GetNinjaBinary
+                  name: pd4web-object-${{ matrix.artifact }}
+                  path: build/Sources/Pd/pd4web
                   if-no-files-found: error
 
-            - name: Upload Python Module
+            - name: Upload Python wheel
               uses: actions/upload-artifact@v7
               with:
-                  name: pypd4web-${{ matrix.os }}
+                  name: pypd4web-${{ matrix.artifact }}
                   path: dist/*.whl
                   if-no-files-found: error
 
-    publish-pypi:
-        if: ${{ github.event.inputs.publish_pypi == 'true' }}
+    publish:
+        name: Publish release artifacts
+        needs:
+            - metadata
+            - build
+        runs-on: ubuntu-latest
         permissions:
             contents: write
-        needs: pd4web-compiler
-        runs-on: ubuntu-latest
+
         steps:
-            - name: Download wheels
+            - name: Download Python wheels
               uses: actions/download-artifact@v7
               with:
                   pattern: pypd4web-*
                   merge-multiple: true
                   path: dist
 
-            - name: Download puredata
+            - name: Download Pure Data packages
               uses: actions/download-artifact@v7
               with:
                   pattern: pd4web-object-*
                   merge-multiple: true
-                  path: ${{ env.LIBNAME }}
+                  path: pd4web
 
-            - name: Upload using docker deken
-              continue-on-error: true
-              if: ${{ github.event.inputs.publish_pdobject == 'true' }}
+            - name: Validate downloaded artifacts
+              shell: bash
+              run: |
+                  compgen -G "dist/*.whl" > /dev/null
+                  compgen -G "pd4web/pd4web.compiler.*" > /dev/null
+                  test -f pd4web/pd4web.pd
+
+            - name: Package and publish Pure Data object to Deken
               env:
                   DEKEN_USERNAME: charlesneimog
                   DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
+              shell: bash
               run: |
-                  pip install deken
-                  deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
-                  deken upload -v ${{ env.LIBVERSION }} *.dek
+                  python -m pip install deken
+                  deken package --version "${{ needs.metadata.outputs.version }}" pd4web
+                  deken upload -v "${{ needs.metadata.outputs.version }}" ./*.dek
 
-            - name: Upload using docker deken
-              if: ${{ github.event.inputs.publish_pdobject == 'true' }}
-              env:
-                  DEKEN_USERNAME: charlesneimog
-                  DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
-              run: |
-                  deken package --version ${{ env.LIBVERSION }} ${{ env.LIBNAME }}
-                  deken upload -v ${{ env.LIBVERSION }} *.dek
-            - name: Publish to PyPI
+            - name: Publish Python wheels to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
               with:
                   user: __token__
@@ -244,16 +317,24 @@ jobs:
                   skip-existing: true
                   packages-dir: dist
 
-            - name: Create zip
+            - name: Assemble GitHub release assets
+              shell: bash
               run: |
-                  zip -r pd4web-${{ env.LIBVERSION }}.zip ${{ env.LIBNAME }}
-            - name: Create / Update GitHub Release
+                  mkdir -p release
+                  cp dist/*.whl release/
+                  if compgen -G "./*.dek" > /dev/null; then
+                    cp ./*.dek release/
+                  fi
+                  zip -r "release/pd4web-${{ needs.metadata.outputs.version }}.zip" pd4web
+
+            - name: Publish GitHub release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: v${{ env.LIBVERSION }}
-                  name: v${{ env.LIBVERSION }}
+                  tag_name: ${{ needs.metadata.outputs.tag }}
+                  name: ${{ needs.metadata.outputs.tag }}
                   target_commitish: ${{ github.sha }}
-                  draft: true
+                  draft: false
                   prerelease: false
-                  files: |
-                      pd4web-${{ env.LIBVERSION }}.zip
+                  generate_release_notes: true
+                  fail_on_unmatched_files: true
+                  files: release/*

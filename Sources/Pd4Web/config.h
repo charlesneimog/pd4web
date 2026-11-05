@@ -10,7 +10,7 @@ extern "C" {
 // clang-format off
 // Pd4Web Version
 #define PD4WEB_VERSION_MAJOR 3
-#define PD4WEB_VERSION_MINOR 0
+#define PD4WEB_VERSION_MINOR 4
 #define PD4WEB_VERSION_PATCH 0
 
 // Sound
