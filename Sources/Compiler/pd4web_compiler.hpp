@@ -7,9 +7,12 @@
 */
 
 #include <functional>
+#include <filesystem>
 #include <memory>
 #include <string>
-#include <filesystem>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 #include <sys/stat.h>
 
@@ -199,6 +202,11 @@ class Pd4Web {
     };
     void setPd4WebRootFolder(fs::path root) {
         m_Pd4WebRoot = root;
+        m_LibrarySearchRoots.clear();
+        m_ConfiguredLibraryScans.clear();
+        m_IndexedLuaLibraries.clear();
+        m_DependencyLuaObjects.clear();
+        m_DependencyLuaIndexBuilt = false;
     };
     void setInitialMemory(int memory) {
         m_Memory = memory;
@@ -312,6 +320,11 @@ class Pd4Web {
     TSParser *m_cppParser;
     TSParser *m_cParser;
     Libraries m_Libraries;
+    std::unordered_map<std::string, std::vector<fs::path>> m_LibrarySearchRoots;
+    std::unordered_set<std::string> m_ConfiguredLibraryScans;
+    std::unordered_set<std::string> m_IndexedLuaLibraries;
+    std::unordered_map<std::string, std::vector<fs::path>> m_DependencyLuaObjects;
+    bool m_DependencyLuaIndexBuilt = false;
 
     // Gui Objects
     std::vector<std::string> m_NumberInput = {"l.floatatom", "l.nbx"};
@@ -368,12 +381,16 @@ class Pd4Web {
     bool processObjAudioInOut(std::shared_ptr<Patch> &p, PatchLine &pl);
 
     // Libraries
-    std::vector<std::string> GetLuaRequires(const std::string &filePath);
+    std::vector<std::string> GetLuaRequireFolder(const std::string &filePath);
     void loadObjectsJson(std::shared_ptr<Patch> &p);
 
     bool libIsSupported(std::string libName);
     bool downloadSupportedLib(std::string libName);
     bool getSupportedLibraries(std::shared_ptr<Patch> &Patch);
+    bool configureLibraryForObjectScan(std::shared_ptr<Patch> &p, const std::string &Lib);
+    std::vector<fs::path> getLibrarySearchRoots(std::shared_ptr<Patch> &p, const std::string &Lib);
+    std::vector<fs::path> findDependencyLuaObjects(std::shared_ptr<Patch> &p,
+                                                   const std::string &objectName);
     bool libsDownload(YamlNode node);
     std::vector<std::string> listObjectsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
     std::vector<std::string> listAbstractionsInLibrary(std::shared_ptr<Patch> &p, std::string Lib);
@@ -397,6 +414,8 @@ class Pd4Web {
     void createMainCmake(std::shared_ptr<Patch> &p);
     void createExternalsCppFile(std::shared_ptr<Patch> &p);
     void copySources(std::shared_ptr<Patch> &p);
+    void copyLuaRequirements(std::shared_ptr<Patch> &p);
+
     void buildPatch(std::shared_ptr<Patch> &p);
     void createAppManifest(std::shared_ptr<Patch> &p);
     void copyExtraSources(std::shared_ptr<Patch> &p, fs::path buildDir);

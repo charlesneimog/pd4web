@@ -459,6 +459,7 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
     print("\n");
     print("Configuring Build Project", Pd4WebLogLevel::PD4WEB_LOG1);
 
+    copyLuaRequirements(p);
     createMainCmake(p);
     copySources(p);
 
@@ -466,6 +467,319 @@ void Pd4Web::configureProjectToCompile(std::shared_ptr<Patch> &p) {
     print("Configuring C++ Code", Pd4WebLogLevel::PD4WEB_LOG1);
     createConfigFile(p);
     createExternalsCppFile(p);
+}
+
+// ─────────────────────────────────────
+void Pd4Web::copyLuaRequirements(std::shared_ptr<Patch> &p) {
+    PD4WEB_LOGGER();
+
+    std::vector<fs::path> searchRoots;
+    std::unordered_set<std::string> knownRoots;
+    auto addSearchRoot = [&](const fs::path &root) {
+        std::error_code ec;
+        if (root.empty() || !fs::is_directory(root, ec)) {
+            return;
+        }
+
+        fs::path normalized = fs::weakly_canonical(root, ec);
+        if (ec) {
+            normalized = root.lexically_normal();
+        }
+        if (knownRoots.insert(normalized.generic_string()).second) {
+            searchRoots.push_back(normalized);
+        }
+    };
+
+    addSearchRoot(p->PatchFolder / "Extras");
+    addSearchRoot(p->PatchFolder / "Libs");
+    for (const std::string &path : p->DeclaredPaths) {
+        addSearchRoot(p->PatchFolder / path);
+        addSearchRoot(p->Pd4WebRoot / path);
+    }
+    for (const std::string &lib : p->DeclaredLibs) {
+        for (const fs::path &root : getLibrarySearchRoots(p, lib)) {
+            addSearchRoot(root);
+        }
+    }
+    addSearchRoot(p->PatchFolder);
+
+    fs::path extras = p->OutputFolder / "Extras";
+    std::unordered_set<std::string> copiedObjects;
+    std::unordered_set<std::string> processedLuaFiles;
+    std::unordered_set<std::string> processedModules;
+
+    auto canonicalKey = [](const fs::path &path) {
+        std::error_code ec;
+        fs::path normalized = fs::weakly_canonical(path, ec);
+        return (ec ? path.lexically_normal() : normalized).generic_string();
+    };
+
+    auto copyFile = [&](const fs::path &source, const fs::path &destination) {
+        if (canonicalKey(source) == canonicalKey(destination)) {
+            return true;
+        }
+        std::error_code ec;
+        fs::create_directories(destination.parent_path(), ec);
+        if (ec) {
+            print("Failed to create Lua destination folder '" + destination.parent_path().string() +
+                      "': " + ec.message(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        fs::copy_file(source, destination, fs::copy_options::overwrite_existing, ec);
+        if (ec) {
+            print("Failed to copy Lua file '" + source.string() + "': " + ec.message(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        print("Copying Lua file '" + source.filename().string() + "' to Extras",
+              Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+        return true;
+    };
+
+    auto copyFolder = [&](const fs::path &source, const fs::path &destination) {
+        if (canonicalKey(source) == canonicalKey(destination)) {
+            return true;
+        }
+        std::error_code ec;
+        fs::create_directories(destination, ec);
+        if (ec) {
+            print("Failed to create Lua destination folder '" + destination.string() +
+                      "': " + ec.message(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        fs::copy(source, destination,
+                 fs::copy_options::recursive | fs::copy_options::overwrite_existing |
+                     fs::copy_options::skip_symlinks,
+                 ec);
+        if (ec) {
+            print("Failed to copy Lua folder '" + source.string() + "': " + ec.message(),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return false;
+        }
+        print("Copying Lua folder '" + source.filename().string() + "' to Extras",
+              Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+        return true;
+    };
+
+    auto luaObjectPathFromJson = [&](const std::string &library,
+                                     const std::string &name) -> fs::path {
+        if (!p->ExternalObjectsJson.contains(library)) {
+            return {};
+        }
+        const auto &libraryEntry = p->ExternalObjectsJson[library];
+        if (!libraryEntry.is_object() || !libraryEntry.contains("lua_objects")) {
+            return {};
+        }
+        const auto &objects = libraryEntry["lua_objects"];
+        if (!objects.is_object() || !objects.contains(name)) {
+            return {};
+        }
+        const auto &entry = objects[name];
+        if (entry.is_array() && entry.size() > 1 && entry[1].is_string()) {
+            fs::path candidate = entry[1].get<std::string>();
+            if (fs::is_regular_file(candidate)) {
+                return candidate;
+            }
+        }
+        return {};
+    };
+
+    auto findObjectInJson = [&](const PatchLine &obj) -> fs::path {
+        if (!p->ExternalObjectsJson.is_object()) {
+            return {};
+        }
+        if (!obj.Lib.empty()) {
+            fs::path candidate = luaObjectPathFromJson(obj.Lib, obj.Name);
+            if (!candidate.empty()) {
+                return candidate;
+            }
+        }
+        for (auto library = p->ExternalObjectsJson.begin(); library != p->ExternalObjectsJson.end();
+             ++library) {
+            fs::path candidate = luaObjectPathFromJson(library.key(), obj.Name);
+            if (!candidate.empty()) {
+                return candidate;
+            }
+        }
+        return {};
+    };
+
+    auto findLuaObject = [&](const PatchLine &obj) -> fs::path {
+        fs::path jsonPath = findObjectInJson(obj);
+        if (!jsonPath.empty()) {
+            return jsonPath;
+        }
+
+        const fs::path filename = obj.Name + ".pd_lua";
+        const std::string patchFolderKey = canonicalKey(p->PatchFolder);
+        for (const fs::path &root : searchRoots) {
+            fs::path direct = root / filename;
+            if (fs::is_regular_file(direct)) {
+                return direct;
+            }
+            if (canonicalKey(root) == patchFolderKey) {
+                continue;
+            }
+
+            std::error_code ec;
+            fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied,
+                                                ec);
+            fs::recursive_directory_iterator end;
+            while (!ec && it != end) {
+                if (it->is_regular_file(ec) && it->path().filename() == filename) {
+                    return it->path();
+                }
+                it.increment(ec);
+            }
+        }
+        return {};
+    };
+
+    struct LuaModule {
+        fs::path File;
+        fs::path Root;
+        fs::path Relative;
+    };
+
+    auto isSafeModulePath = [](const fs::path &path) {
+        if (path.empty() || path.is_absolute() || path.has_root_name()) {
+            return false;
+        }
+        for (const fs::path &part : path) {
+            if (part == "..") {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    auto findModule = [&](const std::string &requirement, const fs::path &requiringFolder,
+                          const fs::path &objectRoot) -> LuaModule {
+        std::string moduleName = requirement;
+        std::replace(moduleName.begin(), moduleName.end(), '\\', '/');
+        if (moduleName.ends_with(".lua")) {
+            moduleName.resize(moduleName.size() - 4);
+        }
+
+        std::vector<fs::path> modulePaths = {fs::path(moduleName)};
+        std::string dotted = moduleName;
+        std::replace(dotted.begin(), dotted.end(), '.', '/');
+        if (dotted != moduleName) {
+            modulePaths.emplace_back(dotted);
+        }
+
+        std::vector<fs::path> roots;
+        std::unordered_set<std::string> moduleRoots;
+        auto addModuleRoot = [&](const fs::path &root) {
+            if (!root.empty() && moduleRoots.insert(canonicalKey(root)).second) {
+                roots.push_back(root);
+            }
+        };
+        addModuleRoot(requiringFolder);
+        addModuleRoot(objectRoot);
+        for (const fs::path &root : searchRoots) {
+            addModuleRoot(root);
+        }
+
+        for (const fs::path &modulePath : modulePaths) {
+            if (!isSafeModulePath(modulePath)) {
+                continue;
+            }
+            for (const fs::path &root : roots) {
+                for (const fs::path &relative :
+                     {fs::path(modulePath.string() + ".lua"), modulePath / "init.lua"}) {
+                    fs::path candidate = root / relative;
+                    if (fs::is_regular_file(candidate)) {
+                        return {candidate, root, relative};
+                    }
+                }
+            }
+        }
+        return {};
+    };
+
+    std::function<void(const fs::path &, const fs::path &)> processRequirements;
+    processRequirements = [&](const fs::path &luaFile, const fs::path &objectRoot) {
+        if (!processedLuaFiles.insert(canonicalKey(luaFile)).second) {
+            return;
+        }
+
+        for (const std::string &requirement : GetLuaRequireFolder(luaFile.string())) {
+            LuaModule module = findModule(requirement, luaFile.parent_path(), objectRoot);
+            if (module.File.empty()) {
+                print("Lua requirement '" + requirement + "' referenced by '" +
+                          luaFile.filename().string() + "' was not found",
+                      Pd4WebLogLevel::PD4WEB_WARNING, p->printLevel + 1);
+                continue;
+            }
+
+            std::string moduleKey = requirement + "@" + canonicalKey(module.Root);
+            if (!processedModules.insert(moduleKey).second) {
+                continue;
+            }
+
+            auto relative = module.Relative.lexically_normal();
+            auto first = relative.begin();
+            bool directoryModule = first != relative.end() && std::next(first) != relative.end();
+            if (directoryModule) {
+                fs::path sourceFolder = module.Root / *first;
+                fs::path destinationFolder = extras / *first;
+                if (!copyFolder(sourceFolder, destinationFolder)) {
+                    continue;
+                }
+
+                std::error_code ec;
+                fs::recursive_directory_iterator it(
+                    sourceFolder, fs::directory_options::skip_permission_denied, ec);
+                fs::recursive_directory_iterator end;
+                while (!ec && it != end) {
+                    if (it->is_regular_file(ec)) {
+                        const std::string extension = it->path().extension().string();
+                        if (extension == ".lua" || extension == ".pd_lua") {
+                            processRequirements(it->path(), module.Root);
+                        }
+                    }
+                    it.increment(ec);
+                }
+            } else {
+                fs::path destination = extras / module.Relative;
+                if (copyFile(module.File, destination)) {
+                    processRequirements(module.File, module.Root);
+                }
+            }
+        }
+    };
+
+    auto copyObjectAndRequirements = [&](const PatchLine &obj) {
+        if (!obj.isLuaExternal || !copiedObjects.insert(obj.Name).second) {
+            return;
+        }
+
+        fs::path source = findLuaObject(obj);
+        if (source.empty()) {
+            print("Lua object '" + obj.Name +
+                      ".pd_lua' was detected but its source file "
+                      "could not be found",
+                  Pd4WebLogLevel::PD4WEB_ERROR, p->printLevel + 1);
+            return;
+        }
+
+        if (copyFile(source, extras / source.filename())) {
+            fs::path objectRoot = source.parent_path();
+            processRequirements(source, objectRoot);
+        }
+    };
+
+    // Main-patch Lua objects live in PatchLines. Lua objects inherited from
+    // abstractions are collected in ExternalObjects by processSubpatch().
+    for (const PatchLine &obj : p->PatchLines) {
+        copyObjectAndRequirements(obj);
+    }
+    for (const PatchLine &obj : p->ExternalObjects) {
+        copyObjectAndRequirements(obj);
+    }
 }
 
 // ─────────────────────────────────────

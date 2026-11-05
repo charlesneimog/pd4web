@@ -340,26 +340,85 @@ fs::path Pd4Web::getAbsPath(std::shared_ptr<Patch> &p, PatchLine &pl) {
 // ─────────────────────────────────────
 void Pd4Web::isLuaObj(std::shared_ptr<Patch> &Patch, PatchLine &pl) {
     PD4WEB_LOGGER();
-    listLuaObjectsInLibrary(Patch, pl.Lib);
-
     if (Patch->PdLua) {
-        std::vector<fs::path> results;
         std::vector<std::string> subdirs = {"Extras", "Libs"};
         for (const auto &subdir : subdirs) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
             if (pl.Found) {
-                Patch->DeclaredPaths.push_back(subdir);
-                break;
+                if (std::find(Patch->DeclaredPaths.begin(), Patch->DeclaredPaths.end(), subdir) ==
+                    Patch->DeclaredPaths.end()) {
+                    Patch->DeclaredPaths.push_back(subdir);
+                }
+                return;
             }
         }
         for (const auto &subdir : Patch->DeclaredPaths) {
             findLuaObjects(Patch, Patch->PatchFolder / subdir, pl);
+            if (pl.Found) {
+                return;
+            }
         }
     }
 
-    if (!pl.Found) {
-        pl.isLuaExternal = false;
+    std::vector<std::string> libraries;
+    if (!pl.Lib.empty()) {
+        libraries.push_back(pl.Lib);
     }
+    for (const std::string &library : Patch->DeclaredLibs) {
+        if (std::find(libraries.begin(), libraries.end(), library) == libraries.end()) {
+            libraries.push_back(library);
+        }
+    }
+
+    auto markLuaObject = [&](const std::string &library) {
+        pl.Found = true;
+        pl.isLuaExternal = true;
+        pl.isExternal = true;
+        pl.Lib = library;
+    };
+
+    for (const std::string &library : libraries) {
+        std::vector<std::string> objects = listLuaObjectsInLibrary(Patch, library);
+        if (std::find(objects.begin(), objects.end(), pl.Name) != objects.end()) {
+            markLuaObject(library);
+            return;
+        }
+    }
+
+    auto assumeDependencyObject = [&](const std::string &luaName) {
+        std::vector<fs::path> matches = findDependencyLuaObjects(Patch, luaName);
+        if (matches.size() > 1) {
+            print("Cannot assume a Lua object for '" + pl.Name + "': found " +
+                      std::to_string(matches.size()) + " dependency files named '" + luaName +
+                      ".pd_lua'",
+                  Pd4WebLogLevel::PD4WEB_WARNING, Patch->printLevel + 1);
+            return false;
+        }
+        if (matches.empty()) {
+            return false;
+        }
+
+        const fs::path &source = matches.front();
+        Patch->ExternalObjectsJson["_assumed_lua_objects"]["lua_objects"][pl.Name] = {
+            luaName, source.string()};
+        markLuaObject("_assumed_lua_objects");
+        std::string requestedObject = pl.Tokens.size() > 4
+                                          ? pl.Tokens[4]
+                                          : (pl.Lib.empty() ? pl.Name : pl.Lib + "/" + pl.Name);
+        if (!requestedObject.empty() && requestedObject.back() == ';') {
+            requestedObject.pop_back();
+        }
+        print("Assuming Pd object '" + requestedObject + "' is Lua object '" + luaName +
+                  "' from '" + source.string() + "'",
+              Pd4WebLogLevel::PD4WEB_WARNING, Patch->printLevel + 1);
+        return true;
+    };
+
+    if (assumeDependencyObject(pl.Name)) {
+        return;
+    }
+
+    pl.isLuaExternal = false;
 }
 
 // ─────────────────────────────────────

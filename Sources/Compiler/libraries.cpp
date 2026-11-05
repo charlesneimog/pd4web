@@ -113,6 +113,137 @@ bool Pd4Web::getSupportedLibraries(std::shared_ptr<Patch> &Patch) {
 }
 
 // ─────────────────────────────────────
+bool Pd4Web::configureLibraryForObjectScan(std::shared_ptr<Patch> &p, const std::string &Lib) {
+    auto library = std::find_if(m_Libraries.begin(), m_Libraries.end(),
+                                [&](const Library &entry) { return entry.Name == Lib; });
+    if (library == m_Libraries.end() || !library->ConfigureBeforeCheckObjects ||
+        m_ConfiguredLibraryScans.contains(Lib)) {
+        return true;
+    }
+
+    fs::path sourceDir = p->Pd4WebRoot / Lib;
+    fs::path buildDir = sourceDir / ".build";
+    if (!fs::is_directory(sourceDir)) {
+        return false;
+    }
+
+    std::vector<std::string> cfgArgs = {
+        m_Cmake.string(),
+        sourceDir.string(),
+        "-B",
+        buildDir.string(),
+        "-G",
+        "Ninja",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
+        "-DCPM_SOURCE_CACHE=" + (p->Pd4WebRoot / "Dependencies").string(),
+        "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module),
+        "-Wno-dev",
+    };
+    int result = execProcess(m_Emcmake.string(), cfgArgs);
+    if (result != 0) {
+        print("Configuration step failed while discovering dependencies of library '" + Lib + "'",
+              Pd4WebLogLevel::PD4WEB_ERROR);
+        return false;
+    }
+
+    m_ConfiguredLibraryScans.insert(Lib);
+    m_LibrarySearchRoots.erase(Lib);
+    m_IndexedLuaLibraries.erase(Lib);
+    m_DependencyLuaObjects.clear();
+    m_DependencyLuaIndexBuilt = false;
+    return true;
+}
+
+// ─────────────────────────────────────
+std::vector<fs::path> Pd4Web::getLibrarySearchRoots(std::shared_ptr<Patch> &p,
+                                                    const std::string &Lib) {
+    if (Lib.empty()) {
+        return {};
+    }
+    if (auto cached = m_LibrarySearchRoots.find(Lib); cached != m_LibrarySearchRoots.end()) {
+        return cached->second;
+    }
+
+    (void)configureLibraryForObjectScan(p, Lib);
+
+    std::vector<fs::path> roots;
+    std::unordered_set<std::string> known;
+    auto addRoot = [&](const fs::path &root) {
+        std::error_code ec;
+        if (!fs::is_directory(root, ec)) {
+            return;
+        }
+        fs::path normalized = fs::weakly_canonical(root, ec);
+        if (ec) {
+            normalized = root.lexically_normal();
+        }
+        if (known.insert(normalized.generic_string()).second) {
+            roots.push_back(normalized);
+        }
+    };
+
+    fs::path libraryRoot = p->Pd4WebRoot / Lib;
+    addRoot(libraryRoot);
+
+    // CMake/CPM materializes every dependency owned by this library beneath
+    // <library>/.build/_deps/<dependency>-src. This gives us an unambiguous
+    // library-to-dependency relationship without guessing from the global cache.
+    fs::path dependencyBuildRoot = libraryRoot / ".build" / "_deps";
+    std::error_code ec;
+    fs::directory_iterator dependencies(dependencyBuildRoot,
+                                        fs::directory_options::skip_permission_denied, ec);
+    fs::directory_iterator end;
+    while (!ec && dependencies != end) {
+        const fs::path path = dependencies->path();
+        const std::string name = path.filename().string();
+        if (dependencies->is_directory(ec) && name.ends_with("-src")) {
+            addRoot(path);
+        }
+        dependencies.increment(ec);
+    }
+
+    m_LibrarySearchRoots[Lib] = roots;
+    return roots;
+}
+
+// ─────────────────────────────────────
+std::vector<fs::path> Pd4Web::findDependencyLuaObjects(std::shared_ptr<Patch> &p,
+                                                       const std::string &objectName) {
+    if (!m_DependencyLuaIndexBuilt) {
+        fs::path dependenciesRoot = p->Pd4WebRoot / "Dependencies";
+        std::error_code ec;
+        fs::recursive_directory_iterator it(dependenciesRoot,
+                                            fs::directory_options::skip_permission_denied, ec);
+        fs::recursive_directory_iterator end;
+        while (!ec && it != end) {
+            if (it->is_directory(ec)) {
+                const std::string name = it->path().filename().string();
+                if (name == ".git" || name == ".build") {
+                    it.disable_recursion_pending();
+                }
+            } else if (it->is_regular_file(ec) && it->path().extension() == ".pd_lua") {
+                const std::string objectName = it->path().stem().string();
+                fs::path normalized = fs::weakly_canonical(it->path(), ec);
+                if (ec) {
+                    normalized = it->path().lexically_normal();
+                    ec.clear();
+                }
+                auto &objects = m_DependencyLuaObjects[objectName];
+                if (std::find(objects.begin(), objects.end(), normalized) == objects.end()) {
+                    objects.push_back(normalized);
+                }
+            }
+            it.increment(ec);
+        }
+        m_DependencyLuaIndexBuilt = true;
+    }
+
+    auto found = m_DependencyLuaObjects.find(objectName);
+    return found == m_DependencyLuaObjects.end() ? std::vector<fs::path>{} : found->second;
+}
+
+// ─────────────────────────────────────
 std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::path dir,
                                              PatchLine &pl) {
     PD4WEB_LOGGER();
@@ -149,7 +280,7 @@ std::vector<fs::path> Pd4Web::findLuaObjects(std::shared_ptr<Patch> &Patch, fs::
 }
 
 // ─────────────────────────────────────
-std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
+std::vector<std::string> Pd4Web::GetLuaRequireFolder(const std::string &filePath) {
     std::vector<std::string> lua_requires;
 
     std::ifstream file(filePath);
@@ -159,7 +290,9 @@ std::vector<std::string> Pd4Web::GetLuaRequires(const std::string &filePath) {
 
     std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
-    std::regex re(R"(require\s*\(\s*["']([^"']+)["']\s*\))");
+    // Lua accepts both require("module") and require "module". Keep this parser
+    // deliberately small: dependency resolution only needs static string modules.
+    std::regex re(R"lua(\brequire\s*(?:\(\s*)?["']([^"']+)["']\s*\)?)lua");
     std::smatch match;
 
     auto begin = content.cbegin();
@@ -191,79 +324,90 @@ void Pd4Web::loadObjectsJson(std::shared_ptr<Patch> &p) {
 // ─────────────────────────────────────
 std::vector<std::string> Pd4Web::listLuaObjectsInLibrary(std::shared_ptr<Patch> &p,
                                                          std::string Lib) {
-
     PD4WEB_LOGGER();
-
-    std::vector<std::string> absNames;
-    const std::string jsonFile = (p->Pd4WebRoot / "objects.json").string();
-    json full_json;
-    std::ifstream in(jsonFile);
-    if (in.is_open()) {
-        in >> full_json;
-        in.close();
-        if (full_json.contains(Lib)) {
-            if (full_json[Lib].contains("lua_objects")) {
-                print("Found lua objects in library '" + Lib + "'", Pd4WebLogLevel::PD4WEB_LOG2,
-                      p->printLevel + 1);
-                const auto &libEntry = full_json[Lib]["lua_objects"];
-                std::vector<std::string> keys;
-                for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
-                    keys.push_back(it.key());
-                }
-                p->ExternalObjectsJson = full_json;
-                return keys;
-            }
-        }
-    }
-
-    // find lua objects
-    fs::path completPath = p->PatchFolder / Lib;
-    std::vector<std::string> patchNames;
-    std::vector<std::string> patchPath;
-
-    if (!fs::exists(completPath)) {
+    if (Lib.empty()) {
         return {};
     }
 
-    for (const auto &entry : fs::recursive_directory_iterator(completPath)) {
-        std::string ext = entry.path().extension().string();
-        std::string filename = entry.path().stem().string();
-        if (ext == ".pd_lua") {
-            std::string name = entry.path().stem().string();
-            std::string path = entry.path().string();
-            // list all files and folders inside the library and save them in json for later copy
-            // them to the project ignore hidden files and folders (starting with .)
-
-            // list files and folders inside the library and save them in json for later copy them
-            // to the project ignore hidden files and folders (starting with .)
-            std::vector<std::string> files;
-            std::vector<std::string> folders;
-
-            for (const auto &part : entry.path()) {
-                if (part.filename().string().starts_with(".")) {
-                    continue;
-                }
-                if (fs::is_directory(part)) {
-                    folders.push_back(part.filename().string());
-                } else {
-                    files.push_back(part.filename().string());
-                }
-            }
-
-            full_json[Lib]["lua_objects"][filename] = {
-                name,
-                path,
-                files,
-                folders,
-            };
+    const fs::path jsonPath = p->Pd4WebRoot / "objects.json";
+    json full_json;
+    std::ifstream in(jsonPath);
+    if (in.is_open()) {
+        try {
+            in >> full_json;
+        } catch (const json::exception &error) {
+            print("Failed to parse objects.json while listing Lua objects: " +
+                      std::string(error.what()),
+                  Pd4WebLogLevel::PD4WEB_ERROR);
+            return {};
         }
     }
 
-    for (size_t i = 0; i < patchNames.size(); ++i) {
-        full_json[Lib]["abstractions"][patchNames[i]] = {patchNames[i], patchPath[i]};
+    if (m_IndexedLuaLibraries.contains(Lib) && full_json.contains(Lib) &&
+        full_json[Lib].contains("lua_objects")) {
+        std::vector<std::string> cachedObjects;
+        for (auto object = full_json[Lib]["lua_objects"].begin();
+             object != full_json[Lib]["lua_objects"].end(); ++object) {
+            cachedObjects.push_back(object.key());
+        }
+        p->ExternalObjectsJson = full_json;
+        return cachedObjects;
     }
 
-    return {};
+    std::vector<fs::path> roots = getLibrarySearchRoots(p, Lib);
+    if (roots.empty()) {
+        return {};
+    }
+
+    full_json[Lib]["lua_objects"] = json::object();
+    full_json[Lib]["dependencies"] = json::object();
+    std::vector<std::string> objectNames;
+    std::unordered_set<std::string> knownObjects;
+    const fs::path libraryRoot = p->Pd4WebRoot / Lib;
+
+    for (const fs::path &root : roots) {
+        if (root != libraryRoot) {
+            std::string dependencyName = root.filename().string();
+            if (dependencyName.ends_with("-src")) {
+                dependencyName.resize(dependencyName.size() - 4);
+            }
+            full_json[Lib]["dependencies"][dependencyName] = root.string();
+        }
+
+        std::error_code ec;
+        fs::recursive_directory_iterator it(root, fs::directory_options::skip_permission_denied,
+                                            ec);
+        fs::recursive_directory_iterator end;
+        while (!ec && it != end) {
+            if (it->is_directory(ec)) {
+                const std::string directoryName = it->path().filename().string();
+                if (directoryName == ".git" || directoryName == ".build") {
+                    it.disable_recursion_pending();
+                }
+            } else if (it->is_regular_file(ec) && it->path().extension() == ".pd_lua") {
+                const std::string name = it->path().stem().string();
+                if (knownObjects.insert(name).second) {
+                    objectNames.push_back(name);
+                    full_json[Lib]["lua_objects"][name] = {name, it->path().string()};
+                }
+            }
+            it.increment(ec);
+        }
+    }
+
+    std::ofstream out(jsonPath);
+    if (!out) {
+        print("Unable to update Lua objects in " + jsonPath.string(), Pd4WebLogLevel::PD4WEB_ERROR);
+        return {};
+    }
+    out << full_json.dump(2);
+    p->ExternalObjectsJson = full_json;
+    m_IndexedLuaLibraries.insert(Lib);
+
+    print("Found " + std::to_string(objectNames.size()) + " Lua objects owned by library '" + Lib +
+              "' and its dependencies",
+          Pd4WebLogLevel::PD4WEB_LOG2, p->printLevel + 1);
+    return objectNames;
 }
 
 // ─────────────────────────────────────
@@ -642,6 +786,11 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
         }
     }
 
+    // Configuring the owning library materializes its dependency graph under
+    // <library>/.build/_deps. The main recursive scan below then includes both
+    // the library and its dependency-provided Pd externals.
+    std::vector<fs::path> librarySearchRoots = getLibrarySearchRoots(p, Lib);
+
     const fs::path jsonPath = p->Pd4WebRoot / "objects.json";
     const std::string jsonFile = jsonPath.string();
 
@@ -652,7 +801,8 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
         if (in.is_open()) {
             in >> full_json;
             in.close();
-            if (full_json.contains(Lib) && full_json[Lib].contains("objects")) {
+            if (full_json.contains(Lib) && full_json[Lib].contains("objects") &&
+                full_json[Lib].value("dependency_objects_indexed", false)) {
                 const auto &libEntry = full_json[Lib]["objects"];
                 std::vector<std::string> keys;
                 for (auto it = libEntry.begin(); it != libEntry.end(); ++it) {
@@ -660,24 +810,6 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
                 }
                 p->ExternalObjectsJson = full_json;
                 return keys;
-            } else {
-
-                for (Library LibYaml : m_Libraries) {
-                    if (LibYaml.Name == Lib && LibYaml.ConfigureBeforeCheckObjects) {
-                        std::vector<std::string> cfgArgs = {
-                            m_Cmake.string(),
-                            // p->OutputFolder.string(),
-                            (m_Pd4WebRoot / LibYaml.Name).string(), "-B",
-                            (m_Pd4WebRoot / LibYaml.Name / ".build").string(), "-G", "Ninja",
-                            "-DCMAKE_BUILD_TYPE=Release",
-                            "-DCMAKE_MAKE_PROGRAM=" + m_Ninja.string(),
-                            "-DPD4WEB_AS_ES6=" + std::to_string(m_ExportES6Module), "-Wno-dev"};
-                        int result = execProcess(m_Emcmake.string(), cfgArgs);
-                        if (result != 0) {
-                            print("Configuration step failed", Pd4WebLogLevel::PD4WEB_ERROR);
-                        }
-                    }
-                }
             }
         }
     } catch (const std::exception &e) {
@@ -763,6 +895,18 @@ std::vector<std::string> Pd4Web::listObjectsInLibrary(std::shared_ptr<Patch> &p,
         setupSignatures.size() == setupNames.size()) {
         for (size_t i = 0; i < objectNames.size(); ++i) {
             full_json[Lib]["objects"][objectNames[i]] = {setupSignatures[i], setupNames[i]};
+        }
+        full_json[Lib]["dependency_objects_indexed"] = true;
+        full_json[Lib]["dependencies"] = json::object();
+        for (const fs::path &root : librarySearchRoots) {
+            if (root == completPath) {
+                continue;
+            }
+            std::string dependencyName = root.filename().string();
+            if (dependencyName.ends_with("-src")) {
+                dependencyName.resize(dependencyName.size() - 4);
+            }
+            full_json[Lib]["dependencies"][dependencyName] = root.string();
         }
     } else {
         print("Mismatched vector sizes when collecting objects; aborting JSON update",
