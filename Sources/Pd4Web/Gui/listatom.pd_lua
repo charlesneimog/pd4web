@@ -135,18 +135,26 @@ function listatom:in_1_symbol(args)
 end
 
 -- ─────────────────────────────────────
+function listatom:in_1_set(args)
+	self.atoms = args or {}
+	self.atom = ""
+	self.needtoreset = false
+	self:repaint()
+end
+
+-- ─────────────────────────────────────
 function listatom:paint(g)
 	local w, h = self:get_size()
-	g:set_color(0)
+	g:set_color(255, 255, 255)
 	g:fill_all()
 
-	g:set_color(1)
+	g:set_color(0, 0, 0)
 	g:stroke_rect(0, 0, w, h, 1)
 
 	if self.select then
 		g:set_color(255, 0, 0)
 	else
-		g:set_color(1)
+		g:set_color(0, 0, 0)
 	end
 
 	local str = ""
