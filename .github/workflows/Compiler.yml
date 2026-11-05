@@ -222,8 +222,29 @@ jobs:
             - name: Verify Pure Data package
               shell: bash
               run: |
-                  test -d build/Sources/Pd/pd4web
-                  compgen -G "build/Sources/Pd/pd4web/pd4web.compiler.*" > /dev/null
+                  package=build/Sources/Pd/pd4web
+                  test -d "${package}"
+                  compgen -G "${package}/pd4web.compiler.*" > /dev/null
+                  test -f "${package}/Pd4Web/Pd4Web/CMakeLists.txt"
+                  compgen -G "${package}/Pd4Web/bin/cmake/share/cmake-*/Modules/CMake.cmake" > /dev/null
+
+                  case "${RUNNER_OS}" in
+                    Linux)
+                      test -f "${package}/Pd4Web/bin/cmake/bin/cmake-linux"
+                      test -f "${package}/Pd4Web/bin/ninja-linux"
+                      ;;
+                    macOS)
+                      test -f "${package}/Pd4Web/bin/cmake/bin/cmake-mac"
+                      test -f "${package}/Pd4Web/bin/ninja-mac"
+                      ;;
+                    Windows)
+                      test -f "${package}/Pd4Web/bin/cmake/bin/cmake.exe"
+                      test -f "${package}/Pd4Web/bin/ninja.exe"
+                      ;;
+                  esac
+
+                  test ! -f "${package}/pd4web.cpp"
+                  test ! -d "${package}/cmake-4.3"
 
             - name: Verify macOS Pure Data object architecture
               if: runner.os == 'macOS'
@@ -305,6 +326,16 @@ jobs:
                   compgen -G "dist/*.whl" > /dev/null
                   compgen -G "pd4web/pd4web.compiler.*" > /dev/null
                   test -f pd4web/pd4web.pd
+                  test -f pd4web/Pd4Web/Pd4Web/CMakeLists.txt
+                  test -f pd4web/Pd4Web/bin/cmake/bin/cmake-linux
+                  test -f pd4web/Pd4Web/bin/cmake/bin/cmake-mac
+                  test -f pd4web/Pd4Web/bin/cmake/bin/cmake.exe
+                  test -f pd4web/Pd4Web/bin/ninja-linux
+                  test -f pd4web/Pd4Web/bin/ninja-mac
+                  test -f pd4web/Pd4Web/bin/ninja.exe
+                  compgen -G "pd4web/Pd4Web/bin/cmake/share/cmake-*/Modules/CMake.cmake" > /dev/null
+                  test ! -f pd4web/pd4web.cpp
+                  test ! -d pd4web/cmake-4.3
 
             - name: Package and publish Pure Data object to Deken
               env:

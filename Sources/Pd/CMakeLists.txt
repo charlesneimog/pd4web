@@ -22,42 +22,56 @@ set_target_properties(pd4web.compiler PROPERTIES CMAKE_POSITION_INDEPENDENT_CODE
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.compiler.cpp")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/pd4web.pd")
 pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/README.deken.pd")
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world")
-pd_add_datafile(pd4web.compiler "${CMAKE_CURRENT_SOURCE_DIR}/2-p5js")
-pd_add_datafile(
-    pd4web.compiler
-    "${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web/"
-    DESTINATION
-    "Pd4Web/Pd4Web")
+
+# pd.cmake 2.0.18 honors DESTINATION for install rules, but its build-time directory copy always
+# writes directly to PD_OUTPUT_PATH. Stage directories ourselves so the build artifact has the
+# same layout as the installed package.
+if(PD_OUTPUT_PATH)
+    if(IS_ABSOLUTE "${PD_OUTPUT_PATH}")
+        set(PD4WEB_PD_PACKAGE_DIR "${PD_OUTPUT_PATH}")
+    else()
+        set(PD4WEB_PD_PACKAGE_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PD_OUTPUT_PATH}")
+    endif()
+else()
+    set(PD4WEB_PD_PACKAGE_DIR "${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}")
+endif()
+cmake_path(NORMAL_PATH PD4WEB_PD_PACKAGE_DIR)
+
+set(PD4WEB_PD_INSTALL_DIR "${PD_LIB_DIR}/${CMAKE_PROJECT_NAME}")
+
+function(pd4web_add_data_directory source destination)
+    add_custom_command(
+        TARGET pd4web.compiler
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${source}"
+                "${PD4WEB_PD_PACKAGE_DIR}/${destination}"
+        VERBATIM)
+    install(DIRECTORY "${source}/" DESTINATION "${PD4WEB_PD_INSTALL_DIR}/${destination}")
+endfunction()
+
+pd4web_add_data_directory("${CMAKE_CURRENT_SOURCE_DIR}/1-hello-world" "1-hello-world")
+pd4web_add_data_directory("${CMAKE_CURRENT_SOURCE_DIR}/2-p5js" "2-p5js")
+pd4web_add_data_directory("${CMAKE_CURRENT_SOURCE_DIR}/../Pd4Web" "Pd4Web/Pd4Web")
 
 if(APPLE)
-    pd_add_datafile(
-        pd4web.compiler
-        "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin"
-        DESTINATION
-        "Pd4Web/bin/cmake/")
-    pd_add_datafile(
-        pd4web.compiler
-        "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share"
-        DESTINATION
-        "Pd4Web/bin/cmake/")
+    set(PD4WEB_CMAKE_BIN_DIR "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/bin")
+    set(PD4WEB_CMAKE_SHARE_DIR "${PD4WEB_CMAKE_FOLDER}/CMake.app/Contents/share")
 else()
-    pd_add_datafile(
-        pd4web.compiler
-        "${PD4WEB_CMAKE_FOLDER}/bin"
-        DESTINATION
-        "Pd4Web/bin/cmake/")
-    pd_add_datafile(
-        pd4web.compiler
-        "${PD4WEB_CMAKE_FOLDER}/share"
-        DESTINATION
-        "Pd4Web/bin/cmake/")
+    set(PD4WEB_CMAKE_BIN_DIR "${PD4WEB_CMAKE_FOLDER}/bin")
+    set(PD4WEB_CMAKE_SHARE_DIR "${PD4WEB_CMAKE_FOLDER}/share")
 endif()
-pd_add_datafile(
-    pd4web.compiler
-    "${PD4WEB_NINJA_BINARY}"
-    DESTINATION
-    "Pd4Web/bin")
+
+pd4web_add_data_directory("${PD4WEB_CMAKE_BIN_DIR}" "Pd4Web/bin/cmake/bin")
+pd4web_add_data_directory("${PD4WEB_CMAKE_SHARE_DIR}" "Pd4Web/bin/cmake/share")
+
+add_custom_command(
+    TARGET pd4web.compiler
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory "${PD4WEB_PD_PACKAGE_DIR}/Pd4Web/bin"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${PD4WEB_NINJA_BINARY}"
+            "${PD4WEB_PD_PACKAGE_DIR}/Pd4Web/bin"
+    VERBATIM)
+install(FILES "${PD4WEB_NINJA_BINARY}" DESTINATION "${PD4WEB_PD_INSTALL_DIR}/Pd4Web/bin")
 
 set_target_properties(
     pd4web.compiler
