@@ -154,10 +154,17 @@ jobs:
 
             - name: Install Pure Data and build tools
               if: runner.os == 'macOS'
+              env:
+                  HOMEBREW_NO_AUTO_UPDATE: "1"
+                  HOMEBREW_NO_INSTALL_CLEANUP: "1"
               run: |
-                  brew update
                   brew install --cask pd
-                  brew install ccache git perl
+
+                  for formula in ccache git perl; do
+                      if ! brew list --formula "${formula}" > /dev/null 2>&1; then
+                          brew install "${formula}"
+                      fi
+                  done
 
             - name: Install Pure Data and build tools
               if: runner.os == 'Linux'
@@ -305,9 +312,25 @@ jobs:
                   DEKEN_PASSWORD: ${{ secrets.DEKEN_PASSWORD }}
               shell: bash
               run: |
-                  python -m pip install deken
-                  deken package --version "${{ needs.metadata.outputs.version }}" pd4web
-                  deken upload -v "${{ needs.metadata.outputs.version }}" ./*.dek
+                  set -euo pipefail
+                  docker run --rm \
+                    --user "$(id -u):$(id -g)" \
+                    --volume "${{ github.workspace }}:/deken" \
+                    --workdir /deken \
+                    registry.git.iem.at/pd/deken \
+                    deken package --version "${{ needs.metadata.outputs.version }}" pd4web
+
+                  shopt -s nullglob
+                  deken_packages=(./*.dek)
+                  test "${#deken_packages[@]}" -gt 0
+
+                  docker run --rm \
+                    --user "$(id -u):$(id -g)" \
+                    --volume "${{ github.workspace }}:/deken" \
+                    --workdir /deken \
+                    -e DEKEN_USERNAME -e DEKEN_PASSWORD \
+                    registry.git.iem.at/pd/deken \
+                    deken upload -v "${{ needs.metadata.outputs.version }}" "${deken_packages[@]}"
 
             - name: Publish Python wheels to PyPI
               uses: pypa/gh-action-pypi-publish@release/v1
